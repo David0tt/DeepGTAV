@@ -19,6 +19,7 @@ void ScriptMain()
 			server.checkRecvMessage();
 			server.checkSendMessage();
 			server.scenario.run();
+            scriptWait(0);
 		}
 	}
 }

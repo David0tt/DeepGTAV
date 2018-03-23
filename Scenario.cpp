@@ -6,6 +6,7 @@
 #include "Rewarders\SpeedRewarder.h"
 #include "defaults.h"
 #include <time.h>
+#include <fstream>
 
 char* Scenario::weatherList[14] = { "CLEAR", "EXTRASUNNY", "CLOUDS", "OVERCAST", "RAIN", "CLEARING", "THUNDER", "SMOG", "FOGGY", "XMAS", "SNOWLIGHT", "BLIZZARD", "NEUTRAL", "SNOW" };
 char* Scenario::vehicleList[3] = { "blista", "voltic", "packer" };
@@ -59,7 +60,7 @@ void Scenario::parseScenarioConfig(const Value& sc, bool setDefaults) {
 }
 
 void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
-	if (!dc["rate"].IsNull()) rate = dc["rate"].GetInt();
+	if (!dc["rate"].IsNull()) rate = dc["rate"].GetFloat();
 	else if (setDefaults) rate = _RATE_;
 	
 	if (!dc["frame"].IsNull()) {
@@ -121,6 +122,8 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
 	else if (setDefaults) location = _LOCATION_;
 	if (!dc["time"].IsNull()) time = dc["time"].GetBool();
 	else if (setDefaults) time = _TIME_;
+    if (!dc["pointclouds"].IsNull()) pointclouds = dc["pointclouds"].GetBool();
+    else if (setDefaults) pointclouds = _POINTCLOUDS_;
 
 	//Create JSON DOM
 	d.SetObject();
@@ -241,6 +244,7 @@ void Scenario::run() {
 		
 		float delay = ((float)(now - lastSafetyCheck)) / CLOCKS_PER_SEC;
 		if (delay > 10) {
+            log("In delay > 10");
 			lastSafetyCheck = std::clock();
 			//Avoid bad things such as getting killed by the police, robbed, dying in car accidents or other horrible stuff
 			PLAYER::SET_EVERYONE_IGNORE_PLAYER(player, TRUE);
@@ -265,6 +269,9 @@ void Scenario::run() {
 			// Driving characteristics
 			PED::SET_DRIVER_AGGRESSIVENESS(ped, 0.0);
 			PED::SET_DRIVER_ABILITY(ped, 100.0);
+
+            //Setup LiDAR before collecting
+            setupLiDAR();
 		}
 	}
 	scriptWait(0);
@@ -305,6 +312,7 @@ StringBuffer Scenario::generateMessage() {
 	if (drivingMode); //TODO
 	if (location) setLocation();
 	if (time) setTime();
+    if (pointclouds && lidar_initialized) collectLiDAR();
 
 	d.Accept(writer);
 
@@ -623,4 +631,26 @@ void Scenario::setDirection(){
 
 void Scenario::setReward() {
 	d["reward"] = rewarder->computeReward(vehicle);
+}
+
+void Scenario::setupLiDAR() {
+    if (pointclouds && !lidar_initialized) //flag if activate the LiDAR
+    {
+        lidar.Init3DLiDAR_FOV(120.0f, 90.1f, 0.09f, 26.9f, 0.09f);
+        lidar.AttachLiDAR2Camera(camera, ped);
+        lidar_initialized = true;
+    }
+}
+
+void Scenario::collectLiDAR() {
+    float * pointCloud = lidar.GetPointClouds(m_pointCloudSize);
+    
+    char format[] = "E:\\data\\velodyne\\%010d.bin";
+    char filename[sizeof format + 100];
+    sprintf(filename, format, instance_index);
+
+    std::ofstream ofile(filename, std::ios::binary);
+    ofile.write((char*)pointCloud, 4 * sizeof(float)*m_pointCloudSize);
+
+    ++instance_index;
 }

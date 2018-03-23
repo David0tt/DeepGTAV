@@ -1,3 +1,10 @@
+/*
+
+Original source code taken from:
+https://github.com/gdpinchina/A-virtual-LiDAR-for-DeepGTAV
+
+*/
+
 #pragma once
 #include "lib/script.h"
 
@@ -45,7 +52,7 @@ public:
 
     void DestroyLiDAR();
 
-    float* GetPointClouds();
+    float* GetPointClouds(int &size);
     int getTotalSmplNum();
     int getVertiSmplNum();
     int getHorizSmplNum();
@@ -62,6 +69,7 @@ private:
 private:
 
     float* m_pPointClouds;
+    int m_pointsHit;
     float m_maxRange;//meter
     float m_vertiUpLimit;//deg, the upside limit of zenith direction, namely the min vertical angle, 0 <= up <= phiUp < 90
     float m_vertiUnLimit;//deg, the underside limit of ground direction, namely the max vertical angle, 90 <= phiLo <= un <= 180

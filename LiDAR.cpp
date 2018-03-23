@@ -2,13 +2,19 @@
 #include "Scenario.h"
 #include <math.h>
 #include <stdio.h>
+#include <cmath>
+
 #define PI 3.1415926535898
 #define D2R PI/180.0
+
+const int MAX_POINTS = 5000000;
+const int FLOATS_PER_POINT = 4;
 
 
 LiDAR::LiDAR()
 {
     m_pPointClouds = NULL;
+    m_pointsHit = 0;
     m_maxRange = 0;
     m_vertiUpLimit = 0;
     m_vertiUnLimit = 0;
@@ -91,7 +97,8 @@ void LiDAR::Init3DLiDAR_SmplNum(float maxRange, int horizSmplNum, float horizLeL
     m_horizResolu = (m_horizLeLimit + 360.0 - m_horizRiLimit) / m_horizSmplNum;
 
     if (!m_pPointClouds)
-        m_pPointClouds = (float *)malloc(m_vertiSmplNum * m_horizSmplNum * sizeof(float));
+        //Malloc 4*max number of points bytes for the point cloud
+        m_pPointClouds = (float*)malloc((MAX_POINTS * sizeof(float)));
     if (m_pPointClouds == NULL)
         printf("\nLiDAR: memory alloc err");
 
@@ -126,9 +133,12 @@ void LiDAR::AttachLiDAR2Camera(Cam camera, Entity ownCar)
         m_camera = camera;
         m_ownCar = ownCar;
         m_isAttach = true;
+        log("LiDAR attached to car");
     }
     else
-        printf("\nThe LiDAR has been attached to an entity");
+    {
+        log("LiDAR is already attached to car");
+    }
 }
 
 void LiDAR::DestroyLiDAR()
@@ -153,8 +163,9 @@ void LiDAR::DestroyLiDAR()
     m_isAttach = false;
 }
 
-float * LiDAR::GetPointClouds()
+float * LiDAR::GetPointClouds(int &size)
 {
+    m_pointsHit = 0;
     if (m_pPointClouds == NULL || m_initType == _LIDAR_NOT_INIT_YET_ || !m_isAttach)
         return NULL;
     switch (m_initType)
@@ -162,6 +173,7 @@ float * LiDAR::GetPointClouds()
     case _LIDAR_INIT_AS_2D_: GenerateHorizPointClouds(90, m_pPointClouds);
     case _LIDAR_INIT_AS_3D_:
     {
+        //log("Trying to generate pointcloud");
         float phi = m_vertiUnLimit;
         for (int k = 0; k < m_vertiSmplNum; k++)
         {
@@ -170,13 +182,15 @@ float * LiDAR::GetPointClouds()
             else
                 break;
 
-            GenerateHorizPointClouds(phi, &m_pPointClouds[k * m_horizSmplNum]);
+            GenerateHorizPointClouds(phi, m_pPointClouds);
         }
     }
     default:
         break;
     }
+    //log("After obtaining pointcloud\n");
 
+    size = m_pointsHit;
     return m_pPointClouds;
 }
 
@@ -210,6 +224,9 @@ int LiDAR::getCurType()
 
 void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
 {
+    if (m_pointsHit >= MAX_POINTS) {
+        log("WARNING: MAX NUMBER OF POINTS REACHED! INCREASE MAX_POINTS\n", true);
+    }
     BOOL isHit;
     Entity hitEntity;
     Vector3 target, endCoord, surfaceNorm;
@@ -225,16 +242,19 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
     target.z = m_rotDCM[6] * endCoord.x + m_rotDCM[7] * endCoord.y + m_rotDCM[8] * endCoord.z + m_curPos.z;
 
     //options: -1=everything
-    raycast_handle = WORLDPROBE::_CAST_RAY_POINT_TO_POINT(m_curPos.x, m_curPos.y, m_curPos.z, target.x, target.y, target.z, -1, m_ownCar, 7);
+    //New function is called _START_SHAPE_TEST_RAY
+    raycast_handle = WORLDPROBE::_CAST_RAY_POINT_TO_POINT(m_curPos.x, m_curPos.y, m_curPos.z, target.x, target.y, target.z, -1, 0, 7);
 
+    //New function is called GET_SHAPE_TEST_RESULT
     WORLDPROBE::_GET_RAYCAST_RESULT(raycast_handle, &isHit, &endCoord, &surfaceNorm, &hitEntity);
 
-    if (isHit)
-        *p = sqrt((endCoord.x - m_curPos.x) * (endCoord.x - m_curPos.x) +
-        (endCoord.y - m_curPos.y) * (endCoord.y - m_curPos.y) +
-            (endCoord.z - m_curPos.z) * (endCoord.z - m_curPos.z));
-    else
-        *p = m_maxRange;
+    if (isHit) {
+        *p = endCoord.x - m_curPos.x;
+        *(p + 1) = endCoord.y - m_curPos.y;
+        *(p + 2) = endCoord.z - m_curPos.z;
+        *(p + 3) = 0;//This should be the reflectance value - TODO
+        m_pointsHit++;
+    }
 
 #ifdef DEBUG_LOG
     printf("\nDEBUG_LOG: function: %s", __FUNCTION__);
@@ -253,6 +273,7 @@ void LiDAR::GenerateHorizPointClouds(float phi, float *p)
     float theta = 0.0, quaterion[4];
 
     m_curPos = CAM::GET_CAM_COORD(m_camera);
+    //m_curPos = CAM::GET_GAMEPLAY_CAM_COORD();
     calcDCM();
 
     //Right side:
@@ -263,7 +284,7 @@ void LiDAR::GenerateHorizPointClouds(float phi, float *p)
             theta = m_horizRiLimit + j * m_horizResolu;
         else
             break;
-        GenerateSinglePoint(phi, theta, p + j);
+        GenerateSinglePoint(phi, theta, p + (m_pointsHit * FLOATS_PER_POINT));
     }
     //Left side:
     theta = theta - 360.0;
@@ -273,8 +294,13 @@ void LiDAR::GenerateHorizPointClouds(float phi, float *p)
             theta = 0.0 + i * m_horizResolu;
         else
             break;
-        GenerateSinglePoint(phi, theta, p + i + j);
+        GenerateSinglePoint(phi, theta, p + (m_pointsHit * FLOATS_PER_POINT));
     }
+    /*
+    FILE* f = fopen("D:\\Rockstar Games\\GTA V\\Braden.log", "a");
+    fprintf(f, "After generating horiz points at point: %d\n", m_pointsHit);
+    fclose(f);
+    */
 }
 
 void LiDAR::calcDCM()

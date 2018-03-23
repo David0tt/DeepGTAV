@@ -15,3 +15,4 @@
 #define _DRIVING_MODE_ false
 #define _LOCATION_ false
 #define _TIME_ false
+#define _POINTCLOUDS_ true

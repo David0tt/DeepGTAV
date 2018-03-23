@@ -11,8 +11,19 @@
 
 #include "ScreenCapturer.h"
 #include "Rewarders\Rewarder.h"
+#include "LiDAR.h"
 
 using namespace rapidjson;
+
+static bool LOGGING = true;
+static void log(std::string str, bool override = false) {
+    if (override || LOGGING) {
+        FILE* f = fopen("D:\\Rockstar Games\\GTA V\\Braden.log", "a");
+        fprintf(f, str.c_str());
+        fprintf(f, "\n");
+        fclose(f);
+    }
+}
 
 //#define DEBUG 1
 
@@ -46,6 +57,7 @@ private:
 	bool drivingMode; //TODO
 	bool location;
 	bool time;
+    bool pointclouds;
 
 	float currentThrottle = 0.0;
 	float currentBrake = 0.0;
@@ -59,8 +71,14 @@ private:
 	bool running = false;
 	Document d;
 
+    //LiDAR variables
+    LiDAR lidar;
+    bool lidar_initialized = false;
+    int instance_index = 0;
+    int m_pointCloudSize = 0;
+
 public:
-	int rate;
+	float rate;
 
 	void start(const Value& sc, const Value& dc);
 	void stop();
@@ -89,4 +107,6 @@ private:
 	void setDrivingMode();
 	void setLocation();
 	void setTime();
+    void setupLiDAR();
+    void collectLiDAR();
 };
