@@ -8,6 +8,24 @@ import argparse
 import time
 import cv2
 
+width = 1920
+height = 1080
+index = 0
+    
+def printInstances(filename, list, text):
+    text_file = open(filename, "a")
+    for instance in list:
+        text_file.write("%s " % text)
+        for num in instance['FUR']:
+            text_file.write(" %f" % num)
+        for num in instance['BLL']:
+            text_file.write(" %f" % num)
+        text_file.write(" %f" % instance['speed'])
+        text_file.write(" %f" % instance['heading'])
+        text_file.write(" %d" % instance['classID'])
+        text_file.write("\n")
+    text_file.close()
+
 # Stores a dataset file with data coming from DeepGTAV
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=None)
@@ -20,22 +38,35 @@ if __name__ == '__main__':
     # If desired, a dataset path and compression level can be set to store in memory all the data received in a gziped pickle file.
     client = Client(ip=args.host, port=args.port, datasetPath=args.dataset_path, compressionLevel=9)
     
+    print("Here1")
     # Configures the information that we want DeepGTAV to generate and send to us. 
     # See deepgtav/messages.py to see what options are supported
-    dataset = Dataset(rate=30, frame=[320,160], throttle=True, brake=True, steering=True, vehicles=True, peds=True, reward=[15.0, 0.0], direction=None, speed=True, yawRate=True, location=True, time=True)
+    dataset = Dataset(rate=0.5, frame=[width,height], throttle=True, brake=True, steering=True, vehicles=True, peds=True, reward=[15.0, 0.0], direction=None, speed=True, yawRate=True, location=True, time=True)
     # Send the Start request to DeepGTAV.
     scenario = Scenario(drivingMode=[786603,15.0]) # Driving style is set to normal, with a speed of 15.0 mph. All other scenario options are random.
     client.sendMessage(Start(dataset=dataset,scenario=scenario))
 
+    print("Here2")
     # Start listening for messages coming from DeepGTAV. We do it for 80 hours
     stoptime = time.time() + 80*3600
     while time.time() < stoptime:
         try:
             # We receive a message as a Python dictionary
             message = client.recvMessage()  
+            index = message['index']
             
             # The frame is a numpy array and can be displayed using OpenCV or similar       
-            # image = frame2numpy(message['frame'], (320,160))
+            image = frame2numpy(message['frame'], (width,height))
+            cv2.imwrite("E:\data\images\%010d.png" % index, image)
+            
+            #Output object detections
+            filename = "E:\data\labels\%010d.txt" % index
+            text_file = open(filename, "w")
+            text_file.write("")
+            text_file.close()
+            printInstances(filename, message['vehicles'], "Car")
+            printInstances(filename, message['peds'], "Pedestrian")
+            
             # cv2.imshow('img',image)
             # cv2.waitKey(-1)
         except KeyboardInterrupt:
