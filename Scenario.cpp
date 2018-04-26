@@ -143,6 +143,7 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
 	if (drivingMode) d.AddMember("drivingMode", 0, allocator);
 	if (location) d.AddMember("location", a, allocator);
 	if (time) d.AddMember("time", 0, allocator);
+    d.AddMember("index", 0, allocator);
 
 	screenCapturer = new ScreenCapturer(width, height);
 }
@@ -299,6 +300,7 @@ StringBuffer Scenario::generateMessage() {
 	
 	screenCapturer->capture();
 
+    setIndex();
 	if (vehicles) setVehiclesList();
 	if (peds) setPedsList();
 	if (trafficSigns); //TODO
@@ -636,7 +638,7 @@ void Scenario::setReward() {
 void Scenario::setupLiDAR() {
     if (pointclouds && !lidar_initialized) //flag if activate the LiDAR
     {
-        lidar.Init3DLiDAR_FOV(120.0f, 90.1f, 0.09f, 26.9f, 0.09f);
+        lidar.Init3DLiDAR_FOV(120.0f, 359.9f, 0.09f, 26.9f, 0.420f);
         lidar.AttachLiDAR2Camera(camera, ped);
         lidar_initialized = true;
     }
@@ -653,4 +655,8 @@ void Scenario::collectLiDAR() {
     ofile.write((char*)pointCloud, 4 * sizeof(float)*m_pointCloudSize);
 
     ++instance_index;
+}
+
+void Scenario::setIndex() {
+    d["index"] = instance_index;
 }

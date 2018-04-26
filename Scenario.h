@@ -74,7 +74,7 @@ private:
     //LiDAR variables
     LiDAR lidar;
     bool lidar_initialized = false;
-    int instance_index = 0;
+    int instance_index = 1;
     int m_pointCloudSize = 0;
 
 public:
@@ -109,4 +109,5 @@ private:
 	void setTime();
     void setupLiDAR();
     void collectLiDAR();
+    void setIndex();
 };

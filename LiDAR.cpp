@@ -3,6 +3,8 @@
 #include <math.h>
 #include <stdio.h>
 #include <cmath>
+#include <string>
+#include <sstream>
 
 #define PI 3.1415926535898
 #define D2R PI/180.0
@@ -70,6 +72,11 @@ void LiDAR::Init2DLiDAR_SmplNum(float maxRange, int horizSmplNum, float horizLeL
 void LiDAR::Init3DLiDAR_SmplNum(float maxRange, int horizSmplNum, float horizLeLimit, float horizRiLimit,
     int vertiSmplNum, float vertiUpLimit, float vertiUnLimit)
 {
+    std::ostringstream oss;
+    oss << "Vertical sample number: " << vertiSmplNum;
+    std::string str = oss.str();
+    log(str);
+
     if (m_initType != _LIDAR_NOT_INIT_YET_)
         DestroyLiDAR();
 
