@@ -304,7 +304,7 @@ void LiDAR::GenerateHorizPointClouds(float phi, float *p)
         GenerateSinglePoint(phi, theta, p + (m_pointsHit * FLOATS_PER_POINT));
     }
     /*
-    FILE* f = fopen("D:\\Rockstar Games\\GTA V\\Braden.log", "a");
+    FILE* f = fopen("C:\\GTA V\\Braden.log", "a");
     fprintf(f, "After generating horiz points at point: %d\n", m_pointsHit);
     fclose(f);
     */
