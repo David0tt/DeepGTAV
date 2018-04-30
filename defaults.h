@@ -16,3 +16,5 @@
 #define _LOCATION_ false
 #define _TIME_ false
 #define _POINTCLOUDS_ true
+#define _OFFSCREEN_ true
+#define _SHOWBOXES_ false

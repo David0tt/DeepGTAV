@@ -18,7 +18,7 @@ using namespace rapidjson;
 static bool LOGGING = true;
 static void log(std::string str, bool override = false) {
     if (override || LOGGING) {
-        FILE* f = fopen("D:\\Rockstar Games\\GTA V\\Braden.log", "a");
+        FILE* f = fopen("C:\\GTA V\\Braden.log", "a");
         fprintf(f, str.c_str());
         fprintf(f, "\n");
         fclose(f);
@@ -58,6 +58,8 @@ private:
 	bool location;
 	bool time;
     bool pointclouds;
+    bool offscreen;
+    bool showBoxes;
 
 	float currentThrottle = 0.0;
 	float currentBrake = 0.0;
@@ -74,8 +76,11 @@ private:
     //LiDAR variables
     LiDAR lidar;
     bool lidar_initialized = false;
-    int instance_index = 1;
+    int instance_index = 50;
     int m_pointCloudSize = 0;
+
+    //Camera intrinsic parameters
+    float intrinsics[3];
 
 public:
 	float rate;
@@ -110,4 +115,6 @@ private:
     void setupLiDAR();
     void collectLiDAR();
     void setIndex();
+    void drawBoxes(Vector3 BLL, Vector3 FUR, Vector3 dim, Vector3 upVector, Vector3 rightVector, Vector3 forwardVector, Vector3 position, int colour);
+    void setCameraIntrinsics();
 };

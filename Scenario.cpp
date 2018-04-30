@@ -7,9 +7,17 @@
 #include "defaults.h"
 #include <time.h>
 #include <fstream>
+#include <string>
+#include <sstream>
+
+const float PI = 3.14159265359;
+const float VERT_CAM_FOV = 59; //In degrees
+//Need to input the vertical FOV with GTA functions.
+//90 degrees horizontal (KITTI) corresponds to 59 degrees vertical (https://www.gtaall.com/info/fov-calculator.html).
+const float HOR_CAM_FOV = 90; //In degrees
 
 char* Scenario::weatherList[14] = { "CLEAR", "EXTRASUNNY", "CLOUDS", "OVERCAST", "RAIN", "CLEARING", "THUNDER", "SMOG", "FOGGY", "XMAS", "SNOWLIGHT", "BLIZZARD", "NEUTRAL", "SNOW" };
-char* Scenario::vehicleList[3] = { "blista", "voltic", "packer" };
+char* Scenario::vehicleList[3] = { "blista", "blista", "blista" };//voltic, packer
 
 void Scenario::parseScenarioConfig(const Value& sc, bool setDefaults) {
 	const Value& location = sc["location"];
@@ -38,12 +46,13 @@ void Scenario::parseScenarioConfig(const Value& sc, bool setDefaults) {
 		else if (setDefaults) minute = rand() % 60;
 	}
 	else if (setDefaults) {
-		hour = rand() % 24;
+        hour = 16;//TODO Do we want random times? rand() % 24;
 		minute = rand() % 60;
 	}
 
 	if (!weather.IsNull()) _weather = weather.GetString();
-	else if (setDefaults) _weather = weatherList[rand() % 14];
+    //TODO: Do we want other weather?
+    else if (setDefaults) _weather = "CLEAR";// weatherList[rand() % 14];
 
 	if (!vehicle.IsNull()) _vehicle = vehicle.GetString();
 	else if (setDefaults) _vehicle = vehicleList[rand() % 3];
@@ -124,6 +133,13 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
 	else if (setDefaults) time = _TIME_;
     if (!dc["pointclouds"].IsNull()) pointclouds = dc["pointclouds"].GetBool();
     else if (setDefaults) pointclouds = _POINTCLOUDS_;
+    if (!dc["offscreen"].IsNull()) offscreen = dc["offscreen"].GetBool();
+    else if (setDefaults) offscreen = _OFFSCREEN_;
+    if (!dc["showBoxes"].IsNull()) showBoxes = dc["showBoxes"].GetBool();
+    else if (setDefaults) showBoxes = _SHOWBOXES_;
+
+    //Create camera intrinsics matrix
+    setCameraIntrinsics();
 
 	//Create JSON DOM
 	d.SetObject();
@@ -188,7 +204,7 @@ void Scenario::buildScenario() {
 	camera = CAM::CREATE_CAM("DEFAULT_SCRIPTED_CAMERA", TRUE);
 	if (strcmp(_vehicle, "packer") == 0) CAM::ATTACH_CAM_TO_ENTITY(camera, vehicle, 0, 2.35, 1.7, TRUE);
 	else CAM::ATTACH_CAM_TO_ENTITY(camera, vehicle, 0, 0.5, 0.8, TRUE);
-	CAM::SET_CAM_FOV(camera, 60);
+	CAM::SET_CAM_FOV(camera, VERT_CAM_FOV);
 	CAM::SET_CAM_ACTIVE(camera, TRUE);
 	CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 1);
 	CAM::SET_CAM_INHERIT_ROLL_VEHICLE(camera, TRUE);
@@ -344,7 +360,8 @@ void Scenario::setVehiclesList() {
 	int count = worldGetAllVehicles(vehicles, ARR_SIZE);
 	for (int i = 0; i < count; i++) {
 		if (vehicles[i] == vehicle) continue; //Don't process own car!
-		if (ENTITY::IS_ENTITY_ON_SCREEN(vehicles[i])) {
+        bool isOnScreen = ENTITY::IS_ENTITY_ON_SCREEN(vehicles[i]);
+        if (offscreen || isOnScreen) {
 			//Check if it is in screen
 			ENTITY::GET_ENTITY_MATRIX(vehicles[i], &rightVector, &forwardVector, &upVector, &position); //Blue or red pill
 			if (SYSTEM::VDIST2(currentPos.x, currentPos.y, currentPos.z, position.x, position.y, position.z) < 22500) { //150 m.
@@ -397,59 +414,13 @@ void Scenario::setVehiclesList() {
 					_vector.SetArray();
 					_vector.PushBack(BLL.x - currentPos.x, allocator).PushBack(BLL.y - currentPos.y, allocator).PushBack(BLL.z - currentPos.z, allocator);
 					_vehicle.AddMember("BLL", _vector, allocator).AddMember("speed", speed, allocator).AddMember("heading", heading, allocator).AddMember("classID", classid, allocator);
+                    _vehicle.AddMember("offscreen", offscreen, allocator);
+                    //_vehicle.AddMember("dimensions", dim, allocator);
+                    //_vehicle.AddMember("position", position, allocator);
 
 					_vehicles.PushBack(_vehicle, allocator);
 
-					#ifdef DEBUG
-					Vector3 edge1 = BLL;
-					Vector3 edge2;
-					Vector3 edge3;
-					Vector3 edge4;
-					Vector3 edge5 = FUR;
-					Vector3 edge6;
-					Vector3 edge7;
-					Vector3 edge8;
-
-					edge2.x = edge1.x + 2 * dim.y*rightVector.x;
-					edge2.y = edge1.y + 2 * dim.y*rightVector.y;
-					edge2.z = edge1.z + 2 * dim.y*rightVector.z;
-
-					edge3.x = edge2.x + 2 * dim.z*upVector.x;
-					edge3.y = edge2.y + 2 * dim.z*upVector.y;
-					edge3.z = edge2.z + 2 * dim.z*upVector.z;
-
-					edge4.x = edge1.x + 2 * dim.z*upVector.x;
-					edge4.y = edge1.y + 2 * dim.z*upVector.y;
-					edge4.z = edge1.z + 2 * dim.z*upVector.z;
-
-					edge6.x = edge5.x - 2 * dim.y*rightVector.x;
-					edge6.y = edge5.y - 2 * dim.y*rightVector.y;
-					edge6.z = edge5.z - 2 * dim.y*rightVector.z;
-
-					edge7.x = edge6.x - 2 * dim.z*upVector.x;
-					edge7.y = edge6.y - 2 * dim.z*upVector.y;
-					edge7.z = edge6.z - 2 * dim.z*upVector.z;
-
-					edge8.x = edge5.x - 2 * dim.z*upVector.x;
-					edge8.y = edge5.y - 2 * dim.z*upVector.y;
-					edge8.z = edge5.z - 2 * dim.z*upVector.z;
-
-					GRAPHICS::DRAW_LINE(edge1.x, edge1.y, edge1.z, edge2.x, edge2.y, edge2.z, 0, 255, 0, 200);
-					GRAPHICS::DRAW_LINE(edge1.x, edge1.y, edge1.z, edge4.x, edge4.y, edge4.z, 0, 255, 0, 200);
-					GRAPHICS::DRAW_LINE(edge2.x, edge2.y, edge2.z, edge3.x, edge3.y, edge3.z, 0, 255, 0, 200);
-					GRAPHICS::DRAW_LINE(edge3.x, edge3.y, edge3.z, edge4.x, edge4.y, edge4.z, 0, 255, 0, 200);
-
-					GRAPHICS::DRAW_LINE(edge5.x, edge5.y, edge5.z, edge6.x, edge6.y, edge6.z, 0, 255, 0, 200);
-					GRAPHICS::DRAW_LINE(edge5.x, edge5.y, edge5.z, edge8.x, edge8.y, edge8.z, 0, 255, 0, 200);
-					GRAPHICS::DRAW_LINE(edge6.x, edge6.y, edge6.z, edge7.x, edge7.y, edge7.z, 0, 255, 0, 200);
-					GRAPHICS::DRAW_LINE(edge7.x, edge7.y, edge7.z, edge8.x, edge8.y, edge8.z, 0, 255, 0, 200);
-
-					GRAPHICS::DRAW_LINE(edge1.x, edge1.y, edge1.z, edge7.x, edge7.y, edge7.z, 0, 255, 0, 200);
-					GRAPHICS::DRAW_LINE(edge2.x, edge2.y, edge2.z, edge8.x, edge8.y, edge8.z, 0, 255, 0, 200);
-					GRAPHICS::DRAW_LINE(edge3.x, edge3.y, edge3.z, edge5.x, edge5.y, edge5.z, 0, 255, 0, 200);
-					GRAPHICS::DRAW_LINE(edge4.x, edge4.y, edge4.z, edge6.x, edge6.y, edge6.z, 0, 255, 0, 200);
-					#endif
-
+                    drawBoxes(BLL, FUR, dim, upVector, rightVector, forwardVector, position, 1);
 				}
 			}
 		}
@@ -481,7 +452,8 @@ void Scenario::setPedsList(){
 	int count = worldGetAllPeds(peds, ARR_SIZE);
 	for (int i = 0; i < count; i++) {
 		if (PED::IS_PED_IN_ANY_VEHICLE(peds[i], TRUE)) continue; //Don't process peds in vehicles!
-		if (ENTITY::IS_ENTITY_ON_SCREEN(peds[i])) {
+        bool isOnScreen = ENTITY::IS_ENTITY_ON_SCREEN(peds[i]);
+		if (offscreen || isOnScreen) {
 			//Check if it is in screen
 			ENTITY::GET_ENTITY_MATRIX(peds[i], &rightVector, &forwardVector, &upVector, &position); //Blue or red pill
 			if (SYSTEM::VDIST2(currentPos.x, currentPos.y, currentPos.z, position.x, position.y, position.z) < 22500) { //150 m.
@@ -526,59 +498,11 @@ void Scenario::setPedsList(){
 					_vector.SetArray();
 					_vector.PushBack(BLL.x - currentPos.x, allocator).PushBack(BLL.y - currentPos.y, allocator).PushBack(BLL.z - currentPos.z, allocator);
 					_ped.AddMember("BLL", _vector, allocator).AddMember("speed", speed, allocator).AddMember("heading", heading, allocator).AddMember("classID", classid, allocator);
+                    _ped.AddMember("offscreen", offscreen, allocator);
 
 					_peds.PushBack(_ped, allocator);
 
-					#ifdef DEBUG
-					Vector3 edge1 = BLL;
-					Vector3 edge2;
-					Vector3 edge3;
-					Vector3 edge4;
-					Vector3 edge5 = FUR;
-					Vector3 edge6;
-					Vector3 edge7;
-					Vector3 edge8;
-
-					edge2.x = edge1.x + 2 * dim.y*rightVector.x;
-					edge2.y = edge1.y + 2 * dim.y*rightVector.y;
-					edge2.z = edge1.z + 2 * dim.y*rightVector.z;
-
-					edge3.x = edge2.x + 2 * dim.z*upVector.x;
-					edge3.y = edge2.y + 2 * dim.z*upVector.y;
-					edge3.z = edge2.z + 2 * dim.z*upVector.z;
-
-					edge4.x = edge1.x + 2 * dim.z*upVector.x;
-					edge4.y = edge1.y + 2 * dim.z*upVector.y;
-					edge4.z = edge1.z + 2 * dim.z*upVector.z;
-
-					edge6.x = edge5.x - 2 * dim.y*rightVector.x;
-					edge6.y = edge5.y - 2 * dim.y*rightVector.y;
-					edge6.z = edge5.z - 2 * dim.y*rightVector.z;
-
-					edge7.x = edge6.x - 2 * dim.z*upVector.x;
-					edge7.y = edge6.y - 2 * dim.z*upVector.y;
-					edge7.z = edge6.z - 2 * dim.z*upVector.z;
-
-					edge8.x = edge5.x - 2 * dim.z*upVector.x;
-					edge8.y = edge5.y - 2 * dim.z*upVector.y;
-					edge8.z = edge5.z - 2 * dim.z*upVector.z;
-
-					GRAPHICS::DRAW_LINE(edge1.x, edge1.y, edge1.z, edge2.x, edge2.y, edge2.z, 255, 0, 0, 200);
-					GRAPHICS::DRAW_LINE(edge1.x, edge1.y, edge1.z, edge4.x, edge4.y, edge4.z, 255, 0, 0, 200);
-					GRAPHICS::DRAW_LINE(edge2.x, edge2.y, edge2.z, edge3.x, edge3.y, edge3.z, 255, 0, 0, 200);
-					GRAPHICS::DRAW_LINE(edge3.x, edge3.y, edge3.z, edge4.x, edge4.y, edge4.z, 255, 0, 0, 200);
-
-					GRAPHICS::DRAW_LINE(edge5.x, edge5.y, edge5.z, edge6.x, edge6.y, edge6.z, 255, 0, 0, 200);
-					GRAPHICS::DRAW_LINE(edge5.x, edge5.y, edge5.z, edge8.x, edge8.y, edge8.z, 255, 0, 0, 200);
-					GRAPHICS::DRAW_LINE(edge6.x, edge6.y, edge6.z, edge7.x, edge7.y, edge7.z, 255, 0, 0, 200);
-					GRAPHICS::DRAW_LINE(edge7.x, edge7.y, edge7.z, edge8.x, edge8.y, edge8.z, 255, 0, 0, 200);
-
-					GRAPHICS::DRAW_LINE(edge1.x, edge1.y, edge1.z, edge7.x, edge7.y, edge7.z, 255, 0, 0, 200);
-					GRAPHICS::DRAW_LINE(edge2.x, edge2.y, edge2.z, edge8.x, edge8.y, edge8.z, 255, 0, 0, 200);
-					GRAPHICS::DRAW_LINE(edge3.x, edge3.y, edge3.z, edge5.x, edge5.y, edge5.z, 255, 0, 0, 200);
-					GRAPHICS::DRAW_LINE(edge4.x, edge4.y, edge4.z, edge6.x, edge6.y, edge6.z, 255, 0, 0, 200);
-					#endif
-
+                    drawBoxes(BLL, FUR, dim, upVector, rightVector, forwardVector, position, 0);
 				}
 			}
 		}
@@ -659,4 +583,78 @@ void Scenario::collectLiDAR() {
 
 void Scenario::setIndex() {
     d["index"] = instance_index;
+}
+
+void Scenario::setCameraIntrinsics() {
+    float f = width / (2 * tan(HOR_CAM_FOV * PI / 360));
+    float cu = width / 2;
+    float cy = height / 2;
+
+    intrinsics[0] = f;
+    intrinsics[1] = cu;
+    intrinsics[2] = cy;
+}
+
+void Scenario::drawBoxes(Vector3 BLL, Vector3 FUR, Vector3 dim, Vector3 upVector, Vector3 rightVector, Vector3 forwardVector, Vector3 position, int colour) {
+    log("Inside draw boxes");
+    if (showBoxes) {
+        log("Inside show boxes");
+        Vector3 edge1 = BLL;
+        Vector3 edge2;
+        Vector3 edge3;
+        Vector3 edge4;
+        Vector3 edge5 = FUR;
+        Vector3 edge6;
+        Vector3 edge7;
+        Vector3 edge8;
+
+        int green = colour * 255;
+        int blue = abs(colour - 1) * 255;
+
+        std::ostringstream oss;
+        oss << "Green: " << green << " Blue: " << blue;
+        std::string str = oss.str();
+        log(str);
+
+
+        edge2.x = edge1.x + 2 * dim.y*rightVector.x;
+        edge2.y = edge1.y + 2 * dim.y*rightVector.y;
+        edge2.z = edge1.z + 2 * dim.y*rightVector.z;
+
+        edge3.x = edge2.x + 2 * dim.z*upVector.x;
+        edge3.y = edge2.y + 2 * dim.z*upVector.y;
+        edge3.z = edge2.z + 2 * dim.z*upVector.z;
+
+        edge4.x = edge1.x + 2 * dim.z*upVector.x;
+        edge4.y = edge1.y + 2 * dim.z*upVector.y;
+        edge4.z = edge1.z + 2 * dim.z*upVector.z;
+
+        edge6.x = edge5.x - 2 * dim.y*rightVector.x;
+        edge6.y = edge5.y - 2 * dim.y*rightVector.y;
+        edge6.z = edge5.z - 2 * dim.y*rightVector.z;
+
+        edge7.x = edge6.x - 2 * dim.z*upVector.x;
+        edge7.y = edge6.y - 2 * dim.z*upVector.y;
+        edge7.z = edge6.z - 2 * dim.z*upVector.z;
+
+        edge8.x = edge5.x - 2 * dim.z*upVector.x;
+        edge8.y = edge5.y - 2 * dim.z*upVector.y;
+        edge8.z = edge5.z - 2 * dim.z*upVector.z;
+
+        GRAPHICS::DRAW_LINE(edge1.x, edge1.y, edge1.z, edge2.x, edge2.y, edge2.z, 0, green, blue, 200);
+        GRAPHICS::DRAW_LINE(edge1.x, edge1.y, edge1.z, edge4.x, edge4.y, edge4.z, 0, green, blue, 200);
+        GRAPHICS::DRAW_LINE(edge2.x, edge2.y, edge2.z, edge3.x, edge3.y, edge3.z, 0, green, blue, 200);
+        GRAPHICS::DRAW_LINE(edge3.x, edge3.y, edge3.z, edge4.x, edge4.y, edge4.z, 0, green, blue, 200);
+
+        GRAPHICS::DRAW_LINE(edge5.x, edge5.y, edge5.z, edge6.x, edge6.y, edge6.z, 0, green, blue, 200);
+        GRAPHICS::DRAW_LINE(edge5.x, edge5.y, edge5.z, edge8.x, edge8.y, edge8.z, 0, green, blue, 200);
+        GRAPHICS::DRAW_LINE(edge6.x, edge6.y, edge6.z, edge7.x, edge7.y, edge7.z, 0, green, blue, 200);
+        GRAPHICS::DRAW_LINE(edge7.x, edge7.y, edge7.z, edge8.x, edge8.y, edge8.z, 0, green, blue, 200);
+
+        GRAPHICS::DRAW_LINE(edge1.x, edge1.y, edge1.z, edge7.x, edge7.y, edge7.z, 0, green, blue, 200);
+        GRAPHICS::DRAW_LINE(edge2.x, edge2.y, edge2.z, edge8.x, edge8.y, edge8.z, 0, green, blue, 200);
+        GRAPHICS::DRAW_LINE(edge3.x, edge3.y, edge3.z, edge5.x, edge5.y, edge5.z, 0, green, blue, 200);
+        GRAPHICS::DRAW_LINE(edge4.x, edge4.y, edge4.z, edge6.x, edge6.y, edge6.z, 0, green, blue, 200);
+        WAIT(0);
+    }
 }

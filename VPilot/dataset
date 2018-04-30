@@ -11,11 +11,39 @@ import cv2
 width = 1920
 height = 1080
 index = 0
+
+def getText(classID):
+    return {
+        0: "Car",
+        10: "Pedestrian"
+    }.get(classID,"DontCare")
     
-def printInstances(filename, list, text):
+def printInstances(filename, list):
     text_file = open(filename, "a")
     for instance in list:
-        text_file.write("%s " % text)
+        #TODO Determine actual class of vehicle
+        text = getText(instance['classID'])
+        text_file.write("%s" % text)
+        #TODO - Determine if truncated
+        text_file.write(" 0.00")
+        #TODO - Occlusion
+        text_file.write(" 0")
+        
+        #Observation angle TODO
+        text_file.write(" 0.0")
+        
+        #3D dimensions
+        text_file.write(" 0.0")
+        
+        #3D location
+        # location = instance['location']
+        # text_file.write(" %f" % location['x'])
+        # text_file.write(" %f" % location['y'])
+        # text_file.write(" %f" % location['z'])
+        
+        #Rotation_y
+        text_file.write(" %f" % instance['heading'])
+        
         for num in instance['FUR']:
             text_file.write(" %f" % num)
         for num in instance['BLL']:
@@ -23,6 +51,12 @@ def printInstances(filename, list, text):
         text_file.write(" %f" % instance['speed'])
         text_file.write(" %f" % instance['heading'])
         text_file.write(" %d" % instance['classID'])
+        
+        if instance['offscreen']:
+            text_file.write(" 0")
+        else:
+            text_file.write(" 1")
+        
         text_file.write("\n")
     text_file.close()
 
@@ -38,15 +72,16 @@ if __name__ == '__main__':
     # If desired, a dataset path and compression level can be set to store in memory all the data received in a gziped pickle file.
     client = Client(ip=args.host, port=args.port, datasetPath=args.dataset_path, compressionLevel=9)
     
-    print("Here1")
+    print("Connecting to client...")
     # Configures the information that we want DeepGTAV to generate and send to us. 
     # See deepgtav/messages.py to see what options are supported
-    dataset = Dataset(rate=0.5, frame=[width,height], throttle=True, brake=True, steering=True, vehicles=True, peds=True, reward=[15.0, 0.0], direction=None, speed=True, yawRate=True, location=True, time=True)
+    dataset = Dataset(rate=0.5, frame=[width,height], throttle=True, brake=True, steering=True, vehicles=True, peds=True, reward=[15.0, 0.0],
+                    direction=None, speed=True, yawRate=True, location=True, time=True, offscreen=False, showBoxes=False)
     # Send the Start request to DeepGTAV.
     scenario = Scenario(drivingMode=[786603,15.0]) # Driving style is set to normal, with a speed of 15.0 mph. All other scenario options are random.
     client.sendMessage(Start(dataset=dataset,scenario=scenario))
 
-    print("Here2")
+    print("Message sent to client to begin.")
     # Start listening for messages coming from DeepGTAV. We do it for 80 hours
     stoptime = time.time() + 80*3600
     while time.time() < stoptime:
@@ -64,8 +99,8 @@ if __name__ == '__main__':
             text_file = open(filename, "w")
             text_file.write("")
             text_file.close()
-            printInstances(filename, message['vehicles'], "Car")
-            printInstances(filename, message['peds'], "Pedestrian")
+            printInstances(filename, message['vehicles'])
+            printInstances(filename, message['peds'])
             
             # cv2.imshow('img',image)
             # cv2.waitKey(-1)
