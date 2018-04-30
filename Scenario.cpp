@@ -415,8 +415,13 @@ void Scenario::setVehiclesList() {
 					_vector.PushBack(BLL.x - currentPos.x, allocator).PushBack(BLL.y - currentPos.y, allocator).PushBack(BLL.z - currentPos.z, allocator);
 					_vehicle.AddMember("BLL", _vector, allocator).AddMember("speed", speed, allocator).AddMember("heading", heading, allocator).AddMember("classID", classid, allocator);
                     _vehicle.AddMember("offscreen", offscreen, allocator);
-                    //_vehicle.AddMember("dimensions", dim, allocator);
-                    //_vehicle.AddMember("position", position, allocator);
+                    _vector.SetArray();
+                    _vector.PushBack(dim.x, allocator).PushBack(dim.y, allocator).PushBack(dim.z, allocator);
+                    _vehicle.AddMember("dimensions", _vector, allocator);
+                    _vector.SetArray();
+                    _vector.PushBack(position.x, allocator).PushBack(position.y, allocator).PushBack(position.z, allocator);
+                    _vehicle.AddMember("location", _vector, allocator);
+                    //_vehicle.AddMember("rotation_y", PI*heading/180.0, allocator);
 
 					_vehicles.PushBack(_vehicle, allocator);
 
@@ -499,6 +504,12 @@ void Scenario::setPedsList(){
 					_vector.PushBack(BLL.x - currentPos.x, allocator).PushBack(BLL.y - currentPos.y, allocator).PushBack(BLL.z - currentPos.z, allocator);
 					_ped.AddMember("BLL", _vector, allocator).AddMember("speed", speed, allocator).AddMember("heading", heading, allocator).AddMember("classID", classid, allocator);
                     _ped.AddMember("offscreen", offscreen, allocator);
+                    _vector.SetArray();
+                    _vector.PushBack(dim.x, allocator).PushBack(dim.y, allocator).PushBack(dim.z, allocator);
+                    _ped.AddMember("dimensions", _vector, allocator);
+                    _vector.SetArray();
+                    _vector.PushBack(position.x, allocator).PushBack(position.y, allocator).PushBack(position.z, allocator);
+                    _ped.AddMember("location", _vector, allocator);
 
 					_peds.PushBack(_ped, allocator);
 

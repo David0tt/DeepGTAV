@@ -31,15 +31,17 @@ def printInstances(filename, list):
         
         #Observation angle TODO
         text_file.write(" 0.0")
+
+        #2D Bounding box TODO
+
         
         #3D dimensions
-        text_file.write(" 0.0")
+        for num in instance['dimensions']:
+            text_file.write(" %f" % num)
         
         #3D location
-        # location = instance['location']
-        # text_file.write(" %f" % location['x'])
-        # text_file.write(" %f" % location['y'])
-        # text_file.write(" %f" % location['z'])
+        for num in instance['location']:
+            text_file.write(" %f" % num)
         
         #Rotation_y
         text_file.write(" %f" % instance['heading'])
