@@ -337,7 +337,34 @@ StringBuffer Scenario::generateMessage() {
 	return buffer;
 }
 
+//Returns the angle between a relative position vector and the forward vector (rotated about up axis)
+static float observationAngle(Vector3 forward, Vector3 up, Vector3 position) {
+    float x1 = forward.x;
+    float y1 = forward.y;
+    float z1 = forward.z;
+    float x2 = position.x;
+    float y2 = position.y;
+    float z2 = position.z;
+    float xn = up.x;
+    float yn = up.y;
+    float zn = up.z;
+
+    float dot = x1 * x2 + y1 * y2 + z1 * z2;
+    float det = x1 * y2*zn + x2 * yn*z1 + xn * y1*z2 - z1 * y2*xn - z2 * yn*x1 - zn * y1*x2;
+    float observationAngle = atan2(det, dot);
+
+    std::ostringstream oss;
+    oss << "Forward is: " << forward.x << ", " << forward.y << ", " << forward.z << 
+        "\nNormal is: " << up.x << ", " << up.y << ", " << up.z << 
+        "\nPosition is: " << position.x << ", " << position.y << ", " << position.z << " and angle is: " << observationAngle;
+    std::string str = oss.str();
+    log(str);
+
+    return observationAngle;
+}
+
 void Scenario::setVehiclesList() {
+    log("Setting vehicles list.");
 	const int ARR_SIZE = 1024;
 	Vehicle vehicles[ARR_SIZE];
 	Value _vehicles(kArrayType);
@@ -406,6 +433,11 @@ void Scenario::setVehiclesList() {
 					BLL.z = position.z - dim.y*rightVector.z - dim.x*forwardVector.z - dim.z*upVector.z;
 					//GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(BLL.x, BLL.y, 1000.0, &(BLL.z), 0);
 
+                    Vector3 relativePos;
+                    relativePos.x = position.x - currentPos.x;
+                    relativePos.y = position.y - currentPos.y;
+                    relativePos.z = position.z - currentPos.z;
+
 					Value _vehicle(kObjectType);
 
 					Value _vector(kArrayType);
@@ -419,9 +451,10 @@ void Scenario::setVehiclesList() {
                     _vector.PushBack(dim.x, allocator).PushBack(dim.y, allocator).PushBack(dim.z, allocator);
                     _vehicle.AddMember("dimensions", _vector, allocator);
                     _vector.SetArray();
-                    _vector.PushBack(position.x, allocator).PushBack(position.y, allocator).PushBack(position.z, allocator);
+                    _vector.PushBack(relativePos.x, allocator).PushBack(relativePos.z, allocator).PushBack(relativePos.y, allocator);
                     _vehicle.AddMember("location", _vector, allocator);
-                    //_vehicle.AddMember("rotation_y", PI*heading/180.0, allocator);
+                    _vehicle.AddMember("rotation_y", PI*heading/180.0, allocator);
+                    _vehicle.AddMember("alpha", observationAngle(currentForwardVector, upVector, relativePos), allocator);
 
 					_vehicles.PushBack(_vehicle, allocator);
 
@@ -435,6 +468,7 @@ void Scenario::setVehiclesList() {
 }
 
 void Scenario::setPedsList(){
+    log("Setting peds list.");
 	const int ARR_SIZE = 1024;
 	Ped peds[ARR_SIZE];
 	Value _peds(kArrayType);
@@ -508,8 +542,15 @@ void Scenario::setPedsList(){
                     _vector.PushBack(dim.x, allocator).PushBack(dim.y, allocator).PushBack(dim.z, allocator);
                     _ped.AddMember("dimensions", _vector, allocator);
                     _vector.SetArray();
-                    _vector.PushBack(position.x, allocator).PushBack(position.y, allocator).PushBack(position.z, allocator);
+                    _vector.PushBack(position.x - currentPos.x, allocator).PushBack(position.z - currentPos.z, allocator).PushBack(position.y - currentPos.y, allocator);
                     _ped.AddMember("location", _vector, allocator);
+                    _ped.AddMember("rotation_y", PI*heading / 180.0, allocator);
+
+                    Vector3 relativePos;
+                    relativePos.x = position.x - currentPos.x;
+                    relativePos.y = position.y - currentPos.y;
+                    relativePos.z = position.z - currentPos.z;
+                    _ped.AddMember("alpha", observationAngle(currentForwardVector, upVector, relativePos), allocator);
 
 					_peds.PushBack(_ped, allocator);
 
@@ -582,7 +623,7 @@ void Scenario::setupLiDAR() {
 void Scenario::collectLiDAR() {
     float * pointCloud = lidar.GetPointClouds(m_pointCloudSize);
     
-    char format[] = "E:\\data\\velodyne\\%010d.bin";
+    char format[] = "E:\\data\\velodyne\\%06d.bin";
     char filename[sizeof format + 100];
     sprintf(filename, format, instance_index);
 
@@ -607,9 +648,9 @@ void Scenario::setCameraIntrinsics() {
 }
 
 void Scenario::drawBoxes(Vector3 BLL, Vector3 FUR, Vector3 dim, Vector3 upVector, Vector3 rightVector, Vector3 forwardVector, Vector3 position, int colour) {
-    log("Inside draw boxes");
+    //log("Inside draw boxes");
     if (showBoxes) {
-        log("Inside show boxes");
+        //log("Inside show boxes");
         Vector3 edge1 = BLL;
         Vector3 edge2;
         Vector3 edge3;
@@ -621,12 +662,6 @@ void Scenario::drawBoxes(Vector3 BLL, Vector3 FUR, Vector3 dim, Vector3 upVector
 
         int green = colour * 255;
         int blue = abs(colour - 1) * 255;
-
-        std::ostringstream oss;
-        oss << "Green: " << green << " Blue: " << blue;
-        std::string str = oss.str();
-        log(str);
-
 
         edge2.x = edge1.x + 2 * dim.y*rightVector.x;
         edge2.y = edge1.y + 2 * dim.y*rightVector.y;

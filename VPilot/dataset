@@ -24,16 +24,21 @@ def printInstances(filename, list):
         #TODO Determine actual class of vehicle
         text = getText(instance['classID'])
         text_file.write("%s" % text)
+
         #TODO - Determine if truncated
         text_file.write(" 0.00")
+
         #TODO - Occlusion
         text_file.write(" 0")
         
         #Observation angle TODO
-        text_file.write(" 0.0")
+        text_file.write(" %f" % instance['alpha'])
 
         #2D Bounding box TODO
-
+        text_file.write(" 0.00")
+        text_file.write(" 0.00")
+        text_file.write(" 0.00")
+        text_file.write(" 0.00")
         
         #3D dimensions
         for num in instance['dimensions']:
@@ -44,20 +49,22 @@ def printInstances(filename, list):
             text_file.write(" %f" % num)
         
         #Rotation_y
-        text_file.write(" %f" % instance['heading'])
+        text_file.write(" %f" % instance['rotation_y'])
+
+        # text_file.write(" EOKITTI")
+
+        # for num in instance['FUR']:
+        #     text_file.write(" %f" % num)
+        # for num in instance['BLL']:
+        #     text_file.write(" %f" % num)
+        # text_file.write(" %f" % instance['speed'])
+        # text_file.write(" %f" % instance['heading'])
+        # text_file.write(" %d" % instance['classID'])
         
-        for num in instance['FUR']:
-            text_file.write(" %f" % num)
-        for num in instance['BLL']:
-            text_file.write(" %f" % num)
-        text_file.write(" %f" % instance['speed'])
-        text_file.write(" %f" % instance['heading'])
-        text_file.write(" %d" % instance['classID'])
-        
-        if instance['offscreen']:
-            text_file.write(" 0")
-        else:
-            text_file.write(" 1")
+        # if instance['offscreen']:
+        #     text_file.write(" 0")
+        # else:
+        #     text_file.write(" 1")
         
         text_file.write("\n")
     text_file.close()
@@ -94,10 +101,10 @@ if __name__ == '__main__':
             
             # The frame is a numpy array and can be displayed using OpenCV or similar       
             image = frame2numpy(message['frame'], (width,height))
-            cv2.imwrite("E:\data\images\%010d.png" % index, image)
+            cv2.imwrite("E:\data\images\%06d.png" % index, image)
             
             #Output object detections
-            filename = "E:\data\labels\%010d.txt" % index
+            filename = "E:\data\labels\%06d.txt" % index
             text_file = open(filename, "w")
             text_file.write("")
             text_file.close()
