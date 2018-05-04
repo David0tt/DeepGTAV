@@ -58,6 +58,8 @@ public:
     int getHorizSmplNum();
     int getCurType();
 
+    void updateCurrentPosition(Vector3 currentForwardVector, Vector3 currentRightVector, Vector3 currentUpVector);
+
 
 private:
 
@@ -87,4 +89,8 @@ private:
     float m_rotDCM[9];//convert n-coord to b-coord
     int m_initType;
     bool m_isAttach;
+
+    Vector3 currentForwardVec;
+    Vector3 currentUpVec;
+    Vector3 currentRightVec;
 };

@@ -6,6 +6,8 @@
 #include <string>
 #include <sstream>
 
+#include "Functions.h"
+
 #define PI 3.1415926535898
 #define D2R PI/180.0
 
@@ -256,9 +258,16 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
     WORLDPROBE::_GET_RAYCAST_RESULT(raycast_handle, &isHit, &endCoord, &surfaceNorm, &hitEntity);
 
     if (isHit) {
-        *p = endCoord.x - m_curPos.x;
-        *(p + 1) = endCoord.y - m_curPos.y;
-        *(p + 2) = endCoord.z - m_curPos.z;
+        Vector3 vec;
+        vec.x = endCoord.x - m_curPos.x;
+        vec.y = endCoord.y - m_curPos.y;
+        vec.z = endCoord.z - m_curPos.z;
+
+        Vector3 vec_cam_coord = convertCoordinateSystem(vec, currentForwardVec, currentRightVec, currentUpVec);
+
+        *p = vec_cam_coord.x;
+        *(p + 1) = vec_cam_coord.y;
+        *(p + 2) = vec_cam_coord.z;
         *(p + 3) = 0;//This should be the reflectance value - TODO
         m_pointsHit++;
     }
@@ -328,4 +337,10 @@ void LiDAR::calcDCM()
     m_rotDCM[6] = 2 * (q13 - q02);
     m_rotDCM[7] = 2 * (q23 + q01);
     m_rotDCM[8] = q00 - q11 - q22 + q33;
+}
+
+void LiDAR::updateCurrentPosition(Vector3 currentForwardVector, Vector3 currentRightVector, Vector3 currentUpVector) {
+    currentForwardVec = currentForwardVector;
+    currentRightVec = currentRightVector;
+    currentUpVec = currentUpVector;
 }

@@ -61,7 +61,7 @@ void Scenario::parseScenarioConfig(const Value& sc, bool setDefaults) {
 		if (!drivingMode[0].IsNull()) _drivingMode = drivingMode[0].GetInt();
 		else if (setDefaults)  _drivingMode = rand() % 4294967296;
 		if (drivingMode[1].IsNull()) _setSpeed = drivingMode[1].GetFloat(); 
-		else if (setDefaults) _setSpeed = 1.0*(rand() % 20);
+		else if (setDefaults) _setSpeed = 1.0*(rand() % 10) + 10;
 	}
 	else if (setDefaults) {
 		_drivingMode = -1;
@@ -317,6 +317,7 @@ StringBuffer Scenario::generateMessage() {
 	screenCapturer->capture();
 
     setIndex();
+    setPosition();
 	if (vehicles) setVehiclesList();
 	if (peds) setPedsList();
 	if (trafficSigns); //TODO
@@ -338,29 +339,62 @@ StringBuffer Scenario::generateMessage() {
 }
 
 //Returns the angle between a relative position vector and the forward vector (rotated about up axis)
-static float observationAngle(Vector3 forward, Vector3 up, Vector3 position) {
-    float x1 = forward.x;
-    float y1 = forward.y;
-    float z1 = forward.z;
+float Scenario::observationAngle(Vector3 position) {
+    float x1 = currentForwardVector.x;
+    float y1 = currentForwardVector.y;
+    float z1 = currentForwardVector.z;
     float x2 = position.x;
     float y2 = position.y;
     float z2 = position.z;
-    float xn = up.x;
-    float yn = up.y;
-    float zn = up.z;
+    float xn = currentUpVector.x;
+    float yn = currentUpVector.y;
+    float zn = currentUpVector.z;
 
     float dot = x1 * x2 + y1 * y2 + z1 * z2;
     float det = x1 * y2*zn + x2 * yn*z1 + xn * y1*z2 - z1 * y2*xn - z2 * yn*x1 - zn * y1*x2;
     float observationAngle = atan2(det, dot);
 
     std::ostringstream oss;
-    oss << "Forward is: " << forward.x << ", " << forward.y << ", " << forward.z << 
-        "\nNormal is: " << up.x << ", " << up.y << ", " << up.z << 
+    oss << "Forward is: " << x1 << ", " << y1 << ", " << z1 << 
+        "\nNormal is: " << x2 << ", " << y2 << ", " << z2 << 
         "\nPosition is: " << position.x << ", " << position.y << ", " << position.z << " and angle is: " << observationAngle;
     std::string str = oss.str();
     log(str);
 
     return observationAngle;
+}
+
+void Scenario::drawVectorFromPosition(Vector3 vector, int blue, int green) {
+    GRAPHICS::DRAW_LINE(currentPos.x, currentPos.y, currentPos.z, vector.x*1000 + currentPos.x, vector.y * 1000 + currentPos.y, vector.z * 1000 + currentPos.z, 0, green, blue, 200);
+    WAIT(0);
+}
+
+//Saves the position and vectors of the capture vehicle
+//TODO Check if the forward vector is being set correctly
+//Note: GET_ENTITY_FORWARD_VECTOR seems to return the vector which is the right vector NOT the forward vector
+void Scenario::setPosition() {
+    //currentPos = ENTITY::GET_ENTITY_COORDS(vehicle, false);
+    //currentForwardVector = ENTITY::GET_ENTITY_FORWARD_VECTOR(vehicle);
+    //drawVectorFromPosition(currentForwardVector, 255, 0);
+    /*
+    std::ostringstream oss;
+    oss << "SELF ****** Forward is: " << currentForwardVector.x << ", " << currentForwardVector.y << ", " << currentForwardVector.z <<
+        "\nPosition is: " << currentPos.x << ", " << currentPos.y << ", " << currentPos.z;
+    std::string str = oss.str();
+    log(str);
+    */
+
+    //NOTE: The forward and right vectors are swapped here to keep consistency with coordinate system
+    ENTITY::GET_ENTITY_MATRIX(vehicle, &currentForwardVector, &currentRightVector, &currentUpVector, &currentPos); //Blue or red pill
+    //drawVectorFromPosition(currentForwardVector, 0, 255);
+
+    /*std::ostringstream oss2;
+    oss2 << "SELF (After get_entity_matrix ****** Forward is: " << currentForwardVector.x << ", " << currentForwardVector.y << ", " << currentForwardVector.z <<
+        "Right is : " << currentRightVector.x << ", " << currentRightVector.y << ", " << currentRightVector.z <<
+        "\nPosition is: " << currentPos.x << ", " << currentPos.y << ", " << currentPos.z;
+    str = oss2.str();
+    log(str);
+    */
 }
 
 bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocator, int entityID, Hash model, int classid) {
@@ -374,9 +408,6 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
     Vector3 max;
     Vector3 speedVector;
     float heading, speed;
-
-    Vector3 currentPos = ENTITY::GET_ENTITY_COORDS(vehicle, false);
-    Vector3 currentForwardVector = ENTITY::GET_ENTITY_FORWARD_VECTOR(vehicle);
 
     bool isOnScreen = ENTITY::IS_ENTITY_ON_SCREEN(entityID);
     if (offscreen || isOnScreen) {
@@ -432,7 +463,7 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 _vector.PushBack(relativePos.x, allocator).PushBack(relativePos.z, allocator).PushBack(relativePos.y, allocator);
                 _entity.AddMember("location", _vector, allocator);
                 _entity.AddMember("rotation_y", PI*heading / 180.0, allocator);
-                _entity.AddMember("alpha", observationAngle(currentForwardVector, upVector, relativePos), allocator);
+                _entity.AddMember("alpha", observationAngle(relativePos), allocator);
 
                 drawBoxes(BLL, FUR, dim, upVector, rightVector, forwardVector, position, 1);
             }
@@ -563,6 +594,7 @@ void Scenario::setupLiDAR() {
 }
 
 void Scenario::collectLiDAR() {
+    lidar.updateCurrentPosition(currentForwardVector, currentRightVector, currentUpVector);
     float * pointCloud = lidar.GetPointClouds(m_pointCloudSize);
     
     char format[] = "E:\\data\\velodyne\\%06d.bin";

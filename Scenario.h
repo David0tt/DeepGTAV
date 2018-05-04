@@ -65,6 +65,11 @@ private:
 	float currentBrake = 0.0;
 	float currentSteering = 0.0;
 
+    Vector3 currentPos;
+    Vector3 currentForwardVector;
+    Vector3 currentUpVector;
+    Vector3 currentRightVector;
+
 	Rewarder* rewarder;
 	std::clock_t lastSafetyCheck;
 	int _drivingMode;
@@ -118,4 +123,7 @@ private:
     void drawBoxes(Vector3 BLL, Vector3 FUR, Vector3 dim, Vector3 upVector, Vector3 rightVector, Vector3 forwardVector, Vector3 position, int colour);
     void setCameraIntrinsics();
     bool getEntityVector(Value &_entity, Document::AllocatorType& allocator, int entityID, Hash model, int classid);
+    void setPosition();
+    float observationAngle(Vector3 position);
+    void drawVectorFromPosition(Vector3 vector, int blue, int green);
 };
