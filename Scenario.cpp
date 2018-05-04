@@ -363,6 +363,85 @@ static float observationAngle(Vector3 forward, Vector3 up, Vector3 position) {
     return observationAngle;
 }
 
+bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocator, int entityID, Hash model, int classid) {
+    bool success = false;
+
+    Vector3 FUR; //Front Upper Right
+    Vector3 BLL; //Back Lower Lelft
+    Vector3 dim; //Vehicle dimensions
+    Vector3 upVector, rightVector, forwardVector, position; //Vehicle position
+    Vector3 min;
+    Vector3 max;
+    Vector3 speedVector;
+    float heading, speed;
+
+    Vector3 currentPos = ENTITY::GET_ENTITY_COORDS(vehicle, false);
+    Vector3 currentForwardVector = ENTITY::GET_ENTITY_FORWARD_VECTOR(vehicle);
+
+    bool isOnScreen = ENTITY::IS_ENTITY_ON_SCREEN(entityID);
+    if (offscreen || isOnScreen) {
+        //Check if it is in screen
+        ENTITY::GET_ENTITY_MATRIX(entityID, &rightVector, &forwardVector, &upVector, &position); //Blue or red pill
+        if (SYSTEM::VDIST2(currentPos.x, currentPos.y, currentPos.z, position.x, position.y, position.z) < 22500) { //150 m.
+            if (ENTITY::HAS_ENTITY_CLEAR_LOS_TO_ENTITY(vehicle, entityID, 19)) {
+                success = true;
+                //Check if we see it (not occluded)
+                GAMEPLAY::GET_MODEL_DIMENSIONS(model, &min, &max);
+
+                speedVector = ENTITY::GET_ENTITY_SPEED_VECTOR(entityID, false);
+                speed = ENTITY::GET_ENTITY_SPEED(entityID);
+                if (speed > 0) {
+                    heading = GAMEPLAY::GET_HEADING_FROM_VECTOR_2D(speedVector.x - currentForwardVector.x, speedVector.y - currentForwardVector.y);
+                }
+                else {
+                    heading = GAMEPLAY::GET_HEADING_FROM_VECTOR_2D(forwardVector.x - currentForwardVector.x, forwardVector.y - currentForwardVector.y);
+                }
+
+                //Calculate size
+                dim.x = 0.5*(max.x - min.x);
+                dim.y = 0.5*(max.y - min.y);
+                dim.z = 0.5*(max.z - min.z);
+
+                FUR.x = position.x + dim.y*rightVector.x + dim.x*forwardVector.x + dim.z*upVector.x;
+                FUR.y = position.y + dim.y*rightVector.y + dim.x*forwardVector.y + dim.z*upVector.y;
+                FUR.z = position.z + dim.y*rightVector.z + dim.x*forwardVector.z + dim.z*upVector.z;
+                //GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(FUR.x, FUR.y, FUR.z, &(FUR.z), 0);
+                //FUR.z += 2 * dim.z;
+
+                BLL.x = position.x - dim.y*rightVector.x - dim.x*forwardVector.x - dim.z*upVector.x;
+                BLL.y = position.y - dim.y*rightVector.y - dim.x*forwardVector.y - dim.z*upVector.y;
+                BLL.z = position.z - dim.y*rightVector.z - dim.x*forwardVector.z - dim.z*upVector.z;
+                //GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(BLL.x, BLL.y, 1000.0, &(BLL.z), 0);
+
+                Vector3 relativePos;
+                relativePos.x = position.x - currentPos.x;
+                relativePos.y = position.y - currentPos.y;
+                relativePos.z = position.z - currentPos.z;
+
+                Value _vector(kArrayType);
+                _vector.PushBack(FUR.x - currentPos.x, allocator).PushBack(FUR.y - currentPos.y, allocator).PushBack(FUR.z - currentPos.z, allocator);
+                _entity.AddMember("FUR", _vector, allocator);
+                _vector.SetArray();
+                _vector.PushBack(BLL.x - currentPos.x, allocator).PushBack(BLL.y - currentPos.y, allocator).PushBack(BLL.z - currentPos.z, allocator);
+                _entity.AddMember("BLL", _vector, allocator).AddMember("speed", speed, allocator).AddMember("heading", heading, allocator).AddMember("classID", classid, allocator);
+                _entity.AddMember("offscreen", offscreen, allocator);
+                _vector.SetArray();
+                _vector.PushBack(dim.x, allocator).PushBack(dim.y, allocator).PushBack(dim.z, allocator);
+                _entity.AddMember("dimensions", _vector, allocator);
+                _vector.SetArray();
+                _vector.PushBack(relativePos.x, allocator).PushBack(relativePos.z, allocator).PushBack(relativePos.y, allocator);
+                _entity.AddMember("location", _vector, allocator);
+                _entity.AddMember("rotation_y", PI*heading / 180.0, allocator);
+                _entity.AddMember("alpha", observationAngle(currentForwardVector, upVector, relativePos), allocator);
+
+                drawBoxes(BLL, FUR, dim, upVector, rightVector, forwardVector, position, 1);
+            }
+        }
+    }
+
+    return success;
+}
+
 void Scenario::setVehiclesList() {
     log("Setting vehicles list.");
 	const int ARR_SIZE = 1024;
@@ -370,98 +449,30 @@ void Scenario::setVehiclesList() {
 	Value _vehicles(kArrayType);
 	Document::AllocatorType& allocator = d.GetAllocator();
 
-	Vector3 FUR; //Front Upper Right
-	Vector3 BLL; //Back Lower Lelft
-	Vector3 dim; //Vehicle dimensions
-	Vector3 upVector, rightVector, forwardVector, position; //Vehicle position
-	Hash model;
-	Vector3 min;
-	Vector3 max;
-	Vector3 speedVector;
-	float heading, speed;
+    Hash model;
 	int classid;
-
-	Vector3 currentPos = ENTITY::GET_ENTITY_COORDS(vehicle, false);
-	Vector3 currentForwardVector = ENTITY::GET_ENTITY_FORWARD_VECTOR(vehicle);
 
 	int count = worldGetAllVehicles(vehicles, ARR_SIZE);
 	for (int i = 0; i < count; i++) {
 		if (vehicles[i] == vehicle) continue; //Don't process own car!
-        bool isOnScreen = ENTITY::IS_ENTITY_ON_SCREEN(vehicles[i]);
-        if (offscreen || isOnScreen) {
-			//Check if it is in screen
-			ENTITY::GET_ENTITY_MATRIX(vehicles[i], &rightVector, &forwardVector, &upVector, &position); //Blue or red pill
-			if (SYSTEM::VDIST2(currentPos.x, currentPos.y, currentPos.z, position.x, position.y, position.z) < 22500) { //150 m.
-				if (ENTITY::HAS_ENTITY_CLEAR_LOS_TO_ENTITY(vehicle, vehicles[i], 19)){
-					//Check if we see it (not occluded)
-					model = ENTITY::GET_ENTITY_MODEL(vehicles[i]);
-					GAMEPLAY::GET_MODEL_DIMENSIONS(model, &min, &max);
 
-					speedVector = ENTITY::GET_ENTITY_SPEED_VECTOR(vehicles[i], false);
-					speed = ENTITY::GET_ENTITY_SPEED(vehicles[i]);
-					if (speed > 0) {
-						heading = GAMEPLAY::GET_HEADING_FROM_VECTOR_2D(speedVector.x - currentForwardVector.x, speedVector.y - currentForwardVector.y);
-					}
-					else {
-						heading = GAMEPLAY::GET_HEADING_FROM_VECTOR_2D(forwardVector.x - currentForwardVector.x, forwardVector.y - currentForwardVector.y);
-					}
+        model = ENTITY::GET_ENTITY_MODEL(vehicles[i]);
+        if (VEHICLE::IS_THIS_MODEL_A_CAR(model)) classid = 0;
+        else if (VEHICLE::IS_THIS_MODEL_A_BIKE(model)) classid = 1;
+        else if (VEHICLE::IS_THIS_MODEL_A_BICYCLE(model)) classid = 2;
+        else if (VEHICLE::IS_THIS_MODEL_A_QUADBIKE(model)) classid = 3;
+        else if (VEHICLE::IS_THIS_MODEL_A_BOAT(model)) classid = 4;
+        else if (VEHICLE::IS_THIS_MODEL_A_PLANE(model)) classid = 5;
+        else if (VEHICLE::IS_THIS_MODEL_A_HELI(model)) classid = 6;
+        else if (VEHICLE::IS_THIS_MODEL_A_TRAIN(model)) classid = 7;
+        else if (VEHICLE::_IS_THIS_MODEL_A_SUBMERSIBLE(model)) classid = 8;
+        else classid = 9; //unknown (ufo?)
 
-					if (VEHICLE::IS_THIS_MODEL_A_CAR(model)) classid = 0;
-					else if (VEHICLE::IS_THIS_MODEL_A_BIKE(model)) classid = 1;
-					else if (VEHICLE::IS_THIS_MODEL_A_BICYCLE(model)) classid = 2;
-					else if (VEHICLE::IS_THIS_MODEL_A_QUADBIKE(model)) classid = 3;
-					else if (VEHICLE::IS_THIS_MODEL_A_BOAT(model)) classid = 4;
-					else if (VEHICLE::IS_THIS_MODEL_A_PLANE(model)) classid = 5;
-					else if (VEHICLE::IS_THIS_MODEL_A_HELI(model)) classid = 6;
-					else if (VEHICLE::IS_THIS_MODEL_A_TRAIN(model)) classid = 7;
-					else if (VEHICLE::_IS_THIS_MODEL_A_SUBMERSIBLE(model)) classid = 8;
-					else classid = 9; //unknown (ufo?)
-
-					//Calculate size
-					dim.x = 0.5*(max.x - min.x);
-					dim.y = 0.5*(max.y - min.y);
-					dim.z = 0.5*(max.z - min.z);
-
-					FUR.x = position.x + dim.y*rightVector.x + dim.x*forwardVector.x + dim.z*upVector.x;
-					FUR.y = position.y + dim.y*rightVector.y + dim.x*forwardVector.y + dim.z*upVector.y;
-					FUR.z = position.z + dim.y*rightVector.z + dim.x*forwardVector.z + dim.z*upVector.z;
-					//GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(FUR.x, FUR.y, FUR.z, &(FUR.z), 0);
-					//FUR.z += 2 * dim.z;
-
-					BLL.x = position.x - dim.y*rightVector.x - dim.x*forwardVector.x - dim.z*upVector.x;
-					BLL.y = position.y - dim.y*rightVector.y - dim.x*forwardVector.y - dim.z*upVector.y;
-					BLL.z = position.z - dim.y*rightVector.z - dim.x*forwardVector.z - dim.z*upVector.z;
-					//GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(BLL.x, BLL.y, 1000.0, &(BLL.z), 0);
-
-                    Vector3 relativePos;
-                    relativePos.x = position.x - currentPos.x;
-                    relativePos.y = position.y - currentPos.y;
-                    relativePos.z = position.z - currentPos.z;
-
-					Value _vehicle(kObjectType);
-
-					Value _vector(kArrayType);
-					_vector.PushBack(FUR.x - currentPos.x, allocator).PushBack(FUR.y - currentPos.y, allocator).PushBack(FUR.z - currentPos.z, allocator);
-					_vehicle.AddMember("FUR", _vector, allocator);
-					_vector.SetArray();
-					_vector.PushBack(BLL.x - currentPos.x, allocator).PushBack(BLL.y - currentPos.y, allocator).PushBack(BLL.z - currentPos.z, allocator);
-					_vehicle.AddMember("BLL", _vector, allocator).AddMember("speed", speed, allocator).AddMember("heading", heading, allocator).AddMember("classID", classid, allocator);
-                    _vehicle.AddMember("offscreen", offscreen, allocator);
-                    _vector.SetArray();
-                    _vector.PushBack(dim.x, allocator).PushBack(dim.y, allocator).PushBack(dim.z, allocator);
-                    _vehicle.AddMember("dimensions", _vector, allocator);
-                    _vector.SetArray();
-                    _vector.PushBack(relativePos.x, allocator).PushBack(relativePos.z, allocator).PushBack(relativePos.y, allocator);
-                    _vehicle.AddMember("location", _vector, allocator);
-                    _vehicle.AddMember("rotation_y", PI*heading/180.0, allocator);
-                    _vehicle.AddMember("alpha", observationAngle(currentForwardVector, upVector, relativePos), allocator);
-
-					_vehicles.PushBack(_vehicle, allocator);
-
-                    drawBoxes(BLL, FUR, dim, upVector, rightVector, forwardVector, position, 1);
-				}
-			}
-		}
+        Value _vehicle(kObjectType);
+        bool success = getEntityVector(_vehicle, allocator, vehicles[i], model, classid);
+        if (success) {
+            _vehicles.PushBack(_vehicle, allocator);
+        }
 	}
 			
 	d["vehicles"] = _vehicles;
@@ -474,90 +485,21 @@ void Scenario::setPedsList(){
 	Value _peds(kArrayType);
 	Document::AllocatorType& allocator = d.GetAllocator();
 
-	Vector3 FUR; //Front Upper Right
-	Vector3 BLL; //Back Lower Lelft
-	Vector3 dim; //Vehicle dimensions
-	Vector3 upVector, rightVector, forwardVector, position; //Vehicle position
 	Hash model;
-	Vector3 min;
-	Vector3 max;
-	Vector3 speedVector;
-	float heading, speed;
 	int classid;
-
-	Vector3 currentPos = ENTITY::GET_ENTITY_COORDS(vehicle, false);
-	Vector3 currentForwardVector = ENTITY::GET_ENTITY_FORWARD_VECTOR(vehicle);
 
 	int count = worldGetAllPeds(peds, ARR_SIZE);
 	for (int i = 0; i < count; i++) {
 		if (PED::IS_PED_IN_ANY_VEHICLE(peds[i], TRUE)) continue; //Don't process peds in vehicles!
-        bool isOnScreen = ENTITY::IS_ENTITY_ON_SCREEN(peds[i]);
-		if (offscreen || isOnScreen) {
-			//Check if it is in screen
-			ENTITY::GET_ENTITY_MATRIX(peds[i], &rightVector, &forwardVector, &upVector, &position); //Blue or red pill
-			if (SYSTEM::VDIST2(currentPos.x, currentPos.y, currentPos.z, position.x, position.y, position.z) < 22500) { //150 m.
-				if (ENTITY::HAS_ENTITY_CLEAR_LOS_TO_ENTITY(ped, peds[i], 19)){
-					//Check if we see it (not occluded)
-					model = ENTITY::GET_ENTITY_MODEL(peds[i]);
-					GAMEPLAY::GET_MODEL_DIMENSIONS(model, &min, &max);
 
-					speedVector = ENTITY::GET_ENTITY_SPEED_VECTOR(peds[i], false);
-					speed = ENTITY::GET_ENTITY_SPEED(peds[i]);
-					if (speed > 0) {
-						heading = GAMEPLAY::GET_HEADING_FROM_VECTOR_2D(speedVector.x - currentForwardVector.x, speedVector.y - currentForwardVector.y);
-					}
-					else {
-						heading = GAMEPLAY::GET_HEADING_FROM_VECTOR_2D(forwardVector.x - currentForwardVector.x, forwardVector.y - currentForwardVector.y);
-					}
+        if (PED::GET_PED_TYPE(peds[i]) == 28) classid = 11; //animal
+        else classid = 10;
 
-					if (PED::GET_PED_TYPE(peds[i]) == 28) classid = 11; //animal
-					else classid = 10;
-
-					//Calculate size
-					dim.x = 0.5*(max.x - min.x);
-					dim.y = 0.5*(max.y - min.y);
-					dim.z = 0.5*(max.z - min.z);
-
-					FUR.x = position.x + dim.y*rightVector.x + dim.x*forwardVector.x + dim.z*upVector.x;
-					FUR.y = position.y + dim.y*rightVector.y + dim.x*forwardVector.y + dim.z*upVector.y;
-					FUR.z = position.z + dim.y*rightVector.z + dim.x*forwardVector.z + dim.z*upVector.z;
-					//GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(FUR.x, FUR.y, 1000.0, &(FUR.z), 0);
-					//FUR.z += 2 * dim.z;
-
-					BLL.x = position.x - dim.y*rightVector.x - dim.x*forwardVector.x - dim.z*upVector.x;
-					BLL.y = position.y - dim.y*rightVector.y - dim.x*forwardVector.y - dim.z*upVector.y;
-					BLL.z = position.z - dim.y*rightVector.z - dim.x*forwardVector.z - dim.z*upVector.z;
-					//GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(BLL.x, BLL.y, 1000.0, &(BLL.z), 0);
-
-					Value _ped(kObjectType);
-
-					Value _vector(kArrayType);
-					_vector.PushBack(FUR.x - currentPos.x, allocator).PushBack(FUR.y - currentPos.y, allocator).PushBack(FUR.z - currentPos.z, allocator);
-					_ped.AddMember("FUR", _vector, allocator);
-					_vector.SetArray();
-					_vector.PushBack(BLL.x - currentPos.x, allocator).PushBack(BLL.y - currentPos.y, allocator).PushBack(BLL.z - currentPos.z, allocator);
-					_ped.AddMember("BLL", _vector, allocator).AddMember("speed", speed, allocator).AddMember("heading", heading, allocator).AddMember("classID", classid, allocator);
-                    _ped.AddMember("offscreen", offscreen, allocator);
-                    _vector.SetArray();
-                    _vector.PushBack(dim.x, allocator).PushBack(dim.y, allocator).PushBack(dim.z, allocator);
-                    _ped.AddMember("dimensions", _vector, allocator);
-                    _vector.SetArray();
-                    _vector.PushBack(position.x - currentPos.x, allocator).PushBack(position.z - currentPos.z, allocator).PushBack(position.y - currentPos.y, allocator);
-                    _ped.AddMember("location", _vector, allocator);
-                    _ped.AddMember("rotation_y", PI*heading / 180.0, allocator);
-
-                    Vector3 relativePos;
-                    relativePos.x = position.x - currentPos.x;
-                    relativePos.y = position.y - currentPos.y;
-                    relativePos.z = position.z - currentPos.z;
-                    _ped.AddMember("alpha", observationAngle(currentForwardVector, upVector, relativePos), allocator);
-
-					_peds.PushBack(_ped, allocator);
-
-                    drawBoxes(BLL, FUR, dim, upVector, rightVector, forwardVector, position, 0);
-				}
-			}
-		}
+        Value _ped(kObjectType);
+        bool success = getEntityVector(_ped, allocator, peds[i], model, classid);
+        if (success) {
+            _peds.PushBack(_ped, allocator);
+        }
 	}		
 	d["peds"] = _peds;
 }
