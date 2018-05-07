@@ -80,7 +80,11 @@ def printCalib(filename, focalLen):
         text_file.write(" 0 0 1 0\n")
 
     text_file.write("R0_rect: 1 0 0 0 1 0 0 0 1\n")
-    text_file.write("Tr_velo_to_cam: 1 0 0 0 0 0 -1 0 0 1 0 0")
+    #From KITTI velo to KITTI cam
+    text_file.write("Tr_velo_to_cam: 0 -1 0 0 0 0 -1 0 1 0 0 0")
+
+    # From GTA to KITTI
+    # text_file.write("Tr_velo_to_cam: 1 0 0 0 0 0 -1 0 0 1 0 0")
 
 
 # Stores a dataset file with data coming from DeepGTAV

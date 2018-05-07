@@ -263,10 +263,12 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
         vec.y = endCoord.y - m_curPos.y;
         vec.z = endCoord.z - m_curPos.z;
 
+        //To convert from world coordinates to GTA vehicle coordinates (where y axis is forward)
         Vector3 vec_cam_coord = convertCoordinateSystem(vec, currentForwardVec, currentRightVec, currentUpVec);
 
-        *p = vec_cam_coord.x;
-        *(p + 1) = vec_cam_coord.y;
+        //Note: The y/x axes are changed to conform with KITTI velodyne axes
+        *p = vec_cam_coord.y;
+        *(p + 1) = -vec_cam_coord.x;
         *(p + 2) = vec_cam_coord.z;
         *(p + 3) = 0;//This should be the reflectance value - TODO
         m_pointsHit++;

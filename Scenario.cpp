@@ -392,13 +392,12 @@ void Scenario::setPosition() {
     ENTITY::GET_ENTITY_MATRIX(vehicle, &currentForwardVector, &currentRightVector, &currentUpVector, &currentPos); //Blue or red pill
     //drawVectorFromPosition(currentForwardVector, 0, 255);
 
-    /*std::ostringstream oss2;
+    std::ostringstream oss2;
     oss2 << "SELF (After get_entity_matrix ****** Forward is: " << currentForwardVector.x << ", " << currentForwardVector.y << ", " << currentForwardVector.z <<
-        "Right is : " << currentRightVector.x << ", " << currentRightVector.y << ", " << currentRightVector.z <<
-        "\nPosition is: " << currentPos.x << ", " << currentPos.y << ", " << currentPos.z;
-    str = oss2.str();
+        "\nRight is : " << currentRightVector.x << ", " << currentRightVector.y << ", " << currentRightVector.z <<
+        "\nUp is: " << currentUpVector.x << ", " << currentUpVector.y << ", " << currentUpVector.z;
+    std::string str = oss2.str();
     log(str);
-    */
 }
 
 bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocator, int entityID, Hash model, int classid) {
@@ -417,7 +416,8 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
     if (offscreen || isOnScreen) {
         //Check if it is in screen
         ENTITY::GET_ENTITY_MATRIX(entityID, &rightVector, &forwardVector, &upVector, &position); //Blue or red pill
-        if (SYSTEM::VDIST2(currentPos.x, currentPos.y, currentPos.z, position.x, position.y, position.z) < 22500) { //150 m.
+        //TODO set DontCare from 80-150m
+        if (SYSTEM::VDIST2(currentPos.x, currentPos.y, currentPos.z, position.x, position.y, position.z) < 900) { //30m     ->22500) { //150 m.
             if (ENTITY::HAS_ENTITY_CLEAR_LOS_TO_ENTITY(vehicle, entityID, 19)) {
                 success = true;
                 //Check if we see it (not occluded)
@@ -463,9 +463,15 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 std::ostringstream oss;
                 oss << "Before coordinate transform Position is: " << relativePos.x << ", " << relativePos.y << ", " << relativePos.z;
                 relativePos = convertCoordinateSystem(relativePos, currentForwardVector, currentRightVector, currentUpVector);
-                oss << "New Position is: " << relativePos.x << ", " << relativePos.y << ", " << relativePos.z;
+                oss << "\nNew Position is: " << relativePos.x << ", " << relativePos.y << ", " << relativePos.z;
                 std::string str = oss.str();
                 log(str);
+
+                //Convert to KITTI camera coordinates
+                Vector3 kittiPos;
+                kittiPos.x = relativePos.x;
+                kittiPos.y = -relativePos.z;
+                kittiPos.z = relativePos.y;
 
                 Value _vector(kArrayType);
                 _vector.PushBack(FUR.x - currentPos.x, allocator).PushBack(FUR.y - currentPos.y, allocator).PushBack(FUR.z - currentPos.z, allocator);
@@ -478,7 +484,7 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 _vector.PushBack(dim.x, allocator).PushBack(dim.y, allocator).PushBack(dim.z, allocator);
                 _entity.AddMember("dimensions", _vector, allocator);
                 _vector.SetArray();
-                _vector.PushBack(relativePos.x, allocator).PushBack(relativePos.z, allocator).PushBack(relativePos.y, allocator);
+                _vector.PushBack(kittiPos.x, allocator).PushBack(kittiPos.y, allocator).PushBack(kittiPos.z, allocator);
                 _entity.AddMember("location", _vector, allocator);
                 _entity.AddMember("rotation_y", PI*heading / 180.0, allocator);
                 _entity.AddMember("alpha", observationAngle(relativePos), allocator);

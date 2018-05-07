@@ -81,7 +81,7 @@ private:
     //LiDAR variables
     LiDAR lidar;
     bool lidar_initialized = false;
-    int instance_index = 60;
+    int instance_index = 10;
     int m_pointCloudSize = 0;
 
     //Camera intrinsic parameters
