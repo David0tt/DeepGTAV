@@ -9,6 +9,7 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include "Functions.h"
 
 const float PI = 3.14159265359;
 const float VERT_CAM_FOV = 59; //In degrees
@@ -139,7 +140,8 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
     else if (setDefaults) showBoxes = _SHOWBOXES_;
 
     //Create camera intrinsics matrix
-    setCameraIntrinsics();
+    log("About to set focal length");
+    calcCameraIntrinsics();
 
 	//Create JSON DOM
 	d.SetObject();
@@ -160,6 +162,7 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
 	if (location) d.AddMember("location", a, allocator);
 	if (time) d.AddMember("time", 0, allocator);
     d.AddMember("index", 0, allocator);
+    d.AddMember("focalLen", 0.0, allocator);
 
 	screenCapturer = new ScreenCapturer(width, height);
 }
@@ -332,6 +335,7 @@ StringBuffer Scenario::generateMessage() {
 	if (location) setLocation();
 	if (time) setTime();
     if (pointclouds && lidar_initialized) collectLiDAR();
+    setFocalLength();
 
 	d.Accept(writer);
 
@@ -432,6 +436,13 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 dim.x = 0.5*(max.x - min.x);
                 dim.y = 0.5*(max.y - min.y);
                 dim.z = 0.5*(max.z - min.z);
+                
+                std::ostringstream oss2;
+                oss2 << "Dimensions are: " << dim.x << ", " << dim.y << ", " << dim.z;
+                oss2 << "\nMax: " << max.x << ", " << max.y << ", " << max.z;
+                oss2 << "\nMin: " << min.x << ", " << min.y << ", " << min.z;
+                std::string str2 = oss2.str();
+                log(str2);
 
                 FUR.x = position.x + dim.y*rightVector.x + dim.x*forwardVector.x + dim.z*upVector.x;
                 FUR.y = position.y + dim.y*rightVector.y + dim.x*forwardVector.y + dim.z*upVector.y;
@@ -448,6 +459,13 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 relativePos.x = position.x - currentPos.x;
                 relativePos.y = position.y - currentPos.y;
                 relativePos.z = position.z - currentPos.z;
+
+                std::ostringstream oss;
+                oss << "Before coordinate transform Position is: " << relativePos.x << ", " << relativePos.y << ", " << relativePos.z;
+                relativePos = convertCoordinateSystem(relativePos, currentForwardVector, currentRightVector, currentUpVector);
+                oss << "New Position is: " << relativePos.x << ", " << relativePos.y << ", " << relativePos.z;
+                std::string str = oss.str();
+                log(str);
 
                 Value _vector(kArrayType);
                 _vector.PushBack(FUR.x - currentPos.x, allocator).PushBack(FUR.y - currentPos.y, allocator).PushBack(FUR.z - currentPos.z, allocator);
@@ -611,14 +629,28 @@ void Scenario::setIndex() {
     d["index"] = instance_index;
 }
 
-void Scenario::setCameraIntrinsics() {
+//Camera intrinsics are focal length, and center in horizontal (x) and vertical (y)
+void Scenario::calcCameraIntrinsics() {
     float f = width / (2 * tan(HOR_CAM_FOV * PI / 360));
-    float cu = width / 2;
+    float cx = width / 2;
     float cy = height / 2;
 
     intrinsics[0] = f;
-    intrinsics[1] = cu;
+    intrinsics[1] = cx;
     intrinsics[2] = cy;
+
+    std::ostringstream oss;
+    oss << "Focal length is: " << f;
+    std::string str = oss.str();
+    log(str);
+
+    d["focalLen"] = f;
+}
+
+//Camera intrinsics are focal length, and center in horizontal (x) and vertical (y)
+void Scenario::setFocalLength() {
+    log("Setting focal length");
+    d["focalLen"] = intrinsics[0];
 }
 
 void Scenario::drawBoxes(Vector3 BLL, Vector3 FUR, Vector3 dim, Vector3 upVector, Vector3 rightVector, Vector3 forwardVector, Vector3 position, int colour) {

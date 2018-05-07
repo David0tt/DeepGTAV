@@ -12,6 +12,8 @@ width = 1920
 height = 1080
 index = 0
 
+base_folder = "E:\data\\"
+
 def getText(classID):
     return {
         0: "Car",
@@ -69,6 +71,18 @@ def printInstances(filename, list):
         text_file.write("\n")
     text_file.close()
 
+def printCalib(filename, focalLen):
+    text_file = open(filename, "w")
+    for i in range(0,4):
+        text_file.write("P%d:" % i)
+        text_file.write(" %d 0 %d 0" % (focalLen, width/2))
+        text_file.write(" 0 %f %d 0" % (focalLen, height/2))
+        text_file.write(" 0 0 1 0\n")
+
+    text_file.write("R0_rect: 1 0 0 0 1 0 0 0 1\n")
+    text_file.write("Tr_velo_to_cam: 1 0 0 0 0 0 -1 0 0 1 0 0")
+
+
 # Stores a dataset file with data coming from DeepGTAV
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=None)
@@ -101,15 +115,19 @@ if __name__ == '__main__':
             
             # The frame is a numpy array and can be displayed using OpenCV or similar       
             image = frame2numpy(message['frame'], (width,height))
-            cv2.imwrite("E:\data\images\%06d.png" % index, image)
+            cv2.imwrite("%simages\%06d.png" % (base_folder, index), image)
             
             #Output object detections
-            filename = "E:\data\labels\%06d.txt" % index
+            filename = "%slabels\%06d.txt" % (base_folder, index)
             text_file = open(filename, "w")
             text_file.write("")
             text_file.close()
             printInstances(filename, message['vehicles'])
             printInstances(filename, message['peds'])
+
+            #Print calib file
+            calib_file = "%scalib\%06d.txt" % (base_folder, index)
+            printCalib(calib_file, message['focalLen'])
             
             # cv2.imshow('img',image)
             # cv2.waitKey(-1)

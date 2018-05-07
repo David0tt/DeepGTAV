@@ -121,7 +121,8 @@ private:
     void collectLiDAR();
     void setIndex();
     void drawBoxes(Vector3 BLL, Vector3 FUR, Vector3 dim, Vector3 upVector, Vector3 rightVector, Vector3 forwardVector, Vector3 position, int colour);
-    void setCameraIntrinsics();
+    void calcCameraIntrinsics();
+    void setFocalLength();
     bool getEntityVector(Value &_entity, Document::AllocatorType& allocator, int entityID, Hash model, int classid);
     void setPosition();
     float observationAngle(Vector3 position);
