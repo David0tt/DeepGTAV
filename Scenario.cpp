@@ -344,9 +344,9 @@ StringBuffer Scenario::generateMessage() {
 
 //Returns the angle between a relative position vector and the forward vector (rotated about up axis)
 float Scenario::observationAngle(Vector3 position) {
-    float x1 = currentForwardVector.x;
-    float y1 = currentForwardVector.y;
-    float z1 = currentForwardVector.z;
+    float x1 = currentRightVector.x;
+    float y1 = currentRightVector.y;
+    float z1 = currentRightVector.z;
     float x2 = position.x;
     float y2 = position.y;
     float z2 = position.z;
@@ -416,8 +416,8 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
     if (offscreen || isOnScreen) {
         //Check if it is in screen
         ENTITY::GET_ENTITY_MATRIX(entityID, &rightVector, &forwardVector, &upVector, &position); //Blue or red pill
-        //TODO set DontCare from 80-150m
-        if (SYSTEM::VDIST2(currentPos.x, currentPos.y, currentPos.z, position.x, position.y, position.z) < 900) { //30m     ->22500) { //150 m.
+        float distance = sqrt(SYSTEM::VDIST2(currentPos.x, currentPos.y, currentPos.z, position.x, position.y, position.z));
+        if (distance < 150) {
             if (ENTITY::HAS_ENTITY_CLEAR_LOS_TO_ENTITY(vehicle, entityID, 19)) {
                 success = true;
                 //Check if we see it (not occluded)
@@ -436,6 +436,11 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 dim.x = 0.5*(max.x - min.x);
                 dim.y = 0.5*(max.y - min.y);
                 dim.z = 0.5*(max.z - min.z);
+
+                //Kitti dimensions
+                float kittiHeight = 2 * dim.z;
+                float kittiWidth = 2 * dim.x;
+                float kittiLength = 2 * dim.y;
                 
                 std::ostringstream oss2;
                 oss2 << "Dimensions are: " << dim.x << ", " << dim.y << ", " << dim.z;
@@ -481,13 +486,15 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 _entity.AddMember("BLL", _vector, allocator).AddMember("speed", speed, allocator).AddMember("heading", heading, allocator).AddMember("classID", classid, allocator);
                 _entity.AddMember("offscreen", offscreen, allocator);
                 _vector.SetArray();
-                _vector.PushBack(dim.x, allocator).PushBack(dim.y, allocator).PushBack(dim.z, allocator);
+                _vector.PushBack(kittiHeight, allocator).PushBack(kittiWidth, allocator).PushBack(kittiLength, allocator);
                 _entity.AddMember("dimensions", _vector, allocator);
                 _vector.SetArray();
                 _vector.PushBack(kittiPos.x, allocator).PushBack(kittiPos.y, allocator).PushBack(kittiPos.z, allocator);
                 _entity.AddMember("location", _vector, allocator);
-                _entity.AddMember("rotation_y", PI*heading / 180.0, allocator);
+                _entity.AddMember("rotation_y", PI - (PI*heading / 180.0), allocator);
                 _entity.AddMember("alpha", observationAngle(relativePos), allocator);
+                _entity.AddMember("entityID", entityID, allocator);
+                _entity.AddMember("distance", distance, allocator);
 
                 drawBoxes(BLL, FUR, dim, upVector, rightVector, forwardVector, position, 1);
             }
@@ -549,6 +556,8 @@ void Scenario::setPedsList(){
 
         if (PED::GET_PED_TYPE(peds[i]) == 28) classid = 11; //animal
         else classid = 10;
+
+        model = ENTITY::GET_ENTITY_MODEL(peds[i]);
 
         Value _ped(kObjectType);
         bool success = getEntityVector(_ped, allocator, peds[i], model, classid);

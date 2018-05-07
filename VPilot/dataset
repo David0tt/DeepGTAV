@@ -14,17 +14,23 @@ index = 0
 
 base_folder = "E:\data\\"
 
-def getText(classID):
+def getText(classID, distance):
+    if distance > 80:
+        return "DontCare"
     return {
         0: "Car",
+        1: "Motorcycle",
+        2: "Cyclist",
+        3: "QuadBike",
+        7: "Train",
         10: "Pedestrian"
     }.get(classID,"DontCare")
     
-def printInstances(filename, list):
+def printInstances(filename, list, augment):
     text_file = open(filename, "a")
     for instance in list:
         #TODO Determine actual class of vehicle
-        text = getText(instance['classID'])
+        text = getText(instance['classID'], instance['distance'])
         text_file.write("%s" % text)
 
         #TODO - Determine if truncated
@@ -53,21 +59,22 @@ def printInstances(filename, list):
         #Rotation_y
         text_file.write(" %f" % instance['rotation_y'])
 
-        # text_file.write(" EOKITTI")
+        if augment:
+            text_file.write(" %f" % instance['entityID'])
+            text_file.write(" %f" % instance['speed'])
+            text_file.write(" %f" % instance['heading'])
+            text_file.write(" %d" % instance['classID'])
+            
+            if instance['offscreen']:
+                text_file.write(" 0")
+            else:
+                text_file.write(" 1")
+        
+            # for num in instance['FUR']:
+            #     text_file.write(" %f" % num)
+            # for num in instance['BLL']:
+            #     text_file.write(" %f" % num)
 
-        # for num in instance['FUR']:
-        #     text_file.write(" %f" % num)
-        # for num in instance['BLL']:
-        #     text_file.write(" %f" % num)
-        # text_file.write(" %f" % instance['speed'])
-        # text_file.write(" %f" % instance['heading'])
-        # text_file.write(" %d" % instance['classID'])
-        
-        # if instance['offscreen']:
-        #     text_file.write(" 0")
-        # else:
-        #     text_file.write(" 1")
-        
         text_file.write("\n")
     text_file.close()
 
@@ -126,8 +133,16 @@ if __name__ == '__main__':
             text_file = open(filename, "w")
             text_file.write("")
             text_file.close()
-            printInstances(filename, message['vehicles'])
-            printInstances(filename, message['peds'])
+            printInstances(filename, message['vehicles'], False)
+            printInstances(filename, message['peds'], False)
+            
+            #Output object detections with augmentations
+            filename = "%slabels_aug\%06d.txt" % (base_folder, index)
+            text_file = open(filename, "w")
+            text_file.write("")
+            text_file.close()
+            printInstances(filename, message['vehicles'], True)
+            printInstances(filename, message['peds'], True)
 
             #Print calib file
             calib_file = "%scalib\%06d.txt" % (base_folder, index)
