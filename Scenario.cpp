@@ -415,7 +415,7 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
     bool isOnScreen = ENTITY::IS_ENTITY_ON_SCREEN(entityID);
     if (offscreen || isOnScreen) {
         //Check if it is in screen
-        ENTITY::GET_ENTITY_MATRIX(entityID, &rightVector, &forwardVector, &upVector, &position); //Blue or red pill
+        ENTITY::GET_ENTITY_MATRIX(entityID, &forwardVector, &rightVector, &upVector, &position); //Blue or red pill
         float distance = sqrt(SYSTEM::VDIST2(currentPos.x, currentPos.y, currentPos.z, position.x, position.y, position.z));
         if (distance < 150) {
             if (ENTITY::HAS_ENTITY_CLEAR_LOS_TO_ENTITY(vehicle, entityID, 19)) {
@@ -465,6 +465,9 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 relativePos.y = position.y - currentPos.y;
                 relativePos.z = position.z - currentPos.z;
 
+                Vector3 kittiForwardVector = convertCoordinateSystem(forwardVector, currentForwardVector, currentRightVector, currentUpVector);
+                float angle = -atan2(kittiForwardVector.y, kittiForwardVector.x);
+
                 std::ostringstream oss;
                 oss << "Before coordinate transform Position is: " << relativePos.x << ", " << relativePos.y << ", " << relativePos.z;
                 relativePos = convertCoordinateSystem(relativePos, currentForwardVector, currentRightVector, currentUpVector);
@@ -491,8 +494,8 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 _vector.SetArray();
                 _vector.PushBack(kittiPos.x, allocator).PushBack(kittiPos.y, allocator).PushBack(kittiPos.z, allocator);
                 _entity.AddMember("location", _vector, allocator);
-                _entity.AddMember("rotation_y", PI - (PI*heading / 180.0), allocator);
-                _entity.AddMember("alpha", observationAngle(relativePos), allocator);
+                _entity.AddMember("rotation_y", angle, allocator);
+                _entity.AddMember("alpha", angle, allocator);
                 _entity.AddMember("entityID", entityID, allocator);
                 _entity.AddMember("distance", distance, allocator);
 
