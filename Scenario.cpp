@@ -437,6 +437,24 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 dim.y = 0.5*(max.y - min.y);
                 dim.z = 0.5*(max.z - min.z);
 
+                //Amount dimensions are offcenter
+                Vector3 offcenter;
+                offcenter.x = max.x + min.x;
+                offcenter.y = max.y + min.y;
+                offcenter.z = min.z - max.z; //KITTI position is at object ground plane
+
+                //TODO Why are the offcenter measurements not helping?
+                float ground;
+                GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(position.x, position.y, position.z, &(ground), 0);
+                //Update object position to be consistent with KITTI (symmetrical dimensions except for z which is ground)
+                //position.x = position.x + offcenter.y*forwardVector.x + offcenter.x*rightVector.x + offcenter.z*upVector.x;
+                //position.y = position.y + offcenter.y*forwardVector.y + offcenter.x*rightVector.y + offcenter.z*upVector.y;
+                position.z = position.z + offcenter.y*forwardVector.z + offcenter.x*rightVector.z + offcenter.z*upVector.z;
+
+                std::ostringstream oss3;
+                oss3 << "Calculated z: " << position.z << " actual ground: " << ground;
+                log(oss3.str());
+
                 //Kitti dimensions
                 float kittiHeight = 2 * dim.z;
                 float kittiWidth = 2 * dim.x;
@@ -449,15 +467,15 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 std::string str2 = oss2.str();
                 log(str2);
 
-                FUR.x = position.x + dim.y*rightVector.x + dim.x*forwardVector.x + dim.z*upVector.x;
-                FUR.y = position.y + dim.y*rightVector.y + dim.x*forwardVector.y + dim.z*upVector.y;
-                FUR.z = position.z + dim.y*rightVector.z + dim.x*forwardVector.z + dim.z*upVector.z;
+                FUR.x = position.x + dim.y*forwardVector.x + dim.x*rightVector.x + dim.z*upVector.x;
+                FUR.y = position.y + dim.y*forwardVector.y + dim.x*rightVector.y + dim.z*upVector.y;
+                FUR.z = position.z + dim.y*forwardVector.z + dim.x*rightVector.z + dim.z*upVector.z;
                 //GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(FUR.x, FUR.y, FUR.z, &(FUR.z), 0);
                 //FUR.z += 2 * dim.z;
 
-                BLL.x = position.x - dim.y*rightVector.x - dim.x*forwardVector.x - dim.z*upVector.x;
-                BLL.y = position.y - dim.y*rightVector.y - dim.x*forwardVector.y - dim.z*upVector.y;
-                BLL.z = position.z - dim.y*rightVector.z - dim.x*forwardVector.z - dim.z*upVector.z;
+                BLL.x = position.x - dim.y*forwardVector.x - dim.x*rightVector.x - dim.z*upVector.x;
+                BLL.y = position.y - dim.y*forwardVector.y - dim.x*rightVector.y - dim.z*upVector.y;
+                BLL.z = position.z - dim.y*forwardVector.z - dim.x*rightVector.z - dim.z*upVector.z;
                 //GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(BLL.x, BLL.y, 1000.0, &(BLL.z), 0);
 
                 Vector3 relativePos;
@@ -491,6 +509,9 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 _vector.SetArray();
                 _vector.PushBack(kittiHeight, allocator).PushBack(kittiWidth, allocator).PushBack(kittiLength, allocator);
                 _entity.AddMember("dimensions", _vector, allocator);
+                _vector.SetArray();
+                _vector.PushBack(offcenter.z, allocator).PushBack(offcenter.x, allocator).PushBack(offcenter.y, allocator);
+                _entity.AddMember("offcenter", _vector, allocator);
                 _vector.SetArray();
                 _vector.PushBack(kittiPos.x, allocator).PushBack(kittiPos.y, allocator).PushBack(kittiPos.z, allocator);
                 _entity.AddMember("location", _vector, allocator);

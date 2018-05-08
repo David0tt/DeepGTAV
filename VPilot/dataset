@@ -69,6 +69,10 @@ def printInstances(filename, list, augment):
                 text_file.write(" 0")
             else:
                 text_file.write(" 1")
+
+            #3D dimensions offcenter
+            for num in instance['offcenter']:
+                text_file.write(" %f" % num)
         
             # for num in instance['FUR']:
             #     text_file.write(" %f" % num)
