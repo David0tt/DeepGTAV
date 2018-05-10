@@ -651,6 +651,43 @@ void Scenario::setupLiDAR() {
 }
 
 void Scenario::collectLiDAR() {
+    /**********Debug code for trying to get LiDAR to work reliably past 30m
+    //Collect array of nearby peds/vehicles so that LiDAR hits them
+    const int numElements = 16;
+    const int arrSize = numElements * 2 + 2;  //Start at index 2, and the odd elements are padding
+    Ped pedsTemp[arrSize];
+    Vehicle vehiclesTemp[arrSize];
+    //0 index is the size of the array
+    pedsTemp[0] = numElements;
+    vehiclesTemp[0] = numElements;
+
+    int count = PED::GET_PED_NEARBY_VEHICLES(PLAYER::PLAYER_PED_ID(), pedsTemp);
+
+    for (int i = 0; i < count; ++i)
+    {
+        int offsettedID = i * 2 + 2;
+        if (ENTITY::DOES_ENTITY_EXIST(pedsTemp[offsettedID]))
+        {
+            ENTITY::SET_PED_AS_NO_LONGER_NEEDED(&pedsTemp[offsettedID]);
+            //ENTITY::SET_ENTITY_CAN_BE_DAMAGED(pedsTemp[offsettedID],false);
+            //PED::EXPLODE_PED_HEAD(peds[offsettedID], 0x5FC3C11);
+        }
+    }
+
+    count = PED::GET_PED_NEARBY_VEHICLES(PLAYER::PLAYER_PED_ID(), vehiclesTemp);
+
+    for (int i = 0; i < count; ++i)
+    {
+        int offsettedID = i * 2 + 2;
+        if (ENTITY::DOES_ENTITY_EXIST(vehiclesTemp[offsettedID]))
+        {
+            ENTITY::SET_VEHICLE_AS_NO_LONGER_NEEDED(&vehiclesTemp[offsettedID]);
+            //ENTITY::SET_ENTITY_CAN_BE_DAMAGED(vehiclesTemp[offsettedID], false);
+            //PED::EXPLODE_PED_HEAD(peds[offsettedID], 0x5FC3C11);
+        }
+    }
+    */
+
     lidar.updateCurrentPosition(currentForwardVector, currentRightVector, currentUpVector);
     float * pointCloud = lidar.GetPointClouds(m_pointCloudSize);
     

@@ -93,4 +93,7 @@ private:
     Vector3 currentForwardVec;
     Vector3 currentUpVec;
     Vector3 currentRightVec;
+
+    float m_max_dist;
+    float m_min_dist;
 };

@@ -182,6 +182,9 @@ float * LiDAR::GetPointClouds(int &size)
     case _LIDAR_INIT_AS_2D_: GenerateHorizPointClouds(90, m_pPointClouds);
     case _LIDAR_INIT_AS_3D_:
     {
+        m_max_dist = 0;
+        m_min_dist = 5555555555;
+
         //log("Trying to generate pointcloud");
         float phi = m_vertiUnLimit;
         for (int k = 0; k < m_vertiSmplNum; k++)
@@ -193,6 +196,9 @@ float * LiDAR::GetPointClouds(int &size)
 
             GenerateHorizPointClouds(phi, m_pPointClouds);
         }
+        std::ostringstream oss;
+        oss << "************************ Max distance: " << m_max_dist << " min distance: " << m_min_dist;
+        //log(oss.str());
     }
     default:
         break;
@@ -257,6 +263,12 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
     //New function is called GET_SHAPE_TEST_RESULT
     WORLDPROBE::_GET_RAYCAST_RESULT(raycast_handle, &isHit, &endCoord, &surfaceNorm, &hitEntity);
 
+    std::ostringstream oss2;
+    oss2 << "***Endcoord is: " << endCoord.x << ", " << endCoord.y << ", " << endCoord.z <<
+        "\n Current position is: " << m_curPos.x << ", " << m_curPos.y << ", " << m_curPos.z;
+    std::string str = oss2.str();
+    //log(str);
+
     if (isHit) {
         Vector3 vec;
         vec.x = endCoord.x - m_curPos.x;
@@ -272,6 +284,28 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
         *(p + 2) = vec_cam_coord.z;
         *(p + 3) = 0;//This should be the reflectance value - TODO
         m_pointsHit++;
+
+        /********Debug code for trying to get LiDAR to work reliably past 30m
+
+        float distance = sqrt(SYSTEM::VDIST2(m_curPos.x, m_curPos.y, m_curPos.z, endCoord.x, endCoord.y, endCoord.z));
+        if (m_max_dist < distance) m_max_dist = distance;
+        if (m_min_dist > distance) m_min_dist = distance;
+        if (distance < 150 && distance > 1) {
+            //To convert from world coordinates to GTA vehicle coordinates (where y axis is forward)
+            Vector3 vec_cam_coord = convertCoordinateSystem(vec, currentForwardVec, currentRightVec, currentUpVec);
+
+            if (hitEntity < 0) {
+                hitEntity = 0;
+            }
+
+            //Note: The y/x axes are changed to conform with KITTI velodyne axes
+            *p = vec_cam_coord.y;
+            *(p + 1) = -vec_cam_coord.x;
+            *(p + 2) = vec_cam_coord.z;
+            *(p + 3) = 0;//This should be the reflectance value - TODO
+            m_pointsHit++;
+        }
+        */
     }
 
 #ifdef DEBUG_LOG
