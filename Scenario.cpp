@@ -17,6 +17,9 @@ const float VERT_CAM_FOV = 59; //In degrees
 //90 degrees horizontal (KITTI) corresponds to 59 degrees vertical (https://www.gtaall.com/info/fov-calculator.html).
 const float HOR_CAM_FOV = 90; //In degrees
 
+const float CAM_OFFSET_FORWARD = 0.5;
+const float CAM_OFFSET_UP = 0.8;
+
 char* Scenario::weatherList[14] = { "CLEAR", "EXTRASUNNY", "CLOUDS", "OVERCAST", "RAIN", "CLEARING", "THUNDER", "SMOG", "FOGGY", "XMAS", "SNOWLIGHT", "BLIZZARD", "NEUTRAL", "SNOW" };
 char* Scenario::vehicleList[3] = { "blista", "blista", "blista" };//voltic, packer
 
@@ -206,7 +209,7 @@ void Scenario::buildScenario() {
 	CAM::DESTROY_ALL_CAMS(TRUE);
 	camera = CAM::CREATE_CAM("DEFAULT_SCRIPTED_CAMERA", TRUE);
 	if (strcmp(_vehicle, "packer") == 0) CAM::ATTACH_CAM_TO_ENTITY(camera, vehicle, 0, 2.35, 1.7, TRUE);
-	else CAM::ATTACH_CAM_TO_ENTITY(camera, vehicle, 0, 0.5, 0.8, TRUE);
+	else CAM::ATTACH_CAM_TO_ENTITY(camera, vehicle, 0, CAM_OFFSET_FORWARD, CAM_OFFSET_UP, TRUE);
 	CAM::SET_CAM_FOV(camera, VERT_CAM_FOV);
 	CAM::SET_CAM_ACTIVE(camera, TRUE);
 	CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 1);
@@ -441,19 +444,21 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 Vector3 offcenter;
                 offcenter.x = max.x + min.x;
                 offcenter.y = max.y + min.y;
-                offcenter.z = min.z - max.z; //KITTI position is at object ground plane
+                offcenter.z = min.z; //KITTI position is at object ground plane
+
+                Vector3 offcenterPosition = convertCoordinateSystem(offcenter, forwardVector, rightVector, upVector);
 
                 //TODO Why are the offcenter measurements not helping?
                 float ground;
                 GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(position.x, position.y, position.z, &(ground), 0);
                 //Update object position to be consistent with KITTI (symmetrical dimensions except for z which is ground)
-                //position.x = position.x + offcenter.y*forwardVector.x + offcenter.x*rightVector.x + offcenter.z*upVector.x;
-                //position.y = position.y + offcenter.y*forwardVector.y + offcenter.x*rightVector.y + offcenter.z*upVector.y;
-                position.z = position.z + offcenter.y*forwardVector.z + offcenter.x*rightVector.z + offcenter.z*upVector.z;
+                //position.x = position.x + offcenterPosition.x;
+                //position.y = position.y + offcenterPosition.y;
+                position.z = position.z + offcenterPosition.z;
 
                 std::ostringstream oss3;
                 oss3 << "Calculated z: " << position.z << " actual ground: " << ground;
-                log(oss3.str());
+                //log(oss3.str());
 
                 //Kitti dimensions
                 float kittiHeight = 2 * dim.z;
@@ -461,9 +466,10 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 float kittiLength = 2 * dim.y;
                 
                 std::ostringstream oss2;
-                oss2 << "Dimensions are: " << dim.x << ", " << dim.y << ", " << dim.z;
+                oss2 << "Instance Index: " << instance_index << " Dimensions are: " << dim.x << ", " << dim.y << ", " << dim.z;
                 oss2 << "\nMax: " << max.x << ", " << max.y << ", " << max.z;
                 oss2 << "\nMin: " << min.x << ", " << min.y << ", " << min.z;
+                oss2 << "\noffset: " << offcenter.x << ", " << offcenter.y << ", " << offcenter.z;
                 std::string str2 = oss2.str();
                 log(str2);
 
@@ -492,6 +498,10 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 oss << "\nNew Position is: " << relativePos.x << ", " << relativePos.y << ", " << relativePos.z;
                 std::string str = oss.str();
                 log(str);
+
+                //Update object position to be consistent with KITTI (symmetrical dimensions except for z which is ground)
+                relativePos.y = relativePos.y - CAM_OFFSET_FORWARD;
+                relativePos.z = relativePos.z - CAM_OFFSET_UP;
 
                 //Convert to KITTI camera coordinates
                 Vector3 kittiPos;
