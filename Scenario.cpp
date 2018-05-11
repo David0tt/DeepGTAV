@@ -20,6 +20,8 @@ const float HOR_CAM_FOV = 90; //In degrees
 const float CAM_OFFSET_FORWARD = 0.5;
 const float CAM_OFFSET_UP = 0.8;
 
+bool STATIONARY_SCEN = true;
+
 char* Scenario::weatherList[14] = { "CLEAR", "EXTRASUNNY", "CLOUDS", "OVERCAST", "RAIN", "CLEARING", "THUNDER", "SMOG", "FOGGY", "XMAS", "SNOWLIGHT", "BLIZZARD", "NEUTRAL", "SNOW" };
 char* Scenario::vehicleList[3] = { "blista", "blista", "blista" };//voltic, packer
 
@@ -143,7 +145,6 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
     else if (setDefaults) showBoxes = _SHOWBOXES_;
 
     //Create camera intrinsics matrix
-    log("About to set focal length");
     calcCameraIntrinsics();
 
 	//Create JSON DOM
@@ -183,6 +184,12 @@ void Scenario::buildScenario() {
 	vehicleHash = GAMEPLAY::GET_HASH_KEY((char*)_vehicle);
 	STREAMING::REQUEST_MODEL(vehicleHash);
 	while (!STREAMING::HAS_MODEL_LOADED(vehicleHash)) WAIT(0);
+    if (STATIONARY_SCEN) {
+        pos.x = 1000;
+        pos.y = 0;
+        pos.z = 0;
+        heading = 0;
+    }
 	while (!ENTITY::DOES_ENTITY_EXIST(vehicle)) {
 		vehicle = VEHICLE::CREATE_VEHICLE(vehicleHash, pos.x, pos.y, pos.z, heading, FALSE, FALSE);
 		WAIT(0);
@@ -214,10 +221,15 @@ void Scenario::buildScenario() {
 	CAM::SET_CAM_ACTIVE(camera, TRUE);
 	CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 1);
 	CAM::SET_CAM_INHERIT_ROLL_VEHICLE(camera, TRUE);
-	CAM::RENDER_SCRIPT_CAMS(TRUE, FALSE, 0, TRUE, TRUE);
+
+    if (STATIONARY_SCEN) {
+        _setSpeed = 0;
+    }
+
+    CAM::RENDER_SCRIPT_CAMS(TRUE, FALSE, 0, TRUE, TRUE);
 
 	AI::CLEAR_PED_TASKS(ped);
-	if (_drivingMode >= 0) AI::TASK_VEHICLE_DRIVE_WANDER(ped, vehicle, _setSpeed, _drivingMode);
+	if (_drivingMode >= 0 && !STATIONARY_SCEN) AI::TASK_VEHICLE_DRIVE_WANDER(ped, vehicle, _setSpeed, _drivingMode);
 }
 
 void Scenario::start(const Value& sc, const Value& dc) {
@@ -267,7 +279,6 @@ void Scenario::run() {
 		
 		float delay = ((float)(now - lastSafetyCheck)) / CLOCKS_PER_SEC;
 		if (delay > 10) {
-            log("In delay > 10");
 			lastSafetyCheck = std::clock();
 			//Avoid bad things such as getting killed by the police, robbed, dying in car accidents or other horrible stuff
 			PLAYER::SET_EVERYONE_IGNORE_PLAYER(player, TRUE);
@@ -295,6 +306,9 @@ void Scenario::run() {
 
             //Setup LiDAR before collecting
             setupLiDAR();
+
+            //Create vehicles if it is a stationary scenario
+            createVehicles();
 		}
 	}
 	scriptWait(0);
@@ -361,12 +375,14 @@ float Scenario::observationAngle(Vector3 position) {
     float det = x1 * y2*zn + x2 * yn*z1 + xn * y1*z2 - z1 * y2*xn - z2 * yn*x1 - zn * y1*x2;
     float observationAngle = atan2(det, dot);
 
-    std::ostringstream oss;
-    oss << "Forward is: " << x1 << ", " << y1 << ", " << z1 << 
-        "\nNormal is: " << x2 << ", " << y2 << ", " << z2 << 
-        "\nPosition is: " << position.x << ", " << position.y << ", " << position.z << " and angle is: " << observationAngle;
-    std::string str = oss.str();
-    log(str);
+    if (DEBUG_LOGGING) {
+        std::ostringstream oss;
+        oss << "Forward is: " << x1 << ", " << y1 << ", " << z1 <<
+            "\nNormal is: " << x2 << ", " << y2 << ", " << z2 <<
+            "\nPosition is: " << position.x << ", " << position.y << ", " << position.z << " and angle is: " << observationAngle;
+        std::string str = oss.str();
+        log(str);
+    }
 
     return observationAngle;
 }
@@ -377,30 +393,9 @@ void Scenario::drawVectorFromPosition(Vector3 vector, int blue, int green) {
 }
 
 //Saves the position and vectors of the capture vehicle
-//TODO Check if the forward vector is being set correctly
-//Note: GET_ENTITY_FORWARD_VECTOR seems to return the vector which is the right vector NOT the forward vector
 void Scenario::setPosition() {
-    //currentPos = ENTITY::GET_ENTITY_COORDS(vehicle, false);
-    //currentForwardVector = ENTITY::GET_ENTITY_FORWARD_VECTOR(vehicle);
-    //drawVectorFromPosition(currentForwardVector, 255, 0);
-    /*
-    std::ostringstream oss;
-    oss << "SELF ****** Forward is: " << currentForwardVector.x << ", " << currentForwardVector.y << ", " << currentForwardVector.z <<
-        "\nPosition is: " << currentPos.x << ", " << currentPos.y << ", " << currentPos.z;
-    std::string str = oss.str();
-    log(str);
-    */
-
-    //NOTE: The forward and right vectors are swapped here to keep consistency with coordinate system
+    //NOTE: The forward and right vectors are swapped (compared to native function labels) to keep consistency with coordinate system
     ENTITY::GET_ENTITY_MATRIX(vehicle, &currentForwardVector, &currentRightVector, &currentUpVector, &currentPos); //Blue or red pill
-    //drawVectorFromPosition(currentForwardVector, 0, 255);
-
-    std::ostringstream oss2;
-    oss2 << "SELF (After get_entity_matrix ****** Forward is: " << currentForwardVector.x << ", " << currentForwardVector.y << ", " << currentForwardVector.z <<
-        "\nRight is : " << currentRightVector.x << ", " << currentRightVector.y << ", " << currentRightVector.z <<
-        "\nUp is: " << currentUpVector.x << ", " << currentUpVector.y << ", " << currentUpVector.z;
-    std::string str = oss2.str();
-    log(str);
 }
 
 bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocator, int entityID, Hash model, int classid) {
@@ -442,36 +437,32 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
 
                 //Amount dimensions are offcenter
                 Vector3 offcenter;
-                offcenter.x = max.x + min.x;
-                offcenter.y = max.y + min.y;
+                offcenter.x = 0;// max.x + min.x;
+                offcenter.y = 0;// max.y + min.y;
                 offcenter.z = min.z; //KITTI position is at object ground plane
 
                 Vector3 offcenterPosition = convertCoordinateSystem(offcenter, forwardVector, rightVector, upVector);
 
-                //TODO Why are the offcenter measurements not helping?
-                float ground;
-                GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(position.x, position.y, position.z, &(ground), 0);
+                //Seems like the offcenter is not actually correct
                 //Update object position to be consistent with KITTI (symmetrical dimensions except for z which is ground)
-                //position.x = position.x + offcenterPosition.x;
-                //position.y = position.y + offcenterPosition.y;
+                position.x = position.x + offcenterPosition.x;
+                position.y = position.y + offcenterPosition.y;
                 position.z = position.z + offcenterPosition.z;
-
-                std::ostringstream oss3;
-                oss3 << "Calculated z: " << position.z << " actual ground: " << ground;
-                //log(oss3.str());
 
                 //Kitti dimensions
                 float kittiHeight = 2 * dim.z;
                 float kittiWidth = 2 * dim.x;
                 float kittiLength = 2 * dim.y;
                 
-                std::ostringstream oss2;
-                oss2 << "Instance Index: " << instance_index << " Dimensions are: " << dim.x << ", " << dim.y << ", " << dim.z;
-                oss2 << "\nMax: " << max.x << ", " << max.y << ", " << max.z;
-                oss2 << "\nMin: " << min.x << ", " << min.y << ", " << min.z;
-                oss2 << "\noffset: " << offcenter.x << ", " << offcenter.y << ", " << offcenter.z;
-                std::string str2 = oss2.str();
-                log(str2);
+                if (abs(offcenter.y) > 0.5 && classid == 0) {
+                    std::ostringstream oss2;
+                    oss2 << "Instance Index: " << instance_index << " Dimensions are: " << dim.x << ", " << dim.y << ", " << dim.z;
+                    oss2 << "\nMax: " << max.x << ", " << max.y << ", " << max.z;
+                    oss2 << "\nMin: " << min.x << ", " << min.y << ", " << min.z;
+                    oss2 << "\noffset: " << offcenter.x << ", " << offcenter.y << ", " << offcenter.z;
+                    std::string str2 = oss2.str();
+                    log(str2);
+                }
 
                 FUR.x = position.x + dim.y*forwardVector.x + dim.x*rightVector.x + dim.z*upVector.x;
                 FUR.y = position.y + dim.y*forwardVector.y + dim.x*rightVector.y + dim.z*upVector.y;
@@ -492,12 +483,7 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 Vector3 kittiForwardVector = convertCoordinateSystem(forwardVector, currentForwardVector, currentRightVector, currentUpVector);
                 float angle = -atan2(kittiForwardVector.y, kittiForwardVector.x);
 
-                std::ostringstream oss;
-                oss << "Before coordinate transform Position is: " << relativePos.x << ", " << relativePos.y << ", " << relativePos.z;
                 relativePos = convertCoordinateSystem(relativePos, currentForwardVector, currentRightVector, currentUpVector);
-                oss << "\nNew Position is: " << relativePos.x << ", " << relativePos.y << ", " << relativePos.z;
-                std::string str = oss.str();
-                log(str);
 
                 //Update object position to be consistent with KITTI (symmetrical dimensions except for z which is ground)
                 relativePos.y = relativePos.y - CAM_OFFSET_FORWARD;
@@ -660,6 +646,25 @@ void Scenario::setupLiDAR() {
     }
 }
 
+void Scenario::createVehicles() {
+    setPosition();
+    if (STATIONARY_SCEN && !vehicles_created) {
+        log("Creating vehicle");
+        Hash vehicleHash = GAMEPLAY::GET_HASH_KEY("benson");
+        Vector3 pos;
+        pos.x = currentPos.x + currentForwardVector.x * 20 + currentRightVector.x * 0;
+        pos.y = currentPos.y + currentForwardVector.y * 20 + currentRightVector.y * 0;
+        pos.z = currentPos.z + currentForwardVector.z * 20;
+        STREAMING::REQUEST_MODEL(vehicleHash);
+        while (!STREAMING::HAS_MODEL_LOADED(vehicleHash)) WAIT(0);
+        Vehicle tempV = VEHICLE::CREATE_VEHICLE(vehicleHash, pos.x, pos.y, pos.z, 60, FALSE, FALSE);
+        WAIT(0);
+        VEHICLE::SET_VEHICLE_ON_GROUND_PROPERLY(vehicle);
+        ENTITY::SET_ENTITY_AS_NO_LONGER_NEEDED(&tempV);
+        vehicles_created = true;
+    }
+}
+
 void Scenario::collectLiDAR() {
     /**********Debug code for trying to get LiDAR to work reliably past 30m
     //Collect array of nearby peds/vehicles so that LiDAR hits them
@@ -725,17 +730,18 @@ void Scenario::calcCameraIntrinsics() {
     intrinsics[1] = cx;
     intrinsics[2] = cy;
 
-    std::ostringstream oss;
-    oss << "Focal length is: " << f;
-    std::string str = oss.str();
-    log(str);
+    if (DEBUG_LOGGING) {
+        std::ostringstream oss;
+        oss << "Focal length is: " << f;
+        std::string str = oss.str();
+        log(str);
+    }
 
     d["focalLen"] = f;
 }
 
 //Camera intrinsics are focal length, and center in horizontal (x) and vertical (y)
 void Scenario::setFocalLength() {
-    log("Setting focal length");
     d["focalLen"] = intrinsics[0];
 }
 
