@@ -258,15 +258,16 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
 
     //options: -1=everything
     //New function is called _START_SHAPE_TEST_RAY
-    raycast_handle = WORLDPROBE::_CAST_RAY_POINT_TO_POINT(m_curPos.x, m_curPos.y, m_curPos.z, target.x, target.y, target.z, -1, 0, 7);
+    raycast_handle = WORLDPROBE::_CAST_RAY_POINT_TO_POINT(m_curPos.x, m_curPos.y, m_curPos.z, target.x, target.y, target.z, -1, m_ownCar, 7);
 
     //New function is called GET_SHAPE_TEST_RESULT
     WORLDPROBE::_GET_RAYCAST_RESULT(raycast_handle, &isHit, &endCoord, &surfaceNorm, &hitEntity);
 
-    std::ostringstream oss2;
+    /*std::ostringstream oss2;
     oss2 << "***Endcoord is: " << endCoord.x << ", " << endCoord.y << ", " << endCoord.z <<
         "\n Current position is: " << m_curPos.x << ", " << m_curPos.y << ", " << m_curPos.z;
     std::string str = oss2.str();
+    */
     //log(str);
 
     if (isHit) {
@@ -278,11 +279,16 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
         //To convert from world coordinates to GTA vehicle coordinates (where y axis is forward)
         Vector3 vec_cam_coord = convertCoordinateSystem(vec, currentForwardVec, currentRightVec, currentUpVec);
 
+        int entityID = 0;
+        if (ENTITY::IS_ENTITY_A_PED(hitEntity) || ENTITY::IS_ENTITY_A_VEHICLE(hitEntity)) {
+            entityID = hitEntity;
+        }
+
         //Note: The y/x axes are changed to conform with KITTI velodyne axes
         *p = vec_cam_coord.y;
         *(p + 1) = -vec_cam_coord.x;
         *(p + 2) = vec_cam_coord.z;
-        *(p + 3) = 0;//This should be the reflectance value - TODO
+        *(p + 3) = entityID;//This is the entityID (Only non-zero for pedestrians and vehicles)
         m_pointsHit++;
 
         /********Debug code for trying to get LiDAR to work reliably past 30m
