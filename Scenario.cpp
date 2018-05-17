@@ -20,8 +20,6 @@ const float HOR_CAM_FOV = 90; //In degrees
 const float CAM_OFFSET_FORWARD = 0.5;
 const float CAM_OFFSET_UP = 0.8;
 
-bool STATIONARY_SCEN = true;
-
 char* Scenario::weatherList[14] = { "CLEAR", "EXTRASUNNY", "CLOUDS", "OVERCAST", "RAIN", "CLEARING", "THUNDER", "SMOG", "FOGGY", "XMAS", "SNOWLIGHT", "BLIZZARD", "NEUTRAL", "SNOW" };
 char* Scenario::vehicleList[3] = { "blista", "blista", "blista" };//voltic, packer
 
@@ -137,12 +135,14 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
 	else if (setDefaults) location = _LOCATION_;
 	if (!dc["time"].IsNull()) time = dc["time"].GetBool();
 	else if (setDefaults) time = _TIME_;
-    if (!dc["pointclouds"].IsNull()) pointclouds = dc["pointclouds"].GetBool();
-    else if (setDefaults) pointclouds = _POINTCLOUDS_;
     if (!dc["offscreen"].IsNull()) offscreen = dc["offscreen"].GetBool();
     else if (setDefaults) offscreen = _OFFSCREEN_;
     if (!dc["showBoxes"].IsNull()) showBoxes = dc["showBoxes"].GetBool();
     else if (setDefaults) showBoxes = _SHOWBOXES_;
+    if (!dc["pointclouds"].IsNull()) pointclouds = dc["pointclouds"].GetBool();
+    else if (setDefaults) pointclouds = _POINTCLOUDS_;
+    if (!dc["stationaryScene"].IsNull()) stationaryScene = dc["stationaryScene"].GetBool();
+    else if (setDefaults) stationaryScene = _STATIONARY_SCENE_;
 
     //Create camera intrinsics matrix
     calcCameraIntrinsics();
@@ -184,11 +184,12 @@ void Scenario::buildScenario() {
 	vehicleHash = GAMEPLAY::GET_HASH_KEY((char*)_vehicle);
 	STREAMING::REQUEST_MODEL(vehicleHash);
 	while (!STREAMING::HAS_MODEL_LOADED(vehicleHash)) WAIT(0);
-    if (STATIONARY_SCEN) {
-        pos.x = 1000;
+    if (stationaryScene) {
+        pos.x = 0;
         pos.y = 0;
         pos.z = 0;
-        heading = 0;
+        heading = 60;
+        vehicles_created = false;
     }
 	while (!ENTITY::DOES_ENTITY_EXIST(vehicle)) {
 		vehicle = VEHICLE::CREATE_VEHICLE(vehicleHash, pos.x, pos.y, pos.z, heading, FALSE, FALSE);
@@ -222,14 +223,14 @@ void Scenario::buildScenario() {
 	CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 1);
 	CAM::SET_CAM_INHERIT_ROLL_VEHICLE(camera, TRUE);
 
-    if (STATIONARY_SCEN) {
+    if (stationaryScene) {
         _setSpeed = 0;
     }
 
     CAM::RENDER_SCRIPT_CAMS(TRUE, FALSE, 0, TRUE, TRUE);
 
 	AI::CLEAR_PED_TASKS(ped);
-	if (_drivingMode >= 0 && !STATIONARY_SCEN) AI::TASK_VEHICLE_DRIVE_WANDER(ped, vehicle, _setSpeed, _drivingMode);
+	if (_drivingMode >= 0 && !stationaryScene) AI::TASK_VEHICLE_DRIVE_WANDER(ped, vehicle, _setSpeed, _drivingMode);
 }
 
 void Scenario::start(const Value& sc, const Value& dc) {
@@ -398,6 +399,59 @@ void Scenario::setPosition() {
     ENTITY::GET_ENTITY_MATRIX(vehicle, &currentForwardVector, &currentRightVector, &currentUpVector, &currentPos); //Blue or red pill
 }
 
+BBox2D Scenario::BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector) {
+    BBox2D bbox;
+    bbox.left = 1.0;// width;
+    bbox.right = 0.0;
+    bbox.top = 1.0;// height;
+    bbox.bottom = 0.0;
+    //return bbox;
+    //TODO Figure out how to transform world to screen coordinates
+    for (int right = -1; right <= 1; right += 2) {
+        for (int forward = -1; forward <= 1; forward += 2) {
+            for (int up = -1; up <= 1; up += 2) {
+                Vector3 pos;
+                pos.x = position.x + forward * dim.y*forwardVector.x + right * dim.x*rightVector.x + up * dim.z*upVector.x;
+                pos.y = position.y + forward * dim.y*forwardVector.y + right * dim.x*rightVector.y + up * dim.z*upVector.y;
+                pos.z = position.z + forward * dim.y*forwardVector.z + right * dim.x*rightVector.z + up * dim.z*upVector.z;
+
+                float scrX, scrY;
+                bool success = UI::_0xF9904D11F1ACBEC3(pos.x, pos.y, pos.z, &scrX, &scrY);
+
+                float screenX = scrX;// *width;
+                float screenY = scrY;// *height;
+
+                std::ostringstream oss2;
+                oss2 << "ScreenX: " << screenX << " ScreenY: " << screenY;
+                std::string str2 = oss2.str();
+                log(str2);
+
+                if (screenX < 0 || screenY < 0 || screenX > 1 || screenY > 1) {
+                    log("Screen position is out of bounds.");
+                }
+                if (true) {//Why does the function always return false
+                    if (screenX < bbox.left) bbox.left = screenX;
+                    if (screenX > bbox.right) bbox.right = screenX;
+                    if (screenY < bbox.top) bbox.top = screenY;
+                    if (screenY > bbox.bottom) bbox.bottom = screenY;
+                }
+                else {
+                    log("screen position from world returned false");
+                }
+            }
+        }
+    }
+
+    std::ostringstream oss2;
+    oss2 << "BBox left: " << bbox.left << " right: " << bbox.right << " top: " << bbox.top << " bot: " << bbox.bottom << std::endl <<
+        "PosX: " << bbox.posX() << " PosY: " << bbox.posY() << " Width: " << bbox.width() << " Height: " << bbox.height();
+    std::string str2 = oss2.str();
+    log(str2);
+    GRAPHICS::DRAW_RECT(bbox.posX(), bbox.posY(), bbox.width(), bbox.height(), 0, 255, 0, 100);
+    WAIT(0);
+    return bbox;
+}
+
 bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocator, int entityID, Hash model, int classid) {
     bool success = false;
 
@@ -435,6 +489,8 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 dim.y = 0.5*(max.y - min.y);
                 dim.z = 0.5*(max.z - min.z);
 
+                BBox2D bbox2d = BBox2DFrom3DObject(position, dim, forwardVector, rightVector, upVector);
+
                 //Amount dimensions are offcenter
                 Vector3 offcenter;
                 offcenter.x = 0;// max.x + min.x;
@@ -464,17 +520,6 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                     log(str2);
                 }
 
-                FUR.x = position.x + dim.y*forwardVector.x + dim.x*rightVector.x + dim.z*upVector.x;
-                FUR.y = position.y + dim.y*forwardVector.y + dim.x*rightVector.y + dim.z*upVector.y;
-                FUR.z = position.z + dim.y*forwardVector.z + dim.x*rightVector.z + dim.z*upVector.z;
-                //GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(FUR.x, FUR.y, FUR.z, &(FUR.z), 0);
-                //FUR.z += 2 * dim.z;
-
-                BLL.x = position.x - dim.y*forwardVector.x - dim.x*rightVector.x - dim.z*upVector.x;
-                BLL.y = position.y - dim.y*forwardVector.y - dim.x*rightVector.y - dim.z*upVector.y;
-                BLL.z = position.z - dim.y*forwardVector.z - dim.x*rightVector.z - dim.z*upVector.z;
-                //GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(BLL.x, BLL.y, 1000.0, &(BLL.z), 0);
-
                 Vector3 relativePos;
                 relativePos.x = position.x - currentPos.x;
                 relativePos.y = position.y - currentPos.y;
@@ -496,11 +541,7 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 kittiPos.z = relativePos.y;
 
                 Value _vector(kArrayType);
-                _vector.PushBack(FUR.x - currentPos.x, allocator).PushBack(FUR.y - currentPos.y, allocator).PushBack(FUR.z - currentPos.z, allocator);
-                _entity.AddMember("FUR", _vector, allocator);
-                _vector.SetArray();
-                _vector.PushBack(BLL.x - currentPos.x, allocator).PushBack(BLL.y - currentPos.y, allocator).PushBack(BLL.z - currentPos.z, allocator);
-                _entity.AddMember("BLL", _vector, allocator).AddMember("speed", speed, allocator).AddMember("heading", heading, allocator).AddMember("classID", classid, allocator);
+                _entity.AddMember("speed", speed, allocator).AddMember("heading", heading, allocator).AddMember("classID", classid, allocator);
                 _entity.AddMember("offscreen", offscreen, allocator);
                 _vector.SetArray();
                 _vector.PushBack(kittiHeight, allocator).PushBack(kittiWidth, allocator).PushBack(kittiLength, allocator);
@@ -515,6 +556,9 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 _entity.AddMember("alpha", angle, allocator);
                 _entity.AddMember("entityID", entityID, allocator);
                 _entity.AddMember("distance", distance, allocator);
+                _vector.SetArray();
+                _vector.PushBack(bbox2d.left, allocator).PushBack(bbox2d.top, allocator).PushBack(bbox2d.right, allocator).PushBack(bbox2d.bottom, allocator);
+                _entity.AddMember("bbox2d", _vector, allocator);
 
                 drawBoxes(BLL, FUR, dim, upVector, rightVector, forwardVector, position, 1);
             }
@@ -648,13 +692,13 @@ void Scenario::setupLiDAR() {
 
 void Scenario::createVehicles() {
     setPosition();
-    if (STATIONARY_SCEN && !vehicles_created) {
+    if (stationaryScene && !vehicles_created) {
         log("Creating vehicle");
         Hash vehicleHash = GAMEPLAY::GET_HASH_KEY("benson");
         Vector3 pos;
-        pos.x = currentPos.x + currentForwardVector.x * 20 + currentRightVector.x * 0;
-        pos.y = currentPos.y + currentForwardVector.y * 20 + currentRightVector.y * 0;
-        pos.z = currentPos.z + currentForwardVector.z * 20;
+        pos.x = currentPos.x + currentForwardVector.x * 15 + currentRightVector.x * 0;
+        pos.y = currentPos.y + currentForwardVector.y * 15 + currentRightVector.y * 0;
+        pos.z = currentPos.z + currentForwardVector.z * 15;
         STREAMING::REQUEST_MODEL(vehicleHash);
         while (!STREAMING::HAS_MODEL_LOADED(vehicleHash)) WAIT(0);
         Vehicle tempV = VEHICLE::CREATE_VEHICLE(vehicleHash, pos.x, pos.y, pos.z, 60, FALSE, FALSE);
@@ -748,7 +792,7 @@ void Scenario::setFocalLength() {
 void Scenario::drawBoxes(Vector3 BLL, Vector3 FUR, Vector3 dim, Vector3 upVector, Vector3 rightVector, Vector3 forwardVector, Vector3 position, int colour) {
     //log("Inside draw boxes");
     if (showBoxes) {
-        //log("Inside show boxes");
+        log("Inside show boxes");
         Vector3 edge1 = BLL;
         Vector3 edge2;
         Vector3 edge3;

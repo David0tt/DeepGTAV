@@ -12,6 +12,7 @@
 #include "ScreenCapturer.h"
 #include "Rewarders\Rewarder.h"
 #include "LiDAR.h"
+#include "Functions.h"
 
 using namespace rapidjson;
 
@@ -58,9 +59,10 @@ private:
 	bool drivingMode; //TODO
 	bool location;
 	bool time;
-    bool pointclouds;
     bool offscreen;
     bool showBoxes;
+    bool pointclouds;
+    bool stationaryScene;
 
 	float currentThrottle = 0.0;
 	float currentBrake = 0.0;
@@ -131,4 +133,6 @@ private:
     float observationAngle(Vector3 position);
     void drawVectorFromPosition(Vector3 vector, int blue, int green);
     void createVehicles();
+
+    BBox2D BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector);
 };

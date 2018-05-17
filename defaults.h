@@ -15,6 +15,7 @@
 #define _DRIVING_MODE_ false
 #define _LOCATION_ false
 #define _TIME_ false
-#define _POINTCLOUDS_ true
 #define _OFFSCREEN_ true
 #define _SHOWBOXES_ false
+#define _POINTCLOUDS_ true
+#define _STATIONARY_SCENE_ false

@@ -3318,7 +3318,7 @@ namespace UI
 	static void SET_HUD_COMPONENT_POSITION(Any p0, float p1, float p2) { invoke<Void>(0xAABB1F56E2A17CED, p0, p1, p2); } // 0xAABB1F56E2A17CED 0x2F3A0D15
 	static Vector3 GET_HUD_COMPONENT_POSITION(Any p0) { return invoke<Vector3>(0x223CA69A8C4417FD, p0); } // 0x223CA69A8C4417FD 0x080DCED6
 	static void _0xB57D8DD645CFA2CF() { invoke<Void>(0xB57D8DD645CFA2CF); } // 0xB57D8DD645CFA2CF 0x5BBCC934
-	static Any _0xF9904D11F1ACBEC3(float x, float y, float z, Any* p3, Any* p4) { return invoke<Any>(0xF9904D11F1ACBEC3, x, y, z, p3, p4); } // 0xF9904D11F1ACBEC3 0xFE9A39F8
+	static Any _0xF9904D11F1ACBEC3(float x, float y, float z, float* p3, float* p4) { return invoke<Any>(0xF9904D11F1ACBEC3, x, y, z, p3, p4); } // 0xF9904D11F1ACBEC3 0xFE9A39F8
 	static void _0x523A590C1A3CC0D3() { invoke<Void>(0x523A590C1A3CC0D3); } // 0x523A590C1A3CC0D3 0x10DE5150
 	static void _0xEE4C0E6DBC6F2C6F() { invoke<Void>(0xEE4C0E6DBC6F2C6F); } // 0xEE4C0E6DBC6F2C6F 0x67649EE0
 	static Any _0x9135584D09A3437E() { return invoke<Any>(0x9135584D09A3437E); } // 0x9135584D09A3437E 0x9D2C94FA

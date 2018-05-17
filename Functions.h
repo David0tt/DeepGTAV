@@ -11,3 +11,26 @@ static Vector3 convertCoordinateSystem(Vector3 vec, Vector3 forwardVector, Vecto
 
     return newVec;
 }
+
+typedef struct BBox2D {
+    float left;
+    float top;
+    float right;
+    float bottom;
+
+    float width() {
+        return right - left;
+    }
+
+    float height() {
+        return bottom - top;
+    }
+
+    float posX() {
+        return left + width() / 2;
+    }
+
+    float posY() {
+        return top + height() / 2;
+    }
+};
