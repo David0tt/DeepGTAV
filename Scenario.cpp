@@ -185,8 +185,8 @@ void Scenario::buildScenario() {
 	STREAMING::REQUEST_MODEL(vehicleHash);
 	while (!STREAMING::HAS_MODEL_LOADED(vehicleHash)) WAIT(0);
     if (stationaryScene) {
-        pos.x = 0;
-        pos.y = 0;
+        pos.x = 1000;
+        pos.y = 50;
         pos.z = 0;
         heading = 60;
         vehicles_created = false;
@@ -339,6 +339,7 @@ StringBuffer Scenario::generateMessage() {
 
     setIndex();
     setPosition();
+    if (pointclouds && lidar_initialized) collectLiDAR();
 	if (vehicles) setVehiclesList();
 	if (peds) setPedsList();
 	if (trafficSigns); //TODO
@@ -352,8 +353,8 @@ StringBuffer Scenario::generateMessage() {
 	if (drivingMode); //TODO
 	if (location) setLocation();
 	if (time) setTime();
-    if (pointclouds && lidar_initialized) collectLiDAR();
     setFocalLength();
+    increaseIndex();
 
 	d.Accept(writer);
 
@@ -557,8 +558,22 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 _entity.AddMember("entityID", entityID, allocator);
                 _entity.AddMember("distance", distance, allocator);
                 _vector.SetArray();
-                _vector.PushBack(bbox2d.left, allocator).PushBack(bbox2d.top, allocator).PushBack(bbox2d.right, allocator).PushBack(bbox2d.bottom, allocator);
+                _vector.PushBack(bbox2d.left*width, allocator).PushBack(bbox2d.top*height, allocator).PushBack(bbox2d.right*width, allocator).PushBack(bbox2d.bottom*height, allocator);
                 _entity.AddMember("bbox2d", _vector, allocator);
+
+                int pointsHit = 0;
+                if (entitiesHit.find(entityID) != entitiesHit.end()) {
+                    pointsHit = entitiesHit[entityID];
+                }
+                std::ostringstream oss2;
+                oss2 << "Before using entityID " << entityID << " in points hit.";
+                std::string str2 = oss2.str();
+                log(str2);
+                oss2 << " With value: " << pointsHit;
+                str2 = oss2.str();
+                log(str2);
+                _entity.AddMember("pointsHit", pointsHit, allocator);
+                log("After using entityID in points hit.");
 
                 drawBoxes(BLL, FUR, dim, upVector, rightVector, forwardVector, position, 1);
             }
@@ -747,16 +762,19 @@ void Scenario::collectLiDAR() {
     }
     */
 
+    entitiesHit.clear();
     lidar.updateCurrentPosition(currentForwardVector, currentRightVector, currentUpVector);
-    float * pointCloud = lidar.GetPointClouds(m_pointCloudSize);
+    float * pointCloud = lidar.GetPointClouds(pointCloudSize, &entitiesHit);
     
     char format[] = "E:\\data\\velodyne\\%06d.bin";
     char filename[sizeof format + 100];
     sprintf(filename, format, instance_index);
 
     std::ofstream ofile(filename, std::ios::binary);
-    ofile.write((char*)pointCloud, 4 * sizeof(float)*m_pointCloudSize);
+    ofile.write((char*)pointCloud, 4 * sizeof(float)*pointCloudSize);
+}
 
+void Scenario::increaseIndex() {
     ++instance_index;
 }
 

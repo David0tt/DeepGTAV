@@ -85,7 +85,8 @@ private:
     LiDAR lidar;
     bool lidar_initialized = false;
     int instance_index = 20;
-    int m_pointCloudSize = 0;
+    int pointCloudSize = 0;
+    std::unordered_map<int,int> entitiesHit;
 
     bool vehicles_created = false;
 
@@ -133,6 +134,7 @@ private:
     float observationAngle(Vector3 position);
     void drawVectorFromPosition(Vector3 vector, int blue, int green);
     void createVehicles();
+    void increaseIndex();
 
     BBox2D BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector);
 };

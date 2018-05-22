@@ -172,8 +172,9 @@ void LiDAR::DestroyLiDAR()
     m_isAttach = false;
 }
 
-float * LiDAR::GetPointClouds(int &size)
+float * LiDAR::GetPointClouds(int &size, std::unordered_map<int,int> *entitiesHit)
 {
+    m_entitiesHit = entitiesHit;
     m_pointsHit = 0;
     if (m_pPointClouds == NULL || m_initType == _LIDAR_NOT_INIT_YET_ || !m_isAttach)
         return NULL;
@@ -290,6 +291,13 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
         *(p + 2) = vec_cam_coord.z;
         *(p + 3) = entityID;//This is the entityID (Only non-zero for pedestrians and vehicles)
         m_pointsHit++;
+
+        if (m_entitiesHit->find(entityID) != m_entitiesHit->end()) {
+            m_entitiesHit->at(entityID)++;
+        }
+        else {
+            m_entitiesHit->insert(std::pair<int,int>(entityID,1));
+        }
 
         /********Debug code for trying to get LiDAR to work reliably past 30m
 

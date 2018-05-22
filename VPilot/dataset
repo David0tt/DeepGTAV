@@ -58,7 +58,9 @@ def printInstances(filename, list, augment):
         text_file.write(" %f" % instance['rotation_y'])
 
         if augment:
+            text_file.write(" Augmentations:")
             text_file.write(" %d" % instance['entityID'])
+            text_file.write(" %d" % instance['pointsHit'])
             text_file.write(" %f" % instance['speed'])
             text_file.write(" %f" % instance['heading'])
             text_file.write(" %d" % instance['classID'])
@@ -112,15 +114,18 @@ if __name__ == '__main__':
     # Configures the information that we want DeepGTAV to generate and send to us. 
     # See deepgtav/messages.py to see what options are supported
     # rate is in captures per second
-    # dataset = Dataset(rate=1, frame=[width,height], throttle=True, brake=True, steering=True, vehicles=True, peds=True, reward=[15.0, 0.0],
-    #                 direction=None, speed=True, yawRate=True, location=True, time=True, offscreen=True, showBoxes=False, pointclouds=True,
-    #                 stationaryScene=False)
-    dataset = Dataset(rate=60, frame=[width,height], throttle=True, brake=True, steering=True, vehicles=True, peds=True, reward=[15.0, 0.0],
-                    direction=None, speed=True, yawRate=True, location=True, time=True, offscreen=True, showBoxes=False, pointclouds=False,
-                    stationaryScene=True)
+    collectStationary = False
+    if collectStationary:
+        dataset = Dataset(rate=60, frame=[width,height], throttle=True, brake=True, steering=True, vehicles=True, peds=True, reward=[15.0, 0.0],
+                        direction=None, speed=True, yawRate=True, location=True, time=True, offscreen=True, showBoxes=False, pointclouds=False,
+                        stationaryScene=True)
+        scenario = Scenario(drivingMode=[-1,0]) #Stationary/manual mode
+    else:
+        dataset = Dataset(rate=1, frame=[width,height], throttle=True, brake=True, steering=True, vehicles=True, peds=True, reward=[15.0, 0.0],
+                        direction=None, speed=True, yawRate=True, location=True, time=True, offscreen=True, showBoxes=False, pointclouds=True,
+                        stationaryScene=False)
+        scenario = Scenario(drivingMode=[786603,15.0]) # Driving style is set to normal, with a speed of 15.0 mph. All other scenario options are random.
     # Send the Start request to DeepGTAV.
-    scenario = Scenario(drivingMode=[-1,0]) #Stationary/manual mode
-    #scenario = Scenario(drivingMode=[786603,15.0]) # Driving style is set to normal, with a speed of 15.0 mph. All other scenario options are random.
     client.sendMessage(Start(dataset=dataset,scenario=scenario))
 
     print("Message sent to client to begin.")
