@@ -176,19 +176,21 @@ void Scenario::buildScenario() {
 	Hash vehicleHash;
 	float heading;
 
-	GAMEPLAY::SET_RANDOM_SEED(std::time(NULL));
-	while (!PATHFIND::_0xF7B79A50B905A30D(-8192.0f, 8192.0f, -8192.0f, 8192.0f)) WAIT(0);
-	PATHFIND::GET_CLOSEST_VEHICLE_NODE_WITH_HEADING(x, y, 0, &pos, &heading, 0, 0, 0);
+    if (!stationaryScene) {
+        GAMEPLAY::SET_RANDOM_SEED(std::time(NULL));
+        while (!PATHFIND::_0xF7B79A50B905A30D(-8192.0f, 8192.0f, -8192.0f, 8192.0f)) WAIT(0);
+        PATHFIND::GET_CLOSEST_VEHICLE_NODE_WITH_HEADING(x, y, 0, &pos, &heading, 0, 0, 0);
+    }
 
 	ENTITY::DELETE_ENTITY(&vehicle);
 	vehicleHash = GAMEPLAY::GET_HASH_KEY((char*)_vehicle);
 	STREAMING::REQUEST_MODEL(vehicleHash);
 	while (!STREAMING::HAS_MODEL_LOADED(vehicleHash)) WAIT(0);
     if (stationaryScene) {
-        pos.x = 1000;
-        pos.y = 50;
+        pos.x = x;
+        pos.y = y;
         pos.z = 0;
-        heading = 60;
+        heading = 0;
         vehicles_created = false;
     }
 	while (!ENTITY::DOES_ENTITY_EXIST(vehicle)) {
@@ -565,15 +567,7 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 if (entitiesHit.find(entityID) != entitiesHit.end()) {
                     pointsHit = entitiesHit[entityID];
                 }
-                std::ostringstream oss2;
-                oss2 << "Before using entityID " << entityID << " in points hit.";
-                std::string str2 = oss2.str();
-                log(str2);
-                oss2 << " With value: " << pointsHit;
-                str2 = oss2.str();
-                log(str2);
                 _entity.AddMember("pointsHit", pointsHit, allocator);
-                log("After using entityID in points hit.");
 
                 drawBoxes(BLL, FUR, dim, upVector, rightVector, forwardVector, position, 1);
             }

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from deepgtav.messages import Start, Stop, Dataset, frame2numpy, Scenario
+from deepgtav.messages import Start, Stop, Dataset, frame2numpy, Scenario, Config
 from deepgtav.client import Client
+from deepgtav.export import printInstances, printCalib
 
 import argparse
 import time
@@ -12,98 +13,16 @@ width = 1920
 height = 1080
 index = 0
 
-base_folder = "E:\data\\"
-
-def getText(classID, distance):
-    if distance > 80:
-        return "DontCare"
-    return {
-        0: "Car",
-        1: "Motorcycle",
-        2: "Cyclist",
-        3: "QuadBike",
-        7: "Train",
-        10: "Pedestrian"
-    }.get(classID,"DontCare")
-    
-def printInstances(filename, list, augment):
-    text_file = open(filename, "a")
-    for instance in list:
-        #TODO Determine actual class of vehicle
-        text = getText(instance['classID'], instance['distance'])
-        text_file.write("%s" % text)
-
-        #TODO - Determine if truncated
-        text_file.write(" 0.00")
-
-        #TODO - Occlusion
-        text_file.write(" 0")
-        
-        #Observation angle TODO
-        text_file.write(" %f" % instance['alpha'])
-
-        #2D Bounding box TODO
-        for num in instance['bbox2d']:
-            text_file.write(" %d" % num)
-        
-        #3D dimensions
-        for num in instance['dimensions']:
-            text_file.write(" %f" % num)
-        
-        #3D location
-        for num in instance['location']:
-            text_file.write(" %f" % num)
-        
-        #Rotation_y
-        text_file.write(" %f" % instance['rotation_y'])
-
-        if augment:
-            text_file.write(" Augmentations:")
-            text_file.write(" %d" % instance['entityID'])
-            text_file.write(" %d" % instance['pointsHit'])
-            text_file.write(" %f" % instance['speed'])
-            text_file.write(" %f" % instance['heading'])
-            text_file.write(" %d" % instance['classID'])
-            
-            if instance['offscreen']:
-                text_file.write(" 0")
-            else:
-                text_file.write(" 1")
-
-            #3D dimensions offcenter
-            for num in instance['offcenter']:
-                text_file.write(" %f" % num)
-        
-            # for num in instance['FUR']:
-            #     text_file.write(" %f" % num)
-            # for num in instance['BLL']:
-            #     text_file.write(" %f" % num)
-
-        text_file.write("\n")
-    text_file.close()
-
-def printCalib(filename, focalLen):
-    text_file = open(filename, "w")
-    for i in range(0,4):
-        text_file.write("P%d:" % i)
-        text_file.write(" %f 0 %d 0" % (focalLen, width/2))
-        text_file.write(" 0 %f %d 0" % (focalLen, height/2))
-        text_file.write(" 0 0 1 0\n")
-
-    text_file.write("R0_rect: 1 0 0 0 1 0 0 0 1\n")
-    #From KITTI velo to KITTI cam
-    text_file.write("Tr_velo_to_cam: 0 -1 0 0 0 0 -1 0 1 0 0 0")
-
-    # From GTA to KITTI
-    # text_file.write("Tr_velo_to_cam: 1 0 0 0 0 0 -1 0 0 1 0 0")
-
+base_folder = "E:\\data\\"
+collectStationary = True
 
 # Stores a dataset file with data coming from DeepGTAV
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=None)
     parser.add_argument('-l', '--host', default='localhost', help='The IP where DeepGTAV is running')
     parser.add_argument('-p', '--port', default=8000, help='The port where DeepGTAV is running')
-    parser.add_argument('-d', '--dataset_path', default='dataset.pz', help='Place to store the dataset')
+    default_dataset_path = base_folder + 'dataset.pz'
+    parser.add_argument('-d', '--dataset_path', default=default_dataset_path, help='Place to store the dataset')
     args = parser.parse_args()
 
     # Creates a new connection to DeepGTAV using the specified ip and port. 
@@ -114,12 +33,11 @@ if __name__ == '__main__':
     # Configures the information that we want DeepGTAV to generate and send to us. 
     # See deepgtav/messages.py to see what options are supported
     # rate is in captures per second
-    collectStationary = False
     if collectStationary:
         dataset = Dataset(rate=60, frame=[width,height], throttle=True, brake=True, steering=True, vehicles=True, peds=True, reward=[15.0, 0.0],
                         direction=None, speed=True, yawRate=True, location=True, time=True, offscreen=True, showBoxes=False, pointclouds=False,
                         stationaryScene=True)
-        scenario = Scenario(drivingMode=[-1,0]) #Stationary/manual mode
+        scenario = Scenario(drivingMode=[-1,0], location=[320.0,3600.0]) #Stationary/manual mode
     else:
         dataset = Dataset(rate=1, frame=[width,height], throttle=True, brake=True, steering=True, vehicles=True, peds=True, reward=[15.0, 0.0],
                         direction=None, speed=True, yawRate=True, location=True, time=True, offscreen=True, showBoxes=False, pointclouds=True,
@@ -127,6 +45,16 @@ if __name__ == '__main__':
         scenario = Scenario(drivingMode=[786603,15.0]) # Driving style is set to normal, with a speed of 15.0 mph. All other scenario options are random.
     # Send the Start request to DeepGTAV.
     client.sendMessage(Start(dataset=dataset,scenario=scenario))
+
+    # if collectStationary:
+    #     stoptime = time.time() + 20
+    #     while time.time() < stoptime:
+    #         time.sleep(1)
+
+    #     scenario.location = [2000,0]
+    #     #scenario = Scenario(location=[1000,0])
+    #     print("Sending config message...")
+    #     client.sendMessage(Config(dataset=dataset,scenario=scenario))
 
     print("Message sent to client to begin.")
     # Start listening for messages coming from DeepGTAV. We do it for 80 hours
@@ -139,10 +67,10 @@ if __name__ == '__main__':
             
             # The frame is a numpy array and can be displayed using OpenCV or similar       
             image = frame2numpy(message['frame'], (width,height))
-            cv2.imwrite("%simages\%06d.png" % (base_folder, index), image)
+            cv2.imwrite("%simages\\%06d.png" % (base_folder, index), image)
             
             #Output object detections
-            filename = "%slabels\%06d.txt" % (base_folder, index)
+            filename = "%slabels\\%06d.txt" % (base_folder, index)
             text_file = open(filename, "w")
             text_file.write("")
             text_file.close()
@@ -150,7 +78,7 @@ if __name__ == '__main__':
             printInstances(filename, message['peds'], False)
             
             #Output object detections with augmentations
-            filename = "%slabels_aug\%06d.txt" % (base_folder, index)
+            filename = "%slabels_aug\\%06d.txt" % (base_folder, index)
             text_file = open(filename, "w")
             text_file.write("")
             text_file.close()
@@ -158,11 +86,9 @@ if __name__ == '__main__':
             printInstances(filename, message['peds'], True)
 
             #Print calib file
-            calib_file = "%scalib\%06d.txt" % (base_folder, index)
-            printCalib(calib_file, message['focalLen'])
-            
-            # cv2.imshow('img',image)
-            # cv2.waitKey(-1)
+            calib_file = "%scalib\\%06d.txt" % (base_folder, index)
+            printCalib(calib_file, message['focalLen'], width, height)
+
         except KeyboardInterrupt:
             break
             
