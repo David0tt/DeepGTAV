@@ -281,7 +281,8 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
         Vector3 vec_cam_coord = convertCoordinateSystem(vec, currentForwardVec, currentRightVec, currentUpVec);
 
         int entityID = 0;
-        if (ENTITY::IS_ENTITY_A_PED(hitEntity) || ENTITY::IS_ENTITY_A_VEHICLE(hitEntity)) {
+        if ((ENTITY::IS_ENTITY_A_PED(hitEntity) && PED::GET_PED_TYPE(hitEntity) != 28) //PED_TYPE 28 are animals
+            || ENTITY::IS_ENTITY_A_VEHICLE(hitEntity)) {
             entityID = hitEntity;
         }
 
