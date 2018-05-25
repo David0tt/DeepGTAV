@@ -34,3 +34,26 @@ typedef struct BBox2D {
         return top + height() / 2;
     }
 };
+
+typedef struct VehicleToCreate {
+    std::string model;
+    float forward;
+    float right;
+    float heading;
+    int color;
+    int color2;
+
+    VehicleToCreate(std::string _model, float _forward, float _right, float _heading,
+        int _color, int _color2) :
+        model(_model),
+        forward(_forward),
+        right(_right),
+        heading(_heading),
+        color(_color),
+        color2(_color2)
+    {
+    }
+
+    VehicleToCreate(){
+    }
+};

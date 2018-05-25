@@ -144,6 +144,34 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
     if (!dc["stationaryScene"].IsNull()) stationaryScene = dc["stationaryScene"].GetBool();
     else if (setDefaults) stationaryScene = _STATIONARY_SCENE_;
 
+    if (stationaryScene) {
+        vehiclesToCreate.clear();
+        log("About to get vehicles");
+        if (!dc["vehiclesToCreate"].IsNull()) {
+            log("Vehicles non-null");
+            const rapidjson::Value& jsonVehicles = dc["vehiclesToCreate"];
+            for (rapidjson::SizeType i = 0; i < jsonVehicles.Size(); i++) {
+                log("At least one");
+                bool noHit = false;
+                VehicleToCreate vehicleToCreate;
+                const rapidjson::Value& jVeh = jsonVehicles[i];
+
+                if (!jVeh[0].IsNull()) vehicleToCreate.model = jVeh[0].GetString();
+                if (!jVeh[1].IsNull()) vehicleToCreate.forward = jVeh[1].GetFloat();
+                if (!jVeh[2].IsNull()) vehicleToCreate.right = jVeh[2].GetFloat();
+                if (!jVeh[3].IsNull()) vehicleToCreate.heading = jVeh[3].GetFloat();
+                if (!jVeh[4].IsNull()) vehicleToCreate.color = jVeh[4].GetInt();
+                if (!jVeh[5].IsNull()) vehicleToCreate.color2 = jVeh[5].GetInt();
+                else noHit = true;
+
+                if (!noHit) {
+                    log("Pushing back vehicle");
+                    vehiclesToCreate.push_back(vehicleToCreate);
+                }
+            }
+        }
+    }
+
     //Create camera intrinsics matrix
     calcCameraIntrinsics();
 
@@ -167,6 +195,7 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
 	if (time) d.AddMember("time", 0, allocator);
     d.AddMember("index", 0, allocator);
     d.AddMember("focalLen", 0.0, allocator);
+    d.AddMember("curPosition", a, allocator);
 
 	screenCapturer = new ScreenCapturer(width, height);
 }
@@ -400,6 +429,14 @@ void Scenario::drawVectorFromPosition(Vector3 vector, int blue, int green) {
 void Scenario::setPosition() {
     //NOTE: The forward and right vectors are swapped (compared to native function labels) to keep consistency with coordinate system
     ENTITY::GET_ENTITY_MATRIX(vehicle, &currentForwardVector, &currentRightVector, &currentUpVector, &currentPos); //Blue or red pill
+
+    Value _vector(kArrayType);
+    Document::AllocatorType& allocator = d.GetAllocator();
+
+    _vector.SetArray();
+    _vector.PushBack(currentPos.x, allocator).PushBack(currentPos.y, allocator).PushBack(currentPos.z, allocator);
+
+    d["curPosition"] = _vector;
 }
 
 BBox2D Scenario::BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector) {
@@ -473,6 +510,8 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
         ENTITY::GET_ENTITY_MATRIX(entityID, &forwardVector, &rightVector, &upVector, &position); //Blue or red pill
         float distance = sqrt(SYSTEM::VDIST2(currentPos.x, currentPos.y, currentPos.z, position.x, position.y, position.z));
         if (distance < 150) {
+            //An attempt to try to hit vehicles reliably past 30m
+            //ENTITY::SET_ENTITY_LOD_DIST(entityID, 0xFFFF);
             if (ENTITY::HAS_ENTITY_CLEAR_LOS_TO_ENTITY(vehicle, entityID, 19)) {
                 success = true;
                 //Check if we see it (not occluded)
@@ -699,21 +738,31 @@ void Scenario::setupLiDAR() {
     }
 }
 
+void Scenario::createVehicle(const char* model, float relativeForward, float relativeRight, float heading, int color, int color2) {
+    Hash vehicleHash = GAMEPLAY::GET_HASH_KEY(const_cast<char*>(model));
+    Vector3 pos;
+    pos.x = currentPos.x + currentForwardVector.x * relativeForward + currentRightVector.x * relativeRight;
+    pos.y = currentPos.y + currentForwardVector.y * relativeForward + currentRightVector.y * relativeRight;
+    pos.z = currentPos.z + currentForwardVector.z * relativeForward + currentRightVector.z * relativeRight;
+    STREAMING::REQUEST_MODEL(vehicleHash);
+    while (!STREAMING::HAS_MODEL_LOADED(vehicleHash)) WAIT(0);
+    Vehicle tempV = VEHICLE::CREATE_VEHICLE(vehicleHash, pos.x, pos.y, pos.z, heading, FALSE, FALSE);
+    WAIT(0);
+    VEHICLE::SET_VEHICLE_COLOURS(tempV, color, color2);
+    VEHICLE::SET_VEHICLE_ON_GROUND_PROPERLY(tempV);
+    ENTITY::SET_ENTITY_AS_NO_LONGER_NEEDED(&tempV);
+}
+
 void Scenario::createVehicles() {
     setPosition();
     if (stationaryScene && !vehicles_created) {
-        log("Creating vehicle");
-        Hash vehicleHash = GAMEPLAY::GET_HASH_KEY("benson");
-        Vector3 pos;
-        pos.x = currentPos.x + currentForwardVector.x * 15 + currentRightVector.x * 0;
-        pos.y = currentPos.y + currentForwardVector.y * 15 + currentRightVector.y * 0;
-        pos.z = currentPos.z + currentForwardVector.z * 15;
-        STREAMING::REQUEST_MODEL(vehicleHash);
-        while (!STREAMING::HAS_MODEL_LOADED(vehicleHash)) WAIT(0);
-        Vehicle tempV = VEHICLE::CREATE_VEHICLE(vehicleHash, pos.x, pos.y, pos.z, 60, FALSE, FALSE);
-        WAIT(0);
-        VEHICLE::SET_VEHICLE_ON_GROUND_PROPERLY(vehicle);
-        ENTITY::SET_ENTITY_AS_NO_LONGER_NEEDED(&tempV);
+        log("Creating vehicles");
+        for (int i = 0; i < vehiclesToCreate.size(); i++) {
+            VehicleToCreate v = vehiclesToCreate[i];
+            createVehicle(v.model.c_str(), v.forward, v.right, v.heading, v.color, v.color2);
+        }
+        /*createVehicle("benson", 20.0, 0.0, 60.0);
+        createVehicle("voltic", 15.0, 5.0, 180.0);*/
         vehicles_created = true;
     }
 }
@@ -769,7 +818,14 @@ void Scenario::collectLiDAR() {
 }
 
 void Scenario::increaseIndex() {
-    ++instance_index;
+    if (pointclouds) {
+        if (lidar_initialized) {
+            ++instance_index;
+        }
+    }
+    else {
+        ++instance_index;
+    }
 }
 
 void Scenario::setIndex() {

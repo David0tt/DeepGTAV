@@ -89,6 +89,7 @@ private:
     std::unordered_map<int,int> entitiesHit;
 
     bool vehicles_created = false;
+    std::vector<VehicleToCreate> vehiclesToCreate;
 
     //Camera intrinsic parameters
     float intrinsics[3];
@@ -134,6 +135,7 @@ private:
     float observationAngle(Vector3 position);
     void drawVectorFromPosition(Vector3 vector, int blue, int green);
     void createVehicles();
+    void createVehicle(const char* model, float relativeForward, float relativeRight, float heading, int color, int color2);
     void increaseIndex();
 
     BBox2D BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector);

@@ -34,9 +34,12 @@ if __name__ == '__main__':
     # See deepgtav/messages.py to see what options are supported
     # rate is in captures per second
     if collectStationary:
+        vehicles = []
+        vehicles.append(["voltic", 20, 0, 360, 27, 0])
+        vehicles.append(["voltic", 15, 5, 180, 64, 0])
         dataset = Dataset(rate=60, frame=[width,height], throttle=True, brake=True, steering=True, vehicles=True, peds=True, reward=[15.0, 0.0],
-                        direction=None, speed=True, yawRate=True, location=True, time=True, offscreen=True, showBoxes=False, pointclouds=False,
-                        stationaryScene=True)
+                        direction=None, speed=True, yawRate=True, location=True, time=True, offscreen=True, showBoxes=False, pointclouds=True,
+                        stationaryScene=True, vehiclesToCreate=vehicles)
         scenario = Scenario(drivingMode=[-1,0], location=[320.0,3600.0]) #Stationary/manual mode
     else:
         dataset = Dataset(rate=1, frame=[width,height], throttle=True, brake=True, steering=True, vehicles=True, peds=True, reward=[15.0, 0.0],
@@ -88,6 +91,13 @@ if __name__ == '__main__':
             #Print calib file
             calib_file = "%scalib\\%06d.txt" % (base_folder, index)
             printCalib(calib_file, message['focalLen'], width, height)
+
+            #Output current location:
+            filename = "%slocation.txt" % (base_folder)
+            text_file = open(filename, "w")
+            ownLocation = message['curPosition']
+            text_file.write("x: %d, y: %d" % (ownLocation[0], ownLocation[1]))
+            text_file.close()
 
         except KeyboardInterrupt:
             break
