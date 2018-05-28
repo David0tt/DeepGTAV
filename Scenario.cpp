@@ -36,6 +36,18 @@ void Scenario::parseScenarioConfig(const Value& sc, bool setDefaults) {
 
 		if (!location[1].IsNull()) y = location[1].GetFloat(); 
 		else if (setDefaults) y = 8000 * ((float)rand() / RAND_MAX) - 2000;
+
+        if (!location[2].IsNull()) z = location[2].GetFloat();
+        else if (setDefaults) z = 0;
+
+        if (!location[3].IsNull()) {
+            log("Location 2 is not null");
+            startHeading = location[3].GetFloat();
+        }
+        else if (setDefaults) {
+            log("Location 3 is NULL");
+            startHeading = 0;
+        }
 	}
 	else if (setDefaults) {
 		x = 5000 * ((float)rand() / RAND_MAX) - 2500;
@@ -170,6 +182,29 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
                 }
             }
         }
+        pedsToCreate.clear();
+        log("About to get ped");
+        if (!dc["pedsToCreate"].IsNull()) {
+            log("ped non-null");
+            const rapidjson::Value& jsonPeds = dc["pedsToCreate"];
+            for (rapidjson::SizeType i = 0; i < jsonPeds.Size(); i++) {
+                log("At least one");
+                bool noHit = false;
+                PedToCreate pedToCreate;
+                const rapidjson::Value& jPed = jsonPeds[i];
+
+                if (!jPed[0].IsNull()) pedToCreate.model = jPed[0].GetInt();
+                if (!jPed[1].IsNull()) pedToCreate.forward = jPed[1].GetFloat();
+                if (!jPed[2].IsNull()) pedToCreate.right = jPed[2].GetFloat();
+                if (!jPed[3].IsNull()) pedToCreate.heading = jPed[3].GetFloat();
+                else noHit = true;
+
+                if (!noHit) {
+                    log("Pushing back ped");
+                    pedsToCreate.push_back(pedToCreate);
+                }
+            }
+        }
     }
 
     //Create camera intrinsics matrix
@@ -219,7 +254,11 @@ void Scenario::buildScenario() {
         pos.x = x;
         pos.y = y;
         pos.z = 0;
-        heading = 0;
+        heading = startHeading;
+        std::ostringstream oss;
+        oss << "Start heading: " << startHeading;
+        std::string str = oss.str();
+        log(str);
         vehicles_created = false;
     }
 	while (!ENTITY::DOES_ENTITY_EXIST(vehicle)) {
@@ -429,12 +468,13 @@ void Scenario::drawVectorFromPosition(Vector3 vector, int blue, int green) {
 void Scenario::setPosition() {
     //NOTE: The forward and right vectors are swapped (compared to native function labels) to keep consistency with coordinate system
     ENTITY::GET_ENTITY_MATRIX(vehicle, &currentForwardVector, &currentRightVector, &currentUpVector, &currentPos); //Blue or red pill
+    float heading = GAMEPLAY::GET_HEADING_FROM_VECTOR_2D(currentForwardVector.x, currentForwardVector.y);
 
     Value _vector(kArrayType);
     Document::AllocatorType& allocator = d.GetAllocator();
 
     _vector.SetArray();
-    _vector.PushBack(currentPos.x, allocator).PushBack(currentPos.y, allocator).PushBack(currentPos.z, allocator);
+    _vector.PushBack(currentPos.x, allocator).PushBack(currentPos.y, allocator).PushBack(currentPos.z, allocator).PushBack(heading,allocator);
 
     d["curPosition"] = _vector;
 }
@@ -487,8 +527,10 @@ BBox2D Scenario::BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwa
         "PosX: " << bbox.posX() << " PosY: " << bbox.posY() << " Width: " << bbox.width() << " Height: " << bbox.height();
     std::string str2 = oss2.str();
     log(str2);
-    GRAPHICS::DRAW_RECT(bbox.posX(), bbox.posY(), bbox.width(), bbox.height(), 0, 255, 0, 100);
-    WAIT(0);
+    if (showBoxes) {
+        GRAPHICS::DRAW_RECT(bbox.posX(), bbox.posY(), bbox.width(), bbox.height(), 0, 255, 0, 100);
+        WAIT(0);
+    }
     return bbox;
 }
 
@@ -511,7 +553,7 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
         float distance = sqrt(SYSTEM::VDIST2(currentPos.x, currentPos.y, currentPos.z, position.x, position.y, position.z));
         if (distance < 150) {
             //An attempt to try to hit vehicles reliably past 30m
-            //ENTITY::SET_ENTITY_LOD_DIST(entityID, 0xFFFF);
+            ENTITY::SET_ENTITY_LOD_DIST(entityID, 0xFFFF);
             if (ENTITY::HAS_ENTITY_CLEAR_LOS_TO_ENTITY(vehicle, entityID, 19)) {
                 success = true;
                 //Check if we see it (not occluded)
@@ -748,9 +790,35 @@ void Scenario::createVehicle(const char* model, float relativeForward, float rel
     while (!STREAMING::HAS_MODEL_LOADED(vehicleHash)) WAIT(0);
     Vehicle tempV = VEHICLE::CREATE_VEHICLE(vehicleHash, pos.x, pos.y, pos.z, heading, FALSE, FALSE);
     WAIT(0);
-    VEHICLE::SET_VEHICLE_COLOURS(tempV, color, color2);
+    if (color != -1) {
+        VEHICLE::SET_VEHICLE_COLOURS(tempV, color, color2);
+    }
     VEHICLE::SET_VEHICLE_ON_GROUND_PROPERLY(tempV);
     ENTITY::SET_ENTITY_AS_NO_LONGER_NEEDED(&tempV);
+}
+
+void Scenario::createPed(int model, float relativeForward, float relativeRight, float heading, int task) {
+    //Ped hashes found at: https://www.se7ensins.com/forums/threads/request-pc-ped-hashes.1317848/
+    Hash hash = 0x505603B9;// GAMEPLAY::GET_HASH_KEY(const_cast<char*>(model));
+    Vector3 pos;
+    pos.x = currentPos.x + currentForwardVector.x * relativeForward + currentRightVector.x * relativeRight;
+    pos.y = currentPos.y + currentForwardVector.y * relativeForward + currentRightVector.y * relativeRight;
+    pos.z = currentPos.z + currentForwardVector.z * relativeForward + currentRightVector.z * relativeRight;
+    STREAMING::REQUEST_MODEL(hash);
+    while (!STREAMING::HAS_MODEL_LOADED(hash)) WAIT(0);
+    Ped temp = PED::CREATE_PED(4, hash, pos.x, pos.y, pos.z, heading, FALSE, FALSE);
+    WAIT(0);
+    AI::TASK_STAND_STILL(temp, -1);
+    if (task == 0) {
+        PED::SET_PED_DUCKING(temp, true);
+    }
+    else if (task == 1) {
+        PED::SET_PED_PINNED_DOWN(temp, true, -1);
+    }
+    else if (task == 2) {
+        AI::TASK_WRITHE(temp, player, 999999, false);
+    }
+    ENTITY::SET_ENTITY_AS_NO_LONGER_NEEDED(&temp);
 }
 
 void Scenario::createVehicles() {
@@ -760,6 +828,11 @@ void Scenario::createVehicles() {
         for (int i = 0; i < vehiclesToCreate.size(); i++) {
             VehicleToCreate v = vehiclesToCreate[i];
             createVehicle(v.model.c_str(), v.forward, v.right, v.heading, v.color, v.color2);
+        }
+        log("Creating peds");
+        for (int i = 0; i < pedsToCreate.size(); i++) {
+            PedToCreate p = pedsToCreate[i];
+            createPed(p.model, p.forward, p.right, p.heading, i);
         }
         /*createVehicle("benson", 20.0, 0.0, 60.0);
         createVehicle("voltic", 15.0, 5.0, 180.0);*/

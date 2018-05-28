@@ -40,7 +40,8 @@ private:
 	Cam camera = NULL;
 	Vector3 dir;
 
-	float x, y;
+	float x, y, z;
+    float startHeading;
 	int hour, minute;
 	const char* _weather;
 	const char* _vehicle;
@@ -84,12 +85,13 @@ private:
     //LiDAR variables
     LiDAR lidar;
     bool lidar_initialized = false;
-    int instance_index = 20;
+    int instance_index = 30;
     int pointCloudSize = 0;
     std::unordered_map<int,int> entitiesHit;
 
     bool vehicles_created = false;
     std::vector<VehicleToCreate> vehiclesToCreate;
+    std::vector<PedToCreate> pedsToCreate;
 
     //Camera intrinsic parameters
     float intrinsics[3];
@@ -136,6 +138,7 @@ private:
     void drawVectorFromPosition(Vector3 vector, int blue, int green);
     void createVehicles();
     void createVehicle(const char* model, float relativeForward, float relativeRight, float heading, int color, int color2);
+    void createPed(int model, float relativeForward, float relativeRight, float heading, int task);
     void increaseIndex();
 
     BBox2D BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector);

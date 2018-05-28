@@ -7,7 +7,7 @@ from numpy.lib.stride_tricks import as_strided
 
 class Scenario:
     def __init__(self, location=None, time=None, weather=None, vehicle=None, drivingMode=None):
-        self.location = location #[x,y]
+        self.location = location #[x,y,heading] (heading optional)
         self.time = time #[hour, minute]
         self.weather = weather #string
         self.vehicle = vehicle #string
@@ -16,7 +16,7 @@ class Scenario:
 class Dataset:
     def __init__(self, rate=None, frame=None, vehicles=None, peds=None, trafficSigns=None, direction=None, reward=None, 
             throttle=None, brake=None, steering=None, speed=None, yawRate=None, drivingMode=None, location=None, time=None,
-            offscreen=None, showBoxes=None, pointclouds=None, stationaryScene=None, vehiclesToCreate=None):
+            offscreen=None, showBoxes=None, pointclouds=None, stationaryScene=None, vehiclesToCreate=None, pedsToCreate=None):
         self.rate = rate #Hz
         self.frame = frame #[width, height]
         self.vehicles = vehicles #boolean
@@ -37,6 +37,7 @@ class Dataset:
         self.pointclouds = pointclouds #boolean
         self.stationaryScene = stationaryScene #boolean
         self.vehiclesToCreate = vehiclesToCreate #array of [model, pos.forward, pos.right, heading, color]
+        self.pedsToCreate = pedsToCreate
 
 class Start:
     def __init__(self, scenario=None, dataset=None):

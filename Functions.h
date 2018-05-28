@@ -57,3 +57,10 @@ typedef struct VehicleToCreate {
     VehicleToCreate(){
     }
 };
+
+typedef struct PedToCreate {
+    int model;
+    float forward;
+    float right;
+    float heading;
+};
