@@ -13,6 +13,22 @@ https://github.com/gdpinchina/A-virtual-LiDAR-for-DeepGTAV
 #define _LIDAR_INIT_AS_2D_ 1
 #define _LIDAR_INIT_AS_3D_ 2
 
+struct HitLidarEntity {
+    int pointsHit;
+    Vector3 forward;
+    Vector3 position;
+    float maxFront;
+    float maxBack;
+
+    HitLidarEntity(Vector3 _forward, Vector3 _position) {
+        pointsHit = 1;
+        forward = _forward;
+        position = _position;
+        maxFront = 0;
+        maxBack = 0;
+    }
+};
+
 class LiDAR
 {
 public:
@@ -20,7 +36,6 @@ public:
     ~LiDAR();
 
 public:
-
     //Note: polar-coordinate definition below: 
     //1. Horizontal angle ranges from 0 to 360 degree.
     //	[horizRiLimit, horizLeLimit), anti-clock, namely from rightside to leftside.
@@ -53,7 +68,7 @@ public:
 
     void DestroyLiDAR();
 
-    float* GetPointClouds(int &size, std::unordered_map<int, int> *entitiesHit, int param);
+    float* GetPointClouds(int &size, std::unordered_map<int, HitLidarEntity*> *entitiesHit, int param);
     int getTotalSmplNum();
     int getVertiSmplNum();
     int getHorizSmplNum();
@@ -98,6 +113,6 @@ private:
     float m_max_dist;
     float m_min_dist;
 
-    std::unordered_map<int, int>* m_entitiesHit;
+    std::unordered_map<int, HitLidarEntity*>* m_entitiesHit;
     int native_param = 7;
 };

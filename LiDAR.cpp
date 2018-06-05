@@ -172,7 +172,7 @@ void LiDAR::DestroyLiDAR()
     m_isAttach = false;
 }
 
-float * LiDAR::GetPointClouds(int &size, std::unordered_map<int,int> *entitiesHit, int param)
+float * LiDAR::GetPointClouds(int &size, std::unordered_map<int, HitLidarEntity*> *entitiesHit, int param)
 {
     native_param = param;
     std::ostringstream oss;
@@ -299,10 +299,22 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
         m_pointsHit++;
 
         if (m_entitiesHit->find(entityID) != m_entitiesHit->end()) {
-            m_entitiesHit->at(entityID)++;
+            HitLidarEntity* hitEnt = m_entitiesHit->at(entityID);
+            hitEnt->pointsHit++;
+            Vector3 vecFromObjCenter = subtractVector(vec, hitEnt->position);
+            float forwardFromObjCenter = vecFromObjCenter.x * hitEnt->forward.x + vecFromObjCenter.y * hitEnt->forward.y + vecFromObjCenter.z * hitEnt->forward.z;
+            if (forwardFromObjCenter > hitEnt->maxFront) hitEnt->maxFront = forwardFromObjCenter;
+            if (forwardFromObjCenter < hitEnt->maxBack) hitEnt->maxBack = forwardFromObjCenter;
         }
         else {
-            m_entitiesHit->insert(std::pair<int,int>(entityID,1));
+            Vector3 forwardVector;
+            Vector3 rightVector;
+            Vector3 upVector;
+            Vector3 position;
+            ENTITY::GET_ENTITY_MATRIX(entityID, &forwardVector, &rightVector, &upVector, &position); //Blue or red pill
+            position = subtractVector(position, m_curPos);
+            HitLidarEntity* hitEnt = new HitLidarEntity(forwardVector, position);
+            m_entitiesHit->insert(std::pair<int,HitLidarEntity*>(entityID,hitEnt));
         }
 
         /********Debug code for trying to get LiDAR to work reliably past 30m

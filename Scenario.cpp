@@ -680,8 +680,13 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
             ENTITY::SET_ENTITY_LOD_DIST(entityID, 0xFFFF);
 
             int pointsHit = 0;
+            float maxBack = 0;
+            float maxFront = 0;
             if (entitiesHit.find(entityID) != entitiesHit.end()) {
-                pointsHit = entitiesHit[entityID];
+                HitLidarEntity* hitLidarEnt = entitiesHit[entityID];
+                pointsHit = hitLidarEnt->pointsHit;
+                maxBack = hitLidarEnt->maxBack;
+                maxFront = hitLidarEnt->maxFront;
             }
 
             if (ENTITY::HAS_ENTITY_CLEAR_LOS_TO_ENTITY(vehicle, entityID, 19) || pointsHit > 0) {
@@ -727,9 +732,19 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
 
                 //Amount dimensions are offcenter
                 Vector3 offcenter;
-                offcenter.x = max.x + min.x;
-                offcenter.y = max.y + min.y;
+                offcenter.x = 0;// max.x + min.x;
+                offcenter.y = 0;// max.y + min.y;
                 offcenter.z = min.z; //KITTI position is at object ground plane
+
+                //Correct offcenter with LiDAR info
+                if (maxFront > dim.y) {
+                    offcenter.y = maxFront - dim.y;
+                    log("Hit offcenter from front.");
+                }
+                if (-maxBack > dim.y) {
+                    offcenter.y = dim.y + maxBack;
+                    log("Hit offcenter from back.");
+                }
 
                 Vector3 offcenterPosition = convertCoordinateSystem(offcenter, forwardVector, rightVector, upVector);
 

@@ -64,3 +64,11 @@ typedef struct PedToCreate {
     float right;
     float heading;
 };
+
+static Vector3 subtractVector(Vector3 first, Vector3 subtract) {
+    Vector3 diff;
+    diff.x = first.x - subtract.x;
+    diff.y = first.y - subtract.y;
+    diff.z = first.z - subtract.z;
+    return diff;
+}

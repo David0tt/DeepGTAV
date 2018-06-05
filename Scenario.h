@@ -87,7 +87,7 @@ private:
     bool lidar_initialized = false;
     int instance_index = 30;
     int pointCloudSize = 0;
-    std::unordered_map<int,int> entitiesHit;
+    std::unordered_map<int, HitLidarEntity*> entitiesHit;
     int lidar_param = 7;
 
     bool vehicles_created = false;
