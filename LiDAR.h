@@ -53,7 +53,7 @@ public:
 
     void DestroyLiDAR();
 
-    float* GetPointClouds(int &size, std::unordered_map<int, int> *entitiesHit);
+    float* GetPointClouds(int &size, std::unordered_map<int, int> *entitiesHit, int param);
     int getTotalSmplNum();
     int getVertiSmplNum();
     int getHorizSmplNum();
@@ -99,4 +99,5 @@ private:
     float m_min_dist;
 
     std::unordered_map<int, int>* m_entitiesHit;
+    int native_param = 7;
 };

@@ -172,8 +172,13 @@ void LiDAR::DestroyLiDAR()
     m_isAttach = false;
 }
 
-float * LiDAR::GetPointClouds(int &size, std::unordered_map<int,int> *entitiesHit)
+float * LiDAR::GetPointClouds(int &size, std::unordered_map<int,int> *entitiesHit, int param)
 {
+    native_param = param;
+    std::ostringstream oss;
+    oss << "Native param: " << native_param;
+    std::string str = oss.str();
+    log(str);
     m_entitiesHit = entitiesHit;
     m_pointsHit = 0;
     if (m_pPointClouds == NULL || m_initType == _LIDAR_NOT_INIT_YET_ || !m_isAttach)
@@ -259,7 +264,7 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
 
     //options: -1=everything
     //New function is called _START_SHAPE_TEST_RAY
-    raycast_handle = WORLDPROBE::_CAST_RAY_POINT_TO_POINT(m_curPos.x, m_curPos.y, m_curPos.z, target.x, target.y, target.z, -1, m_ownCar, 7);
+    raycast_handle = WORLDPROBE::_CAST_RAY_POINT_TO_POINT(m_curPos.x, m_curPos.y, m_curPos.z, target.x, target.y, target.z, -1, m_ownCar, native_param);
 
     //New function is called GET_SHAPE_TEST_RESULT
     WORLDPROBE::_GET_RAYCAST_RESULT(raycast_handle, &isHit, &endCoord, &surfaceNorm, &hitEntity);

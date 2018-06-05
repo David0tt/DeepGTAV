@@ -88,6 +88,7 @@ private:
     int instance_index = 30;
     int pointCloudSize = 0;
     std::unordered_map<int,int> entitiesHit;
+    int lidar_param = 7;
 
     bool vehicles_created = false;
     std::vector<VehicleToCreate> vehiclesToCreate;

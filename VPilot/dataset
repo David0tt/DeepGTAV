@@ -17,6 +17,7 @@ base_folder = "E:\\data\\"
 collectStationary = True
 collectVehicles = True
 collectPeds = True
+collectOffscreen = False
 
 # Stores a dataset file with data coming from DeepGTAV
 if __name__ == '__main__':
@@ -47,11 +48,13 @@ if __name__ == '__main__':
         vehicles.append(["benson", -10, 0, 0, 0, 0])
         peds = []
         peds.append([0, 10, 5, 0])
-        peds.append([0, 10, 0, 0])
+        #peds.append([0, 10, 0, 0])
         peds.append([0, 10, -5, 0])
+        startIndex = 60
+        lidarParam = 7
         dataset = Dataset(rate=1, frame=[width,height], throttle=True, brake=True, steering=True, vehicles=collectVehicles, peds=collectPeds, reward=[15.0, 0.0],
-                        direction=None, speed=True, yawRate=True, location=True, time=True, offscreen=True, showBoxes=False, pointclouds=True,
-                        stationaryScene=True, vehiclesToCreate=vehicles, pedsToCreate=peds)
+                        direction=None, speed=True, yawRate=True, location=True, time=True, offscreen=collectOffscreen, showBoxes=False, pointclouds=True,
+                        stationaryScene=True, vehiclesToCreate=vehicles, pedsToCreate=peds, startIndex=startIndex, lidarParam=lidarParam)
         #List of locations
         #Nearplane
         # startLocation = [320.0,3600.0]
@@ -68,7 +71,7 @@ if __name__ == '__main__':
         scenario = Scenario(drivingMode=[-1,0], location=startLocation) #Stationary/manual mode
     else:
         dataset = Dataset(rate=60, frame=[width,height], throttle=True, brake=True, steering=True, vehicles=collectVehicles, peds=collectPeds, reward=[15.0, 0.0],
-                        direction=None, speed=True, yawRate=True, location=True, time=True, offscreen=False, showBoxes=False, pointclouds=True,
+                        direction=None, speed=True, yawRate=True, location=True, time=True, offscreen=collectOffscreen, showBoxes=False, pointclouds=True,
                         stationaryScene=False)
         scenario = Scenario(drivingMode=[786603,15.0]) # Driving style is set to normal, with a speed of 15.0 mph. All other scenario options are random.
     # Send the Start request to DeepGTAV.
