@@ -98,16 +98,16 @@ void OnKeyboardMessage(DWORD key, WORD repeats, BYTE scanCode, BOOL isExtended, 
 {
 	if(key == 'L' && !wasDownBefore && !isUpNow)
 	{
-		auto f = fopen("depth.raw", "w");
+		auto f = fopen("depth.raw", "wb");
 		void* buf;
 		int size = export_get_depth_buffer(&buf);
 		fwrite(buf, 1, size, f);
 		fclose(f);
-		f = fopen("stencil.raw", "w");
+		f = fopen("stencil.raw", "wb");
 		size = export_get_stencil_buffer(&buf);
 		fwrite(buf, 1, size, f);
 		fclose(f);
-		f = fopen("color.raw", "w");
+		f = fopen("color.raw", "wb");
 		size = export_get_color_buffer(&buf);
 		fwrite(buf, 1, size, f);
 		fclose(f);

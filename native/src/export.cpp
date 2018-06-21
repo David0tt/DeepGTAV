@@ -47,7 +47,7 @@ static void unpack_depth(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Reso
 	int screenResX;
 	int screenResY;
 	ComPtr<ID3D11Texture2D> src_tex;
-	GRAPHICS::GET_SCREEN_RESOLUTION(&screenResX, &screenResY);
+	GRAPHICS::_GET_SCREEN_ACTIVE_RESOLUTION(&screenResX, &screenResY);
 	
 	hr = src->QueryInterface(__uuidof(ID3D11Texture2D), &src_tex);
 	if (hr != S_OK) throw std::system_error(hr, std::system_category());
