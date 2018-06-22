@@ -410,6 +410,7 @@ StringBuffer Scenario::generateMessage() {
 	buffer.Clear();
 	Writer<StringBuffer> writer(buffer);
 	
+    GAMEPLAY::SET_GAME_PAUSED(true);
 	screenCapturer->capture();
 
     setIndex();
@@ -430,6 +431,7 @@ StringBuffer Scenario::generateMessage() {
 	if (time) setTime();
     setFocalLength();
     increaseIndex();
+    GAMEPLAY::SET_GAME_PAUSED(false);
 
 	d.Accept(writer);
 
@@ -931,15 +933,6 @@ void Scenario::setReward() {
 	d["reward"] = rewarder->computeReward(vehicle);
 }
 
-void Scenario::setupLiDAR() {
-    if (pointclouds && !lidar_initialized) //flag if activate the LiDAR
-    {
-        lidar.Init3DLiDAR_FOV(120.0f, 359.9f, 0.09f, 26.9f, 0.420f);
-        lidar.AttachLiDAR2Camera(camera, ped);
-        lidar_initialized = true;
-    }
-}
-
 void Scenario::createVehicle(const char* model, float relativeForward, float relativeRight, float heading, int color, int color2) {
     Hash vehicleHash = GAMEPLAY::GET_HASH_KEY(const_cast<char*>(model));
     Vector3 pos;
@@ -1000,44 +993,16 @@ void Scenario::createVehicles() {
     }
 }
 
+void Scenario::setupLiDAR() {
+    if (pointclouds && !lidar_initialized) //flag if activate the LiDAR
+    {
+        lidar.Init3DLiDAR_FOV(120.0f, 359.9f, 0.09f, 26.9f, 0.420f);
+        lidar.AttachLiDAR2Camera(camera, ped);
+        lidar_initialized = true;
+    }
+}
+
 void Scenario::collectLiDAR() {
-    /**********Debug code for trying to get LiDAR to work reliably past 30m
-    //Collect array of nearby peds/vehicles so that LiDAR hits them
-    const int numElements = 16;
-    const int arrSize = numElements * 2 + 2;  //Start at index 2, and the odd elements are padding
-    Ped pedsTemp[arrSize];
-    Vehicle vehiclesTemp[arrSize];
-    //0 index is the size of the array
-    pedsTemp[0] = numElements;
-    vehiclesTemp[0] = numElements;
-
-    int count = PED::GET_PED_NEARBY_VEHICLES(PLAYER::PLAYER_PED_ID(), pedsTemp);
-
-    for (int i = 0; i < count; ++i)
-    {
-        int offsettedID = i * 2 + 2;
-        if (ENTITY::DOES_ENTITY_EXIST(pedsTemp[offsettedID]))
-        {
-            ENTITY::SET_PED_AS_NO_LONGER_NEEDED(&pedsTemp[offsettedID]);
-            //ENTITY::SET_ENTITY_CAN_BE_DAMAGED(pedsTemp[offsettedID],false);
-            //PED::EXPLODE_PED_HEAD(peds[offsettedID], 0x5FC3C11);
-        }
-    }
-
-    count = PED::GET_PED_NEARBY_VEHICLES(PLAYER::PLAYER_PED_ID(), vehiclesTemp);
-
-    for (int i = 0; i < count; ++i)
-    {
-        int offsettedID = i * 2 + 2;
-        if (ENTITY::DOES_ENTITY_EXIST(vehiclesTemp[offsettedID]))
-        {
-            ENTITY::SET_VEHICLE_AS_NO_LONGER_NEEDED(&vehiclesTemp[offsettedID]);
-            //ENTITY::SET_ENTITY_CAN_BE_DAMAGED(vehiclesTemp[offsettedID], false);
-            //PED::EXPLODE_PED_HEAD(peds[offsettedID], 0x5FC3C11);
-        }
-    }
-    */
-
     entitiesHit.clear();
     lidar.updateCurrentPosition(currentForwardVector, currentRightVector, currentUpVector);
     float * pointCloud = lidar.GetPointClouds(pointCloudSize, &entitiesHit, lidar_param);
