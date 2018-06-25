@@ -23,6 +23,7 @@
     <ClInclude Include="defaults.h" />
     <ClInclude Include="Functions.h" />
     <ClInclude Include="LiDAR.h" />
+    <ClInclude Include="RAGETransforms.h" />
     <ClInclude Include="Rewarders\Rewarder.h" />
     <ClInclude Include="Rewarders\GeneralRewarder.h" />
     <ClInclude Include="Rewarders\LaneRewarder.h" />
@@ -80,7 +81,9 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalOptions>lib\ScriptHookV.lib %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>lib\ScriptHookV.lib lib\libMinHook-x64-v141-mt.lib %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>GTAVisionNative.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(GTAVisionLib);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>copy "bin\Release\DeepGTAV*" "C:\GTA V\"</Command>

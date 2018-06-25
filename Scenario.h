@@ -90,6 +90,9 @@ private:
     std::unordered_map<int, HitLidarEntity*> entitiesHit;
     int lidar_param = 7;
 
+    //Depth Map variables
+    float* depth_map = NULL;
+
     bool vehicles_created = false;
     std::vector<VehicleToCreate> vehiclesToCreate;
     std::vector<PedToCreate> pedsToCreate;
@@ -141,6 +144,7 @@ private:
     void createVehicle(const char* model, float relativeForward, float relativeRight, float heading, int color, int color2);
     void createPed(int model, float relativeForward, float relativeRight, float heading, int task);
     void increaseIndex();
+    void setDepthBuffer();
 
     BBox2D BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector);
 };

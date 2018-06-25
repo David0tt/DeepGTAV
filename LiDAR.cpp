@@ -172,8 +172,9 @@ void LiDAR::DestroyLiDAR()
     m_isAttach = false;
 }
 
-float * LiDAR::GetPointClouds(int &size, std::unordered_map<int, HitLidarEntity*> *entitiesHit, int param)
+float * LiDAR::GetPointClouds(int &size, std::unordered_map<int, HitLidarEntity*> *entitiesHit, int param, float* depthMap)
 {
+    m_depthMap = depthMap;
     native_param = param;
     std::ostringstream oss;
     oss << "Native param: " << native_param;
@@ -243,6 +244,56 @@ int LiDAR::getCurType()
     return m_initType;
 }
 
+static float ReverseFloat(const float inFloat)
+{
+    float retVal;
+    char *floatToConvert = (char*)& inFloat;
+    char *returnFloat = (char*)& retVal;
+
+    // swap the bytes into a temporary buffer
+    returnFloat[0] = floatToConvert[3];
+    returnFloat[1] = floatToConvert[2];
+    returnFloat[2] = floatToConvert[1];
+    returnFloat[3] = floatToConvert[0];
+
+    return retVal;
+}
+
+static Vector3 adjustEndCoord(Vector3 pos, float* depthMap, Vector3 relPos) {
+    float scrX, scrY;
+    bool success = UI::_0xF9904D11F1ACBEC3(pos.x, pos.y, pos.z, &scrX, &scrY);
+
+    float screenX = scrX;// *width;
+    float screenY = scrY;// *height;
+
+    std::ostringstream oss2;
+    oss2 << "ScreenX: " << screenX << " ScreenY: " << screenY;
+    std::string str2 = oss2.str();
+    log(str2);
+
+    if (screenX < 0 || screenY < 0 || screenX > 1 || screenY > 1) {
+        log("Screen position is out of bounds.");
+    }
+    else {
+        //TODO remove hardcoded width/height
+        int x = (int)floor(screenX * 1920 + 0.5f);
+        int y = (int)floor(screenY * 1080 + 0.5f);
+
+        float depth = depthMap[y * 1920 + x];
+        float originalDepth = sqrt(relPos.x * relPos.x + relPos.y * relPos.y + relPos.z * relPos.z);
+        float multiplier = depth / originalDepth;
+
+        std::ostringstream oss1;
+        oss1 << "Adjust depth ScreenX: " << x << " ScreenY: " << y << "originalDepth: " << originalDepth << "depth: " << depth << " multiplier: " << multiplier;
+        std::string str1 = oss1.str();
+        log(str1);
+        relPos.x = relPos.x * multiplier;
+        relPos.y = relPos.y * multiplier;
+        relPos.z = relPos.z * multiplier;
+    }
+    return relPos;
+}
+
 void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
 {
     if (m_pointsHit >= MAX_POINTS) {
@@ -281,6 +332,8 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
         vec.x = endCoord.x - m_curPos.x;
         vec.y = endCoord.y - m_curPos.y;
         vec.z = endCoord.z - m_curPos.z;
+
+        vec = adjustEndCoord(endCoord, m_depthMap, vec);
 
         //To convert from world coordinates to GTA vehicle coordinates (where y axis is forward)
         Vector3 vec_cam_coord = convertCoordinateSystem(vec, currentForwardVec, currentRightVec, currentUpVec);
