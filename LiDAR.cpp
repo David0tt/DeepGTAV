@@ -146,6 +146,7 @@ void LiDAR::AttachLiDAR2Camera(Cam camera, Entity ownCar)
         m_fov = CAM::GET_CAM_FOV(camera);
         m_ncHeight = 2 * m_nearClip * tan(m_fov / 2. * (PI / 180.)); // field of view is returned vertically
         m_ncWidth = m_ncHeight * GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false);
+        m_theta = CAM::GET_CAM_ROT(camera, 0);
         log("LiDAR attached to car");
     }
     else
@@ -263,9 +264,15 @@ static float ReverseFloat(const float inFloat)
     return retVal;
 }
 
-static Vector3 adjustEndCoord(Vector3 pos, float* depthMap, Vector3 relPos, float near_clip, float ncWidth, float ncHeight) {
+Vector3 LiDAR::adjustEndCoord(Vector3 pos, Vector3 relPos) {
     float scrX, scrY;
-    bool success = UI::_0xF9904D11F1ACBEC3(pos.x, pos.y, pos.z, &scrX, &scrY);
+    //bool success = UI::_0xF9904D11F1ACBEC3(pos.x, pos.y, pos.z, &scrX, &scrY);
+    Eigen::Vector2f uv = get_2d_from_3d(Eigen::Vector3f(pos.x, pos.y, pos.z),
+        Eigen::Vector3f(m_curPos.x, m_curPos.y, m_curPos.z),
+        Eigen::Vector3f(m_theta.x, m_theta.y, m_theta.z), m_nearClip, m_fov);
+
+    scrX = uv(0);
+    scrY = uv(1);
 
     float screenX = scrX;// *width;
     float screenY = scrY;// *height;
@@ -283,31 +290,31 @@ static Vector3 adjustEndCoord(Vector3 pos, float* depthMap, Vector3 relPos, floa
         int x = (int)floor(screenX * 1920 + 0.5f);
         int y = (int)floor(screenY * 1080 + 0.5f);
 
-        float depth = depthMap[y * 1920 + x];
+        float depth = m_depthMap[y * 1920 + x];
 
         float normScreenX = abs(2 * screenX - 1);
         float normScreenY = abs(2 * screenY - 1);
 
-        float ncX = normScreenX * ncWidth/2;
-        float ncY = normScreenY * ncHeight/2;
+        float ncX = normScreenX * m_ncWidth /2;
+        float ncY = normScreenY * m_ncHeight /2;
 
         //Distance to near clip (hypotenus)
-        float d2nc = sqrt(near_clip * near_clip + ncX * ncX + ncY * ncY);
+        float d2nc = sqrt(m_nearClip * m_nearClip + ncX * ncX + ncY * ncY);
         depth = d2nc /depth;
-        float depth2 = 1920 * depth * 10003.815 / (10003.815 - near_clip);
+        float depth2 = 1920 * depth * 10003.815 / (10003.815 - m_nearClip);
         float originalDepth = sqrt(relPos.x * relPos.x + relPos.y * relPos.y + relPos.z * relPos.z);
         float multiplier = depth / originalDepth;
 
-        /*std::ostringstream oss1;
+        std::ostringstream oss1;
         oss1 << "\nAdjust depth ScreenX: " << screenX << " screenY: " << screenY << 
             "\nAdjust depth NormScreenX: " << normScreenX << " NormScreenY: " << normScreenY <<
             "\nAdjust depth ncX: " << ncX << " ncY: " << ncY <<
-            "\nAdjust depth near_clip: " << near_clip << " d2nc: " << d2nc <<
+            "\nAdjust depth near_clip: " << m_nearClip << " d2nc: " << d2nc <<
             "\nAdjust depth X: " << x << " Y: " << y <<
             "\noriginalDepth: " << originalDepth << "depth: " << depth << 
             "\ndepth2: " << depth2 << " multiplier: " << multiplier;
         std::string str1 = oss1.str();
-        log(str1);*/
+        log(str1);
         relPos.x = relPos.x * multiplier;
         relPos.y = relPos.y * multiplier;
         relPos.z = relPos.z * multiplier;
@@ -395,7 +402,7 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
         //To convert from world coordinates to GTA vehicle coordinates (where y axis is forward)
         vec_cam_coord = convertCoordinateSystem(vec, currentForwardVec, currentRightVec, currentUpVec);
 
-        vec_cam_coord = adjustEndCoord(endCoord, m_depthMap, vec_cam_coord, m_nearClip, m_ncWidth, m_ncHeight);
+        vec_cam_coord = adjustEndCoord(endCoord, vec_cam_coord);
 
         float distance = sqrt(SYSTEM::VDIST2(0, 0, 0, vec_cam_coord.x, vec_cam_coord.y, vec_cam_coord.z));
         if (distance <= 120) {

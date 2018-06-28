@@ -121,4 +121,6 @@ private:
     float m_fov;
     float m_ncHeight;
     float m_ncWidth;
+    Vector3 m_theta;
+    Vector3 adjustEndCoord(Vector3 pos, Vector3 relPos);
 };
