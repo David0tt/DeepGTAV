@@ -117,4 +117,8 @@ private:
     int native_param = 7;
 
     float * m_depthMap;
+    float m_nearClip;
+    float m_fov;
+    float m_ncHeight;
+    float m_ncWidth;
 };

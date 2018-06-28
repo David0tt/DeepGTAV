@@ -16,17 +16,6 @@
 
 using namespace rapidjson;
 
-static bool LOGGING = true;
-static bool DEBUG_LOGGING = false;
-static void log(std::string str, bool override = false) {
-    if (override || LOGGING) {
-        FILE* f = fopen("C:\\GTA V\\Braden.log", "a");
-        fprintf(f, str.c_str());
-        fprintf(f, "\n");
-        fclose(f);
-    }
-}
-
 //#define DEBUG 1
 
 class Scenario {
@@ -92,6 +81,7 @@ private:
 
     //Depth Map variables
     float* depth_map = NULL;
+    float* m_pDMPointClouds;
 
     bool vehicles_created = false;
     std::vector<VehicleToCreate> vehiclesToCreate;

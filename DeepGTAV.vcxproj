@@ -22,6 +22,7 @@
   <ItemGroup>
     <ClInclude Include="defaults.h" />
     <ClInclude Include="Functions.h" />
+    <ClInclude Include="Constants.h" />
     <ClInclude Include="LiDAR.h" />
     <ClInclude Include="RAGETransforms.h" />
     <ClInclude Include="Rewarders\Rewarder.h" />

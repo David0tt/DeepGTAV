@@ -3,6 +3,17 @@
 
 #pragma once
 
+static bool LOGGING = true;
+static bool DEBUG_LOGGING = false;
+static void log(std::string str, bool override = false) {
+    if (override || LOGGING) {
+        FILE* f = fopen("C:\\GTA V\\Braden.log", "a");
+        fprintf(f, str.c_str());
+        fprintf(f, "\n");
+        fclose(f);
+    }
+}
+
 // Converts a vector 'vec' into the coordinate system with the specified unit vectors
 static Vector3 convertCoordinateSystem(Vector3 vec, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector) {
     Vector3 newVec;
@@ -14,7 +25,7 @@ static Vector3 convertCoordinateSystem(Vector3 vec, Vector3 forwardVector, Vecto
     return newVec;
 }
 
-typedef struct BBox2D {
+struct BBox2D {
     float left;
     float top;
     float right;
@@ -37,7 +48,7 @@ typedef struct BBox2D {
     }
 };
 
-typedef struct VehicleToCreate {
+struct VehicleToCreate {
     std::string model;
     float forward;
     float right;
@@ -60,7 +71,7 @@ typedef struct VehicleToCreate {
     }
 };
 
-typedef struct PedToCreate {
+struct PedToCreate {
     int model;
     float forward;
     float right;

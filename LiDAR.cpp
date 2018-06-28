@@ -142,6 +142,10 @@ void LiDAR::AttachLiDAR2Camera(Cam camera, Entity ownCar)
         m_camera = camera;
         m_ownCar = ownCar;
         m_isAttach = true;
+        m_nearClip = CAM::GET_CAM_NEAR_CLIP(camera);
+        m_fov = CAM::GET_CAM_FOV(camera);
+        m_ncHeight = 2 * m_nearClip * tan(m_fov / 2. * (PI / 180.)); // field of view is returned vertically
+        m_ncWidth = m_ncHeight * GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false);
         log("LiDAR attached to car");
     }
     else
@@ -259,17 +263,17 @@ static float ReverseFloat(const float inFloat)
     return retVal;
 }
 
-static Vector3 adjustEndCoord(Vector3 pos, float* depthMap, Vector3 relPos) {
+static Vector3 adjustEndCoord(Vector3 pos, float* depthMap, Vector3 relPos, float near_clip, float ncWidth, float ncHeight) {
     float scrX, scrY;
     bool success = UI::_0xF9904D11F1ACBEC3(pos.x, pos.y, pos.z, &scrX, &scrY);
 
     float screenX = scrX;// *width;
     float screenY = scrY;// *height;
 
-    std::ostringstream oss2;
+    /*std::ostringstream oss2;
     oss2 << "ScreenX: " << screenX << " ScreenY: " << screenY;
     std::string str2 = oss2.str();
-    log(str2);
+    log(str2);*/
 
     if (screenX < 0 || screenY < 0 || screenX > 1 || screenY > 1) {
         log("Screen position is out of bounds.");
@@ -280,13 +284,30 @@ static Vector3 adjustEndCoord(Vector3 pos, float* depthMap, Vector3 relPos) {
         int y = (int)floor(screenY * 1080 + 0.5f);
 
         float depth = depthMap[y * 1920 + x];
+
+        float normScreenX = abs(2 * screenX - 1);
+        float normScreenY = abs(2 * screenY - 1);
+
+        float ncX = normScreenX * ncWidth/2;
+        float ncY = normScreenY * ncHeight/2;
+
+        //Distance to near clip (hypotenus)
+        float d2nc = sqrt(near_clip * near_clip + ncX * ncX + ncY * ncY);
+        depth = d2nc /depth;
+        float depth2 = 1920 * depth * 10003.815 / (10003.815 - near_clip);
         float originalDepth = sqrt(relPos.x * relPos.x + relPos.y * relPos.y + relPos.z * relPos.z);
         float multiplier = depth / originalDepth;
 
-        std::ostringstream oss1;
-        oss1 << "Adjust depth ScreenX: " << x << " ScreenY: " << y << "originalDepth: " << originalDepth << "depth: " << depth << " multiplier: " << multiplier;
+        /*std::ostringstream oss1;
+        oss1 << "\nAdjust depth ScreenX: " << screenX << " screenY: " << screenY << 
+            "\nAdjust depth NormScreenX: " << normScreenX << " NormScreenY: " << normScreenY <<
+            "\nAdjust depth ncX: " << ncX << " ncY: " << ncY <<
+            "\nAdjust depth near_clip: " << near_clip << " d2nc: " << d2nc <<
+            "\nAdjust depth X: " << x << " Y: " << y <<
+            "\noriginalDepth: " << originalDepth << "depth: " << depth << 
+            "\ndepth2: " << depth2 << " multiplier: " << multiplier;
         std::string str1 = oss1.str();
-        log(str1);
+        log(str1);*/
         relPos.x = relPos.x * multiplier;
         relPos.y = relPos.y * multiplier;
         relPos.z = relPos.z * multiplier;
@@ -333,8 +354,6 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
         vec.y = endCoord.y - m_curPos.y;
         vec.z = endCoord.z - m_curPos.z;
 
-        vec = adjustEndCoord(endCoord, m_depthMap, vec);
-
         //To convert from world coordinates to GTA vehicle coordinates (where y axis is forward)
         Vector3 vec_cam_coord = convertCoordinateSystem(vec, currentForwardVec, currentRightVec, currentUpVec);
 
@@ -368,6 +387,24 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
             position = subtractVector(position, m_curPos);
             HitLidarEntity* hitEnt = new HitLidarEntity(forwardVector, position);
             m_entitiesHit->insert(std::pair<int,HitLidarEntity*>(entityID,hitEnt));
+        }
+
+        //****************************************************************
+        //Adding adjusted points
+
+        //To convert from world coordinates to GTA vehicle coordinates (where y axis is forward)
+        vec_cam_coord = convertCoordinateSystem(vec, currentForwardVec, currentRightVec, currentUpVec);
+
+        vec_cam_coord = adjustEndCoord(endCoord, m_depthMap, vec_cam_coord, m_nearClip, m_ncWidth, m_ncHeight);
+
+        float distance = sqrt(SYSTEM::VDIST2(0, 0, 0, vec_cam_coord.x, vec_cam_coord.y, vec_cam_coord.z));
+        if (distance <= 120) {
+            //Note: The y/x axes are changed to conform with KITTI velodyne axes
+            *(p + 4) = vec_cam_coord.y;
+            *(p + 5) = -vec_cam_coord.x;
+            *(p + 6) = vec_cam_coord.z;
+            *(p + 7) = 65535;//This is the entityID (Only non-zero for pedestrians and vehicles)
+            m_pointsHit++;
         }
 
         /********Debug code for trying to get LiDAR to work reliably past 30m

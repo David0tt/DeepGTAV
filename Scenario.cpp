@@ -10,6 +10,8 @@
 #include <string>
 #include <sstream>
 #include "Functions.h"
+#include "RAGETransforms.h"
+#include "Constants.h"
 
 extern "C" {
     __declspec(dllimport) int export_get_depth_buffer(void** buf);
@@ -17,7 +19,6 @@ extern "C" {
     __declspec(dllexport) int export_get_stencil_buffer(void** buf);
 }
 
-const float PI = 3.14159265359;
 const float VERT_CAM_FOV = 59; //In degrees
 //Need to input the vertical FOV with GTA functions.
 //90 degrees horizontal (KITTI) corresponds to 59 degrees vertical (https://www.gtaall.com/info/fov-calculator.html).
@@ -423,7 +424,7 @@ StringBuffer Scenario::generateMessage() {
 
     setIndex();
     setPosition();
-    if (depthMap) setDepthBuffer();
+    if (depthMap && lidar_initialized) setDepthBuffer();
     if (pointclouds && lidar_initialized) collectLiDAR();
 	if (vehicles) setVehiclesList();
 	if (peds) setPedsList();
@@ -872,15 +873,15 @@ void Scenario::createPed(int model, float relativeForward, float relativeRight, 
 void Scenario::createVehicles() {
     setPosition();
     if (stationaryScene && !vehicles_created) {
-        log("Creating vehicles");
-        for (int i = 0; i < vehiclesToCreate.size(); i++) {
-            VehicleToCreate v = vehiclesToCreate[i];
-            createVehicle(v.model.c_str(), v.forward, v.right, v.heading, v.color, v.color2);
-        }
         log("Creating peds");
         for (int i = 0; i < pedsToCreate.size(); i++) {
             PedToCreate p = pedsToCreate[i];
             createPed(p.model, p.forward, p.right, p.heading, i);
+        }
+        log("Creating vehicles");
+        for (int i = 0; i < vehiclesToCreate.size(); i++) {
+            VehicleToCreate v = vehiclesToCreate[i];
+            createVehicle(v.model.c_str(), v.forward, v.right, v.heading, v.color, v.color2);
         }
         /*createVehicle("benson", 20.0, 0.0, 60.0);
         createVehicle("voltic", 15.0, 5.0, 180.0);*/
@@ -894,6 +895,7 @@ void Scenario::setupLiDAR() {
         lidar.Init3DLiDAR_FOV(120.0f, 90.0f, 0.09f, 26.9f, 0.420f);
         lidar.AttachLiDAR2Camera(camera, ped);
         lidar_initialized = true;
+        m_pDMPointClouds = (float *)malloc(width*height * 4 * sizeof(float));
     }
 }
 
@@ -922,21 +924,77 @@ void Scenario::setDepthBuffer() {
     char filename[sizeof format + 100];
     sprintf(filename, format, instance_index);
 
-    std::ostringstream oss;
-    oss << "Depth size: " << size;
-    std::string str = oss.str();
-    log(str);
-
-    /*auto f = fopen(filename, "wb");
-    fwrite(buf, 1, size, f);
-    fclose(f);
-    depth_map = (float*)buf;*/
-
     std::ofstream ofile(filename, std::ios::binary);
     ofile.write((char*)depth_map, size);
     ofile.close();
 
-    log("After writing depth buffer");
+    //int pointCount = 0;
+    //float maxDepth = 0;
+    //float minDepth = 1;
+    //Vector3 curCamPos = CAM::GET_CAM_COORD(camera);
+    //rageInitialize(CAM::GET_CAM_NEAR_CLIP(camera), CAM::GET_CAM_FAR_CLIP(camera), CAM::GET_CAM_FOV(camera), width, height);
+    //rageNewDepthMap(curCamPos, CAM::GET_CAM_ROT(camera, 1));
+    //for (int j = 0; j < height; j+=10) {
+    //    for (int i = 0; i < width; i+=10) {
+    //        float depth = depth_map[j*width + i];
+    //        //depth = depth / width;
+    //        if (depth > maxDepth) maxDepth = depth;
+    //        if (depth < minDepth) minDepth = depth;
+    //        if(depth > 0.001f)
+    //        {
+    //            Vector3 pos = rageNDCToWorld(depth, i, j);
+
+    //            if (LOG_RAGE) {
+    //                std::ostringstream oss1;
+    //                oss1 << "i/j:" << i << ", " << j << "depth: " << depth << "\nAbsolute -> x: " << pos.x << "   y: " << pos.y << "  z: " << pos.z;
+    //                std::string str1 = oss1.str();
+    //                log(str1);
+    //            }
+
+    //            pos.x -= curCamPos.x;
+    //            pos.y -= curCamPos.y;
+    //            pos.z -= curCamPos.z;
+
+    //            Vector3 vec_cam_coord = convertCoordinateSystem(pos, currentForwardVector, currentRightVector, currentUpVector);
+
+    //            if (LOG_RAGE) {
+    //                std::ostringstream oss;
+    //                oss << "Relative: x: " << -vec_cam_coord.x << "   y: " << vec_cam_coord.y << "  z: " << vec_cam_coord.z;
+    //                std::string str = oss.str();
+    //                log(str);
+    //            }
+
+    //            float distance = sqrt(SYSTEM::VDIST2(0, 0, 0, pos.x, pos.y, pos.z));
+    //            if (true || distance <= 120) {
+    //                float* p = m_pDMPointClouds + (pointCount * 4);
+    //                /**p = vec_cam_coord.z;
+    //                *(p + 1) = -vec_cam_coord.x;
+    //                *(p + 2) = -vec_cam_coord.y;
+    //                *(p + 3) = 0;*/
+    //                *p = vec_cam_coord.y;
+    //                *(p + 1) = -vec_cam_coord.x;
+    //                *(p + 2) = vec_cam_coord.z;
+    //                *(p + 3) = 0;
+
+    //                pointCount++;
+    //            }
+    //        }
+    //    }
+    //}
+    //std::ostringstream oss;
+    //oss << "Min depth: " << minDepth << " max: " << maxDepth << " pointCount: " << pointCount;
+    //std::string str = oss.str();
+    //log(str);
+
+    //char format1[] = "E:\\data\\depthPC\\%06d.bin";
+    //char filename1[sizeof format1 + 100];
+    //sprintf(filename1, format1, instance_index);
+
+    //std::ofstream ofile1(filename1, std::ios::binary);
+    //ofile1.write((char*)m_pDMPointClouds, 4 * sizeof(float) * pointCount);
+    //ofile1.close();
+
+    //log("After saving");
 }
 
 void Scenario::increaseIndex() {
