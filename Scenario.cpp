@@ -892,7 +892,11 @@ void Scenario::createVehicles() {
 void Scenario::setupLiDAR() {
     if (pointclouds && !lidar_initialized) //flag if activate the LiDAR
     {
-        lidar.Init3DLiDAR_FOV(120.0f, 90.0f, 0.09f, 26.9f, 0.420f);
+        //Specs on Velodyne HDL-64E
+        //0.09f azimuth resolution
+        //26.8 vertical fov (+2 degrees up to -24.8 degrees down)
+        //0.420 vertical resolution
+        lidar.Init3DLiDAR_FOV(120.0f, 90.0f, 0.09f, 26.9f, 0.420f, 13.4f);
         lidar.AttachLiDAR2Camera(camera, ped);
         lidar_initialized = true;
         m_pDMPointClouds = (float *)malloc(width*height * 4 * sizeof(float));

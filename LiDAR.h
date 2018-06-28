@@ -62,7 +62,7 @@ public:
 
     void Init2DLiDAR_FOV(float maxRange = 100.0, float horizFOV = 180.0, float horizAngResolu = 1.0);
 
-    void Init3DLiDAR_FOV(float maxRange = 100.0, float horizFOV = 180.0, float horizAngResolu = 1.0, float vertiFOV = 90.0, float vertiAngResolu = 10.0);
+    void Init3DLiDAR_FOV(float maxRange = 100.0, float horizFOV = 180.0, float horizAngResolu = 1.0, float vertiFOV = 90.0, float vertiAngResolu = 10.0, float vertiUpLimit = 2.0);
 
     void AttachLiDAR2Camera(Cam camera, Entity ownCar);
 

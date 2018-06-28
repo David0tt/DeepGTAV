@@ -130,9 +130,9 @@ void LiDAR::Init2DLiDAR_FOV(float maxRange, float horizFOV, float horizAngResolu
     Init2DLiDAR_SmplNum(maxRange, horizFOV / horizAngResolu, horizFOV / 2, 360.0 - horizFOV / 2);
 }
 
-void LiDAR::Init3DLiDAR_FOV(float maxRange, float horizFOV, float horizAngResolu, float vertiFOV, float vertiAngResolu)
+void LiDAR::Init3DLiDAR_FOV(float maxRange, float horizFOV, float horizAngResolu, float vertiFOV, float vertiAngResolu, float vertiUpLimit)
 {
-    Init3DLiDAR_SmplNum(maxRange, horizFOV / horizAngResolu, horizFOV / 2, 360.0 - horizFOV / 2, vertiFOV / vertiAngResolu, 90.0 - vertiFOV / 2, 90.0 + vertiFOV / 2);
+    Init3DLiDAR_SmplNum(maxRange, horizFOV / horizAngResolu, horizFOV / 2, 360.0 - horizFOV / 2, vertiFOV / vertiAngResolu, 90.0 - vertiUpLimit, 90.0 + vertiFOV - vertiUpLimit);
 }
 
 void LiDAR::AttachLiDAR2Camera(Cam camera, Entity ownCar)
@@ -305,7 +305,7 @@ Vector3 LiDAR::adjustEndCoord(Vector3 pos, Vector3 relPos) {
         float originalDepth = sqrt(relPos.x * relPos.x + relPos.y * relPos.y + relPos.z * relPos.z);
         float multiplier = depth / originalDepth;
 
-        std::ostringstream oss1;
+        /*std::ostringstream oss1;
         oss1 << "\nAdjust depth ScreenX: " << screenX << " screenY: " << screenY << 
             "\nAdjust depth NormScreenX: " << normScreenX << " NormScreenY: " << normScreenY <<
             "\nAdjust depth ncX: " << ncX << " ncY: " << ncY <<
@@ -314,7 +314,7 @@ Vector3 LiDAR::adjustEndCoord(Vector3 pos, Vector3 relPos) {
             "\noriginalDepth: " << originalDepth << "depth: " << depth << 
             "\ndepth2: " << depth2 << " multiplier: " << multiplier;
         std::string str1 = oss1.str();
-        log(str1);
+        log(str1);*/
         relPos.x = relPos.x * multiplier;
         relPos.y = relPos.y * multiplier;
         relPos.z = relPos.z * multiplier;
