@@ -82,6 +82,11 @@ private:
     //Depth Map variables
     float* depth_map = NULL;
     float* m_pDMPointClouds;
+    float m_nearClip;
+    float m_fov;
+    float m_ncHeight;
+    float m_ncWidth;
+    bool m_depthInit = false;
 
     bool vehicles_created = false;
     std::vector<VehicleToCreate> vehiclesToCreate;
@@ -135,6 +140,8 @@ private:
     void createPed(int model, float relativeForward, float relativeRight, float heading, int task);
     void increaseIndex();
     void setDepthBuffer();
+    void setDepthParams();
+    Vector3 depthToCamCoords(float depth, float screenX, float screenY);
 
     BBox2D BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector);
 };

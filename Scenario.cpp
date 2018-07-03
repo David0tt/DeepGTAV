@@ -932,6 +932,43 @@ void Scenario::setDepthBuffer() {
     ofile.write((char*)depth_map, size);
     ofile.close();
 
+    setDepthParams();
+    int pointCount = 0;
+    float maxDepth = 0;
+    float minDepth = 1;
+    for (int j = 0; j < height; ++j) {
+        for (int i = 0; i < width; ++i) {
+            float ndc = depth_map[j*width + i];
+            Vector3 relPos = depthToCamCoords(ndc, i, j);
+
+            float distance = sqrt(SYSTEM::VDIST2(0, 0, 0, relPos.x, relPos.y, relPos.z));
+            if (distance <= 120) {
+                float* p = m_pDMPointClouds + (pointCount * 4);
+                *p = relPos.y;
+                *(p + 1) = -relPos.x;
+                *(p + 2) = relPos.z;
+                *(p + 3) = 0;
+
+                pointCount++;
+            }
+        }
+    }
+    std::ostringstream oss;
+    oss << "Min depth: " << minDepth << " max: " << maxDepth << " pointCount: " << pointCount;
+    std::string str = oss.str();
+    log(str);
+
+    char format1[] = "E:\\data\\depthPC\\%06d.bin";
+    char filename1[sizeof format1 + 100];
+    sprintf(filename1, format1, instance_index);
+
+    std::ofstream ofile1(filename1, std::ios::binary);
+    ofile1.write((char*)m_pDMPointClouds, 4 * sizeof(float) * pointCount);
+    ofile1.close();
+
+    log("After saving");
+
+
     //int pointCount = 0;
     //float maxDepth = 0;
     //float minDepth = 1;
@@ -969,7 +1006,7 @@ void Scenario::setDepthBuffer() {
     //            }
 
     //            float distance = sqrt(SYSTEM::VDIST2(0, 0, 0, pos.x, pos.y, pos.z));
-    //            if (true || distance <= 120) {
+    //            if (distance <= 120) {
     //                float* p = m_pDMPointClouds + (pointCount * 4);
     //                /**p = vec_cam_coord.z;
     //                *(p + 1) = -vec_cam_coord.x;
@@ -999,6 +1036,54 @@ void Scenario::setDepthBuffer() {
     //ofile1.close();
 
     //log("After saving");
+}
+
+void Scenario::setDepthParams() {
+    m_nearClip = CAM::GET_CAM_NEAR_CLIP(camera);
+    m_fov = CAM::GET_CAM_FOV(camera);
+    m_ncHeight = 2 * m_nearClip * tan(m_fov / 2. * (PI / 180.)); // field of view is returned vertically
+    m_ncWidth = m_ncHeight * GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false);
+    m_depthInit = true;
+}
+
+//ndc is Normalized Device Coordinates which is value received from depth buffer
+Vector3 Scenario::depthToCamCoords(float ndc, float screenX, float screenY) {
+    if (!m_depthInit) {
+        setDepthParams();
+    }
+
+    float normScreenX = (2 * screenX - width) / width;
+    float normScreenY = (2 * screenY - height) / height;
+
+    float ncX = normScreenX * m_ncWidth / 2;
+    float ncY = normScreenY * m_ncHeight / 2;
+
+    //Distance to near clip (hypotenus)
+    float d2nc = sqrt(m_nearClip * m_nearClip + ncX * ncX + ncY * ncY);
+    float worldDepth = d2nc / ndc;
+
+    //X is right, Y is forward, Z is up (GTA coordinate frame)
+    Vector3 unitVec;
+    unitVec.x = ncX / d2nc;
+    unitVec.y = m_nearClip / d2nc;
+    unitVec.z = -ncY / d2nc;
+
+    Vector3 relPos;
+    relPos.x = unitVec.x * worldDepth;
+    relPos.y = unitVec.y * worldDepth;
+    relPos.z = unitVec.z * worldDepth;
+
+    /*std::ostringstream oss1;
+    oss1 << "\nAdjust depth ScreenX: " << screenX << " screenY: " << screenY <<
+        "\nAdjust depth NormScreenX: " << normScreenX << " NormScreenY: " << normScreenY <<
+        "\nAdjust depth ncX: " << ncX << " ncY: " << ncY <<
+        "\nAdjust depth near_clip: " << m_nearClip << " d2nc: " << d2nc <<
+        "\nUnit vec X: " << unitVec.x << " Y: " << unitVec.y << " Z: " << unitVec.z <<
+        "\ndepth: " << ndc << " worldDepth: " << worldDepth;
+    std::string str1 = oss1.str();
+    log(str1);*/
+
+    return relPos;
 }
 
 void Scenario::increaseIndex() {
