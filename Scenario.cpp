@@ -896,8 +896,8 @@ void Scenario::setupLiDAR() {
         //0.09f azimuth resolution
         //26.8 vertical fov (+2 degrees up to -24.8 degrees down)
         //0.420 vertical resolution
-        lidar.Init3DLiDAR_FOV(120.0f, 90.0f, 0.09f, 26.9f, 0.420f, 13.4f);
-        lidar.AttachLiDAR2Camera(camera, ped);
+        lidar.Init3DLiDAR_FOV(120.0f, 90.0f, 0.09f, 26.9f, 0.420f, 2.0f);
+        lidar.AttachLiDAR2Camera(camera, ped, width, height);
         lidar_initialized = true;
         m_pDMPointClouds = (float *)malloc(width*height * 4 * sizeof(float));
     }

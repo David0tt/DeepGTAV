@@ -135,13 +135,15 @@ void LiDAR::Init3DLiDAR_FOV(float maxRange, float horizFOV, float horizAngResolu
     Init3DLiDAR_SmplNum(maxRange, horizFOV / horizAngResolu, horizFOV / 2, 360.0 - horizFOV / 2, vertiFOV / vertiAngResolu, 90.0 - vertiUpLimit, 90.0 + vertiFOV - vertiUpLimit);
 }
 
-void LiDAR::AttachLiDAR2Camera(Cam camera, Entity ownCar)
+void LiDAR::AttachLiDAR2Camera(Cam camera, Entity ownCar, int scrWidth, int scrHeight)
 {
     if (!m_isAttach)
     {
         m_camera = camera;
         m_ownCar = ownCar;
         m_isAttach = true;
+        m_scrHeight = scrHeight;
+        m_scrWidth = scrWidth;
         m_nearClip = CAM::GET_CAM_NEAR_CLIP(camera);
         m_fov = CAM::GET_CAM_FOV(camera);
         m_ncHeight = 2 * m_nearClip * tan(m_fov / 2. * (PI / 180.)); // field of view is returned vertically
@@ -199,6 +201,7 @@ float * LiDAR::GetPointClouds(int &size, std::unordered_map<int, HitLidarEntity*
 
         //log("Trying to generate pointcloud");
         float phi = m_vertiUnLimit;
+        int beamCount = 0;
         for (int k = 0; k < m_vertiSmplNum; k++)
         {
             if (phi > m_vertiUpLimit - m_vertiResolu)
@@ -206,11 +209,13 @@ float * LiDAR::GetPointClouds(int &size, std::unordered_map<int, HitLidarEntity*
             else
                 break;
 
+            ++beamCount;
             GenerateHorizPointClouds(phi, m_pPointClouds);
         }
         std::ostringstream oss;
-        oss << "************************ Max distance: " << m_max_dist << " min distance: " << m_min_dist;
-        //log(oss.str());
+        oss << "************************ Max distance: " << m_max_dist << " min distance: " << m_min_dist
+            << "\nBeamCount: " << beamCount;
+        log(oss.str());
     }
     default:
         break;
@@ -286,11 +291,35 @@ Vector3 LiDAR::adjustEndCoord(Vector3 pos, Vector3 relPos) {
         log("Screen position is out of bounds.");
     }
     else {
-        //TODO remove hardcoded width/height
-        int x = (int)floor(screenX * 1920 + 0.5f);
-        int y = (int)floor(screenY * 1080 + 0.5f);
+        //Pixels are 0 indexed
+        int x = (int)floor(screenX * m_scrWidth);
+        int y = (int)floor(screenY * m_scrHeight);
 
-        float depth = m_depthMap[y * 1920 + x];
+        if (x >= m_scrWidth) {
+            x = m_scrWidth - 1;
+            log("x out of bounds");
+            std::ostringstream oss3;
+            oss3 << "x: " << x << " y: " << y
+                << "ScreenX: " << screenX << " ScreenY: " << screenY
+                << "\nscrWidth: " << m_scrWidth << " scrHeight: " << m_scrHeight;
+            std::string str3 = oss3.str();
+            log(str3);
+        }
+        if (y >= m_scrHeight) {
+            y = m_scrHeight - 1;
+            log("y out of bounds");
+            std::ostringstream oss3;
+            oss3 << "x: " << x << " y: " << y
+                << "ScreenX: " << screenX << " ScreenY: " << screenY
+                << "\nscrWidth: " << m_scrWidth << " scrHeight: " << m_scrHeight;
+            std::string str3 = oss3.str();
+            log(str3);
+        }
+
+
+
+        //depth value in normalized device coordinates (NDC)
+        float ndc = m_depthMap[y * m_scrWidth + x];
 
         float normScreenX = abs(2 * screenX - 1);
         float normScreenY = abs(2 * screenY - 1);
@@ -300,8 +329,7 @@ Vector3 LiDAR::adjustEndCoord(Vector3 pos, Vector3 relPos) {
 
         //Distance to near clip (hypotenus)
         float d2nc = sqrt(m_nearClip * m_nearClip + ncX * ncX + ncY * ncY);
-        depth = d2nc /depth;
-        float depth2 = 1920 * depth * 10003.815 / (10003.815 - m_nearClip);
+        float depth = d2nc / ndc;
         float originalDepth = sqrt(relPos.x * relPos.x + relPos.y * relPos.y + relPos.z * relPos.z);
         float multiplier = depth / originalDepth;
 
@@ -312,7 +340,7 @@ Vector3 LiDAR::adjustEndCoord(Vector3 pos, Vector3 relPos) {
             "\nAdjust depth near_clip: " << m_nearClip << " d2nc: " << d2nc <<
             "\nAdjust depth X: " << x << " Y: " << y <<
             "\noriginalDepth: " << originalDepth << "depth: " << depth << 
-            "\ndepth2: " << depth2 << " multiplier: " << multiplier;
+            "\nmultiplier: " << multiplier;
         std::string str1 = oss1.str();
         log(str1);*/
         relPos.x = relPos.x * multiplier;
