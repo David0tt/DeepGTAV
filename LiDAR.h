@@ -126,4 +126,5 @@ private:
     float m_ncWidth;
     Vector3 m_theta;
     Vector3 adjustEndCoord(Vector3 pos, Vector3 relPos);
+    float depthFromNDC(int x, int y, float screenX = 0.0f, float screenY = 0.0f);
 };

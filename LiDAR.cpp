@@ -269,6 +269,48 @@ static float ReverseFloat(const float inFloat)
     return retVal;
 }
 
+float LiDAR::depthFromNDC(int x, int y, float screenX, float screenY) {
+    if (x >= m_scrWidth) {
+        x = m_scrWidth - 1;
+        log("x out of bounds");
+        std::ostringstream oss3;
+        oss3 << "x: " << x << " y: " << y
+            << "ScreenX: " << screenX << " ScreenY: " << screenY
+            << "\nscrWidth: " << m_scrWidth << " scrHeight: " << m_scrHeight;
+        std::string str3 = oss3.str();
+        log(str3);
+    }
+    if (y >= m_scrHeight) {
+        y = m_scrHeight - 1;
+        log("y out of bounds");
+        std::ostringstream oss3;
+        oss3 << "x: " << x << " y: " << y
+            << "ScreenX: " << screenX << " ScreenY: " << screenY
+            << "\nscrWidth: " << m_scrWidth << " scrHeight: " << m_scrHeight;
+        std::string str3 = oss3.str();
+        log(str3);
+    }
+
+    float xNorm = (float)x / (m_scrWidth - 1);
+    float yNorm = (float)y / (m_scrHeight - 1);
+    float normScreenX = abs(2 * xNorm - 1);
+    float normScreenY = abs(2 * yNorm - 1);
+
+    float ncX = normScreenX * m_ncWidth / 2;
+    float ncY = normScreenY * m_ncHeight / 2;
+
+    //Distance to near clip (hypotenus)
+    float d2nc = sqrt(m_nearClip * m_nearClip + ncX * ncX + ncY * ncY);
+
+    //depth value in normalized device coordinates (NDC)
+    float ndc = m_depthMap[y * m_scrWidth + x];
+
+    //Actual depth in camera coordinates
+    float depth = d2nc / ndc;
+
+    return depth;
+}
+
 Vector3 LiDAR::adjustEndCoord(Vector3 pos, Vector3 relPos) {
     float scrX, scrY;
     //bool success = UI::_0xF9904D11F1ACBEC3(pos.x, pos.y, pos.z, &scrX, &scrY);
@@ -288,48 +330,45 @@ Vector3 LiDAR::adjustEndCoord(Vector3 pos, Vector3 relPos) {
     log(str2);*/
 
     if (screenX < 0 || screenY < 0 || screenX > 1 || screenY > 1) {
-        log("Screen position is out of bounds.");
+        //It is expected for some LiDAR positions to be out of screen bounds
+        //log("Screen position is out of bounds.");
     }
     else {
-        //Pixels are 0 indexed
-        int x = (int)floor(screenX * m_scrWidth);
-        int y = (int)floor(screenY * m_scrHeight);
+        bool use_interpolation = true;
+        float depth;
+        float halfW = 0.5 / m_scrWidth;
+        float halfH = 0.5 / m_scrHeight;
+        if (use_interpolation && screenX > halfW && screenX < 1 - halfW
+            && screenY > halfH && screenY < 1 - halfH) {
+            float x = screenX * m_scrWidth - 0.5;
+            float y = screenY * m_scrHeight - 0.5;
 
-        if (x >= m_scrWidth) {
-            x = m_scrWidth - 1;
-            log("x out of bounds");
-            std::ostringstream oss3;
-            oss3 << "x: " << x << " y: " << y
-                << "ScreenX: " << screenX << " ScreenY: " << screenY
-                << "\nscrWidth: " << m_scrWidth << " scrHeight: " << m_scrHeight;
-            std::string str3 = oss3.str();
-            log(str3);
+            int x0 = (int)floor(x);
+            int x1 = (int)ceil(x);
+            int y0 = (int)floor(y);
+            int y1 = (int)ceil(y);
+
+            float d00 = depthFromNDC(x0, y0);
+            float d01 = depthFromNDC(x0, y1);
+            float d10 = depthFromNDC(x1, y0);
+            float d11 = depthFromNDC(x1, y1);
+
+            //Normalize x/y to be between 0 and 1 to simplify interpolation
+            float normX = (float)x - x0;
+            float normY = (float)y - y0;
+
+            //Bilinear interpolation
+            //TODO: This creates artifacts - need to threshold or create per object bilinear interpolation
+            depth = (1 - normX)*(1 - normY)*d00 + normX * (1 - normY)*d10 + (1 - normX)*normY*d01 + normX * normY*d11;
         }
-        if (y >= m_scrHeight) {
-            y = m_scrHeight - 1;
-            log("y out of bounds");
-            std::ostringstream oss3;
-            oss3 << "x: " << x << " y: " << y
-                << "ScreenX: " << screenX << " ScreenY: " << screenY
-                << "\nscrWidth: " << m_scrWidth << " scrHeight: " << m_scrHeight;
-            std::string str3 = oss3.str();
-            log(str3);
+        else {
+            //Pixels are 0 indexed
+            int x = (int)floor(screenX * m_scrWidth);
+            int y = (int)floor(screenY * m_scrHeight);
+
+            depth = depthFromNDC(x, y, screenX, screenY);
         }
 
-
-
-        //depth value in normalized device coordinates (NDC)
-        float ndc = m_depthMap[y * m_scrWidth + x];
-
-        float normScreenX = abs(2 * screenX - 1);
-        float normScreenY = abs(2 * screenY - 1);
-
-        float ncX = normScreenX * m_ncWidth /2;
-        float ncY = normScreenY * m_ncHeight /2;
-
-        //Distance to near clip (hypotenus)
-        float d2nc = sqrt(m_nearClip * m_nearClip + ncX * ncX + ncY * ncY);
-        float depth = d2nc / ndc;
         float originalDepth = sqrt(relPos.x * relPos.x + relPos.y * relPos.y + relPos.z * relPos.z);
         float multiplier = depth / originalDepth;
 
