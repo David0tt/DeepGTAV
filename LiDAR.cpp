@@ -1,3 +1,5 @@
+#define NOMINMAX
+
 #include "LiDAR.h"
 #include "Scenario.h"
 #include <math.h>
@@ -5,6 +7,7 @@
 #include <cmath>
 #include <string>
 #include <sstream>
+#include <algorithm>
 
 #include "Functions.h"
 
@@ -338,6 +341,7 @@ Vector3 LiDAR::adjustEndCoord(Vector3 pos, Vector3 relPos) {
         float depth;
         float halfW = 0.5 / m_scrWidth;
         float halfH = 0.5 / m_scrHeight;
+        bool interpolated = false;
         if (use_interpolation && screenX > halfW && screenX < 1 - halfW
             && screenY > halfH && screenY < 1 - halfH) {
             float x = screenX * m_scrWidth - 0.5;
@@ -359,9 +363,24 @@ Vector3 LiDAR::adjustEndCoord(Vector3 pos, Vector3 relPos) {
 
             //Bilinear interpolation
             //TODO: This creates artifacts - need to threshold or create per object bilinear interpolation
-            depth = (1 - normX)*(1 - normY)*d00 + normX * (1 - normY)*d10 + (1 - normX)*normY*d01 + normX * normY*d11;
+            bool outsideThreshold = false;
+            float minDepth = std::min(d00, std::min(d01, std::min(d10, d11)));
+            float maxDepth = std::max(d00, std::max(d01, std::max(d10, d11)));
+            if (maxDepth > minDepth * 1.08) {
+                outsideThreshold = true;
+            }
+            //float thresh = 0.5; //Threshold value in metres
+            //if (abs(d00 - d01) > thresh || abs(d00 - d10) > thresh || abs(d00 - d11) > thresh ||
+            //    abs(d01 - d10) > thresh || abs(d01 - d11) > thresh || abs(d10 - d11) > thresh) {
+            //    outsideThreshold = true;
+            //}
+            if (!outsideThreshold){
+                interpolated = true;
+                depth = (1 - normX)*(1 - normY)*d00 + normX * (1 - normY)*d10 + (1 - normX)*normY*d01 + normX * normY*d11;
+            }
         }
-        else {
+        
+        if (!interpolated) {
             //Pixels are 0 indexed
             int x = (int)floor(screenX * m_scrWidth);
             int y = (int)floor(screenY * m_scrHeight);
