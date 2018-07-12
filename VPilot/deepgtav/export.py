@@ -11,12 +11,11 @@ def getText(classID, distance):
         10: "Pedestrian"
     }.get(classID,"DontCare")
 
-def outputClass(text_file, instance):
+def outputObjectInfo(text_file, instance):
     #TODO Determine actual class of vehicle
     text = getText(instance['classID'], instance['distance'])
     text_file.write("%s" % text)
 
-def outputObjectInfo(text_file, instance):
     #TODO - Determine if truncated
     text_file.write(" 0.00")
 
@@ -46,13 +45,10 @@ def printInstances(filename, list, augment, tracking=False):
     text_file = open(filename, "a")
     for instance in list:
         if tracking:
-            #TODO output proper frame ID
-            text_file.write(" %d" % instance['trackFirstFrame'])
-            text_file.write(" %d" % instance['entityID'])
-            outputClass(text_file, instance)
+            text_file.write("%d" % instance['trackFirstFrame'])
+            text_file.write(" %d " % instance['entityID'])
             outputObjectInfo(text_file, instance)
         else:
-            outputClass(text_file, instance)
             outputObjectInfo(text_file, instance)
 
             if augment:

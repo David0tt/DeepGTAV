@@ -93,6 +93,9 @@ private:
     std::vector<VehicleToCreate> vehiclesToCreate;
     std::vector<PedToCreate> pedsToCreate;
 
+    //For tracking: first frame in a series that an entity appears
+    std::unordered_map<int, int> trackFirstFrame;
+
     //Camera intrinsic parameters
     float intrinsics[3];
 
@@ -110,12 +113,14 @@ public:
 
     int instance_index = 30;
     int series_index = 0;
+    std::string series_string = "0000";
+    std::string instance_string;
     int baseTrackingIndex = instance_index;
 
     //Tracking variables
     bool collectTracking;
     //# of instances in one series
-    const int trSeriesLength = 20;
+    const int trSeriesLength = 500;
     //# of seconds between series
     const int trSeriesGapTime = 30;
     //Used for keeing track of when to add the gap

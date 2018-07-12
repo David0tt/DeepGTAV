@@ -11,6 +11,7 @@ import cv2
 import datetime
 import os
 import errno
+import math
 
 def ensureDirExists(filename):
     if not os.path.exists(os.path.dirname(filename)):
@@ -118,7 +119,7 @@ if __name__ == '__main__':
             index = message['index']
 
             if tracking:
-                indexString = "%s\\%06d" % (message['seriesIndex'], index)
+                indexString = "%04d\\%06d" % (message['seriesIndex'], index)
             else:
                 indexString = "%06d" % index
             
@@ -130,9 +131,9 @@ if __name__ == '__main__':
             
             #Output tracking labels
             if tracking:
-                filename = "%slabels_tracking\\%s.txt" % (base_folder, indexString)
+                filename = "%slabels_tracking\\%04d.txt" % (base_folder, message['seriesIndex'])
                 ensureDirExists(filename)
-                text_file = open(filename, "w")
+                text_file = open(filename, "a")
                 text_file.write("")
                 text_file.close()
                 if collectVehicles:
@@ -169,7 +170,7 @@ if __name__ == '__main__':
 
             curPosition = message['curPosition']
             if tracking:
-                filename = "%s\\oxts\\%s\\timestamps.txt" % (base_folder, message['seriesIndex'])
+                filename = "%s\\oxts\\%04d\\timestamps.txt" % (base_folder, message['seriesIndex'])
                 ensureDirExists(filename)
                 text_file = open(filename, "a")
                 text = message['time']

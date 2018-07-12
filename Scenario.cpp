@@ -100,6 +100,11 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
         baseTrackingIndex = instance_index;
     }
 
+    char temp[] = "%06d";
+    char strComp[sizeof temp + 100];
+    sprintf(strComp, temp, instance_index);
+    instance_string = strComp;
+
     if (!dc["lidarParam"].IsNull()) lidar_param = dc["lidarParam"].GetInt();
 	
 	if (!dc["frame"].IsNull()) {
@@ -504,9 +509,13 @@ void Scenario::setPosition() {
 
     _vector.SetArray();
     _vector.PushBack(currentPos.x, allocator).PushBack(currentPos.y, allocator).PushBack(currentPos.z, allocator);
-    float roll = atan2(currentUpVector.x, currentUpVector.z);
-    float pitch = atan2(currentForwardVector.z, currentForwardVector.y);
-    _vector.PushBack(roll, allocator).PushBack(pitch, allocator).PushBack(heading, allocator);
+
+    float roll = atan2(currentUpVector.z, -currentUpVector.x);
+    float pitch = atan2(-currentForwardVector.z, currentForwardVector.y);
+    //Should use heading2 over heading
+    float heading2 = atan2(currentForwardVector.y, currentForwardVector.x);
+
+    _vector.PushBack(roll, allocator).PushBack(pitch, allocator).PushBack(heading2, allocator).PushBack(heading, allocator);
 
     d["curPosition"] = _vector;
 }
@@ -723,6 +732,11 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 _entity.AddMember("bbox2d", _vector, allocator);
                 _entity.AddMember("pointsHit", pointsHit, allocator);
 
+                if (trackFirstFrame.find(entityID) == trackFirstFrame.end()) {
+                    trackFirstFrame.insert(std::pair<int, int>(entityID, instance_index));
+                }
+                _entity.AddMember("trackFirstFrame", trackFirstFrame[entityID], allocator);
+
                 drawBoxes(BLL, FUR, dim, upVector, rightVector, forwardVector, position, 1);
             }
         }
@@ -922,12 +936,15 @@ void Scenario::collectLiDAR() {
     entitiesHit.clear();
     lidar.updateCurrentPosition(currentForwardVector, currentRightVector, currentUpVector);
     float * pointCloud = lidar.GetPointClouds(pointCloudSize, &entitiesHit, lidar_param, depth_map);
-    
-    char format[1024];
-    strcpy(format, baseFolder.c_str());
-    strcat(format, "velodyne\\%06d.bin");
-    char filename[sizeof format + 100];
-    sprintf(filename, format, instance_index);
+
+    std::string filename = baseFolder + "velodyne\\";
+    if (collectTracking) {
+        filename.append(series_string);
+        CreateDirectory(filename.c_str(), NULL);
+    }
+    filename.append("\\");
+    filename.append(instance_string);
+    filename.append(".bin");
 
     std::ofstream ofile(filename, std::ios::binary);
     ofile.write((char*)pointCloud, 4 * sizeof(float)*pointCloudSize);
@@ -941,11 +958,14 @@ void Scenario::setDepthBuffer() {
 
     int size = export_get_depth_buffer((void**)&depth_map);
 
-    char format[1024];
-    strcpy(format, baseFolder.c_str());
-    strcat(format, "depth\\%06d.raw");
-    char filename[sizeof format + 100];
-    sprintf(filename, format, instance_index);
+    std::string filename = baseFolder + "depth\\";
+    if (collectTracking) {
+        filename.append(series_string);
+        CreateDirectory(filename.c_str(), NULL);
+    }
+    filename.append("\\");
+    filename.append(instance_string);
+    filename.append(".raw");
 
     std::ofstream ofile(filename, std::ios::binary);
     ofile.write((char*)depth_map, size);
@@ -977,13 +997,16 @@ void Scenario::setDepthBuffer() {
     std::string str = oss.str();
     log(str);
 
-    char format1[1024];
-    strcpy(format1, baseFolder.c_str());
-    strcat(format1, "depthPC\\%06d.bin");
-    char filename1[sizeof format1 + 100];
-    sprintf(filename1, format1, instance_index);
+    filename = baseFolder + "depthPC\\";
+    if (collectTracking) {
+        filename.append(series_string);
+        CreateDirectory(filename.c_str(), NULL);
+    }
+    filename.append("\\");
+    filename.append(instance_string);
+    filename.append(".bin");
 
-    std::ofstream ofile1(filename1, std::ios::binary);
+    std::ofstream ofile1(filename, std::ios::binary);
     ofile1.write((char*)m_pDMPointClouds, 4 * sizeof(float) * pointCount);
     ofile1.close();
 
@@ -1120,7 +1143,19 @@ void Scenario::increaseIndex() {
         instance_index = 0;
         ++series_index;
         trSeriesGap = true;
+        trackFirstFrame.clear();
+
+        //update the string
+        char temp[] = "%04d";
+        char strComp[sizeof temp + 100];
+        sprintf(strComp, temp, series_index);
+        series_string = strComp;
     }
+
+    char temp[] = "%06d";
+    char strComp[sizeof temp + 100];
+    sprintf(strComp, temp, instance_index);
+    instance_string = strComp;
 }
 
 void Scenario::setIndex() {
