@@ -506,7 +506,7 @@ void Scenario::setPosition() {
     _vector.PushBack(currentPos.x, allocator).PushBack(currentPos.y, allocator).PushBack(currentPos.z, allocator);
     float roll = atan2(currentUpVector.x, currentUpVector.z);
     float pitch = atan2(currentForwardVector.z, currentForwardVector.y);
-    vector.PushBack(roll, allocator).PushBack(pitch, allocator).PushBack(heading, allocator);
+    _vector.PushBack(roll, allocator).PushBack(pitch, allocator).PushBack(heading, allocator);
 
     d["curPosition"] = _vector;
 }
