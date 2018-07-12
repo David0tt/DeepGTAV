@@ -95,7 +95,10 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
 	if (!dc["rate"].IsNull()) rate = dc["rate"].GetFloat();
 	else if (setDefaults) rate = _RATE_;
 
-    if (!dc["startIndex"].IsNull()) instance_index = dc["startIndex"].GetInt();
+    if (!dc["startIndex"].IsNull()) {
+        instance_index = dc["startIndex"].GetInt();
+        baseTrackingIndex = instance_index;
+    }
 
     if (!dc["lidarParam"].IsNull()) lidar_param = dc["lidarParam"].GetInt();
 	
@@ -166,6 +169,14 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
     else if (setDefaults) pointclouds = _POINTCLOUDS_;
     if (!dc["stationaryScene"].IsNull()) stationaryScene = dc["stationaryScene"].GetBool();
     else if (setDefaults) stationaryScene = _STATIONARY_SCENE_;
+    if (!dc["collectTracking"].IsNull()) collectTracking = dc["collectTracking"].GetBool();
+    else if (setDefaults) collectTracking = _COLLECT_TRACKING_;
+
+    //Export folder for pointcloud/depth map
+    baseFolder = "E:\\data\\";
+    if (collectTracking) {
+        baseFolder += "tracking\\";
+    }
 
     if (stationaryScene) {
         vehiclesToCreate.clear();
@@ -242,6 +253,7 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
     d.AddMember("index", 0, allocator);
     d.AddMember("focalLen", 0.0, allocator);
     d.AddMember("curPosition", a, allocator);
+    d.AddMember("seriesIndex", a, allocator);
 
 	screenCapturer = new ScreenCapturer(width, height);
 }
@@ -491,7 +503,10 @@ void Scenario::setPosition() {
     Document::AllocatorType& allocator = d.GetAllocator();
 
     _vector.SetArray();
-    _vector.PushBack(currentPos.x, allocator).PushBack(currentPos.y, allocator).PushBack(currentPos.z, allocator).PushBack(heading,allocator);
+    _vector.PushBack(currentPos.x, allocator).PushBack(currentPos.y, allocator).PushBack(currentPos.z, allocator);
+    float roll = atan2(currentUpVector.x, currentUpVector.z);
+    float pitch = atan2(currentForwardVector.z, currentForwardVector.y);
+    vector.PushBack(roll, allocator).PushBack(pitch, allocator).PushBack(heading, allocator);
 
     d["curPosition"] = _vector;
 }
@@ -908,7 +923,9 @@ void Scenario::collectLiDAR() {
     lidar.updateCurrentPosition(currentForwardVector, currentRightVector, currentUpVector);
     float * pointCloud = lidar.GetPointClouds(pointCloudSize, &entitiesHit, lidar_param, depth_map);
     
-    char format[] = "E:\\data\\velodyne\\%06d.bin";
+    char format[1024];
+    strcpy(format, baseFolder.c_str());
+    strcat(format, "velodyne\\%06d.bin");
     char filename[sizeof format + 100];
     sprintf(filename, format, instance_index);
 
@@ -924,7 +941,9 @@ void Scenario::setDepthBuffer() {
 
     int size = export_get_depth_buffer((void**)&depth_map);
 
-    char format[] = "E:\\data\\depth\\%06d.raw";
+    char format[1024];
+    strcpy(format, baseFolder.c_str());
+    strcat(format, "depth\\%06d.raw");
     char filename[sizeof format + 100];
     sprintf(filename, format, instance_index);
 
@@ -958,7 +977,9 @@ void Scenario::setDepthBuffer() {
     std::string str = oss.str();
     log(str);
 
-    char format1[] = "E:\\data\\depthPC\\%06d.bin";
+    char format1[1024];
+    strcpy(format1, baseFolder.c_str());
+    strcat(format1, "depthPC\\%06d.bin");
     char filename1[sizeof format1 + 100];
     sprintf(filename1, format1, instance_index);
 
@@ -1095,10 +1116,16 @@ void Scenario::increaseIndex() {
     else {
         ++instance_index;
     }
+    if (collectTracking && instance_index == trSeriesLength) {
+        instance_index = 0;
+        ++series_index;
+        trSeriesGap = true;
+    }
 }
 
 void Scenario::setIndex() {
     d["index"] = instance_index;
+    d["seriesIndex"] = series_index;
 }
 
 //Camera intrinsics are focal length, and center in horizontal (x) and vertical (y)

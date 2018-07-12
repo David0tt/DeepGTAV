@@ -19,3 +19,4 @@
 #define _SHOWBOXES_ false
 #define _POINTCLOUDS_ true
 #define _STATIONARY_SCENE_ false
+#define _COLLECT_TRACKING_ false

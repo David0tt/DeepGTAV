@@ -8,16 +8,37 @@ from deepgtav.export import printInstances, printCalib
 import argparse
 import time
 import cv2
+import datetime
+import os
+import errno
+
+def ensureDirExists(filename):
+    if not os.path.exists(os.path.dirname(filename)):
+        try:
+            os.makedirs(os.path.dirname(filename))
+        except OSError as exc: # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
 
 width = 1920
 height = 1080
 index = 0
 
-base_folder = "E:\\data\\"
+tracking = True
 collectStationary = True
 collectVehicles = True
 collectPeds = True
 collectOffscreen = False
+captureRate = 1
+
+base_folder = "E:\\data\\"
+if tracking:
+    base_folder = base_folder + "tracking\\"
+    collectStationary = False
+    collectVehicles = True
+    collectPeds = True
+    collectOffscreen = False
+    captureRate = 10
 
 # Stores a dataset file with data coming from DeepGTAV
 if __name__ == '__main__':
@@ -52,9 +73,9 @@ if __name__ == '__main__':
         peds.append([0, 10, -5, 0])
         startIndex = 60
         lidarParam = 7
-        dataset = Dataset(rate=1, frame=[width,height], throttle=True, brake=True, steering=True, vehicles=collectVehicles, peds=collectPeds, reward=[15.0, 0.0],
+        dataset = Dataset(rate=captureRate, frame=[width,height], throttle=True, brake=True, steering=True, vehicles=collectVehicles, peds=collectPeds, reward=[15.0, 0.0],
                         direction=None, speed=True, yawRate=True, location=True, time=True, offscreen=collectOffscreen, showBoxes=False, pointclouds=True,
-                        stationaryScene=True, vehiclesToCreate=vehicles, pedsToCreate=peds, startIndex=startIndex, lidarParam=lidarParam)
+                        stationaryScene=True, collectTracking=tracking, vehiclesToCreate=vehicles, pedsToCreate=peds, startIndex=startIndex, lidarParam=lidarParam)
         #List of locations
         #Nearplane
         # startLocation = [320.0,3600.0]
@@ -70,9 +91,9 @@ if __name__ == '__main__':
 
         scenario = Scenario(drivingMode=[-1,0], location=startLocation) #Stationary/manual mode
     else:
-        dataset = Dataset(rate=60, frame=[width,height], throttle=True, brake=True, steering=True, vehicles=collectVehicles, peds=collectPeds, reward=[15.0, 0.0],
+        dataset = Dataset(rate=captureRate, frame=[width,height], throttle=True, brake=True, steering=True, vehicles=collectVehicles, peds=collectPeds, reward=[15.0, 0.0],
                         direction=None, speed=True, yawRate=True, location=True, time=True, offscreen=collectOffscreen, showBoxes=False, pointclouds=True,
-                        stationaryScene=False)
+                        stationaryScene=False, collectTracking=tracking, startIndex=0)
         scenario = Scenario(drivingMode=[786603,15.0]) # Driving style is set to normal, with a speed of 15.0 mph. All other scenario options are random.
     # Send the Start request to DeepGTAV.
     client.sendMessage(Start(dataset=dataset,scenario=scenario))
@@ -95,13 +116,33 @@ if __name__ == '__main__':
             # We receive a message as a Python dictionary
             message = client.recvMessage()  
             index = message['index']
+
+            if tracking:
+                indexString = "%s\\%06d" % (message['seriesIndex'], index)
+            else:
+                indexString = "%06d" % index
             
             # The frame is a numpy array and can be displayed using OpenCV or similar       
             image = frame2numpy(message['frame'], (width,height))
-            cv2.imwrite("%simages\\%06d.png" % (base_folder, index), image)
+            filename = "%simages\\%s.png" % (base_folder, indexString)
+            ensureDirExists(filename)
+            cv2.imwrite(filename, image)
+            
+            #Output tracking labels
+            if tracking:
+                filename = "%slabels_tracking\\%s.txt" % (base_folder, indexString)
+                ensureDirExists(filename)
+                text_file = open(filename, "w")
+                text_file.write("")
+                text_file.close()
+                if collectVehicles:
+                    printInstances(filename, message['vehicles'], False, True)
+                if collectPeds:
+                    printInstances(filename, message['peds'], False, True)
             
             #Output object detections
-            filename = "%slabels\\%06d.txt" % (base_folder, index)
+            filename = "%slabels\\%s.txt" % (base_folder, indexString)
+            ensureDirExists(filename)
             text_file = open(filename, "w")
             text_file.write("")
             text_file.close()
@@ -111,7 +152,8 @@ if __name__ == '__main__':
                 printInstances(filename, message['peds'], False)
             
             #Output object detections with augmentations
-            filename = "%slabels_aug\\%06d.txt" % (base_folder, index)
+            filename = "%slabels_aug\\%s.txt" % (base_folder, indexString)
+            ensureDirExists(filename)
             text_file = open(filename, "w")
             text_file.write("")
             text_file.close()
@@ -121,14 +163,34 @@ if __name__ == '__main__':
                 printInstances(filename, message['peds'], True)
 
             #Print calib file
-            calib_file = "%scalib\\%06d.txt" % (base_folder, index)
-            printCalib(calib_file, message['focalLen'], width, height)
+            filename = "%scalib\\%s.txt" % (base_folder, indexString)
+            ensureDirExists(filename)
+            printCalib(filename, message['focalLen'], width, height)
+
+            curPosition = message['curPosition']
+            if tracking:
+                filename = "%s\\oxts\\%s\\timestamps.txt" % (base_folder, message['seriesIndex'])
+                ensureDirExists(filename)
+                text_file = open(filename, "a")
+                text = message['time']
+                dateString = datetime.date.today().strftime("%Y-%m-%d")
+                text_file.write("%s %s\n" % (dateString, text))
+                text_file.close()
+
+                filename = "%soxts\\data\\%s.txt" % (base_folder, indexString)
+                ensureDirExists(filename)
+                text_file = open(filename, "w")
+                #
+                text_file.write("%f %f %f %f %f %f %f\n" % (curPosition[0], curPosition[1], curPosition[2],
+                    curPosition[3], curPosition[4], curPosition[5], message['speed']))
+                text_file.close()
+
 
             #Output current location:
             filename = "%slocation.txt" % (base_folder)
+            ensureDirExists(filename)
             text_file = open(filename, "w")
-            ownLocation = message['curPosition']
-            text_file.write("x: %d, y: %d, z: %d, heading %d" % (ownLocation[0], ownLocation[1], ownLocation[2], ownLocation[3]))
+            text_file.write("x: %d, y: %d, z: %d, heading %d" % (curPosition[0], curPosition[1], curPosition[2], curPosition[3]))
             text_file.close()
 
         except KeyboardInterrupt:

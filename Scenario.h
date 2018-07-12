@@ -54,6 +54,8 @@ private:
     bool pointclouds;
     bool stationaryScene;
 
+    std::string baseFolder;
+
 	float currentThrottle = 0.0;
 	float currentBrake = 0.0;
 	float currentSteering = 0.0;
@@ -74,7 +76,6 @@ private:
     //LiDAR variables
     LiDAR lidar;
     bool lidar_initialized = false;
-    int instance_index = 30;
     int pointCloudSize = 0;
     std::unordered_map<int, HitLidarEntity*> entitiesHit;
     int lidar_param = 7;
@@ -106,6 +107,19 @@ public:
 
 	ScreenCapturer* screenCapturer;
 	StringBuffer generateMessage();
+
+    int instance_index = 30;
+    int series_index = 0;
+    int baseTrackingIndex = instance_index;
+
+    //Tracking variables
+    bool collectTracking;
+    //# of instances in one series
+    const int trSeriesLength = 20;
+    //# of seconds between series
+    const int trSeriesGapTime = 30;
+    //Used for keeing track of when to add the gap
+    bool trSeriesGap = false;
 
 private:
 	void parseScenarioConfig(const Value& sc, bool setDefaults);
