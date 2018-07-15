@@ -151,7 +151,6 @@ void LiDAR::AttachLiDAR2Camera(Cam camera, Entity ownCar, int scrWidth, int scrH
         m_fov = CAM::GET_CAM_FOV(camera);
         m_ncHeight = 2 * m_nearClip * tan(m_fov / 2. * (PI / 180.)); // field of view is returned vertically
         m_ncWidth = m_ncHeight * GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false);
-        m_theta = CAM::GET_CAM_ROT(camera, 0);
         log("LiDAR attached to car");
     }
     else
@@ -594,4 +593,5 @@ void LiDAR::updateCurrentPosition(Vector3 currentForwardVector, Vector3 currentR
     currentForwardVec = currentForwardVector;
     currentRightVec = currentRightVector;
     currentUpVec = currentUpVector;
+    m_theta = CAM::GET_CAM_ROT(m_camera, 0);
 }
