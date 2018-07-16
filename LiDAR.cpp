@@ -14,13 +14,12 @@
 #define PI 3.1415926535898
 #define D2R PI/180.0
 
-const int MAX_POINTS = 5000000;
 const int FLOATS_PER_POINT = 4;
-
 
 LiDAR::LiDAR()
 {
     m_pPointClouds = NULL;
+    m_lidar2DPoints = NULL;
     m_pointsHit = 0;
     m_maxRange = 0;
     m_vertiUpLimit = 0;
@@ -114,6 +113,13 @@ void LiDAR::Init3DLiDAR_SmplNum(float maxRange, int horizSmplNum, float horizLeL
     if (m_pPointClouds == NULL)
         printf("\nLiDAR: memory alloc err");
 
+    //Malloc 2*max number of points bytes for the 3d -> 2d point map
+    if (GENERATE_2D_POINTMAP) {
+        m_lidar2DPoints = (float*)malloc((MAX_POINTS * sizeof(float)) / 2);
+        if (m_lidar2DPoints == NULL)
+            printf("\nLiDAR: memory alloc err2");
+    }
+
     m_initType = _LIDAR_INIT_AS_3D_;
 
 #ifdef DEBUG_CONFIG
@@ -166,6 +172,10 @@ void LiDAR::DestroyLiDAR()
         free(m_pPointClouds);
         m_pPointClouds = NULL;
     }
+    if (m_lidar2DPoints) {
+        free(m_lidar2DPoints);
+        m_lidar2DPoints = NULL;
+    }
     m_maxRange = 0;
     m_vertiUpLimit = 0;
     m_vertiUnLimit = 0;
@@ -181,16 +191,25 @@ void LiDAR::DestroyLiDAR()
     m_isAttach = false;
 }
 
+float * LiDAR::Get2DPoints(int &size) {
+    size = m_beamCount;
+    return m_lidar2DPoints;
+}
+
 float * LiDAR::GetPointClouds(int &size, std::unordered_map<int, HitLidarEntity*> *entitiesHit, int param, float* depthMap)
 {
     m_depthMap = depthMap;
     native_param = param;
+
     std::ostringstream oss;
     oss << "Native param: " << native_param;
     std::string str = oss.str();
     log(str);
+
     m_entitiesHit = entitiesHit;
     m_pointsHit = 0;
+    m_beamCount = 0;
+
     if (m_pPointClouds == NULL || m_initType == _LIDAR_NOT_INIT_YET_ || !m_isAttach)
         return NULL;
     switch (m_initType)
@@ -203,7 +222,7 @@ float * LiDAR::GetPointClouds(int &size, std::unordered_map<int, HitLidarEntity*
 
         //log("Trying to generate pointcloud");
         float phi = m_vertiUnLimit;
-        int beamCount = 0;
+        int horizBeamCount = 0;
         for (int k = 0; k < m_vertiSmplNum; k++)
         {
             if (phi > m_vertiUpLimit - m_vertiResolu)
@@ -211,12 +230,12 @@ float * LiDAR::GetPointClouds(int &size, std::unordered_map<int, HitLidarEntity*
             else
                 break;
 
-            ++beamCount;
+            ++horizBeamCount;
             GenerateHorizPointClouds(phi, m_pPointClouds);
         }
         std::ostringstream oss;
         oss << "************************ Max distance: " << m_max_dist << " min distance: " << m_min_dist
-            << "\nBeamCount: " << beamCount;
+            << "\nBeamCount: " << horizBeamCount;
         log(oss.str());
     }
     default:
@@ -426,12 +445,32 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
     target.y = m_rotDCM[3] * endCoord.x + m_rotDCM[4] * endCoord.y + m_rotDCM[5] * endCoord.z + m_curPos.y;
     target.z = m_rotDCM[6] * endCoord.x + m_rotDCM[7] * endCoord.y + m_rotDCM[8] * endCoord.z + m_curPos.z;
 
+    Eigen::Vector2f target2D = get_2d_from_3d(Eigen::Vector3f(target.x, target.y, target.z),
+        Eigen::Vector3f(m_curPos.x, m_curPos.y, m_curPos.z),
+        Eigen::Vector3f(m_theta.x, m_theta.y, m_theta.z), m_nearClip, m_fov);
+
     //options: -1=everything
     //New function is called _START_SHAPE_TEST_RAY
     raycast_handle = WORLDPROBE::_CAST_RAY_POINT_TO_POINT(m_curPos.x, m_curPos.y, m_curPos.z, target.x, target.y, target.z, -1, m_ownCar, native_param);
 
     //New function is called GET_SHAPE_TEST_RESULT
     WORLDPROBE::_GET_RAYCAST_RESULT(raycast_handle, &isHit, &endCoord, &surfaceNorm, &hitEntity);
+
+    Eigen::Vector2f endCoord2D = get_2d_from_3d(Eigen::Vector3f(target.x, target.y, target.z),
+        Eigen::Vector3f(m_curPos.x, m_curPos.y, m_curPos.z),
+        Eigen::Vector3f(m_theta.x, m_theta.y, m_theta.z), m_nearClip, m_fov);
+
+    /*std::ostringstream oss2;
+    oss2 << isHit << "   ***endCoord2D is: " << endCoord2D(0) << ", " << endCoord2D(1) <<
+    "\n target2D is: " << target2D(0) << ", " << target2D(1);
+    std::string str = oss2.str();
+    log(str);*/
+
+    if (GENERATE_2D_POINTMAP) {
+        *(m_lidar2DPoints + 2 * m_beamCount) = target2D(0);
+        *(m_lidar2DPoints + 2 * m_beamCount + 1) = target2D(1);
+        ++m_beamCount;
+    }
 
     /*std::ostringstream oss2;
     oss2 << "***Endcoord is: " << endCoord.x << ", " << endCoord.y << ", " << endCoord.z <<

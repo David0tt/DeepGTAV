@@ -8,10 +8,15 @@ https://github.com/gdpinchina/A-virtual-LiDAR-for-DeepGTAV
 #pragma once
 #include "lib/script.h"
 #include <unordered_map>
+#include <Eigen/Core>
 
 #define _LIDAR_NOT_INIT_YET_ 0
 #define _LIDAR_INIT_AS_2D_ 1
 #define _LIDAR_INIT_AS_3D_ 2
+
+const bool GENERATE_2D_POINTMAP = true;
+
+const int MAX_POINTS = 5000000;
 
 struct HitLidarEntity {
     int pointsHit;
@@ -69,6 +74,7 @@ public:
     void DestroyLiDAR();
 
     float* GetPointClouds(int &size, std::unordered_map<int, HitLidarEntity*> *entitiesHit, int param, float* depthMap);
+    float* Get2DPoints(int &size);
     int getTotalSmplNum();
     int getVertiSmplNum();
     int getHorizSmplNum();
@@ -112,6 +118,9 @@ private:
 
     float m_max_dist;
     float m_min_dist;
+
+    float* m_lidar2DPoints;
+    int m_beamCount;
 
     std::unordered_map<int, HitLidarEntity*>* m_entitiesHit;
     int native_param = 7;

@@ -161,6 +161,7 @@ private:
     void setDepthBuffer();
     void setDepthParams();
     Vector3 depthToCamCoords(float depth, float screenX, float screenY);
+    std::string getStandardFilename(std::string subDir, std::string extension);
 
     BBox2D BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector);
 };

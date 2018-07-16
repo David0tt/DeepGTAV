@@ -12,6 +12,7 @@
 #include "Functions.h"
 #include "RAGETransforms.h"
 #include "Constants.h"
+#include <Eigen/Core>
 
 extern "C" {
     __declspec(dllimport) int export_get_depth_buffer(void** buf);
@@ -937,36 +938,51 @@ void Scenario::collectLiDAR() {
     lidar.updateCurrentPosition(currentForwardVector, currentRightVector, currentUpVector);
     float * pointCloud = lidar.GetPointClouds(pointCloudSize, &entitiesHit, lidar_param, depth_map);
 
-    std::string filename = baseFolder + "velodyne\\";
-    if (collectTracking) {
-        filename.append(series_string);
-        CreateDirectory(filename.c_str(), NULL);
-    }
-    filename.append("\\");
-    filename.append(instance_string);
-    filename.append(".bin");
-
+    std::string filename = getStandardFilename("velodyne", ".bin");
     std::ofstream ofile(filename, std::ios::binary);
     ofile.write((char*)pointCloud, 4 * sizeof(float)*pointCloudSize);
     ofile.close();
+
+    //Used for obtaining the 2D points for sampling depth map to convert to velodyne pointcloud
+    int size;
+    float * points2D = lidar.Get2DPoints(size);
+
+    filename = getStandardFilename("2dpoints", ".bin");
+    std::ofstream ofile2(filename, std::ios::binary);
+    ofile2.write((char*)points2D, 2 * sizeof(float) * size);
+    ofile2.close();
+
+    //Prints out the real values for a sample of the 
+    filename = getStandardFilename("2dpoints", ".txt");
+    FILE* f = fopen(filename.c_str(), "w");
+    fclose(f);
+    f = fopen(filename.c_str(), "a");
+    int i = 0;
+    std::ostringstream oss;
+    while (i < 100) {
+        oss << "num: " << i << " x: " << points2D[2*i] << " y: " << points2D[2*i + 1] << "\n";
+        ++i;
+    }
+    i = (size / 2);
+    int maxPrint = i + 100;
+    while (i < maxPrint) {
+        oss << "num: " << i << " x: " << points2D[2 * i] << " y: " << points2D[2 * i + 1] << "\n";
+        ++i;
+    }
+    i = size - 100;
+    while (i < size) {
+        oss << "num: " << i << " x: " << points2D[2 * i] << " y: " << points2D[2 * i + 1] << "\n";
+        ++i;
+    }
+    std::string str = oss.str();
+    fprintf(f, str.c_str());
+    fclose(f);
 }
 
 void Scenario::setDepthBuffer() {
-    /*if (depth_map) {
-        free(depth_map);
-    }*/
-
     int size = export_get_depth_buffer((void**)&depth_map);
 
-    std::string filename = baseFolder + "depth\\";
-    if (collectTracking) {
-        filename.append(series_string);
-        CreateDirectory(filename.c_str(), NULL);
-    }
-    filename.append("\\");
-    filename.append(instance_string);
-    filename.append(".raw");
-
+    std::string filename = getStandardFilename("depth", ".raw");
     std::ofstream ofile(filename, std::ios::binary);
     ofile.write((char*)depth_map, size);
     ofile.close();
@@ -997,14 +1013,7 @@ void Scenario::setDepthBuffer() {
     std::string str = oss.str();
     log(str);
 
-    filename = baseFolder + "depthPC\\";
-    if (collectTracking) {
-        filename.append(series_string);
-        CreateDirectory(filename.c_str(), NULL);
-    }
-    filename.append("\\");
-    filename.append(instance_string);
-    filename.append(".bin");
+    filename = getStandardFilename("depthPC", ".bin");
 
     std::ofstream ofile1(filename, std::ios::binary);
     ofile1.write((char*)m_pDMPointClouds, 4 * sizeof(float) * pointCount);
@@ -1244,4 +1253,17 @@ void Scenario::drawBoxes(Vector3 BLL, Vector3 FUR, Vector3 dim, Vector3 upVector
         GRAPHICS::DRAW_LINE(edge4.x, edge4.y, edge4.z, edge6.x, edge6.y, edge6.z, 0, green, blue, 200);
         WAIT(0);
     }
+}
+
+std::string Scenario::getStandardFilename(std::string subDir, std::string extension) {
+    std::string filename = baseFolder + subDir + "\\";
+    CreateDirectory(filename.c_str(), NULL);
+    if (collectTracking) {
+        filename.append(series_string);
+        CreateDirectory(filename.c_str(), NULL);
+    }
+    filename.append("\\");
+    filename.append(instance_string);
+    filename.append(extension);
+    return filename;
 }
