@@ -14,8 +14,6 @@ https://github.com/gdpinchina/A-virtual-LiDAR-for-DeepGTAV
 #define _LIDAR_INIT_AS_2D_ 1
 #define _LIDAR_INIT_AS_3D_ 2
 
-const bool GENERATE_2D_POINTMAP = true;
-
 const int MAX_POINTS = 5000000;
 
 struct HitLidarEntity {
@@ -75,6 +73,7 @@ public:
 
     float* GetPointClouds(int &size, std::unordered_map<int, HitLidarEntity*> *entitiesHit, int param, float* depthMap);
     float* Get2DPoints(int &size);
+    float* GetRaycastPointcloud(int & size);
     int getTotalSmplNum();
     int getVertiSmplNum();
     int getHorizSmplNum();
@@ -93,7 +92,10 @@ private:
 private:
 
     float* m_pPointClouds;
+    float* m_pRaycastPointCloud;
     int m_pointsHit;
+    int m_depthMapPoints;
+    int m_raycastPoints;
     float m_maxRange;//meter
     float m_vertiUpLimit;//deg, the upside limit of zenith direction, namely the min vertical angle, 0 <= up <= phiUp < 90
     float m_vertiUnLimit;//deg, the underside limit of ground direction, namely the max vertical angle, 90 <= phiLo <= un <= 180
@@ -136,4 +138,5 @@ private:
     Vector3 m_theta;
     Vector3 adjustEndCoord(Vector3 pos, Vector3 relPos);
     float depthFromNDC(int x, int y, float screenX = 0.0f, float screenY = 0.0f);
+    float getDepthFromScreenPos(float screenX, float screenY);
 };

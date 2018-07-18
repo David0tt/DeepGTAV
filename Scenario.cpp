@@ -799,12 +799,14 @@ void Scenario::setPedsList(){
         if (PED::GET_PED_TYPE(peds[i]) == 28) classid = 11; //animal
         else classid = 10;
 
-        model = ENTITY::GET_ENTITY_MODEL(peds[i]);
+        if (RETAIN_ANIMALS || classid != 11) {
+            model = ENTITY::GET_ENTITY_MODEL(peds[i]);
 
-        Value _ped(kObjectType);
-        bool success = getEntityVector(_ped, allocator, peds[i], model, classid);
-        if (success) {
-            _peds.PushBack(_ped, allocator);
+            Value _ped(kObjectType);
+            bool success = getEntityVector(_ped, allocator, peds[i], model, classid);
+            if (success) {
+                _peds.PushBack(_ped, allocator);
+            }
         }
 	}		
 	d["peds"] = _peds;
@@ -926,10 +928,10 @@ void Scenario::setupLiDAR() {
         //0.09f azimuth resolution
         //26.8 vertical fov (+2 degrees up to -24.8 degrees down)
         //0.420 vertical resolution
-        lidar.Init3DLiDAR_FOV(120.0f, 90.0f, 0.09f, 26.9f, 0.420f, 2.0f);
+        lidar.Init3DLiDAR_FOV(MAX_LIDAR_DIST, 90.0f, 0.09f, 26.9f, 0.420f, 2.0f);
         lidar.AttachLiDAR2Camera(camera, ped, width, height);
         lidar_initialized = true;
-        m_pDMPointClouds = (float *)malloc(width*height * 4 * sizeof(float));
+        m_pDMPointClouds = (float *)malloc(width * height * FLOATS_PER_POINT * sizeof(float));
     }
 }
 
@@ -940,43 +942,55 @@ void Scenario::collectLiDAR() {
 
     std::string filename = getStandardFilename("velodyne", ".bin");
     std::ofstream ofile(filename, std::ios::binary);
-    ofile.write((char*)pointCloud, 4 * sizeof(float)*pointCloudSize);
+    ofile.write((char*)pointCloud, FLOATS_PER_POINT * sizeof(float)*pointCloudSize);
     ofile.close();
 
-    //Used for obtaining the 2D points for sampling depth map to convert to velodyne pointcloud
-    int size;
-    float * points2D = lidar.Get2DPoints(size);
+    if (OUTPUT_RAYCAST_POINTS) {
+        int pointCloudSize2;
+        float* pointCloud2 = lidar.GetRaycastPointcloud(pointCloudSize2);
 
-    filename = getStandardFilename("2dpoints", ".bin");
-    std::ofstream ofile2(filename, std::ios::binary);
-    ofile2.write((char*)points2D, 2 * sizeof(float) * size);
-    ofile2.close();
+        std::string filename2 = getStandardFilename("velodyneRaycast", ".bin");
+        std::ofstream ofile2(filename2, std::ios::binary);
+        ofile2.write((char*)pointCloud2, FLOATS_PER_POINT * sizeof(float)*pointCloudSize2);
+        ofile2.close();
+    }
 
-    //Prints out the real values for a sample of the 
-    filename = getStandardFilename("2dpoints", ".txt");
-    FILE* f = fopen(filename.c_str(), "w");
-    fclose(f);
-    f = fopen(filename.c_str(), "a");
-    int i = 0;
-    std::ostringstream oss;
-    while (i < 100) {
-        oss << "num: " << i << " x: " << points2D[2*i] << " y: " << points2D[2*i + 1] << "\n";
-        ++i;
+    if (GENERATE_2D_POINTMAP) {
+        //Used for obtaining the 2D points for sampling depth map to convert to velodyne pointcloud
+        int size;
+        float * points2D = lidar.Get2DPoints(size);
+
+        filename = getStandardFilename("2dpoints", ".bin");
+        std::ofstream ofile2(filename, std::ios::binary);
+        ofile2.write((char*)points2D, 2 * sizeof(float) * size);
+        ofile2.close();
+
+        //Prints out the real values for a sample of the 
+        filename = getStandardFilename("2dpoints", ".txt");
+        FILE* f = fopen(filename.c_str(), "w");
+        fclose(f);
+        f = fopen(filename.c_str(), "a");
+        int i = 0;
+        std::ostringstream oss;
+        while (i < 100) {
+            oss << "num: " << i << " x: " << points2D[2 * i] << " y: " << points2D[2 * i + 1] << "\n";
+            ++i;
+        }
+        i = (size / 2);
+        int maxPrint = i + 100;
+        while (i < maxPrint) {
+            oss << "num: " << i << " x: " << points2D[2 * i] << " y: " << points2D[2 * i + 1] << "\n";
+            ++i;
+        }
+        i = size - 100;
+        while (i < size) {
+            oss << "num: " << i << " x: " << points2D[2 * i] << " y: " << points2D[2 * i + 1] << "\n";
+            ++i;
+        }
+        std::string str = oss.str();
+        fprintf(f, str.c_str());
+        fclose(f);
     }
-    i = (size / 2);
-    int maxPrint = i + 100;
-    while (i < maxPrint) {
-        oss << "num: " << i << " x: " << points2D[2 * i] << " y: " << points2D[2 * i + 1] << "\n";
-        ++i;
-    }
-    i = size - 100;
-    while (i < size) {
-        oss << "num: " << i << " x: " << points2D[2 * i] << " y: " << points2D[2 * i + 1] << "\n";
-        ++i;
-    }
-    std::string str = oss.str();
-    fprintf(f, str.c_str());
-    fclose(f);
 }
 
 void Scenario::setDepthBuffer() {
@@ -997,7 +1011,7 @@ void Scenario::setDepthBuffer() {
             Vector3 relPos = depthToCamCoords(ndc, i, j);
 
             float distance = sqrt(SYSTEM::VDIST2(0, 0, 0, relPos.x, relPos.y, relPos.z));
-            if (distance <= 120) {
+            if (distance <= MAX_LIDAR_DIST) {
                 float* p = m_pDMPointClouds + (pointCount * 4);
                 *p = relPos.y;
                 *(p + 1) = -relPos.x;
@@ -1016,7 +1030,7 @@ void Scenario::setDepthBuffer() {
     filename = getStandardFilename("depthPC", ".bin");
 
     std::ofstream ofile1(filename, std::ios::binary);
-    ofile1.write((char*)m_pDMPointClouds, 4 * sizeof(float) * pointCount);
+    ofile1.write((char*)m_pDMPointClouds, FLOATS_PER_POINT * sizeof(float) * pointCount);
     ofile1.close();
 
     log("After saving");
@@ -1059,7 +1073,7 @@ void Scenario::setDepthBuffer() {
     //            }
 
     //            float distance = sqrt(SYSTEM::VDIST2(0, 0, 0, pos.x, pos.y, pos.z));
-    //            if (distance <= 120) {
+    //            if (distance <= MAX_LIDAR_DIST) {
     //                float* p = m_pDMPointClouds + (pointCount * 4);
     //                /**p = vec_cam_coord.z;
     //                *(p + 1) = -vec_cam_coord.x;
@@ -1085,7 +1099,7 @@ void Scenario::setDepthBuffer() {
     //sprintf(filename1, format1, instance_index);
 
     //std::ofstream ofile1(filename1, std::ios::binary);
-    //ofile1.write((char*)m_pDMPointClouds, 4 * sizeof(float) * pointCount);
+    //ofile1.write((char*)m_pDMPointClouds, FLOATS_PER_POINT * sizeof(float) * pointCount);
     //ofile1.close();
 
     //log("After saving");
