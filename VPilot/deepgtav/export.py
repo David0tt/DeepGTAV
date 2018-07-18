@@ -44,36 +44,38 @@ def outputObjectInfo(text_file, instance):
 def printInstances(filename, list, augment, tracking=False):
     text_file = open(filename, "a")
     for instance in list:
-        if tracking:
-            text_file.write("%d" % instance['trackFirstFrame'])
-            text_file.write(" %d " % instance['entityID'])
-            outputObjectInfo(text_file, instance)
-        else:
-            outputObjectInfo(text_file, instance)
+        #Only print animals (classId 11) for augmented albels
+        if instance['classID'] != 11 or augment:
+            if tracking:
+                text_file.write("%d" % instance['trackFirstFrame'])
+                text_file.write(" %d " % instance['entityID'])
+                outputObjectInfo(text_file, instance)
+            else:
+                outputObjectInfo(text_file, instance)
 
-            if augment:
-                text_file.write(" Augmentations:")
-                text_file.write(" %d" % instance['entityID'])
-                text_file.write(" %d" % instance['pointsHit'])
-                text_file.write(" %f" % instance['speed'])
-                text_file.write(" %f" % instance['heading'])
-                text_file.write(" %d" % instance['classID'])
+                if augment:
+                    text_file.write(" Augmentations:")
+                    text_file.write(" %d" % instance['entityID'])
+                    text_file.write(" %d" % instance['pointsHit'])
+                    text_file.write(" %f" % instance['speed'])
+                    text_file.write(" %f" % instance['heading'])
+                    text_file.write(" %d" % instance['classID'])
+                    
+                    if instance['offscreen']:
+                        text_file.write(" 0")
+                    else:
+                        text_file.write(" 1")
+
+                    #3D dimensions offcenter
+                    for num in instance['offcenter']:
+                        text_file.write(" %f" % num)
                 
-                if instance['offscreen']:
-                    text_file.write(" 0")
-                else:
-                    text_file.write(" 1")
+                    # for num in instance['FUR']:
+                    #     text_file.write(" %f" % num)
+                    # for num in instance['BLL']:
+                    #     text_file.write(" %f" % num)
 
-                #3D dimensions offcenter
-                for num in instance['offcenter']:
-                    text_file.write(" %f" % num)
-            
-                # for num in instance['FUR']:
-                #     text_file.write(" %f" % num)
-                # for num in instance['BLL']:
-                #     text_file.write(" %f" % num)
-
-        text_file.write("\n")
+            text_file.write("\n")
     text_file.close()
 
 def printCalib(filename, focalLen, width, height):
