@@ -32,6 +32,7 @@ static ComPtr<ID3D11Buffer> constantBuf;
 static vector<unsigned char> depthBuf;
 static vector<unsigned char> colorBuf;
 static vector<unsigned char> stencilBuf;
+static bool requestPrevBuffers = false;
 static rage_matrices constants;
 static bool request_copy = false;
 static mutex copy_mtx;
@@ -213,6 +214,10 @@ void ExtractDepthBuffer(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Resou
 	ctx->CopyResource(depthRes.Get(), res);
 	last_depth_time = std::chrono::high_resolution_clock::now();
 	//unpack_depth(dev, ctx, res, depthBuf, stencilBuf);
+
+    if (requestPrevBuffers) {
+        requestPrevBuffers = false;
+    }
 }
 
 void ExtractColorBuffer(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Resource* tex)
@@ -242,6 +247,7 @@ void ExtractConstantBuffer(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Bu
 extern "C" {
 	__declspec(dllexport) int export_get_depth_buffer(void** buf)
 	{
+        requestPrevBuffers = true;
 		if (lastDev == nullptr || lastCtx == nullptr || depthRes == nullptr) return -1;
 		unpack_depth(lastDev.Get(), lastCtx.Get(), depthRes.Get(), depthBuf, stencilBuf);
 		*buf = &depthBuf[0];
@@ -283,4 +289,17 @@ extern "C" {
 	__declspec(dllexport) long long int export_get_current_time() {
 		return duration_cast<milliseconds>(high_resolution_clock::now().time_since_epoch()).count();
 	}
+
+    __declspec(dllexport) int export_get_previous_depth_stencil_buffers(void** dBuf, void** sBuf, int &stencilSize)
+    {
+        if (requestPrevBuffers) {
+            return -1;
+        }
+        if (lastDev == nullptr || lastCtx == nullptr || depthRes == nullptr) return -1;
+        unpack_depth(lastDev.Get(), lastCtx.Get(), depthRes.Get(), depthBuf, stencilBuf);
+        *dBuf = &depthBuf[0];
+        *sBuf = &stencilBuf[0];
+        stencilSize = stencilBuf.size();
+        return depthBuf.size();
+    }
 }	

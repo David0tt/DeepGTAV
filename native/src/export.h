@@ -17,6 +17,7 @@ extern "C" {
 	__declspec(dllexport) int export_get_depth_buffer(void** buf);
 	__declspec(dllexport) int export_get_color_buffer(void** buf);
 	__declspec(dllexport) int export_get_stencil_buffer(void** buf);
+    __declspec(dllexport) int export_get_previous_depth_stencil_buffers(void** dBuf, void** sBuf, int &stencilSize);
 	__declspec(dllexport) int export_get_constant_buffer(rage_matrices* buf);
 }
 #endif
