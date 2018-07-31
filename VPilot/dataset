@@ -38,7 +38,7 @@ if tracking:
     collectVehicles = True
     collectPeds = True
     collectOffscreen = False
-    captureRate = 1
+    captureRate = 10
 
 # Stores a dataset file with data coming from DeepGTAV
 if __name__ == '__main__':
