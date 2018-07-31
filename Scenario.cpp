@@ -1002,6 +1002,7 @@ void Scenario::collectLiDAR() {
     }
 }
 
+//TODO Calls to export_get_color_buffer are causing GTA to crash
 void Scenario::setColorBuffer() {
     int size = export_get_color_buffer((void**)&color_buf);
 
@@ -1012,7 +1013,6 @@ void Scenario::setColorBuffer() {
 }
 
 void Scenario::setDepthBuffer(bool prevDepth) {
-    setColorBuffer();
     int size;
     std::string filename;
     std::string pcFilename;
