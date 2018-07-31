@@ -371,6 +371,7 @@ void Scenario::run() {
 		std::clock_t now = std::clock();
 
 		Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(vehicle, 1);
+        //TODO Should this be in here? Shouldn't cam automatically rotate with vehicle?
 		CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 1);
 
 		if (_drivingMode < 0) {
