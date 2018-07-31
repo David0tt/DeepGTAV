@@ -3,11 +3,12 @@
 
 #pragma once
 
+static char* logDir = getenv("GTA_LOG_DIR");
 static bool LOGGING = true;
 static bool DEBUG_LOGGING = false;
 static void log(std::string str, bool override = false) {
-    if (override || LOGGING) {
-        FILE* f = fopen("C:\\GTA V\\Braden.log", "a");
+    if ((override || LOGGING) && logDir != NULL) {
+        FILE* f = fopen(logDir, "a");
         fprintf(f, str.c_str());
         fprintf(f, "\n");
         fclose(f);
