@@ -8,6 +8,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="LiDAR.cpp" />
+    <ClCompile Include="lodepng.cpp" />
     <ClCompile Include="Rewarders\GeneralRewarder.cpp" />
     <ClCompile Include="Rewarders\LaneRewarder.cpp" />
     <ClCompile Include="lib\main.cpp" />
@@ -24,6 +25,7 @@
     <ClInclude Include="Functions.h" />
     <ClInclude Include="Constants.h" />
     <ClInclude Include="LiDAR.h" />
+    <ClInclude Include="lodepng.h" />
     <ClInclude Include="RAGETransforms.h" />
     <ClInclude Include="Rewarders\Rewarder.h" />
     <ClInclude Include="Rewarders\GeneralRewarder.h" />

@@ -591,24 +591,26 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
             }
         }
 
-        //Corrects 3D bounding boxes with raycasting points
-        if (m_entitiesHit->find(entityID) != m_entitiesHit->end()) {
-            HitLidarEntity* hitEnt = m_entitiesHit->at(entityID);
-            hitEnt->pointsHit++;
-            Vector3 vecFromObjCenter = subtractVector(vec, hitEnt->position);
-            float forwardFromObjCenter = vecFromObjCenter.x * hitEnt->forward.x + vecFromObjCenter.y * hitEnt->forward.y + vecFromObjCenter.z * hitEnt->forward.z;
-            if (forwardFromObjCenter > hitEnt->maxFront) hitEnt->maxFront = forwardFromObjCenter;
-            if (forwardFromObjCenter < hitEnt->maxBack) hitEnt->maxBack = forwardFromObjCenter;
-        }
-        else {
-            Vector3 forwardVector;
-            Vector3 rightVector;
-            Vector3 upVector;
-            Vector3 position;
-            ENTITY::GET_ENTITY_MATRIX(entityID, &forwardVector, &rightVector, &upVector, &position); //Blue or red pill
-            position = subtractVector(position, m_curPos);
-            HitLidarEntity* hitEnt = new HitLidarEntity(forwardVector, position);
-            m_entitiesHit->insert(std::pair<int,HitLidarEntity*>(entityID,hitEnt));
+        if (CORRECT_BBOXES_WITH_RAYCASTING) {
+            //Corrects 3D bounding boxes with raycasting points
+            if (m_entitiesHit->find(entityID) != m_entitiesHit->end()) {
+                HitLidarEntity* hitEnt = m_entitiesHit->at(entityID);
+                hitEnt->pointsHit++;
+                Vector3 vecFromObjCenter = subtractVector(vec, hitEnt->position);
+                float forwardFromObjCenter = vecFromObjCenter.x * hitEnt->forward.x + vecFromObjCenter.y * hitEnt->forward.y + vecFromObjCenter.z * hitEnt->forward.z;
+                if (forwardFromObjCenter > hitEnt->maxFront) hitEnt->maxFront = forwardFromObjCenter;
+                if (forwardFromObjCenter < hitEnt->maxBack) hitEnt->maxBack = forwardFromObjCenter;
+            }
+            else {
+                Vector3 forwardVector;
+                Vector3 rightVector;
+                Vector3 upVector;
+                Vector3 position;
+                ENTITY::GET_ENTITY_MATRIX(entityID, &forwardVector, &rightVector, &upVector, &position); //Blue or red pill
+                position = subtractVector(position, m_curPos);
+                HitLidarEntity* hitEnt = new HitLidarEntity(forwardVector, position);
+                m_entitiesHit->insert(std::pair<int, HitLidarEntity*>(entityID, hitEnt));
+            }
         }
     }
 

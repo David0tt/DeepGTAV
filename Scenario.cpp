@@ -13,11 +13,13 @@
 #include "RAGETransforms.h"
 #include "Constants.h"
 #include <Eigen/Core>
+#include "lodepng.h"
 
 extern "C" {
     __declspec(dllimport) int export_get_depth_buffer(void** buf);
     __declspec(dllexport) int export_get_color_buffer(void** buf);
     __declspec(dllexport) int export_get_stencil_buffer(void** buf);
+    __declspec(dllimport) int export_get_previous_depth_stencil_buffers(void** dBuf, void** sBuf, int &stencilSize);
 }
 
 const float VERT_CAM_FOV = 59; //In degrees
@@ -434,14 +436,20 @@ StringBuffer Scenario::generateMessage() {
 	buffer.Clear();
 	Writer<StringBuffer> writer(buffer);
 	
+    log("About to pause game");
     GAMEPLAY::SET_GAME_PAUSED(true);
+    //CAM::RENDER_SCRIPT_CAMS(TRUE, FALSE, 0, FALSE, FALSE);
+    //scriptWait(0);
+    //log("Script cams rendered");
 	screenCapturer->capture();
+    log("Screen captured");
 
     //TODO pass this through
     bool depthMap = true;
 
     setIndex();
     setPosition();
+    //if (depthMap && lidar_initialized && m_prevDepth) setDepthBuffer(true);
     if (depthMap && lidar_initialized) setDepthBuffer();
     if (pointclouds && lidar_initialized) collectLiDAR();
 	if (vehicles) setVehiclesList();
@@ -993,10 +1001,45 @@ void Scenario::collectLiDAR() {
     }
 }
 
-void Scenario::setDepthBuffer() {
-    int size = export_get_depth_buffer((void**)&depth_map);
+void Scenario::setColorBuffer() {
+    int size = export_get_color_buffer((void**)&color_buf);
 
-    std::string filename = getStandardFilename("depth", ".raw");
+    std::string filename = getStandardFilename("colorBuffer", ".png");
+    std::vector<std::uint8_t> ImageBuffer;
+    lodepng::encode(ImageBuffer, color_buf, width, height);
+    lodepng::save_file(ImageBuffer, filename);
+}
+
+void Scenario::setDepthBuffer(bool prevDepth) {
+    setColorBuffer();
+    int size;
+    std::string filename;
+    std::string pcFilename;
+    log("About to get depth buffer");
+    if (prevDepth) {
+        filename = m_prevDepthFilename;
+        pcFilename = m_prevDepthPCFilename;
+        log("previous depth buffer");
+        int stencilSize = -1;
+        size = export_get_previous_depth_stencil_buffers((void**)&depth_map, (void**)&m_stencilBuffer, stencilSize);
+        if (size == -1) {
+            return;
+        }
+        m_prevDepth = false;
+        //TODO Use stencil buffer
+    }
+    else {
+        log("current depth buffer");
+        filename = getStandardFilename("depth", ".raw");
+        pcFilename = getStandardFilename("depthPC", ".bin");
+        size = export_get_depth_buffer((void**)&depth_map);
+
+        m_prevDepthFilename = filename;
+        m_prevDepthPCFilename = pcFilename;
+        m_prevDepth = true;
+    }
+    log("After getting depth buffer");
+
     std::ofstream ofile(filename, std::ios::binary);
     ofile.write((char*)depth_map, size);
     ofile.close();
@@ -1027,9 +1070,7 @@ void Scenario::setDepthBuffer() {
     std::string str = oss.str();
     log(str);
 
-    filename = getStandardFilename("depthPC", ".bin");
-
-    std::ofstream ofile1(filename, std::ios::binary);
+    std::ofstream ofile1(pcFilename, std::ios::binary);
     ofile1.write((char*)m_pDMPointClouds, FLOATS_PER_POINT * sizeof(float) * pointCount);
     ofile1.close();
 

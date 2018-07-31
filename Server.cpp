@@ -127,6 +127,10 @@ void Server::checkSendMessage() {
 	int error;
 	int r;
 
+    if (scenario.m_prevDepth) {
+        scenario.setDepthBuffer(true);
+    }
+
     //Return from this function to allow time gaps between series
     if (scenario.collectTracking) {
         if (scenario.trSeriesGap) {

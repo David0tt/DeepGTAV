@@ -82,12 +82,16 @@ private:
 
     //Depth Map variables
     float* depth_map = NULL;
+    float* m_stencilBuffer = NULL;
     float* m_pDMPointClouds;
     float m_nearClip;
     float m_fov;
     float m_ncHeight;
     float m_ncWidth;
     bool m_depthInit = false;
+    unsigned char* color_buf;
+    std::string m_prevDepthFilename;
+    std::string m_prevDepthPCFilename;
 
     bool vehicles_created = false;
     std::vector<VehicleToCreate> vehiclesToCreate;
@@ -107,6 +111,10 @@ public:
 	void config(const Value& sc, const Value& dc);
 	void setCommands(float throttle, float brake, float steering);
 	void run();
+
+    //Depth buffer fn/var needs to be accessed by server
+    void setDepthBuffer(bool prevDepth = false);
+    bool m_prevDepth = false;
 
 	ScreenCapturer* screenCapturer;
 	StringBuffer generateMessage();
@@ -158,7 +166,7 @@ private:
     void createVehicle(const char* model, float relativeForward, float relativeRight, float heading, int color, int color2);
     void createPed(int model, float relativeForward, float relativeRight, float heading, int task);
     void increaseIndex();
-    void setDepthBuffer();
+    void setColorBuffer();
     void setDepthParams();
     Vector3 depthToCamCoords(float depth, float screenX, float screenY);
     std::string getStandardFilename(std::string subDir, std::string extension);
