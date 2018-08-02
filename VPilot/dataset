@@ -171,13 +171,14 @@ if __name__ == '__main__':
 
             curPosition = message['curPosition']
             if tracking:
-                filename = "%s\\oxts\\%04d\\timestamps.txt" % (base_folder, message['seriesIndex'])
-                ensureDirExists(filename)
-                text_file = open(filename, "a")
-                text = message['time']
-                dateString = datetime.date.today().strftime("%Y-%m-%d")
-                text_file.write("%s %s\n" % (dateString, text))
-                text_file.close()
+                # TODO: there is no in-game time reference that properly correlates night/day and real time between frames
+                # filename = "%s\\oxts\\%04d\\timestamps.txt" % (base_folder, message['seriesIndex'])
+                # ensureDirExists(filename)
+                # text_file = open(filename, "a")
+                # text = message['time']
+                # dateString = datetime.date.today().strftime("%Y-%m-%d")
+                # text_file.write("%s %s\n" % (dateString, text))
+                # text_file.close()
 
                 filename = "%soxts\\data\\%s.txt" % (base_folder, indexString)
                 ensureDirExists(filename)
