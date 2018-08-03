@@ -17,6 +17,7 @@ LiDAR::LiDAR()
     m_pPointClouds = NULL;
     m_pRaycastPointCloud = NULL;
     m_lidar2DPoints = NULL;
+    m_updatedPointCloud = NULL;
     m_pointsHit = 0;
     m_maxRange = 0;
     m_vertiUpLimit = 0;
@@ -116,6 +117,12 @@ void LiDAR::Init3DLiDAR_SmplNum(float maxRange, int horizSmplNum, float horizLeL
     if (m_pRaycastPointCloud == NULL)
         printf("\nLiDAR: memory alloc err3");
 
+    if (!m_updatedPointCloud)
+        //Malloc 4*max number of points bytes for the point cloud
+        m_updatedPointCloud = (float*)malloc((MAX_POINTS * sizeof(float)));
+    if (m_updatedPointCloud == NULL)
+        printf("\nLiDAR: memory alloc err4");
+
     //Malloc 2*max number of points bytes for the 3d -> 2d point map
     if (GENERATE_2D_POINTMAP) {
         m_lidar2DPoints = (float*)malloc((MAX_POINTS * sizeof(float)) / 2);
@@ -178,6 +185,10 @@ void LiDAR::DestroyLiDAR()
         free(m_pRaycastPointCloud);
         m_pRaycastPointCloud = NULL;
     }
+    if (m_updatedPointCloud) {
+        free(m_updatedPointCloud);
+        m_updatedPointCloud = NULL;
+    }
     if (m_lidar2DPoints) {
         free(m_lidar2DPoints);
         m_lidar2DPoints = NULL;
@@ -207,6 +218,27 @@ float * LiDAR::GetRaycastPointcloud(int &size) {
     return m_pRaycastPointCloud;
 }
 
+float* LiDAR::UpdatePointCloud(int &size, float* depthMap) {
+    for (int i = 0; i < m_hitDepthPoints.size(); i++) {
+        Vector3 vec_cam_coord = get3DFromDepthTarget(m_hitDepthPoints[i].target, m_hitDepthPoints[i].target2D);
+
+        float newDistance = sqrt(SYSTEM::VDIST2(0, 0, 0, vec_cam_coord.x, vec_cam_coord.y, vec_cam_coord.z));
+        if (newDistance <= MAX_LIDAR_DIST) {
+            //Note: The y/x axes are changed to conform with KITTI velodyne axes
+            float* p = m_updatedPointCloud + (m_updatedPointCount * FLOATS_PER_POINT);
+            *p = vec_cam_coord.y;
+            *(p + 1) = -vec_cam_coord.x;
+            *(p + 2) = vec_cam_coord.z;
+            *(p + 3) = 0;//We don't have the entityID if we're using the depth map
+            ++m_updatedPointCount;
+        }
+    }
+
+    size = m_updatedPointCount;
+    m_hitDepthPoints.clear();
+    return m_updatedPointCloud;
+}
+
 float * LiDAR::GetPointClouds(int &size, std::unordered_map<int, HitLidarEntity*> *entitiesHit, int param, float* depthMap)
 {
     m_depthMap = depthMap;
@@ -222,6 +254,7 @@ float * LiDAR::GetPointClouds(int &size, std::unordered_map<int, HitLidarEntity*
     m_raycastPoints = 0;
     m_depthMapPoints = 0;
     m_beamCount = 0;
+    m_updatedPointCount = 0;
 
     if (m_pPointClouds == NULL || m_initType == _LIDAR_NOT_INIT_YET_ || !m_isAttach)
         return NULL;
@@ -451,6 +484,39 @@ Vector3 LiDAR::adjustEndCoord(Vector3 pos, Vector3 relPos) {
     return relPos;
 }
 
+Vector3 LiDAR::get3DFromDepthTarget(Vector3 target, Eigen::Vector2f target2D){
+    Vector3 unitVec;
+    float distance = sqrt(SYSTEM::VDIST2(m_curPos.x, m_curPos.y, m_curPos.z, target.x, target.y, target.z));
+    unitVec.x = (target.x - m_curPos.x) / distance;
+    unitVec.y = (target.y - m_curPos.y) / distance;
+    unitVec.z = (target.z - m_curPos.z) / distance;
+
+    float depth = getDepthFromScreenPos(target2D(0), target2D(1));
+
+    Vector3 depthEndCoord;
+    depthEndCoord.x = unitVec.x * depth;
+    depthEndCoord.y = unitVec.y * depth;
+    depthEndCoord.z = unitVec.z * depth;
+
+    //Depth is already in relative coordinates
+    /*Vector3 vec;
+    vec.x = depthEndCoord.x - m_curPos.x;
+    vec.y = depthEndCoord.y - m_curPos.y;
+    vec.z = depthEndCoord.z - m_curPos.z;*/
+
+    //To convert from world coordinates to GTA vehicle coordinates (where y axis is forward)
+    Vector3 vec_cam_coord = convertCoordinateSystem(depthEndCoord, currentForwardVec, currentRightVec, currentUpVec);
+
+    /*std::ostringstream oss2;
+    oss2 << "***unitVec is: " << unitVec.x << ", " << unitVec.y << ", " << unitVec.z <<
+    "\n depthEndCoord is: " << depthEndCoord.x << ", " << depthEndCoord.y << ", " << depthEndCoord.z <<
+    "\nvec is: " << vec.x << ", " << vec.y << ", " << vec.z <<
+    "\n m_curPos is: " << m_curPos.x << ", " << m_curPos.y << ", " << m_curPos.z;
+    std::string str = oss2.str();
+    log(str);*/
+    return vec_cam_coord;
+}
+
 void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
 {
     if (m_pointsHit >= MAX_POINTS) {
@@ -497,35 +563,13 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
     //log(str);
 
     bool targetOnScreen = isPositionOnScreen(target2D(0), target2D(1));
-    Vector3 depthEndCoord;
     if (targetOnScreen) {
-        Vector3 unitVec;
-        float distance = sqrt(SYSTEM::VDIST2(m_curPos.x, m_curPos.y, m_curPos.z, target.x, target.y, target.z));
-        unitVec.x = (target.x - m_curPos.x) / distance;
-        unitVec.y = (target.y - m_curPos.y) / distance;
-        unitVec.z = (target.z - m_curPos.z) / distance;
+        Hit2DDepth hitDepth;
+        hitDepth.target = target;
+        hitDepth.target2D = target2D;
+        m_hitDepthPoints.push_back(hitDepth);
 
-        float depth = getDepthFromScreenPos(target2D(0), target2D(1));
-        depthEndCoord.x = unitVec.x * depth;
-        depthEndCoord.y = unitVec.y * depth;
-        depthEndCoord.z = unitVec.z * depth;
-
-        //Depth is already in relative coordinates
-        /*Vector3 vec;
-        vec.x = depthEndCoord.x - m_curPos.x;
-        vec.y = depthEndCoord.y - m_curPos.y;
-        vec.z = depthEndCoord.z - m_curPos.z;*/
-
-        //To convert from world coordinates to GTA vehicle coordinates (where y axis is forward)
-        Vector3 vec_cam_coord = convertCoordinateSystem(depthEndCoord, currentForwardVec, currentRightVec, currentUpVec);
-
-        /*std::ostringstream oss2;
-        oss2 << "***unitVec is: " << unitVec.x << ", " << unitVec.y << ", " << unitVec.z <<
-        "\n depthEndCoord is: " << depthEndCoord.x << ", " << depthEndCoord.y << ", " << depthEndCoord.z <<
-            "\nvec is: " << vec.x << ", " << vec.y << ", " << vec.z <<
-            "\n m_curPos is: " << m_curPos.x << ", " << m_curPos.y << ", " << m_curPos.z;
-        std::string str = oss2.str();
-        log(str);*/
+        Vector3 vec_cam_coord = get3DFromDepthTarget(target, target2D);
 
         float newDistance = sqrt(SYSTEM::VDIST2(0, 0, 0, vec_cam_coord.x, vec_cam_coord.y, vec_cam_coord.z));
         if (newDistance <= MAX_LIDAR_DIST) {
@@ -561,6 +605,13 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
             *(p + 2) = vec_cam_coord.z;
             *(p + 3) = entityID;//This is the entityID (Only non-zero for pedestrians and vehicles)
             ++m_pointsHit;
+
+            float* pUpdatedPC = m_updatedPointCloud + (m_updatedPointCount * FLOATS_PER_POINT);
+            *pUpdatedPC = vec_cam_coord.y;
+            *(pUpdatedPC + 1) = -vec_cam_coord.x;
+            *(pUpdatedPC + 2) = vec_cam_coord.z;
+            *(pUpdatedPC + 3) = entityID;//This is the entityID (Only non-zero for pedestrians and vehicles)
+            ++m_updatedPointCount;
         }
 
         if (OUTPUT_RAYCAST_POINTS) {

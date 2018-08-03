@@ -32,6 +32,11 @@ struct HitLidarEntity {
     }
 };
 
+struct Hit2DDepth {
+    Vector3 target;
+    Eigen::Vector2f target2D;
+};
+
 class LiDAR
 {
 public:
@@ -74,6 +79,7 @@ public:
     float* GetPointClouds(int &size, std::unordered_map<int, HitLidarEntity*> *entitiesHit, int param, float* depthMap);
     float* Get2DPoints(int &size);
     float* GetRaycastPointcloud(int & size);
+    float* UpdatePointCloud(int &size, float* depthMap);
     int getTotalSmplNum();
     int getVertiSmplNum();
     int getHorizSmplNum();
@@ -139,4 +145,10 @@ private:
     Vector3 adjustEndCoord(Vector3 pos, Vector3 relPos);
     float depthFromNDC(int x, int y, float screenX = 0.0f, float screenY = 0.0f);
     float getDepthFromScreenPos(float screenX, float screenY);
+
+    //Updating at a later time with the new depth map
+    int m_updatedPointCount;
+    float * m_updatedPointCloud;
+    Vector3 get3DFromDepthTarget(Vector3 target, Eigen::Vector2f target2D);
+    std::vector<Hit2DDepth> m_hitDepthPoints;
 };

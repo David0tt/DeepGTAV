@@ -4,7 +4,7 @@
 #pragma once
 
 static char* logDir = getenv("GTA_LOG_DIR");
-static bool LOGGING = true;
+static bool LOGGING = false;
 static bool DEBUG_LOGGING = false;
 static void log(std::string str, bool override = false) {
     if ((override || LOGGING) && logDir != NULL) {

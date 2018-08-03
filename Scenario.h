@@ -92,6 +92,7 @@ private:
     unsigned char* color_buf;
     std::string m_prevDepthFilename;
     std::string m_prevDepthPCFilename;
+    std::string m_prevPCFilename;
 
     bool vehicles_created = false;
     std::vector<VehicleToCreate> vehiclesToCreate;

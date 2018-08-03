@@ -961,6 +961,9 @@ void Scenario::collectLiDAR() {
     lidar.updateCurrentPosition(currentForwardVector, currentRightVector, currentUpVector);
     float * pointCloud = lidar.GetPointClouds(pointCloudSize, &entitiesHit, lidar_param, depth_map);
 
+    //U for updated from next depth map
+    m_prevPCFilename = getStandardFilename("velodyneU", ".bin");
+
     std::string filename = getStandardFilename("velodyne", ".bin");
     std::ofstream ofile(filename, std::ios::binary);
     ofile.write((char*)pointCloud, FLOATS_PER_POINT * sizeof(float)*pointCloudSize);
@@ -1039,6 +1042,12 @@ void Scenario::setDepthBuffer(bool prevDepth) {
             return;
         }
         m_prevDepth = false;
+
+        float * pointCloud = lidar.UpdatePointCloud(pointCloudSize, depth_map);
+        std::ofstream ofile1(m_prevPCFilename, std::ios::binary);
+        ofile1.write((char*)pointCloud, FLOATS_PER_POINT * sizeof(float) * pointCloudSize);
+        ofile1.close();
+
         //TODO Use stencil buffer
     }
     else {
