@@ -100,6 +100,11 @@ private:
 
     //For tracking: first frame in a series that an entity appears
     std::unordered_map<int, int> trackFirstFrame;
+    //For calculating real speed
+    Vector3 m_trackLastPos;
+    float m_trackRealSpeed;
+    float m_trackDist;
+    
 
     //Camera intrinsic parameters
     float intrinsics[3];
@@ -170,6 +175,7 @@ private:
     void setDepthParams();
     Vector3 depthToCamCoords(float depth, float screenX, float screenY);
     std::string getStandardFilename(std::string subDir, std::string extension);
+    void outputRealSpeed();
 
     BBox2D BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector);
 

@@ -453,6 +453,7 @@ StringBuffer Scenario::generateMessage() {
 
     setIndex();
     setPosition();
+    outputRealSpeed();
     //if (depthMap && lidar_initialized && m_prevDepth) setDepthBuffer(true);
     if (depthMap && lidar_initialized) setDepthBuffer();
     if (pointclouds && lidar_initialized) collectLiDAR();
@@ -1279,4 +1280,26 @@ std::string Scenario::getStandardFilename(std::string subDir, std::string extens
     filename.append(instance_string);
     filename.append(extension);
     return filename;
+}
+
+void Scenario::outputRealSpeed() {
+    if (instance_index % 10 == 0) {
+        if (instance_index != 0) {
+            m_trackRealSpeed /= 10;
+
+            std::ostringstream oss;
+            oss << "Speed: " << m_trackRealSpeed << " dist: " << m_trackDist;
+            std::string str = oss.str();
+            log(str, true);
+        }
+
+        //Reset to zero
+        m_trackRealSpeed = 0;
+        m_trackDist = 0;
+    }
+    else {
+        m_trackRealSpeed += ENTITY::GET_ENTITY_SPEED(vehicle);
+        m_trackDist += sqrt(SYSTEM::VDIST2(currentPos.x, currentPos.y, currentPos.z, m_trackLastPos.x, m_trackLastPos.y, m_trackLastPos.z));
+    }
+    m_trackLastPos = currentPos;
 }
