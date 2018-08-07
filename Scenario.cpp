@@ -16,7 +16,7 @@
 #include "lodepng.h"
 
 extern "C" {
-    __declspec(dllimport) int export_get_depth_buffer(void** buf);
+    __declspec(dllimport) int export_get_depth_buffer(void** buf, bool updateWithOffsetDepth);
     __declspec(dllexport) int export_get_color_buffer(void** buf);
     __declspec(dllexport) int export_get_stencil_buffer(void** buf);
     __declspec(dllimport) int export_get_previous_depth_stencil_buffers(void** dBuf, void** sBuf, int &stencilSize);
@@ -1057,7 +1057,7 @@ void Scenario::setDepthBuffer(bool prevDepth) {
         log("current depth buffer");
         filename = getStandardFilename("depth", ".raw");
         pcFilename = getStandardFilename("depthPC", ".bin");
-        size = export_get_depth_buffer((void**)&depth_map);
+        size = export_get_depth_buffer((void**)&depth_map, UPDATE_PC_WITH_OFFSET_DEPTH);
 
         m_prevDepthFilename = filename;
         m_prevDepthPCFilename = pcFilename;

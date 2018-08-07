@@ -3,6 +3,7 @@
 #include "lib/rapidjson/document.h"
 #include "lib/rapidjson/stringbuffer.h"
 #include "lib/main.h"
+#include "Constants.h"
 
 using namespace rapidjson;
 
@@ -127,7 +128,7 @@ void Server::checkSendMessage() {
 	int error;
 	int r;
 
-    if (scenario.m_prevDepth) {
+    if (UPDATE_PC_WITH_OFFSET_DEPTH && scenario.m_prevDepth) {
         scenario.setDepthBuffer(true);
     }
 
