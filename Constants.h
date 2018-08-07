@@ -15,6 +15,7 @@ const bool OUTPUT_ADJUSTED_POINTS = false;
 //Outputs secondary pointcloud with raycast points
 const bool OUTPUT_RAYCAST_POINTS = true;
 const bool CORRECT_BBOXES_WITH_RAYCASTING = false;
+const bool OUTPUT_DM_POINTCLOUD = true;
 
 //Sends animals to client. Client only outputs them in augmented labels at the moment
-const bool RETAIN_ANIMALS = true;
+const bool RETAIN_ANIMALS = false;
