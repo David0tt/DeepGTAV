@@ -165,9 +165,15 @@ if __name__ == '__main__':
                 printInstances(filename, message['peds'], True)
 
             #Print calib file
-            filename = "%scalib\\%s.txt" % (base_folder, indexString)
-            ensureDirExists(filename)
-            printCalib(filename, message['focalLen'], width, height)
+            if tracking:
+                if index == 0:
+                    filename = "%scalib\\%04d.txt" % (base_folder, message['seriesIndex'])
+                    ensureDirExists(filename)
+                    printCalib(filename, message['focalLen'], width, height)
+            else:
+                filename = "%scalib\\%s.txt" % (base_folder, indexString)
+                ensureDirExists(filename)
+                printCalib(filename, message['focalLen'], width, height)
 
             curPosition = message['curPosition']
             if tracking:
