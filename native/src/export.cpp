@@ -44,7 +44,7 @@ static time_point<high_resolution_clock> last_color_time;
 static time_point<high_resolution_clock> last_constant_time;
 
 static char* logDir = getenv("GTA_LOG_DIR");
-static bool LOGGING = true;
+static bool LOGGING = false;
 static void log(std::string str) {
     if (LOGGING && logDir != NULL) {
         FILE* f = fopen(logDir, "a");
