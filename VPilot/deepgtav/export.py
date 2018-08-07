@@ -88,7 +88,8 @@ def printCalib(filename, focalLen, width, height):
 
     text_file.write("R0_rect: 1 0 0 0 1 0 0 0 1\n")
     #From KITTI velo to KITTI cam
-    text_file.write("Tr_velo_to_cam: 0 -1 0 0 0 0 -1 0 1 0 0 0")
+    text_file.write("Tr_velo_to_cam: 0 -1 0 0 0 0 -1 0 1 0 0 0\n")
+    text_file.write("Tr_imu_to_velo: 1 0 0 0 0 1 0 0 0 0 1 0")
 
     # From GTA to KITTI
     # text_file.write("Tr_velo_to_cam: 1 0 0 0 0 0 -1 0 0 1 0 0")
