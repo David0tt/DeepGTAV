@@ -100,7 +100,7 @@ void OnKeyboardMessage(DWORD key, WORD repeats, BYTE scanCode, BOOL isExtended, 
 	{
 		auto f = fopen("depth.raw", "wb");
 		void* buf;
-		int size = export_get_depth_buffer(&buf);
+		int size = export_get_depth_buffer(&buf, false);
 		fwrite(buf, 1, size, f);
 		fclose(f);
 		f = fopen("stencil.raw", "wb");

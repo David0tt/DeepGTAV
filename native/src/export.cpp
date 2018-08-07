@@ -263,9 +263,11 @@ void ExtractConstantBuffer(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Bu
 }
 
 extern "C" {
-	__declspec(dllexport) int export_get_depth_buffer(void** buf)
+	__declspec(dllexport) int export_get_depth_buffer(void** buf, bool updateWithOffsetDepth)
 	{
-        requestPrevBuffers = true;
+        if (updateWithOffsetDepth) {
+            requestPrevBuffers = true;
+        }
 		if (lastDev == nullptr || lastCtx == nullptr || depthRes == nullptr) return -1;
 		unpack_depth(lastDev.Get(), lastCtx.Get(), depthRes.Get(), depthBuf, stencilBuf);
 		*buf = &depthBuf[0];
