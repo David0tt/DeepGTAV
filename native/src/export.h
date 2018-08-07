@@ -14,7 +14,7 @@ struct rage_matrices {
 }; 
 
 extern "C" {
-	__declspec(dllexport) int export_get_depth_buffer(void** buf, bool updateWithOffsetDepth);
+	__declspec(dllexport) int export_get_depth_buffer(void** buf, bool updateWithOffsetDepth = false);
 	__declspec(dllexport) int export_get_color_buffer(void** buf);
 	__declspec(dllexport) int export_get_stencil_buffer(void** buf);
     __declspec(dllexport) int export_get_previous_depth_stencil_buffers(void** dBuf, void** sBuf, int &stencilSize);
