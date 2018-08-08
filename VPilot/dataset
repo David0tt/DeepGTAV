@@ -196,11 +196,13 @@ if __name__ == '__main__':
 
 
             #Output current location:
-            filename = "%slocation.txt" % (base_folder)
-            ensureDirExists(filename)
-            text_file = open(filename, "w")
-            text_file.write("x: %d, y: %d, z: %d, heading %d" % (curPosition[0], curPosition[1], curPosition[2], curPosition[3]))
-            text_file.close()
+            outputCurrLocation = False
+            if outputCurrLocation:
+                filename = "%slocation.txt" % (base_folder)
+                ensureDirExists(filename)
+                text_file = open(filename, "w")
+                text_file.write("x: %d, y: %d, z: %d, heading %d" % (curPosition[0], curPosition[1], curPosition[2], curPosition[3]))
+                text_file.close()
             print("ending index %d" % index)
 
         except KeyboardInterrupt:
