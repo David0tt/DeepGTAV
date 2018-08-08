@@ -725,17 +725,9 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 kittiPos.y = -relativePos.z;
                 kittiPos.z = relativePos.y;
 
-                //See cs_overview.pdf in the kitti tracking devkit
-                //for details on the calculation of alpha
-                //TODO: Need to check this
-                float beta_kitti = -atan2(kittiPos.z, kittiPos.x);
-                float alpha_kitti = -(rot_y + beta_kitti);
-                /*std::ostringstream oss3;
-                oss3 << "alpha_kitti: " << alpha_kitti << " rot_y: " << rot_y << " beta_kitti: " << beta_kitti
-                    << "\nkittiPos.x: " << kittiPos.x << " kittiPos.y: " << kittiPos.y
-                    << "\kittiForwardVector: " << kittiForwardVector.x << " kittiForwardVector.y: " << kittiForwardVector.y;
-                std::string str3 = oss3.str();
-                log(str3);*/
+                //alpha is rot_y + tan^-1(z/x) + PI/2
+                float beta_kitti = atan2(kittiPos.z, kittiPos.x);
+                float alpha_kitti = rot_y + beta_kitti - PI/2;
 
                 Value _vector(kArrayType);
                 _entity.AddMember("speed", speed, allocator).AddMember("heading", heading, allocator).AddMember("classID", classid, allocator);
