@@ -103,8 +103,15 @@ private:
     //For calculating real speed
     Vector3 m_trackLastPos;
     float m_trackRealSpeed;
+    float m_trackLastRealSpeed;
     float m_trackDist;
-    
+    float m_trackDistVar;
+    float m_trackDistErrorTotal;
+    float m_trackDistErrorTotalVar;
+    float m_trackDistErrorTotalCount;
+    int m_trackLastIndex = -1;
+    int m_trackLastSeqIndex = 0;
+    std::string m_timeTrackFile;
 
     //Camera intrinsic parameters
     float intrinsics[3];
@@ -125,7 +132,7 @@ public:
 	ScreenCapturer* screenCapturer;
 	StringBuffer generateMessage();
 
-    int instance_index = 30;
+    int instance_index = 0;
     int series_index = 0;
     std::string series_string = "0000";
     std::string instance_string;

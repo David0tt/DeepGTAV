@@ -185,6 +185,7 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
     if (collectTracking) {
         baseFolder += "tracking\\";
     }
+    m_timeTrackFile = baseFolder + "\\TimeAnalysis.txt";
 
     if (stationaryScene) {
         vehiclesToCreate.clear();
@@ -332,6 +333,16 @@ void Scenario::buildScenario() {
 
 	AI::CLEAR_PED_TASKS(ped);
 	if (_drivingMode >= 0 && !stationaryScene) AI::TASK_VEHICLE_DRIVE_WANDER(ped, vehicle, _setSpeed, _drivingMode);
+
+    //Overwrite previous time analysis file so it is empty
+    FILE* f = fopen(m_timeTrackFile.c_str(), "w");
+    std::ostringstream oss;
+    oss << "Mean err, var, avg speed, avg dist";
+    oss << "\nResults are in metres. Frames attempted to capture at 10 Hz.";
+    std::string str = oss.str();
+    fprintf(f, str.c_str());
+    fprintf(f, "\n");
+    fclose(f);
 }
 
 void Scenario::start(const Value& sc, const Value& dc) {
@@ -1275,23 +1286,65 @@ std::string Scenario::getStandardFilename(std::string subDir, std::string extens
 }
 
 void Scenario::outputRealSpeed() {
+    //Print to file after every complete series
+    if (m_trackLastSeqIndex != series_index) {
+        m_trackDistErrorTotal /= m_trackDistErrorTotalCount;
+        m_trackDistErrorTotalVar /= m_trackDistErrorTotalCount;
+        m_trackDistErrorTotalVar = sqrt(m_trackDistErrorTotalVar);
+        float avgSpeed = m_trackRealSpeed / m_trackDistErrorTotalCount;
+        float avgDist = m_trackDist / m_trackDistErrorTotalCount;
+
+        FILE* f = fopen(m_timeTrackFile.c_str(), "a");
+        std::ostringstream oss;
+        oss << m_trackDistErrorTotal << " " << m_trackDistErrorTotalVar << " " << avgSpeed << " " << avgDist;
+        std::string str = oss.str();
+        fprintf(f, str.c_str());
+        fprintf(f, "\n");
+        fclose(f);
+
+        //Reset for every sequence
+        m_trackRealSpeed = 0;
+        m_trackDist = 0;
+        m_trackDistErrorTotal = 0;
+        m_trackDistErrorTotalVar == 0;
+        m_trackDistErrorTotalCount = 0;
+        m_trackLastSeqIndex = series_index;
+    }
+
+    //Initialize for every sequence (after printing)
+    if (instance_index == 0) {
+        m_trackLastPos = currentPos;
+        m_trackLastIndex = instance_index;
+        m_trackLastRealSpeed = ENTITY::GET_ENTITY_SPEED(vehicle) / 10;
+        return;
+    }
+
+    //Do not count if we are in the gap between sequences
+    if (m_trackLastIndex == instance_index) {
+        return;
+    }
+
+    //Intermediate results
     if (instance_index % 10 == 0) {
         if (instance_index != 0) {
-            m_trackRealSpeed /= 10;
-
             std::ostringstream oss;
-            oss << "Speed: " << m_trackRealSpeed << " dist: " << m_trackDist;
+            float avgSpeed = m_trackRealSpeed * 10 / m_trackDistErrorTotalCount;
+            float avgDist = m_trackDist * 10 / m_trackDistErrorTotalCount;
+            oss << "Speed: " << avgSpeed << " dist: " << avgDist;
             std::string str = oss.str();
             log(str, true);
         }
+    }
 
-        //Reset to zero
-        m_trackRealSpeed = 0;
-        m_trackDist = 0;
-    }
-    else {
-        m_trackRealSpeed += ENTITY::GET_ENTITY_SPEED(vehicle);
-        m_trackDist += sqrt(SYSTEM::VDIST2(currentPos.x, currentPos.y, currentPos.z, m_trackLastPos.x, m_trackLastPos.y, m_trackLastPos.z));
-    }
+    //Update values
+    //Average of speed at last frame and current frame
+    m_trackRealSpeed += (ENTITY::GET_ENTITY_SPEED(vehicle) / 10 + m_trackLastRealSpeed)/2;
+    m_trackDist += sqrt(SYSTEM::VDIST2(currentPos.x, currentPos.y, currentPos.z, m_trackLastPos.x, m_trackLastPos.y, m_trackLastPos.z));
+    m_trackDistErrorTotal += m_trackDist - m_trackRealSpeed;
+    m_trackDistErrorTotalVar += pow((m_trackDist - m_trackRealSpeed), 2);
+    m_trackDistErrorTotalCount++;
+
     m_trackLastPos = currentPos;
+    m_trackLastIndex = instance_index;
+    m_trackLastRealSpeed = ENTITY::GET_ENTITY_SPEED(vehicle) / 10;
 }
