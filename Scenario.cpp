@@ -455,8 +455,9 @@ StringBuffer Scenario::generateMessage() {
     scriptWait(0);
     CAM::RENDER_SCRIPT_CAMS(TRUE, FALSE, 0, FALSE, FALSE);
     scriptWait(0);
+
     log("Script cams rendered");
-	screenCapturer->capture();
+    screenCapturer->capture();
     log("Screen captured");
 
     //TODO pass this through
@@ -482,6 +483,7 @@ StringBuffer Scenario::generateMessage() {
 	if (location) setLocation();
 	if (time) setTime();
     setFocalLength();
+
     increaseIndex();
     GAMEPLAY::SET_GAME_PAUSED(false);
 
@@ -551,8 +553,7 @@ BBox2D Scenario::BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwa
     bbox.right = 0.0;
     bbox.top = 1.0;// height;
     bbox.bottom = 0.0;
-    //return bbox;
-    //TODO Figure out how to transform world to screen coordinates
+
     for (int right = -1; right <= 1; right += 2) {
         for (int forward = -1; forward <= 1; forward += 2) {
             for (int up = -1; up <= 1; up += 2) {
@@ -561,29 +562,27 @@ BBox2D Scenario::BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwa
                 pos.y = position.y + forward * dim.y*forwardVector.y + right * dim.x*rightVector.y + up * dim.z*upVector.y;
                 pos.z = position.z + forward * dim.y*forwardVector.z + right * dim.x*rightVector.z + up * dim.z*upVector.z;
 
-                float scrX, scrY;
-                bool success = UI::_0xF9904D11F1ACBEC3(pos.x, pos.y, pos.z, &scrX, &scrY);
+                float screenX, screenY;
 
-                float screenX = scrX;// *width;
-                float screenY = scrY;// *height;
+                //This function always returns false, do not worry about return value
+                bool success = GRAPHICS::_WORLD3D_TO_SCREEN2D(pos.x, pos.y, pos.z, &screenX, &screenY);
 
                 std::ostringstream oss2;
-                oss2 << "ScreenX: " << screenX << " ScreenY: " << screenY;
+                oss2 << "\nnew ScreenX: " << screenX << " ScreenY: " << screenY;
                 std::string str2 = oss2.str();
                 log(str2);
 
-                if (screenX < 0 || screenY < 0 || screenX > 1 || screenY > 1) {
-                    log("Screen position is out of bounds.");
-                }
-                if (true) {//Why does the function always return false
-                    if (screenX < bbox.left) bbox.left = screenX;
-                    if (screenX > bbox.right) bbox.right = screenX;
-                    if (screenY < bbox.top) bbox.top = screenY;
-                    if (screenY > bbox.bottom) bbox.bottom = screenY;
-                }
-                else {
-                    log("screen position from world returned false");
-                }
+                //Restrict boxes to screen edges
+                if (screenX < 0) screenX = 0;
+                if (screenX > 1) screenX = 1;
+                if (screenY < 0) screenY = 0;
+                if (screenY > 1) screenY = 1;
+
+                //Update if value outside current box
+                if (screenX < bbox.left) bbox.left = screenX;
+                if (screenX > bbox.right) bbox.right = screenX;
+                if (screenY < bbox.top) bbox.top = screenY;
+                if (screenY > bbox.bottom) bbox.bottom = screenY;
             }
         }
     }
@@ -655,28 +654,6 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 dim.y = 0.5*(max.y - min.y);
                 dim.z = 0.5*(max.z - min.z);
 
-                BBox2D bbox2d = BBox2DFrom3DObject(position, dim, forwardVector, rightVector, upVector);
-                float min_x = 2;
-                float min_y = 2;
-                float max_x = -1;
-                float max_y = -1;
-                Eigen::Matrix3f R;
-                R.col(0) = Eigen::Vector3f(forwardVector.x, forwardVector.y, forwardVector.z);
-                R.col(1) = Eigen::Vector3f(rightVector.x, rightVector.y, rightVector.z);
-                R.col(2) = Eigen::Vector3f(upVector.x, upVector.y, upVector.z);
-                for (int i = 0; i < 8; ++i) {
-                    Eigen::Vector3f pt = Eigen::Vector3f(position.x, position.y, position.z) + R * Eigen::Vector3f(dim.x, dim.y, dim.z).cwiseProduct(2 * coefficients[i]);
-                    Eigen::Vector2f uv = get_2d_from_3d(pt,
-                        Eigen::Vector3f(cam_pos.x, cam_pos.y, cam_pos.z),
-                        Eigen::Vector3f(theta.x, theta.y, theta.z), near_clip, fov);
-                    min_x = min(uv(0), min_x);
-                    min_y = min(uv(1), min_y);
-                    max_x = max(uv(0), max_x);
-                    max_y = max(uv(1), max_y);
-                }
-                //Set the 2d bbox to eigen-calculated values
-                bbox2d.bottom = max_y;bbox2d.top = min_y;bbox2d.right = max_x;bbox2d.left = min_x;
-
                 //Amount dimensions are offcenter
                 Vector3 offcenter;
                 offcenter.x = 0;// max.x + min.x;
@@ -740,6 +717,75 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 float beta_kitti = atan2(kittiPos.z, kittiPos.x);
                 float alpha_kitti = rot_y + beta_kitti - PI/2;
 
+                position.z += dim.z;
+                BBox2D bbox2dGame = BBox2DFrom3DObject(position, dim, forwardVector, rightVector, upVector);
+                float min_x = 2;
+                float min_y = 2;
+                float max_x = -1;
+                float max_y = -1;
+                Eigen::Matrix3f R;
+                R.col(0) = Eigen::Vector3f(forwardVector.x, forwardVector.y, forwardVector.z);
+                R.col(1) = Eigen::Vector3f(rightVector.x, rightVector.y, rightVector.z);
+                R.col(2) = Eigen::Vector3f(upVector.x, upVector.y, upVector.z);
+                for (int i = 0; i < 8; ++i) {
+                    Eigen::Vector3f pt = Eigen::Vector3f(position.x, position.y, position.z) + R * Eigen::Vector3f(dim.x, dim.y, dim.z).cwiseProduct(2 * coefficients[i]);
+                    Eigen::Vector2f uv = get_2d_from_3d(pt,
+                        Eigen::Vector3f(cam_pos.x, cam_pos.y, cam_pos.z),
+                        Eigen::Vector3f(theta.x, theta.y, theta.z), near_clip, fov);
+                    min_x = min(uv(0), min_x);
+                    min_y = min(uv(1), min_y);
+                    max_x = max(uv(0), max_x);
+                    max_y = max(uv(1), max_y);
+                }
+                //Set the 2d bbox to eigen-calculated values
+                BBox2D bbox2dEigen;
+                bbox2dEigen.bottom = max_y; bbox2dEigen.top = min_y; bbox2dEigen.right = max_x; bbox2dEigen.left = min_x;
+
+                BBox2D bbox2d = bbox2dGame;
+                if (bbox2dGame.bottom >= 1 || bbox2dGame.right >= 1 || bbox2dGame.left <= 0 || bbox2dGame.top <= 0) {
+                    bbox2d = bbox2dEigen;
+                }
+                /*if (bbox2dGame.bottom >= 1) bbox2d.bottom = bbox2dEigen.bottom;
+                if (bbox2dGame.right >= 1) bbox2d.right = bbox2dEigen.right;
+                if (bbox2dGame.left <= 0) bbox2d.left = bbox2dEigen.left;
+                if (bbox2dGame.top <= 0) bbox2d.top = bbox2dEigen.top;*/
+
+                //Adjust for 2D bboxes being outside of edges
+                if (bbox2d.bottom < bbox2d.top) {
+                    bbox2d.bottom = bbox2dGame.bottom;
+                    bbox2d.top = bbox2dGame.top;
+                }
+                if (bbox2d.right < bbox2d.left) {
+                    bbox2d.right = bbox2dGame.right;
+                    bbox2d.left = bbox2dGame.left;
+                }
+
+                //Calculate truncation
+                float absL = max(0, bbox2d.left);
+                float absR = min(1, bbox2d.right);
+                float absT = max(0, bbox2d.top);
+                float absB = min(1, bbox2d.bottom);
+                float areaInside = (absR - absL) * (absB - absT);
+                float areaTotal = (bbox2d.right - bbox2d.left) * (bbox2d.bottom - bbox2d.top);
+                float truncation = 1 - (areaInside / areaTotal);
+
+                //Set bbox boundaries
+                bbox2d.left = max(0, bbox2d.left);
+                bbox2d.right = min(1, bbox2d.right);
+                bbox2d.top = max(0, bbox2d.top);
+                bbox2d.bottom = min(1, bbox2d.bottom);
+
+                //Entire object is out of bounds - do not count
+                if (bbox2d.left == bbox2d.right || bbox2d.top == bbox2d.bottom) {
+                    return false;
+                }
+
+                //Code for taking max bounding box
+                /*bbox2d.bottom = max(max_y, bbox2dGame.bottom);
+                bbox2d.top = min(min_y, bbox2dGame.top);
+                bbox2d.right = max(max_x, bbox2dGame.right);
+                bbox2d.left = min(min_x, bbox2dGame.left);*/
+
                 Value _vector(kArrayType);
                 _entity.AddMember("speed", speed, allocator).AddMember("heading", heading, allocator).AddMember("classID", classid, allocator);
                 _entity.AddMember("offscreen", offscreen, allocator);
@@ -756,6 +802,12 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 _entity.AddMember("alpha", alpha_kitti, allocator);
                 _entity.AddMember("entityID", entityID, allocator);
                 _entity.AddMember("distance", distance, allocator);
+                _vector.SetArray();
+                _vector.PushBack(bbox2dGame.left*width, allocator).PushBack(bbox2dGame.top*height, allocator).PushBack(bbox2dGame.right*width, allocator).PushBack(bbox2dGame.bottom*height, allocator);
+                _entity.AddMember("bbox2dGame", _vector, allocator);
+                _vector.SetArray();
+                _vector.PushBack(bbox2dEigen.left*width, allocator).PushBack(bbox2dEigen.top*height, allocator).PushBack(bbox2dEigen.right*width, allocator).PushBack(bbox2dEigen.bottom*height, allocator);
+                _entity.AddMember("bbox2dEigen", _vector, allocator);
                 _vector.SetArray();
                 _vector.PushBack(bbox2d.left*width, allocator).PushBack(bbox2d.top*height, allocator).PushBack(bbox2d.right*width, allocator).PushBack(bbox2d.bottom*height, allocator);
                 _entity.AddMember("bbox2d", _vector, allocator);

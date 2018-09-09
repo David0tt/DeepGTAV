@@ -11,9 +11,21 @@ def getText(classID, distance):
         10: "Pedestrian"
     }.get(classID,"DontCare")
 
-def outputObjectInfo(text_file, instance):
+test2DBoxes = False
+repeats = 1
+if test2DBoxes:
+    repeats = 3
+
+def outputObjectInfo(text_file, instance, bboxType = 1):
     #TODO Determine actual class of vehicle
-    text = getText(instance['classID'], instance['distance'])
+    if test2DBoxes:
+        text = "Train"
+        if bboxType == 1:
+            text = "Car"
+        if bboxType == 2:
+            text = "DontCare"
+    else:
+        text = getText(instance['classID'], instance['distance'])
     text_file.write("%s" % text)
 
     #TODO - Determine if truncated
@@ -26,7 +38,14 @@ def outputObjectInfo(text_file, instance):
     text_file.write(" %f" % instance['alpha'])
 
     #2D Bounding box TODO
-    for num in instance['bbox2d']:
+    bboxNums = instance['bbox2d']
+    if test2DBoxes:
+        if bboxType == 2:
+            bboxNums = instance['bbox2dEigen']
+        if bboxType == 3:
+            bboxNums = instance['bbox2dGame']
+
+    for num in bboxNums:
         text_file.write(" %d" % num)
     
     #3D dimensions
@@ -39,43 +58,43 @@ def outputObjectInfo(text_file, instance):
     
     #Rotation_y
     text_file.write(" %f" % instance['rotation_y'])
-
     
 def printInstances(filename, list, augment, tracking=False):
     text_file = open(filename, "a")
     for instance in list:
         #Only print animals (classId 11) for augmented albels
         if instance['classID'] != 11 or augment:
-            if tracking:
-                text_file.write("%d" % instance['trackFirstFrame'])
-                text_file.write(" %d " % instance['entityID'])
-                outputObjectInfo(text_file, instance)
-            else:
-                outputObjectInfo(text_file, instance)
+            for bboxType in range(3,repeats + 1):
+                if tracking:
+                    text_file.write("%d" % instance['trackFirstFrame'])
+                    text_file.write(" %d " % instance['entityID'])
+                    outputObjectInfo(text_file, instance)
+                else:
+                    outputObjectInfo(text_file, instance, bboxType)
 
-                if augment:
-                    text_file.write(" Augmentations:")
-                    text_file.write(" %d" % instance['entityID'])
-                    text_file.write(" %d" % instance['pointsHit'])
-                    text_file.write(" %f" % instance['speed'])
-                    text_file.write(" %f" % instance['heading'])
-                    text_file.write(" %d" % instance['classID'])
+                    if augment:
+                        text_file.write(" Augmentations:")
+                        text_file.write(" %d" % instance['entityID'])
+                        text_file.write(" %d" % instance['pointsHit'])
+                        text_file.write(" %f" % instance['speed'])
+                        text_file.write(" %f" % instance['heading'])
+                        text_file.write(" %d" % instance['classID'])
+                        
+                        if instance['offscreen']:
+                            text_file.write(" 0")
+                        else:
+                            text_file.write(" 1")
+
+                        #3D dimensions offcenter
+                        for num in instance['offcenter']:
+                            text_file.write(" %f" % num)
                     
-                    if instance['offscreen']:
-                        text_file.write(" 0")
-                    else:
-                        text_file.write(" 1")
+                        # for num in instance['FUR']:
+                        #     text_file.write(" %f" % num)
+                        # for num in instance['BLL']:
+                        #     text_file.write(" %f" % num)
 
-                    #3D dimensions offcenter
-                    for num in instance['offcenter']:
-                        text_file.write(" %f" % num)
-                
-                    # for num in instance['FUR']:
-                    #     text_file.write(" %f" % num)
-                    # for num in instance['BLL']:
-                    #     text_file.write(" %f" % num)
-
-            text_file.write("\n")
+                text_file.write("\n")
     text_file.close()
 
 def printCalib(filename, focalLen, width, height):
