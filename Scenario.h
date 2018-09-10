@@ -184,7 +184,7 @@ private:
     std::string getStandardFilename(std::string subDir, std::string extension);
     void outputRealSpeed();
 
-    BBox2D BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector);
+    BBox2D BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector, bool &success, float &truncation);
 
     //Do not use this function. Causes GTA to crash - need to figure out why
     void setColorBuffer();
