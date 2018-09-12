@@ -381,10 +381,6 @@ void Scenario::run() {
 	if (running) {
 		std::clock_t now = std::clock();
 
-		Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(vehicle, 1);
-        //TODO Should this be in here? Shouldn't cam automatically rotate with vehicle?
-		CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 1);
-
 		if (_drivingMode < 0) {
 			CONTROLS::_SET_CONTROL_NORMAL(27, 71, currentThrottle); //[0,1]
 			CONTROLS::_SET_CONTROL_NORMAL(27, 72, currentBrake); //[0,1]
@@ -450,6 +446,11 @@ StringBuffer Scenario::generateMessage() {
 	
     log("About to pause game");
     GAMEPLAY::SET_GAME_PAUSED(true);
+
+    //Need to ensure camera rotation aligns with vehicle after game is paused
+    Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(vehicle, 1);
+    CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 1);
+
     //Time synchronization seems to be correct with 2 render calls
     CAM::RENDER_SCRIPT_CAMS(TRUE, FALSE, 0, FALSE, FALSE);
     scriptWait(0);
@@ -466,7 +467,6 @@ StringBuffer Scenario::generateMessage() {
     setIndex();
     setPosition();
     outputRealSpeed();
-    //if (depthMap && lidar_initialized && m_prevDepth) setDepthBuffer(true);
     if (depthMap && lidar_initialized) setDepthBuffer();
     if (pointclouds && lidar_initialized) collectLiDAR();
 	if (vehicles) setVehiclesList();
@@ -654,7 +654,7 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
         //Check if it is in screen
         ENTITY::GET_ENTITY_MATRIX(entityID, &forwardVector, &rightVector, &upVector, &position); //Blue or red pill
         float distance = sqrt(SYSTEM::VDIST2(currentPos.x, currentPos.y, currentPos.z, position.x, position.y, position.z));
-        if (distance < 150) {
+        if (distance < 200) {
             //An attempt to try to hit vehicles reliably past 30m
             ENTITY::SET_ENTITY_LOD_DIST(entityID, 0xFFFF);
 
@@ -1082,7 +1082,7 @@ void Scenario::setDepthBuffer(bool prevDepth) {
         size = export_get_depth_buffer((void**)&depth_map, UPDATE_PC_WITH_OFFSET_DEPTH);
 
         m_prevDepthFilename = filename;
-        m_prevDepthPCFilename = pcFilename;
+        m_prevDepthPCFilename = getStandardFilename("depthPCU", ".bin");//pcFilename;
         m_prevDepth = true;
     }
     log("After getting depth buffer");
@@ -1127,18 +1127,18 @@ void Scenario::setDepthBuffer(bool prevDepth) {
 }
 
 void Scenario::setDepthParams() {
-    m_nearClip = CAM::GET_CAM_NEAR_CLIP(camera);
-    m_fov = CAM::GET_CAM_FOV(camera);
-    m_ncHeight = 2 * m_nearClip * tan(m_fov / 2. * (PI / 180.)); // field of view is returned vertically
-    m_ncWidth = m_ncHeight * GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false);
-    m_depthInit = true;
+    if (!m_depthInit) {
+        m_nearClip = CAM::GET_CAM_NEAR_CLIP(camera);
+        m_fov = CAM::GET_CAM_FOV(camera);
+        m_ncHeight = 2 * m_nearClip * tan(m_fov / 2. * (PI / 180.)); // field of view is returned vertically
+        m_ncWidth = m_ncHeight * GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false);
+        m_depthInit = true;
+    }
 }
 
 //ndc is Normalized Device Coordinates which is value received from depth buffer
 Vector3 Scenario::depthToCamCoords(float ndc, float screenX, float screenY) {
-    if (!m_depthInit) {
-        setDepthParams();
-    }
+    setDepthParams();
 
     float normScreenX = (2 * screenX - width) / width;
     float normScreenY = (2 * screenY - height) / height;
@@ -1350,7 +1350,7 @@ void Scenario::outputRealSpeed() {
             float avgDist = m_trackDist * 10 / m_trackDistErrorTotalCount;
             oss << "Speed: " << avgSpeed << " dist: " << avgDist;
             std::string str = oss.str();
-            log(str, true);
+            log(str);
         }
     }
 
