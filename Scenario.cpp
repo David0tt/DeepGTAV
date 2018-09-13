@@ -571,7 +571,6 @@ BBox2D Scenario::BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwa
                 pos.z = position.z + forward * dim.y*forwardVector.z + right * dim.x*rightVector.z + up * dim.z*upVector.z;
 
                 float screenX, screenY;
-
                 //This function always returns false, do not worry about return value
                 bool success = GRAPHICS::_WORLD3D_TO_SCREEN2D(pos.x, pos.y, pos.z, &screenX, &screenY);
 
@@ -588,6 +587,24 @@ BBox2D Scenario::BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwa
                         Eigen::Vector3f(theta.x, theta.y, theta.z), near_clip, fov);
                     screenX = uv(0);
                     screenY = uv(1);
+                }
+
+                //Corrections for points which are behind camera
+                Vector3 relativePos;
+                relativePos.x = pos.x - currentPos.x;
+                relativePos.y = pos.y - currentPos.y;
+                relativePos.z = pos.z - currentPos.z;
+                relativePos = convertCoordinateSystem(relativePos, currentForwardVector, currentRightVector, currentUpVector);
+                relativePos.y = relativePos.y - CAM_OFFSET_FORWARD;
+
+                //If behind camera update left/right bounds to reflect its position
+                if (relativePos.y < 0) {
+                    if (relativePos.x > 0) {
+                        screenX = 1.0;
+                    }
+                    else {
+                        screenX = 0.0;
+                    }
                 }
 
                 //Update if value outside current box
@@ -655,9 +672,6 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
         ENTITY::GET_ENTITY_MATRIX(entityID, &forwardVector, &rightVector, &upVector, &position); //Blue or red pill
         float distance = sqrt(SYSTEM::VDIST2(currentPos.x, currentPos.y, currentPos.z, position.x, position.y, position.z));
         if (distance < 200) {
-            //An attempt to try to hit vehicles reliably past 30m
-            ENTITY::SET_ENTITY_LOD_DIST(entityID, 0xFFFF);
-
             int pointsHit = 0;
             float maxBack = 0;
             float maxFront = 0;
@@ -668,6 +682,10 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 maxFront = hitLidarEnt->maxFront;
             }
 
+            //HAS_ENTITY_CLEAR_LOS_TO_ENTITY is from vehicle, NOT camera perspective
+            //pointsHit misses some objects
+            //TODO Important
+            //Might be able to use !ENTITY::IS_ENTITY_OCCLUDED(entityID)) as well as raycasting for corners
             if (ENTITY::HAS_ENTITY_CLEAR_LOS_TO_ENTITY(vehicle, entityID, 19) || pointsHit > 0) {
                 success = true;
                 //Check if we see it (not occluded)
