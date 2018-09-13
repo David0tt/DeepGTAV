@@ -707,21 +707,29 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
 
                 //Amount dimensions are offcenter
                 Vector3 offcenter;
-                offcenter.x = 0;// max.x + min.x;
-                offcenter.y = 0;// max.y + min.y;
+                offcenter.x = (max.x + min.x)/2;
+                offcenter.y = (max.y + min.y)/2;
                 offcenter.z = min.z; //KITTI position is at object ground plane
 
                 //Correct offcenter with LiDAR info
-                if (maxFront > dim.y) {
-                    offcenter.y = maxFront - dim.y;
-                    log("Hit offcenter from front.");
-                }
-                if (-maxBack > dim.y) {
-                    offcenter.y = dim.y + maxBack;
-                    log("Hit offcenter from back.");
+                if (CORRECT_BBOXES_WITH_RAYCASTING) {
+                    if (maxFront > dim.y) {
+                        offcenter.y = maxFront - dim.y;
+                        log("Hit offcenter from front.");
+                    }
+                    if (-maxBack > dim.y) {
+                        offcenter.y = dim.y + maxBack;
+                        log("Hit offcenter from back.");
+                    }
                 }
 
-                Vector3 offcenterPosition = convertCoordinateSystem(offcenter, forwardVector, rightVector, upVector);
+                Vector3 worldX; worldX.x = 1; worldX.y = 0; worldX.z = 0;
+                Vector3 worldY; worldY.x = 0; worldY.y = 1; worldY.z = 0;
+                Vector3 worldZ; worldZ.x = 0; worldZ.y = 0; worldZ.z = 1;
+                Vector3 xVector = convertCoordinateSystem(worldX, forwardVector, rightVector, upVector);
+                Vector3 yVector = convertCoordinateSystem(worldY, forwardVector, rightVector, upVector);
+                Vector3 zVector = convertCoordinateSystem(worldZ, forwardVector, rightVector, upVector);
+                Vector3 offcenterPosition = convertCoordinateSystem(offcenter, yVector, xVector, zVector);
 
                 //Seems like the offcenter is not actually correct
                 //Update object position to be consistent with KITTI (symmetrical dimensions except for z which is ground)
