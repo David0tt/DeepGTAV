@@ -17,7 +17,7 @@ const bool OUTPUT_RAYCAST_POINTS = true;
 //Trucks and large vehicles seem to have their dimensions slightly off.
 //This can be corrected with raycasting however some raycasts don't hit objects
 //TODO -> stencil/depth semantic segmentation then use depth map points to correct bboxes
-const bool CORRECT_BBOXES_WITH_RAYCASTING = true;
+const bool CORRECT_BBOXES_WITH_RAYCASTING = false;
 const bool OUTPUT_DM_POINTCLOUD = true;
 const bool UPDATE_PC_WITH_OFFSET_DEPTH = false;
 
