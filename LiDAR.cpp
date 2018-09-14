@@ -238,11 +238,6 @@ float * LiDAR::GetPointClouds(int &size, std::unordered_map<int, HitLidarEntity*
     m_depthMap = depthMap;
     native_param = param;
 
-    std::ostringstream oss;
-    oss << "Native param: " << native_param;
-    std::string str = oss.str();
-    log(str);
-
     m_entitiesHit = entitiesHit;
     m_pointsHit = 0;
     m_raycastPoints = 0;
@@ -274,14 +269,13 @@ float * LiDAR::GetPointClouds(int &size, std::unordered_map<int, HitLidarEntity*
             GenerateHorizPointClouds(phi, m_pPointClouds);
         }
         std::ostringstream oss;
-        oss << "************************ Max distance: " << m_max_dist << " min distance: " << m_min_dist
+        oss << "Max distance: " << m_max_dist << " min distance: " << m_min_dist
             << "\nBeamCount: " << horizBeamCount;
         log(oss.str());
     }
     default:
         break;
     }
-    //log("After obtaining pointcloud\n");
 
     std::ostringstream oss1;
     oss1 << "Raycast points: " << m_raycastPoints << " DM points: " << m_depthMapPoints << " total: " << m_pointsHit;
@@ -338,23 +332,9 @@ static float ReverseFloat(const float inFloat)
 float LiDAR::depthFromNDC(int x, int y, float screenX, float screenY) {
     if (x >= s_camParams.width) {
         x = s_camParams.width - 1;
-        log("x out of bounds");
-        std::ostringstream oss3;
-        oss3 << "x: " << x << " y: " << y
-            << "ScreenX: " << screenX << " ScreenY: " << screenY
-            << "\nscrWidth: " << s_camParams.width << " scrHeight: " << s_camParams.height;
-        std::string str3 = oss3.str();
-        log(str3);
     }
     if (y >= s_camParams.height) {
         y = s_camParams.height - 1;
-        log("y out of bounds");
-        std::ostringstream oss3;
-        oss3 << "x: " << x << " y: " << y
-            << "ScreenX: " << screenX << " ScreenY: " << screenY
-            << "\nscrWidth: " << s_camParams.width << " scrHeight: " << s_camParams.height;
-        std::string str3 = oss3.str();
-        log(str3);
     }
 
     float xNorm = (float)x / (s_camParams.width - 1);
@@ -417,11 +397,6 @@ float LiDAR::getDepthFromScreenPos(float screenX, float screenY) {
         if (maxDepth > minDepth * 1.08) {
             outsideThreshold = true;
         }
-        //float thresh = 0.5; //Threshold value in metres
-        //if (abs(d00 - d01) > thresh || abs(d00 - d10) > thresh || abs(d00 - d11) > thresh ||
-        //    abs(d01 - d10) > thresh || abs(d01 - d11) > thresh || abs(d10 - d11) > thresh) {
-        //    outsideThreshold = true;
-        //}
         if (!outsideThreshold) {
             interpolated = true;
             depth = (1 - normX)*(1 - normY)*d00 + normX * (1 - normY)*d10 + (1 - normX)*normY*d01 + normX * normY*d11;
@@ -453,7 +428,7 @@ Vector3 LiDAR::adjustEndCoord(Vector3 pos, Vector3 relPos) {
 
     if (isPositionOnScreen(screenX, screenY)) {
         //It is expected for some LiDAR positions to be out of screen bounds
-        //log("Screen position is out of bounds.");
+        log("Screen position is out of bounds.");
     }
     else {
         float depth = getDepthFromScreenPos(screenX, screenY);
@@ -487,16 +462,11 @@ Vector3 LiDAR::get3DFromDepthTarget(Vector3 target, Eigen::Vector2f target2D){
 
     float depth = getDepthFromScreenPos(target2D(0), target2D(1));
 
+    //Depth is already in relative coordinates
     Vector3 depthEndCoord;
     depthEndCoord.x = unitVec.x * depth;
     depthEndCoord.y = unitVec.y * depth;
     depthEndCoord.z = unitVec.z * depth;
-
-    //Depth is already in relative coordinates
-    /*Vector3 vec;
-    vec.x = depthEndCoord.x - m_curPos.x;
-    vec.y = depthEndCoord.y - m_curPos.y;
-    vec.z = depthEndCoord.z - m_curPos.z;*/
 
     //To convert from world coordinates to GTA vehicle coordinates (where y axis is forward)
     Vector3 vec_cam_coord = convertCoordinateSystem(depthEndCoord, currentForwardVec, currentRightVec, currentUpVec);

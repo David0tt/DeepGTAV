@@ -1028,8 +1028,6 @@ void Scenario::createVehicles() {
             VehicleToCreate v = vehiclesToCreate[i];
             createVehicle(v.model.c_str(), v.forward, v.right, v.heading, v.color, v.color2);
         }
-        /*createVehicle("benson", 20.0, 0.0, 60.0);
-        createVehicle("voltic", 15.0, 5.0, 180.0);*/
         vehicles_created = true;
     }
 }
