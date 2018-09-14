@@ -9,6 +9,7 @@ https://github.com/gdpinchina/A-virtual-LiDAR-for-DeepGTAV
 #include "lib/script.h"
 #include <unordered_map>
 #include <Eigen/Core>
+#include "CamParams.h"
 
 #define _LIDAR_NOT_INIT_YET_ 0
 #define _LIDAR_INIT_AS_2D_ 1
@@ -72,7 +73,7 @@ public:
 
     void Init3DLiDAR_FOV(float maxRange = 100.0, float horizFOV = 180.0, float horizAngResolu = 1.0, float vertiFOV = 90.0, float vertiAngResolu = 10.0, float vertiUpLimit = 2.0);
 
-    void AttachLiDAR2Camera(Cam camera, Entity ownCar, int scrWidth, int scrHeight);
+    void AttachLiDAR2Camera(Cam camera, Entity ownCar);
 
     void DestroyLiDAR();
 
@@ -135,13 +136,6 @@ private:
 
     //Depth map variables
     float * m_depthMap;
-    int m_scrWidth;
-    int m_scrHeight;
-    float m_nearClip;
-    float m_fov;
-    float m_ncHeight;
-    float m_ncWidth;
-    Vector3 m_theta;
     Vector3 adjustEndCoord(Vector3 pos, Vector3 relPos);
     float depthFromNDC(int x, int y, float screenX = 0.0f, float screenY = 0.0f);
     float getDepthFromScreenPos(float screenX, float screenY);

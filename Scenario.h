@@ -13,6 +13,7 @@
 #include "Rewarders\Rewarder.h"
 #include "LiDAR.h"
 #include "Functions.h"
+#include "CamParams.h"
 
 using namespace rapidjson;
 
@@ -34,7 +35,6 @@ private:
 	int hour, minute;
 	const char* _weather;
 	const char* _vehicle;
-	int width, height;
 
 	bool vehicles;
 	bool peds;
@@ -85,12 +85,6 @@ private:
     float* m_stencilBuffer = NULL;
     float* m_pDMPointClouds;
     uint16_t* m_pDMImage;
-    float m_nearClip;
-    float m_farClip;
-    float m_fov;
-    float m_ncHeight;
-    float m_ncWidth;
-    bool m_depthInit = false;
     unsigned char* color_buf;
     std::string m_prevDepthFilename;
     std::string m_prevDepthPCFilename;
@@ -185,6 +179,7 @@ private:
     Vector3 depthToCamCoords(float depth, float screenX, float screenY);
     std::string getStandardFilename(std::string subDir, std::string extension);
     void outputRealSpeed();
+    void setCamParams();
 
     BBox2D BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector, bool &success, float &truncation);
     bool hasLOSToEntity(Entity entityID, Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector);

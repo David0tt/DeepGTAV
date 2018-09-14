@@ -21,6 +21,7 @@
     <ClCompile Include="lib\utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CamParams.h" />
     <ClInclude Include="defaults.h" />
     <ClInclude Include="Functions.h" />
     <ClInclude Include="Constants.h" />

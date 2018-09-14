@@ -154,19 +154,13 @@ void LiDAR::Init3DLiDAR_FOV(float maxRange, float horizFOV, float horizAngResolu
     Init3DLiDAR_SmplNum(maxRange, horizFOV / horizAngResolu, horizFOV / 2, 360.0 - horizFOV / 2, vertiFOV / vertiAngResolu, 90.0 - vertiUpLimit, 90.0 + vertiFOV - vertiUpLimit);
 }
 
-void LiDAR::AttachLiDAR2Camera(Cam camera, Entity ownCar, int scrWidth, int scrHeight)
+void LiDAR::AttachLiDAR2Camera(Cam camera, Entity ownCar)
 {
     if (!m_isAttach)
     {
         m_camera = camera;
         m_ownCar = ownCar;
         m_isAttach = true;
-        m_scrHeight = scrHeight;
-        m_scrWidth = scrWidth;
-        m_nearClip = CAM::GET_CAM_NEAR_CLIP(camera);
-        m_fov = CAM::GET_CAM_FOV(camera);
-        m_ncHeight = 2 * m_nearClip * tan(m_fov / 2. * (PI / 180.)); // field of view is returned vertically
-        m_ncWidth = m_ncHeight * GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false);
         log("LiDAR attached to car");
     }
     else
@@ -342,40 +336,40 @@ static float ReverseFloat(const float inFloat)
 }
 
 float LiDAR::depthFromNDC(int x, int y, float screenX, float screenY) {
-    if (x >= m_scrWidth) {
-        x = m_scrWidth - 1;
+    if (x >= s_camParams.width) {
+        x = s_camParams.width - 1;
         log("x out of bounds");
         std::ostringstream oss3;
         oss3 << "x: " << x << " y: " << y
             << "ScreenX: " << screenX << " ScreenY: " << screenY
-            << "\nscrWidth: " << m_scrWidth << " scrHeight: " << m_scrHeight;
+            << "\nscrWidth: " << s_camParams.width << " scrHeight: " << s_camParams.height;
         std::string str3 = oss3.str();
         log(str3);
     }
-    if (y >= m_scrHeight) {
-        y = m_scrHeight - 1;
+    if (y >= s_camParams.height) {
+        y = s_camParams.height - 1;
         log("y out of bounds");
         std::ostringstream oss3;
         oss3 << "x: " << x << " y: " << y
             << "ScreenX: " << screenX << " ScreenY: " << screenY
-            << "\nscrWidth: " << m_scrWidth << " scrHeight: " << m_scrHeight;
+            << "\nscrWidth: " << s_camParams.width << " scrHeight: " << s_camParams.height;
         std::string str3 = oss3.str();
         log(str3);
     }
 
-    float xNorm = (float)x / (m_scrWidth - 1);
-    float yNorm = (float)y / (m_scrHeight - 1);
+    float xNorm = (float)x / (s_camParams.width - 1);
+    float yNorm = (float)y / (s_camParams.height - 1);
     float normScreenX = abs(2 * xNorm - 1);
     float normScreenY = abs(2 * yNorm - 1);
 
-    float ncX = normScreenX * m_ncWidth / 2;
-    float ncY = normScreenY * m_ncHeight / 2;
+    float ncX = normScreenX * s_camParams.ncWidth / 2;
+    float ncY = normScreenY * s_camParams.ncHeight / 2;
 
     //Distance to near clip (hypotenus)
-    float d2nc = sqrt(m_nearClip * m_nearClip + ncX * ncX + ncY * ncY);
+    float d2nc = sqrt(s_camParams.nearClip * s_camParams.nearClip + ncX * ncX + ncY * ncY);
 
     //depth value in normalized device coordinates (NDC)
-    float ndc = m_depthMap[y * m_scrWidth + x];
+    float ndc = m_depthMap[y * s_camParams.width + x];
 
     //Actual depth in camera coordinates
     float depth = d2nc / ndc;
@@ -393,13 +387,13 @@ static bool isPositionOnScreen(float screenX, float screenY) {
 
 float LiDAR::getDepthFromScreenPos(float screenX, float screenY) {
     float depth;
-    float halfW = 0.5 / m_scrWidth;
-    float halfH = 0.5 / m_scrHeight;
+    float halfW = 0.5 / s_camParams.width;
+    float halfH = 0.5 / s_camParams.height;
     bool interpolated = false;
     if (screenX > halfW && screenX < 1 - halfW
         && screenY > halfH && screenY < 1 - halfH) {
-        float x = screenX * m_scrWidth - 0.5;
-        float y = screenY * m_scrHeight - 0.5;
+        float x = screenX * s_camParams.width - 0.5;
+        float y = screenY * s_camParams.height - 0.5;
 
         int x0 = (int)floor(x);
         int x1 = (int)ceil(x);
@@ -436,8 +430,8 @@ float LiDAR::getDepthFromScreenPos(float screenX, float screenY) {
 
     if (!interpolated) {
         //Pixels are 0 indexed
-        int x = (int)floor(screenX * m_scrWidth);
-        int y = (int)floor(screenY * m_scrHeight);
+        int x = (int)floor(screenX * s_camParams.width);
+        int y = (int)floor(screenY * s_camParams.height);
 
         depth = depthFromNDC(x, y, screenX, screenY);
     }
@@ -449,7 +443,7 @@ Vector3 LiDAR::adjustEndCoord(Vector3 pos, Vector3 relPos) {
     //Use this function over native function as native function fails at edges of screen
     Eigen::Vector2f uv = get_2d_from_3d(Eigen::Vector3f(pos.x, pos.y, pos.z),
         Eigen::Vector3f(m_curPos.x, m_curPos.y, m_curPos.z),
-        Eigen::Vector3f(m_theta.x, m_theta.y, m_theta.z), m_nearClip, m_fov);
+        Eigen::Vector3f(s_camParams.theta.x, s_camParams.theta.y, s_camParams.theta.z), s_camParams.nearClip, s_camParams.fov);
 
     scrX = uv(0);
     scrY = uv(1);
@@ -471,7 +465,7 @@ Vector3 LiDAR::adjustEndCoord(Vector3 pos, Vector3 relPos) {
         oss1 << "\nAdjust depth ScreenX: " << screenX << " screenY: " << screenY << 
             "\nAdjust depth NormScreenX: " << normScreenX << " NormScreenY: " << normScreenY <<
             "\nAdjust depth ncX: " << ncX << " ncY: " << ncY <<
-            "\nAdjust depth near_clip: " << m_nearClip << " d2nc: " << d2nc <<
+            "\nAdjust depth near_clip: " << s_camParams.nearClip << " d2nc: " << d2nc <<
             "\nAdjust depth X: " << x << " Y: " << y <<
             "\noriginalDepth: " << originalDepth << "depth: " << depth << 
             "\nmultiplier: " << multiplier;
@@ -547,7 +541,7 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
     //This is what should be used for sampling depth map as endCoord will not hit same points as depth map
     Eigen::Vector2f target2D = get_2d_from_3d(Eigen::Vector3f(target.x, target.y, target.z),
         Eigen::Vector3f(m_curPos.x, m_curPos.y, m_curPos.z),
-        Eigen::Vector3f(m_theta.x, m_theta.y, m_theta.z), m_nearClip, m_fov);
+        Eigen::Vector3f(s_camParams.theta.x, s_camParams.theta.y, s_camParams.theta.z), s_camParams.nearClip, s_camParams.fov);
 
     if (GENERATE_2D_POINTMAP) {
         *(m_lidar2DPoints + 2 * m_beamCount) = target2D(0);
@@ -730,5 +724,5 @@ void LiDAR::updateCurrentPosition(Vector3 currentForwardVector, Vector3 currentR
     currentForwardVec = currentForwardVector;
     currentRightVec = currentRightVector;
     currentUpVec = currentUpVector;
-    m_theta = CAM::GET_CAM_ROT(m_camera, 0);
+    s_camParams.theta = CAM::GET_CAM_ROT(m_camera, 0);
 }

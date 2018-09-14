@@ -111,16 +111,21 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
     if (!dc["lidarParam"].IsNull()) lidar_param = dc["lidarParam"].GetInt();
 	
 	if (!dc["frame"].IsNull()) {
-		if (!dc["frame"][0].IsNull()) width = dc["frame"][0].GetInt();
-		else if (setDefaults) width = _WIDTH_;
+		if (!dc["frame"][0].IsNull()) s_camParams.width = dc["frame"][0].GetInt();
+		else if (setDefaults) s_camParams.width = _WIDTH_;
 
-		if (!dc["frame"][1].IsNull()) height = dc["frame"][1].GetInt();
-		else if (setDefaults) height = _HEIGHT_;
+		if (!dc["frame"][1].IsNull()) s_camParams.height = dc["frame"][1].GetInt();
+		else if (setDefaults) s_camParams.height = _HEIGHT_;
 	}
 	else if (setDefaults) {
-		width = _WIDTH_;
-		height = _HEIGHT_;
-	}	
+		s_camParams.width = _WIDTH_;
+		s_camParams.height = _HEIGHT_;
+	}
+
+    //Need to reset camera params when dataset config is received
+    s_camParams.init = false;
+    //Create camera intrinsics matrix
+    calcCameraIntrinsics();
 
 	if (!dc["vehicles"].IsNull()) vehicles = dc["vehicles"].GetBool();
 	else if (setDefaults) vehicles = _VEHICLES_;
@@ -238,9 +243,6 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
         }
     }
 
-    //Create camera intrinsics matrix
-    calcCameraIntrinsics();
-
 	//Create JSON DOM
 	d.SetObject();
 	Document::AllocatorType& allocator = d.GetAllocator();
@@ -264,7 +266,7 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
     d.AddMember("curPosition", a, allocator);
     d.AddMember("seriesIndex", a, allocator);
 
-	screenCapturer = new ScreenCapturer(width, height);
+	screenCapturer = new ScreenCapturer(s_camParams.width, s_camParams.height);
 }
 
 void Scenario::buildScenario() {
@@ -466,6 +468,7 @@ StringBuffer Scenario::generateMessage() {
 
     setIndex();
     setPosition();
+    setCamParams();
     outputRealSpeed();
     if (depthMap && lidar_initialized) setDepthBuffer();
     if (pointclouds && lidar_initialized) collectLiDAR();
@@ -549,11 +552,6 @@ void Scenario::setPosition() {
 
 //Cycle through 8 corners of bbox and see if the ray makes it to or past this point
 bool Scenario::hasLOSToEntity(Entity entityID, Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector) {
-    Vector3 theta = CAM::GET_CAM_ROT(camera, 0);
-    Vector3 cam_pos = CAM::GET_CAM_COORD(camera);
-    float fov = CAM::GET_CAM_FOV(camera);
-    float near_clip = CAM::GET_CAM_NEAR_CLIP(camera);
-
     for (int right = -1; right <= 1; right += 2) {
         for (int forward = -1; forward <= 1; forward += 2) {
             for (int up = -1; up <= 1; up += 2) {
@@ -563,9 +561,9 @@ bool Scenario::hasLOSToEntity(Entity entityID, Vector3 position, Vector3 dim, Ve
                 pos.z = position.z + forward * dim.y*forwardVector.z + right * dim.x*rightVector.z + up * dim.z*upVector.z;
 
                 Vector3 relPos;
-                relPos.x = pos.x - cam_pos.x;
-                relPos.y = pos.y - cam_pos.y;
-                relPos.z = pos.z - cam_pos.z;
+                relPos.x = pos.x - s_camParams.pos.x;
+                relPos.y = pos.y - s_camParams.pos.y;
+                relPos.z = pos.z - s_camParams.pos.z;
 
                 BOOL isHit;
                 Entity hitEntity;
@@ -576,13 +574,13 @@ bool Scenario::hasLOSToEntity(Entity entityID, Vector3 position, Vector3 dim, Ve
 
                 //options: -1=everything
                 //New function is called _START_SHAPE_TEST_RAY
-                int raycast_handle = WORLDPROBE::_CAST_RAY_POINT_TO_POINT(cam_pos.x, cam_pos.y, cam_pos.z, target.x, target.y, target.z, -1, vehicle, 7);
+                int raycast_handle = WORLDPROBE::_CAST_RAY_POINT_TO_POINT(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, target.x, target.y, target.z, -1, vehicle, 7);
 
                 //New function is called GET_SHAPE_TEST_RESULT
                 WORLDPROBE::_GET_RAYCAST_RESULT(raycast_handle, &isHit, &endCoord, &surfaceNorm, &hitEntity);
 
-                float distance = sqrt(SYSTEM::VDIST2(cam_pos.x, cam_pos.y, cam_pos.z, pos.x, pos.y, pos.z));
-                float rayDistance = sqrt(SYSTEM::VDIST2(cam_pos.x, cam_pos.y, cam_pos.z, endCoord.x, endCoord.y, endCoord.z));
+                float distance = sqrt(SYSTEM::VDIST2(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, pos.x, pos.y, pos.z));
+                float rayDistance = sqrt(SYSTEM::VDIST2(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, endCoord.x, endCoord.y, endCoord.z));
 
                 if (!isHit || rayDistance > distance) {
                     return true;
@@ -602,11 +600,6 @@ BBox2D Scenario::BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwa
     bbox2d.right = 0.0;
     bbox2d.top = 1.0;// height;
     bbox2d.bottom = 0.0;
-
-    Vector3 theta = CAM::GET_CAM_ROT(camera, 0);
-    Vector3 cam_pos = CAM::GET_CAM_COORD(camera);
-    float fov = CAM::GET_CAM_FOV(camera);
-    float near_clip = CAM::GET_CAM_NEAR_CLIP(camera);
 
     for (int right = -1; right <= 1; right += 2) {
         for (int forward = -1; forward <= 1; forward += 2) {
@@ -629,8 +622,8 @@ BBox2D Scenario::BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwa
                 Eigen::Vector3f pt(pos.x, pos.y, pos.z);
                 if (screenX < 0 || screenX > 1 || screenY < 0 || screenY > 1) {
                     Eigen::Vector2f uv = get_2d_from_3d(pt,
-                        Eigen::Vector3f(cam_pos.x, cam_pos.y, cam_pos.z),
-                        Eigen::Vector3f(theta.x, theta.y, theta.z), near_clip, fov);
+                        Eigen::Vector3f(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z),
+                        Eigen::Vector3f(s_camParams.theta.x, s_camParams.theta.y, s_camParams.theta.z), s_camParams.nearClip, s_camParams.fov);
                     screenX = uv(0);
                     screenY = uv(1);
                 }
@@ -848,7 +841,7 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                     _entity.AddMember("entityID", entityID, allocator);
                     _entity.AddMember("distance", distance, allocator);
                     _vector.SetArray();
-                    _vector.PushBack(bbox2d.left*width, allocator).PushBack(bbox2d.top*height, allocator).PushBack(bbox2d.right*width, allocator).PushBack(bbox2d.bottom*height, allocator);
+                    _vector.PushBack(bbox2d.left*s_camParams.width, allocator).PushBack(bbox2d.top*s_camParams.height, allocator).PushBack(bbox2d.right*s_camParams.width, allocator).PushBack(bbox2d.bottom*s_camParams.height, allocator);
                     _entity.AddMember("bbox2d", _vector, allocator);
                     _entity.AddMember("truncation", truncation, allocator);
                     _entity.AddMember("pointsHit", pointsHit, allocator);
@@ -1050,10 +1043,10 @@ void Scenario::setupLiDAR() {
         //26.8 vertical fov (+2 degrees up to -24.8 degrees down)
         //0.420 vertical resolution
         lidar.Init3DLiDAR_FOV(MAX_LIDAR_DIST, 90.0f, 0.09f, 26.9f, 0.420f, 2.0f);
-        lidar.AttachLiDAR2Camera(camera, ped, width, height);
+        lidar.AttachLiDAR2Camera(camera, ped);
         lidar_initialized = true;
-        m_pDMPointClouds = (float *)malloc(width * height * FLOATS_PER_POINT * sizeof(float));
-        m_pDMImage = (uint16_t *)malloc(width * height * sizeof(uint16_t));
+        m_pDMPointClouds = (float *)malloc(s_camParams.width * s_camParams.height * FLOATS_PER_POINT * sizeof(float));
+        m_pDMImage = (uint16_t *)malloc(s_camParams.width * s_camParams.height * sizeof(uint16_t));
     }
 }
 
@@ -1124,7 +1117,7 @@ void Scenario::setColorBuffer() {
 
     std::string filename = getStandardFilename("colorBuffer", ".png");
     std::vector<std::uint8_t> ImageBuffer;
-    lodepng::encode(ImageBuffer, color_buf, width, height);
+    lodepng::encode(ImageBuffer, color_buf, s_camParams.width, s_camParams.height);
     lodepng::save_file(ImageBuffer, filename);
 }
 
@@ -1168,13 +1161,12 @@ void Scenario::setDepthBuffer(bool prevDepth) {
     ofile.close();
 
     if (OUTPUT_DM_POINTCLOUD) {
-        setDepthParams();
         int pointCount = 0;
         float maxDepth = 0;
         float minDepth = 1;
-        for (int j = 0; j < height; ++j) {
-            for (int i = 0; i < width; ++i) {
-                float ndc = depth_map[j*width + i];
+        for (int j = 0; j < s_camParams.height; ++j) {
+            for (int i = 0; i < s_camParams.width; ++i) {
+                float ndc = depth_map[j * s_camParams.width + i];
                 Vector3 relPos = depthToCamCoords(ndc, i, j);
 
                 float distance = sqrt(SYSTEM::VDIST2(0, 0, 0, relPos.x, relPos.y, relPos.z));
@@ -1187,8 +1179,8 @@ void Scenario::setDepthBuffer(bool prevDepth) {
                     pointCount++;
                 }
 
-                uint16_t* p = m_pDMImage + (j * width) + i;
-                float distClipped = 1 - min(1, (distance-m_nearClip)/(m_farClip-m_nearClip));
+                uint16_t* p = m_pDMImage + (j * s_camParams.width) + i;
+                float distClipped = 1 - min(1, (distance - s_camParams.nearClip) / (s_camParams.farClip - s_camParams.nearClip));
                 uint16_t num = (uint16_t)floor(distClipped * 65535);
                 uint16_t swapped = (num >> 8) | (num << 8);
                 *p = swapped;
@@ -1205,42 +1197,29 @@ void Scenario::setDepthBuffer(bool prevDepth) {
 
         std::string filename = getStandardFilename("depthImage", ".png");
         std::vector<std::uint8_t> ImageBuffer;
-        lodepng::encode(ImageBuffer, (unsigned char*)m_pDMImage, width, height, LCT_GREY, 16);
+        lodepng::encode(ImageBuffer, (unsigned char*)m_pDMImage, s_camParams.width, s_camParams.height, LCT_GREY, 16);
         lodepng::save_file(ImageBuffer, filename);
 
         log("After saving DM pointcloud");
     }
 }
 
-void Scenario::setDepthParams() {
-    if (!m_depthInit) {
-        m_nearClip = CAM::GET_CAM_NEAR_CLIP(camera);
-        m_farClip = CAM::GET_CAM_FAR_CLIP(camera);
-        m_fov = CAM::GET_CAM_FOV(camera);
-        m_ncHeight = 2 * m_nearClip * tan(m_fov / 2. * (PI / 180.)); // field of view is returned vertically
-        m_ncWidth = m_ncHeight * GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false);
-        m_depthInit = true;
-    }
-}
-
 //ndc is Normalized Device Coordinates which is value received from depth buffer
 Vector3 Scenario::depthToCamCoords(float ndc, float screenX, float screenY) {
-    setDepthParams();
+    float normScreenX = (2 * screenX - s_camParams.width) / s_camParams.width;
+    float normScreenY = (2 * screenY - s_camParams.height) / s_camParams.height;
 
-    float normScreenX = (2 * screenX - width) / width;
-    float normScreenY = (2 * screenY - height) / height;
-
-    float ncX = normScreenX * m_ncWidth / 2;
-    float ncY = normScreenY * m_ncHeight / 2;
+    float ncX = normScreenX * s_camParams.ncWidth / 2;
+    float ncY = normScreenY * s_camParams.ncHeight / 2;
 
     //Distance to near clip (hypotenus)
-    float d2nc = sqrt(m_nearClip * m_nearClip + ncX * ncX + ncY * ncY);
+    float d2nc = sqrt(s_camParams.nearClip * s_camParams.nearClip + ncX * ncX + ncY * ncY);
     float worldDepth = d2nc / ndc;
 
     //X is right, Y is forward, Z is up (GTA coordinate frame)
     Vector3 unitVec;
     unitVec.x = ncX / d2nc;
-    unitVec.y = m_nearClip / d2nc;
+    unitVec.y = s_camParams.nearClip / d2nc;
     unitVec.z = -ncY / d2nc;
 
     Vector3 relPos;
@@ -1252,7 +1231,7 @@ Vector3 Scenario::depthToCamCoords(float ndc, float screenX, float screenY) {
     oss1 << "\nAdjust depth ScreenX: " << screenX << " screenY: " << screenY <<
         "\nAdjust depth NormScreenX: " << normScreenX << " NormScreenY: " << normScreenY <<
         "\nAdjust depth ncX: " << ncX << " ncY: " << ncY <<
-        "\nAdjust depth near_clip: " << m_nearClip << " d2nc: " << d2nc <<
+        "\nAdjust depth near_clip: " << s_camParams.nearClip << " d2nc: " << d2nc <<
         "\nUnit vec X: " << unitVec.x << " Y: " << unitVec.y << " Z: " << unitVec.z <<
         "\ndepth: " << ndc << " worldDepth: " << worldDepth;
     std::string str1 = oss1.str();
@@ -1296,9 +1275,9 @@ void Scenario::setIndex() {
 
 //Camera intrinsics are focal length, and center in horizontal (x) and vertical (y)
 void Scenario::calcCameraIntrinsics() {
-    float f = width / (2 * tan(HOR_CAM_FOV * PI / 360));
-    float cx = width / 2;
-    float cy = height / 2;
+    float f = s_camParams.width / (2 * tan(HOR_CAM_FOV * PI / 360));
+    float cx = s_camParams.width / 2;
+    float cy = s_camParams.height / 2;
 
     intrinsics[0] = f;
     intrinsics[1] = cx;
@@ -1452,4 +1431,20 @@ void Scenario::outputRealSpeed() {
     m_trackLastPos = currentPos;
     m_trackLastIndex = instance_index;
     m_trackLastRealSpeed = ENTITY::GET_ENTITY_SPEED(vehicle) / 10;
+}
+
+void Scenario::setCamParams() {
+    //These values stay the same throughout a collection period
+    if (!s_camParams.init) {
+        s_camParams.nearClip = CAM::GET_CAM_NEAR_CLIP(camera);
+        s_camParams.farClip = CAM::GET_CAM_FAR_CLIP(camera);
+        s_camParams.fov = CAM::GET_CAM_FOV(camera);
+        s_camParams.ncHeight = 2 * s_camParams.nearClip * tan(s_camParams.fov / 2. * (PI / 180.)); // field of view is returned vertically
+        s_camParams.ncWidth = s_camParams.ncHeight * GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false);
+        s_camParams.init = true;
+    }
+
+    //These values change frame to frame
+    s_camParams.theta = CAM::GET_CAM_ROT(camera, 0);
+    s_camParams.pos = CAM::GET_CAM_COORD(camera);
 }
