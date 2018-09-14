@@ -18,7 +18,6 @@ extern "C" {
     __declspec(dllimport) int export_get_depth_buffer(void** buf, bool updateWithOffsetDepth);
     __declspec(dllexport) int export_get_color_buffer(void** buf);
     __declspec(dllexport) int export_get_stencil_buffer(void** buf);
-    __declspec(dllimport) int export_get_previous_depth_stencil_buffers(void** dBuf, void** sBuf, int &stencilSize);
 }
 
 const float VERT_CAM_FOV = 59; //In degrees
@@ -1040,9 +1039,6 @@ void Scenario::collectLiDAR() {
     lidar.updateCurrentPosition(currentForwardVector, currentRightVector, currentUpVector);
     float * pointCloud = lidar.GetPointClouds(pointCloudSize, &entitiesHit, lidar_param, depth_map);
 
-    //U for updated from next depth map
-    m_prevPCFilename = getStandardFilename("velodyneU", ".bin");
-
     std::string filename = getStandardFilename("velodyne", ".bin");
     std::ofstream ofile(filename, std::ios::binary);
     ofile.write((char*)pointCloud, FLOATS_PER_POINT * sizeof(float)*pointCloudSize);
@@ -1111,34 +1107,11 @@ void Scenario::setDepthBuffer(bool prevDepth) {
     std::string filename;
     std::string pcFilename;
     log("About to get depth buffer");
-    if (prevDepth) {
-        filename = m_prevDepthFilename;
-        pcFilename = m_prevDepthPCFilename;
-        log("previous depth buffer");
-        int stencilSize = -1;
-        size = export_get_previous_depth_stencil_buffers((void**)&depth_map, (void**)&m_stencilBuffer, stencilSize);
-        if (size == -1) {
-            return;
-        }
-        m_prevDepth = false;
+    filename = getStandardFilename("depth", ".raw");
+    pcFilename = getStandardFilename("depthPC", ".bin");
+    size = export_get_depth_buffer((void**)&depth_map, false);
 
-        float * pointCloud = lidar.UpdatePointCloud(pointCloudSize, depth_map);
-        std::ofstream ofile1(m_prevPCFilename, std::ios::binary);
-        ofile1.write((char*)pointCloud, FLOATS_PER_POINT * sizeof(float) * pointCloudSize);
-        ofile1.close();
-
-        //TODO Use stencil buffer
-    }
-    else {
-        log("current depth buffer");
-        filename = getStandardFilename("depth", ".raw");
-        pcFilename = getStandardFilename("depthPC", ".bin");
-        size = export_get_depth_buffer((void**)&depth_map, UPDATE_PC_WITH_OFFSET_DEPTH);
-
-        m_prevDepthFilename = filename;
-        m_prevDepthPCFilename = getStandardFilename("depthPCU", ".bin");//pcFilename;
-        m_prevDepth = true;
-    }
+    //TODO Use stencil buffer
     log("After getting depth buffer");
 
     std::ofstream ofile(filename, std::ios::binary);

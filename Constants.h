@@ -17,7 +17,6 @@ const bool OUTPUT_ADJUSTED_POINTS = false;
 //Outputs secondary pointcloud with raycast points
 const bool OUTPUT_RAYCAST_POINTS = true;
 const bool OUTPUT_DM_POINTCLOUD = true;
-const bool UPDATE_PC_WITH_OFFSET_DEPTH = false;
 
 //Can be used to get general outline of some objects with raycasting
 //WARNING: NOT ALL VEHICLES ARE HIT WITH RAYCASTING
