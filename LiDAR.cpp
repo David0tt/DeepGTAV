@@ -606,8 +606,9 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
             }
         }
 
-        if (CORRECT_BBOXES_WITH_RAYCASTING) {
-            //Corrects 3D bounding boxes with raycasting points
+        //Can be used to get general outline of some objects with raycasting
+        //WARNING: NOT ALL VEHICLES ARE HIT WITH RAYCASTING
+        if (OBTAIN_RAY_POINTS_HIT) {
             if (m_entitiesHit->find(entityID) != m_entitiesHit->end()) {
                 HitLidarEntity* hitEnt = m_entitiesHit->at(entityID);
                 hitEnt->pointsHit++;
