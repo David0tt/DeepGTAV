@@ -10,7 +10,6 @@
 #include <string>
 #include <sstream>
 #include "Functions.h"
-#include "RAGETransforms.h"
 #include "Constants.h"
 #include <Eigen/Core>
 #include "lodepng.h"
