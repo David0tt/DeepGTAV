@@ -15,7 +15,7 @@ static void log(std::string str, bool override = false) {
     }
 }
 
-// Converts a vector 'vec' into the coordinate system with the specified unit vectors
+// Converts a vector 'vec' into the coordinate system with the specified unit vectors in terms of the original coordinate system
 static Vector3 convertCoordinateSystem(Vector3 vec, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector) {
     Vector3 newVec;
 
