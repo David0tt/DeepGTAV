@@ -84,7 +84,9 @@ private:
     float* depth_map = NULL;
     float* m_stencilBuffer = NULL;
     float* m_pDMPointClouds;
+    uint16_t* m_pDMImage;
     float m_nearClip;
+    float m_farClip;
     float m_fov;
     float m_ncHeight;
     float m_ncWidth;

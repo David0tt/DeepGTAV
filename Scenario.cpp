@@ -1004,6 +1004,7 @@ void Scenario::setupLiDAR() {
         lidar.AttachLiDAR2Camera(camera, ped, width, height);
         lidar_initialized = true;
         m_pDMPointClouds = (float *)malloc(width * height * FLOATS_PER_POINT * sizeof(float));
+        m_pDMImage = (uint16_t *)malloc(width * height * sizeof(uint16_t));
     }
 }
 
@@ -1128,15 +1129,20 @@ void Scenario::setDepthBuffer(bool prevDepth) {
                 Vector3 relPos = depthToCamCoords(ndc, i, j);
 
                 float distance = sqrt(SYSTEM::VDIST2(0, 0, 0, relPos.x, relPos.y, relPos.z));
-                if (distance <= MAX_LIDAR_DIST) {
+                if (distance <= MAX_LIDAR_DIST && distance >= 1) {
                     float* p = m_pDMPointClouds + (pointCount * 4);
                     *p = relPos.y;
                     *(p + 1) = -relPos.x;
                     *(p + 2) = relPos.z;
                     *(p + 3) = 0;
-
                     pointCount++;
                 }
+
+                uint16_t* p = m_pDMImage + (j * width) + i;
+                float distClipped = 1 - min(1, (distance-m_nearClip)/(m_farClip-m_nearClip));
+                uint16_t num = (uint16_t)floor(distClipped * 65535);
+                uint16_t swapped = (num >> 8) | (num << 8);
+                *p = swapped;
             }
         }
         std::ostringstream oss;
@@ -1148,6 +1154,11 @@ void Scenario::setDepthBuffer(bool prevDepth) {
         ofile1.write((char*)m_pDMPointClouds, FLOATS_PER_POINT * sizeof(float) * pointCount);
         ofile1.close();
 
+        std::string filename = getStandardFilename("depthImage", ".png");
+        std::vector<std::uint8_t> ImageBuffer;
+        lodepng::encode(ImageBuffer, (unsigned char*)m_pDMImage, width, height, LCT_GREY, 16);
+        lodepng::save_file(ImageBuffer, filename);
+
         log("After saving DM pointcloud");
     }
 }
@@ -1155,6 +1166,7 @@ void Scenario::setDepthBuffer(bool prevDepth) {
 void Scenario::setDepthParams() {
     if (!m_depthInit) {
         m_nearClip = CAM::GET_CAM_NEAR_CLIP(camera);
+        m_farClip = CAM::GET_CAM_FAR_CLIP(camera);
         m_fov = CAM::GET_CAM_FOV(camera);
         m_ncHeight = 2 * m_nearClip * tan(m_fov / 2. * (PI / 180.)); // field of view is returned vertically
         m_ncWidth = m_ncHeight * GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false);
