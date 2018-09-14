@@ -547,6 +547,52 @@ void Scenario::setPosition() {
     d["curPosition"] = _vector;
 }
 
+//Cycle through 8 corners of bbox and see if the ray makes it to or past this point
+bool Scenario::hasLOSToEntity(Entity entityID, Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector) {
+    Vector3 theta = CAM::GET_CAM_ROT(camera, 0);
+    Vector3 cam_pos = CAM::GET_CAM_COORD(camera);
+    float fov = CAM::GET_CAM_FOV(camera);
+    float near_clip = CAM::GET_CAM_NEAR_CLIP(camera);
+
+    for (int right = -1; right <= 1; right += 2) {
+        for (int forward = -1; forward <= 1; forward += 2) {
+            for (int up = -1; up <= 1; up += 2) {
+                Vector3 pos;
+                pos.x = position.x + forward * dim.y*forwardVector.x + right * dim.x*rightVector.x + up * dim.z*upVector.x;
+                pos.y = position.y + forward * dim.y*forwardVector.y + right * dim.x*rightVector.y + up * dim.z*upVector.y;
+                pos.z = position.z + forward * dim.y*forwardVector.z + right * dim.x*rightVector.z + up * dim.z*upVector.z;
+
+                Vector3 relPos;
+                relPos.x = pos.x - cam_pos.x;
+                relPos.y = pos.y - cam_pos.y;
+                relPos.z = pos.z - cam_pos.z;
+
+                BOOL isHit;
+                Entity hitEntity;
+                Vector3 target, endCoord, surfaceNorm;
+                target.x = relPos.x * 200 + pos.x;
+                target.y = relPos.y * 200 + pos.y;
+                target.z = relPos.z * 200 + pos.z;
+
+                //options: -1=everything
+                //New function is called _START_SHAPE_TEST_RAY
+                int raycast_handle = WORLDPROBE::_CAST_RAY_POINT_TO_POINT(cam_pos.x, cam_pos.y, cam_pos.z, target.x, target.y, target.z, -1, vehicle, 7);
+
+                //New function is called GET_SHAPE_TEST_RESULT
+                WORLDPROBE::_GET_RAYCAST_RESULT(raycast_handle, &isHit, &endCoord, &surfaceNorm, &hitEntity);
+
+                float distance = sqrt(SYSTEM::VDIST2(cam_pos.x, cam_pos.y, cam_pos.z, pos.x, pos.y, pos.z));
+                float rayDistance = sqrt(SYSTEM::VDIST2(cam_pos.x, cam_pos.y, cam_pos.z, endCoord.x, endCoord.y, endCoord.z));
+
+                if (!isHit || rayDistance > distance) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
 BBox2D Scenario::BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector, bool &success, float &truncation) {
     //Adjust position back to middle of the object for calculating 2D bounding box (Kitti has it at bottom)
     position.z += dim.z;
@@ -682,23 +728,9 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 maxFront = hitLidarEnt->maxFront;
             }
 
-            //HAS_ENTITY_CLEAR_LOS_TO_ENTITY is from vehicle, NOT camera perspective
-            //pointsHit misses some objects
-            //TODO Important
-            //Might be able to use !ENTITY::IS_ENTITY_OCCLUDED(entityID)) as well as raycasting for corners
-            if (ENTITY::HAS_ENTITY_CLEAR_LOS_TO_ENTITY(vehicle, entityID, 19) || pointsHit > 0) {
-                success = true;
+            if (!ENTITY::IS_ENTITY_OCCLUDED(entityID) || pointsHit > 0) {
                 //Check if we see it (not occluded)
                 GAMEPLAY::GET_MODEL_DIMENSIONS(model, &min, &max);
-
-                speedVector = ENTITY::GET_ENTITY_SPEED_VECTOR(entityID, false);
-                speed = ENTITY::GET_ENTITY_SPEED(entityID);
-                if (speed > 0) {
-                    heading = GAMEPLAY::GET_HEADING_FROM_VECTOR_2D(speedVector.x - currentForwardVector.x, speedVector.y - currentForwardVector.y);
-                }
-                else {
-                    heading = GAMEPLAY::GET_HEADING_FROM_VECTOR_2D(forwardVector.x - currentForwardVector.x, forwardVector.y - currentForwardVector.y);
-                }
 
                 //Calculate size
                 dim.x = 0.5*(max.x - min.x);
@@ -707,8 +739,8 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
 
                 //Amount dimensions are offcenter
                 Vector3 offcenter;
-                offcenter.x = (max.x + min.x)/2;
-                offcenter.y = (max.y + min.y)/2;
+                offcenter.x = (max.x + min.x) / 2;
+                offcenter.y = (max.y + min.y) / 2;
                 offcenter.z = min.z; //KITTI position is at object ground plane
 
                 //Correct offcenter with LiDAR info
@@ -737,80 +769,97 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 position.y = position.y + offcenterPosition.y;
                 position.z = position.z + offcenterPosition.z;
 
-                //Kitti dimensions
-                float kittiHeight = 2 * dim.z;
-                float kittiWidth = 2 * dim.x;
-                float kittiLength = 2 * dim.y;
-                
-                if (abs(offcenter.y) > 0.5 && classid == 0) {
-                    std::ostringstream oss2;
-                    oss2 << "Instance Index: " << instance_index << " Dimensions are: " << dim.x << ", " << dim.y << ", " << dim.z;
-                    oss2 << "\nMax: " << max.x << ", " << max.y << ", " << max.z;
-                    oss2 << "\nMin: " << min.x << ", " << min.y << ", " << min.z;
-                    oss2 << "\noffset: " << offcenter.x << ", " << offcenter.y << ", " << offcenter.z;
-                    std::string str2 = oss2.str();
-                    log(str2);
+                //HAS_ENTITY_CLEAR_LOS_TO_ENTITY is from vehicle, NOT camera perspective
+                //pointsHit misses some objects
+                //hasLOSToEntity retrieves from camera perspective however 3D bboxes are larger than object
+                if (ENTITY::HAS_ENTITY_CLEAR_LOS_TO_ENTITY(vehicle, entityID, 19) || pointsHit > 0 ||
+                            hasLOSToEntity(entityID, position, dim, forwardVector, rightVector, upVector)) {
+                    success = true;
+
+                    speedVector = ENTITY::GET_ENTITY_SPEED_VECTOR(entityID, false);
+                    speed = ENTITY::GET_ENTITY_SPEED(entityID);
+                    if (speed > 0) {
+                        heading = GAMEPLAY::GET_HEADING_FROM_VECTOR_2D(speedVector.x - currentForwardVector.x, speedVector.y - currentForwardVector.y);
+                    }
+                    else {
+                        heading = GAMEPLAY::GET_HEADING_FROM_VECTOR_2D(forwardVector.x - currentForwardVector.x, forwardVector.y - currentForwardVector.y);
+                    }
+
+                    //Kitti dimensions
+                    float kittiHeight = 2 * dim.z;
+                    float kittiWidth = 2 * dim.x;
+                    float kittiLength = 2 * dim.y;
+
+                    if (abs(offcenter.y) > 0.5 && classid == 0) {
+                        std::ostringstream oss2;
+                        oss2 << "Instance Index: " << instance_index << " Dimensions are: " << dim.x << ", " << dim.y << ", " << dim.z;
+                        oss2 << "\nMax: " << max.x << ", " << max.y << ", " << max.z;
+                        oss2 << "\nMin: " << min.x << ", " << min.y << ", " << min.z;
+                        oss2 << "\noffset: " << offcenter.x << ", " << offcenter.y << ", " << offcenter.z;
+                        std::string str2 = oss2.str();
+                        log(str2);
+                    }
+
+                    Vector3 relativePos;
+                    relativePos.x = position.x - currentPos.x;
+                    relativePos.y = position.y - currentPos.y;
+                    relativePos.z = position.z - currentPos.z;
+
+                    Vector3 kittiForwardVector = convertCoordinateSystem(forwardVector, currentForwardVector, currentRightVector, currentUpVector);
+                    float rot_y = -atan2(kittiForwardVector.y, kittiForwardVector.x);
+
+                    relativePos = convertCoordinateSystem(relativePos, currentForwardVector, currentRightVector, currentUpVector);
+
+                    //Update object position to be consistent with KITTI (symmetrical dimensions except for z which is ground)
+                    relativePos.y = relativePos.y - CAM_OFFSET_FORWARD;
+                    relativePos.z = relativePos.z - CAM_OFFSET_UP;
+
+                    //Convert to KITTI camera coordinates
+                    Vector3 kittiPos;
+                    kittiPos.x = relativePos.x;
+                    kittiPos.y = -relativePos.z;
+                    kittiPos.z = relativePos.y;
+
+                    //alpha is rot_y + tan^-1(z/x) + PI/2
+                    float beta_kitti = atan2(kittiPos.z, kittiPos.x);
+                    float alpha_kitti = rot_y + beta_kitti - PI / 2;
+
+                    //Attempts to find bbox on screen, if entire 2D box is offscreen returns false
+                    float truncation = 0;
+                    BBox2D bbox2d = BBox2DFrom3DObject(position, dim, forwardVector, rightVector, upVector, success, truncation);
+                    if (!success) {
+                        return success;
+                    }
+
+                    Value _vector(kArrayType);
+                    _entity.AddMember("speed", speed, allocator).AddMember("heading", heading, allocator).AddMember("classID", classid, allocator);
+                    _entity.AddMember("offscreen", offscreen, allocator);
+                    _vector.SetArray();
+                    _vector.PushBack(kittiHeight, allocator).PushBack(kittiWidth, allocator).PushBack(kittiLength, allocator);
+                    _entity.AddMember("dimensions", _vector, allocator);
+                    _vector.SetArray();
+                    _vector.PushBack(offcenter.z, allocator).PushBack(offcenter.x, allocator).PushBack(offcenter.y, allocator);
+                    _entity.AddMember("offcenter", _vector, allocator);
+                    _vector.SetArray();
+                    _vector.PushBack(kittiPos.x, allocator).PushBack(kittiPos.y, allocator).PushBack(kittiPos.z, allocator);
+                    _entity.AddMember("location", _vector, allocator);
+                    _entity.AddMember("rotation_y", rot_y, allocator);
+                    _entity.AddMember("alpha", alpha_kitti, allocator);
+                    _entity.AddMember("entityID", entityID, allocator);
+                    _entity.AddMember("distance", distance, allocator);
+                    _vector.SetArray();
+                    _vector.PushBack(bbox2d.left*width, allocator).PushBack(bbox2d.top*height, allocator).PushBack(bbox2d.right*width, allocator).PushBack(bbox2d.bottom*height, allocator);
+                    _entity.AddMember("bbox2d", _vector, allocator);
+                    _entity.AddMember("truncation", truncation, allocator);
+                    _entity.AddMember("pointsHit", pointsHit, allocator);
+
+                    if (trackFirstFrame.find(entityID) == trackFirstFrame.end()) {
+                        trackFirstFrame.insert(std::pair<int, int>(entityID, instance_index));
+                    }
+                    _entity.AddMember("trackFirstFrame", trackFirstFrame[entityID], allocator);
+
+                    drawBoxes(BLL, FUR, dim, upVector, rightVector, forwardVector, position, 1);
                 }
-
-                Vector3 relativePos;
-                relativePos.x = position.x - currentPos.x;
-                relativePos.y = position.y - currentPos.y;
-                relativePos.z = position.z - currentPos.z;
-
-                Vector3 kittiForwardVector = convertCoordinateSystem(forwardVector, currentForwardVector, currentRightVector, currentUpVector);
-                float rot_y = -atan2(kittiForwardVector.y, kittiForwardVector.x);
-
-                relativePos = convertCoordinateSystem(relativePos, currentForwardVector, currentRightVector, currentUpVector);
-
-                //Update object position to be consistent with KITTI (symmetrical dimensions except for z which is ground)
-                relativePos.y = relativePos.y - CAM_OFFSET_FORWARD;
-                relativePos.z = relativePos.z - CAM_OFFSET_UP;
-
-                //Convert to KITTI camera coordinates
-                Vector3 kittiPos;
-                kittiPos.x = relativePos.x;
-                kittiPos.y = -relativePos.z;
-                kittiPos.z = relativePos.y;
-
-                //alpha is rot_y + tan^-1(z/x) + PI/2
-                float beta_kitti = atan2(kittiPos.z, kittiPos.x);
-                float alpha_kitti = rot_y + beta_kitti - PI/2;
-
-                //Attempts to find bbox on screen, if entire 2D box is offscreen returns false
-                float truncation = 0;
-                BBox2D bbox2d = BBox2DFrom3DObject(position, dim, forwardVector, rightVector, upVector, success, truncation);
-                if (!success) {
-                    return success;
-                }
-
-                Value _vector(kArrayType);
-                _entity.AddMember("speed", speed, allocator).AddMember("heading", heading, allocator).AddMember("classID", classid, allocator);
-                _entity.AddMember("offscreen", offscreen, allocator);
-                _vector.SetArray();
-                _vector.PushBack(kittiHeight, allocator).PushBack(kittiWidth, allocator).PushBack(kittiLength, allocator);
-                _entity.AddMember("dimensions", _vector, allocator);
-                _vector.SetArray();
-                _vector.PushBack(offcenter.z, allocator).PushBack(offcenter.x, allocator).PushBack(offcenter.y, allocator);
-                _entity.AddMember("offcenter", _vector, allocator);
-                _vector.SetArray();
-                _vector.PushBack(kittiPos.x, allocator).PushBack(kittiPos.y, allocator).PushBack(kittiPos.z, allocator);
-                _entity.AddMember("location", _vector, allocator);
-                _entity.AddMember("rotation_y", rot_y, allocator);
-                _entity.AddMember("alpha", alpha_kitti, allocator);
-                _entity.AddMember("entityID", entityID, allocator);
-                _entity.AddMember("distance", distance, allocator);
-                _vector.SetArray();
-                _vector.PushBack(bbox2d.left*width, allocator).PushBack(bbox2d.top*height, allocator).PushBack(bbox2d.right*width, allocator).PushBack(bbox2d.bottom*height, allocator);
-                _entity.AddMember("bbox2d", _vector, allocator);
-                _entity.AddMember("truncation", truncation, allocator);
-                _entity.AddMember("pointsHit", pointsHit, allocator);
-
-                if (trackFirstFrame.find(entityID) == trackFirstFrame.end()) {
-                    trackFirstFrame.insert(std::pair<int, int>(entityID, instance_index));
-                }
-                _entity.AddMember("trackFirstFrame", trackFirstFrame[entityID], allocator);
-
-                drawBoxes(BLL, FUR, dim, upVector, rightVector, forwardVector, position, 1);
             }
         }
     }

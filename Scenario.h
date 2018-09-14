@@ -187,6 +187,7 @@ private:
     void outputRealSpeed();
 
     BBox2D BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector, bool &success, float &truncation);
+    bool hasLOSToEntity(Entity entityID, Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector);
 
     //Do not use this function. Causes GTA to crash - need to figure out why
     void setColorBuffer();
