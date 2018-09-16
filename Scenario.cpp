@@ -20,6 +20,9 @@ extern "C" {
     __declspec(dllexport) int export_get_stencil_buffer(void** buf);
 }
 
+//Global variable for storing camera parameters
+CamParams s_camParams;
+
 const float VERT_CAM_FOV = 59; //In degrees
 //Need to input the vertical FOV with GTA functions.
 //90 degrees horizontal (KITTI) corresponds to 59 degrees vertical (https://www.gtaall.com/info/fov-calculator.html).
@@ -389,6 +392,13 @@ void Scenario::run() {
 		
 		float delay = ((float)(now - lastSafetyCheck)) / CLOCKS_PER_SEC;
 		if (delay > 10) {
+            //Need to delay first camera parameters being set so native functions return correct values
+            if (!s_camParams.firstInit) {
+                s_camParams.init = false;
+                setCamParams();
+                s_camParams.firstInit = true;
+            }
+
 			lastSafetyCheck = std::clock();
 			//Avoid bad things such as getting killed by the police, robbed, dying in car accidents or other horrible stuff
 			PLAYER::SET_EVERYONE_IGNORE_PLAYER(player, TRUE);

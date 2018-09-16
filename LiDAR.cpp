@@ -654,5 +654,4 @@ void LiDAR::updateCurrentPosition(Vector3 currentForwardVector, Vector3 currentR
     currentForwardVec = currentForwardVector;
     currentRightVec = currentRightVector;
     currentUpVec = currentUpVector;
-    s_camParams.theta = CAM::GET_CAM_ROT(m_camera, 0);
 }
