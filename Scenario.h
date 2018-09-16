@@ -82,9 +82,10 @@ private:
 
     //Depth Map variables
     float* depth_map = NULL;
-    float* m_stencilBuffer = NULL;
+    uint8_t* m_stencilBuffer = NULL;
     float* m_pDMPointClouds;
     uint16_t* m_pDMImage;
+    uint8_t* m_pStencilImage;
     unsigned char* color_buf;
 
     bool vehicles_created = false;
@@ -177,6 +178,7 @@ private:
     std::string getStandardFilename(std::string subDir, std::string extension);
     void outputRealSpeed();
     void setCamParams();
+    void setStencilBuffer();
 
     BBox2D BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector, bool &success, float &truncation);
     bool hasLOSToEntity(Entity entityID, Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector);

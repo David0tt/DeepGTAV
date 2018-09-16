@@ -479,6 +479,7 @@ StringBuffer Scenario::generateMessage() {
     setCamParams();
     outputRealSpeed();
     if (depthMap && lidar_initialized) setDepthBuffer();
+    if (depthMap && lidar_initialized) setStencilBuffer();
     if (pointclouds && lidar_initialized) collectLiDAR();
 	if (vehicles) setVehiclesList();
 	if (peds) setPedsList();
@@ -1041,6 +1042,7 @@ void Scenario::setupLiDAR() {
         lidar_initialized = true;
         m_pDMPointClouds = (float *)malloc(s_camParams.width * s_camParams.height * FLOATS_PER_POINT * sizeof(float));
         m_pDMImage = (uint16_t *)malloc(s_camParams.width * s_camParams.height * sizeof(uint16_t));
+        m_pStencilImage = (uint8_t *)malloc(s_camParams.width * s_camParams.height * sizeof(uint8_t));
     }
 }
 
@@ -1110,6 +1112,44 @@ void Scenario::setColorBuffer() {
     std::vector<std::uint8_t> ImageBuffer;
     lodepng::encode(ImageBuffer, color_buf, s_camParams.width, s_camParams.height);
     lodepng::save_file(ImageBuffer, filename);
+}
+
+void Scenario::setStencilBuffer() {
+    int size;
+    std::string filename;
+    log("About to get stencil buffer");
+    filename = getStandardFilename("stencil", ".raw");
+    size = export_get_stencil_buffer((void**)&m_stencilBuffer);
+    log("After getting stencil buffer");
+
+    std::ofstream ofile(filename, std::ios::binary);
+    ofile.write((char*)m_stencilBuffer, size);
+    ofile.close();
+
+    log("After writing stencil buffer", true);
+    for (int j = 0; j < s_camParams.height; ++j) {
+        for (int i = 0; i < s_camParams.width; ++i) {
+            uint8_t val = m_stencilBuffer[j * s_camParams.width + i];
+            uint8_t* p = m_pStencilImage + (j * s_camParams.width) + i;
+            if (val == 2) {
+                *p = 255; //Vehicles
+            }
+            else if (val == 1) {
+                *p = 128; //NPCs
+            }
+            else {
+                *p = val;
+            }
+        }
+    }
+
+    log("Before saving stencil image", true);
+    std::string imFilename = getStandardFilename("stencilImage", ".png");
+    std::vector<std::uint8_t> ImageBuffer;
+    lodepng::encode(ImageBuffer, (unsigned char*)m_pStencilImage, s_camParams.width, s_camParams.height, LCT_GREY, 8);
+    lodepng::save_file(ImageBuffer, imFilename);
+
+    log("After saving stencil image", true);
 }
 
 void Scenario::setDepthBuffer(bool prevDepth) {
