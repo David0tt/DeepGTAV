@@ -83,10 +83,10 @@ private:
     //Depth Map variables
     float* depth_map = NULL;
     uint8_t* m_stencilBuffer = NULL;
-    float* m_pDMPointClouds;
-    uint16_t* m_pDMImage;
-    uint8_t* m_pStencilImage;
-    unsigned char* color_buf;
+    float* m_pDMPointClouds = NULL;
+    uint16_t* m_pDMImage = NULL;
+    uint8_t* m_pStencilImage = NULL;
+    unsigned char* color_buf = NULL;
 
     bool vehicles_created = false;
     std::vector<VehicleToCreate> vehiclesToCreate;
@@ -181,6 +181,10 @@ private:
     void setStencilBuffer();
 
     BBox2D BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector, bool &success, float &truncation);
+    BBox2D processBBox2D(BBox2D bbox, uint8_t stencilType, Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector,
+        Vector3 xVector, Vector3 yVector, Vector3 zVector);
+    bool in3DBox(Vector3 point, Vector3 objPos, Vector3 dim, Vector3 yVector, Vector3 xVector, Vector3 zVector);
+    bool checkDirection(Vector3 unit, Vector3 point, Vector3 min, Vector3 max);
     bool hasLOSToEntity(Entity entityID, Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector);
 
     //Do not use this function. Causes GTA to crash - need to figure out why

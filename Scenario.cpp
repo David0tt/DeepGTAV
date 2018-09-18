@@ -31,6 +31,10 @@ const float HOR_CAM_FOV = 90; //In degrees
 const float CAM_OFFSET_FORWARD = 0.5;
 const float CAM_OFFSET_UP = 0.8;
 
+const int VEHICLE_STENCIL_TYPE = 2;
+const int NPC_STENCIL_TYPE = 1;
+const int PEDESTRIAN_CLASS_ID = 10;
+
 char* Scenario::weatherList[14] = { "CLEAR", "EXTRASUNNY", "CLOUDS", "OVERCAST", "RAIN", "CLEARING", "THUNDER", "SMOG", "FOGGY", "XMAS", "SNOWLIGHT", "BLIZZARD", "NEUTRAL", "SNOW" };
 char* Scenario::vehicleList[3] = { "blista", "blista", "blista" };//voltic, packer
 
@@ -702,6 +706,145 @@ BBox2D Scenario::BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwa
     return bbox2d;
 }
 
+bool Scenario::checkDirection(Vector3 unit, Vector3 point, Vector3 min, Vector3 max) {
+    float dotPoint = dotProd(point, unit);
+    float dotMax = dotProd(max, unit);
+    float dotMin = dotProd(min, unit);
+
+    std::ostringstream oss2;
+    oss2 << " unit: " << unit.x << ", " << unit.y << ", " << unit.z;
+    oss2 << "\nMax: " << max.x << ", " << max.y << ", " << max.z;
+    oss2 << "\nMin: " << min.x << ", " << min.y << ", " << min.z;
+    oss2 << "\npoint: " << point.x << ", " << point.y << ", " << point.z;
+    oss2 << "\ncheckForward" << dotPoint << " minForward: " << dotMin << " maxForward: " << dotMax;
+    std::string str2 = oss2.str();
+    log(str2);
+
+    if ((dotMax <= dotPoint && dotPoint <= dotMin) ||
+        (dotMax >= dotPoint && dotPoint >= dotMin)) {
+        return true;
+    }
+    return false;
+}
+
+//Point and objPos should be in world coordinates
+bool Scenario::in3DBox(Vector3 point, Vector3 objPos, Vector3 dim, Vector3 yVector, Vector3 xVector, Vector3 zVector) {
+    Vector3 forward; forward.y = dim.y * 2; forward.x = 0; forward.z = 0;
+    forward = convertCoordinateSystem(forward, yVector, xVector, zVector);
+
+    Vector3 right; right.x = dim.x * 2; right.y = 0; right.z = 0;
+    right = convertCoordinateSystem(right, yVector, xVector, zVector);
+
+    Vector3 up; up.z = dim.z * 2; up.x = 0; up.y = 0;
+    up = convertCoordinateSystem(up, yVector, xVector, zVector);
+
+    Vector3 rearBotLeft;
+    rearBotLeft.x = objPos.x - forward.x - right.x - up.x;
+    rearBotLeft.y = objPos.y - forward.y - right.y - up.y;
+    rearBotLeft.z = objPos.z - forward.z - right.z - up.z;
+
+    Vector3 frontBotLeft;
+    frontBotLeft.x = objPos.x + forward.x - right.x - up.x;
+    frontBotLeft.y = objPos.y + forward.y - right.y - up.y;
+    frontBotLeft.z = objPos.z + forward.z - right.z - up.z;
+
+    Vector3 rearTopLeft;
+    rearTopLeft.x = objPos.x - forward.x - right.x + up.x;
+    rearTopLeft.y = objPos.y - forward.y - right.y + up.y;
+    rearTopLeft.z = objPos.z - forward.z - right.z + up.z;
+
+    Vector3 rearBotRight;
+    rearBotRight.x = objPos.x - forward.x + right.x - up.x;
+    rearBotRight.y = objPos.y - forward.y + right.y - up.y;
+    rearBotRight.z = objPos.z - forward.z + right.z - up.z;
+
+    std::ostringstream oss2;
+    oss2 << " rearBotLeft are: " << rearBotLeft.x << ", " << rearBotLeft.y << ", " << rearBotLeft.z;
+    oss2 << "\nfrontBotLeft: " << frontBotLeft.x << ", " << frontBotLeft.y << ", " << frontBotLeft.z;
+    oss2 << "\nrearTopLeft: " << rearTopLeft.x << ", " << rearTopLeft.y << ", " << rearTopLeft.z;
+    oss2 << "\nrearBotRight: " << rearBotRight.x << ", " << rearBotRight.y << ", " << rearBotRight.z;
+    std::string str2 = oss2.str();
+    log(str2);
+
+    Vector3 u = getUnitVector(subtractVecs(frontBotLeft, rearBotLeft));
+    Vector3 v = getUnitVector(subtractVecs(rearTopLeft, rearBotLeft));
+    Vector3 w = getUnitVector(subtractVecs(rearBotRight, rearBotLeft));
+
+    if (!checkDirection(u, point, rearBotLeft, frontBotLeft)) return false;
+    if (!checkDirection(v, point, rearBotLeft, rearTopLeft)) return false;
+    if (!checkDirection(w, point, rearBotLeft, rearBotRight)) return false;
+
+    return true;
+}
+
+BBox2D Scenario::processBBox2D(BBox2D bbox, uint8_t stencilType, Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector,
+                               Vector3 xVector, Vector3 yVector, Vector3 zVector) {
+    BBox2D processed;
+    int pointsHit = 0;
+    processed.left = 1;
+    processed.right = 0;
+    processed.top = 1;
+    processed.bottom = 0;
+
+    if (m_stencilBuffer == NULL || depth_map == NULL) return processed;
+
+    int top = (int)floor(bbox.top * s_camParams.height);
+    int bot = min(s_camParams.height,(int)ceil(bbox.bottom * s_camParams.height));
+    int right = min(s_camParams.width, (int)ceil(bbox.right * s_camParams.width));
+    int left = (int)floor(bbox.left * s_camParams.width);
+
+    //Converting vehicle dimensions from vehicle to world coordinates for offset position
+    Vector3 worldX; worldX.x = 1; worldX.y = 0; worldX.z = 0;
+    Vector3 worldY; worldY.x = 0; worldY.y = 1; worldY.z = 0;
+    Vector3 worldZ; worldZ.x = 0; worldZ.y = 0; worldZ.z = 1;
+    Vector3 xVectorCam = convertCoordinateSystem(worldX, currentForwardVector, currentRightVector, currentUpVector);
+    Vector3 yVectorCam = convertCoordinateSystem(worldY, currentForwardVector, currentRightVector, currentUpVector);
+    Vector3 zVectorCam = convertCoordinateSystem(worldZ, currentForwardVector, currentRightVector, currentUpVector);
+
+    int stencilPointCount = 0;
+
+    for (int j = top; j < bot; ++j) {
+        for (int i = left; i < right; ++i) {
+            uint8_t stencilVal = m_stencilBuffer[j * s_camParams.width + i];
+            if (stencilType == stencilVal) {
+                float ndc = depth_map[j * s_camParams.width + i];
+                Vector3 relPos = depthToCamCoords(ndc, i, j);
+                Vector3 worldPos = convertCoordinateSystem(relPos, yVectorCam, xVectorCam, zVectorCam);
+                worldPos.x += s_camParams.pos.x;
+                worldPos.y += s_camParams.pos.y;
+                worldPos.z += s_camParams.pos.z;
+                ++stencilPointCount;
+
+                if (in3DBox(worldPos, position, dim, yVector, xVector, zVector)) {
+                    float x = (float)i / (float)s_camParams.width;
+                    float y = (float)j / (float)s_camParams.height;
+
+                    std::ostringstream oss;
+                    oss << "x,y: " << x << ", " << y;
+                    std::string str = oss.str();
+                    log(str);
+                    if (x < processed.left) processed.left = x;
+                    if (x > processed.right) processed.right = x;
+                    if (y < processed.top) processed.top = y;
+                    if (y > processed.bottom) processed.bottom = y;
+                    ++pointsHit;
+
+                    //TODO Create image with masks for each object
+                }
+            }
+        }
+    }
+
+    std::ostringstream oss;
+    oss << "top, bot, right, left: " << top << ", " << bot << ", " << left << ", " << right <<
+        "\nProcessed: " << processed.top << ", " << processed.bottom << ", " << processed.left << ", " << processed.right <<
+        "\nStencil points: " << stencilPointCount << " points: " << pointsHit;
+    std::string str = oss.str();
+    log(str);
+
+    return processed;
+}
+
 bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocator, int entityID, Hash model, int classid) {
     bool success = false;
 
@@ -745,6 +888,7 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 offcenter.y = (max.y + min.y) / 2;
                 offcenter.z = min.z; //KITTI position is at object ground plane
 
+                //Converting vehicle dimensions from vehicle to world coordinates for offset position
                 Vector3 worldX; worldX.x = 1; worldX.y = 0; worldX.z = 0;
                 Vector3 worldY; worldY.x = 0; worldY.y = 1; worldY.z = 0;
                 Vector3 worldZ; worldZ.x = 0; worldZ.y = 0; worldZ.z = 1;
@@ -821,6 +965,12 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                         return success;
                     }
 
+                    //stencil type for vehicles like cars, bikes...
+                    int stencilType = VEHICLE_STENCIL_TYPE;
+                    //Pedestrian classid
+                    if (classid == PEDESTRIAN_CLASS_ID) stencilType = NPC_STENCIL_TYPE; //For NPCs
+                    BBox2D bbox2dProcessed = processBBox2D(bbox2d, stencilType, position, dim, forwardVector, rightVector, upVector, xVector, yVector, zVector);
+
                     Value _vector(kArrayType);
                     _entity.AddMember("speed", speed, allocator).AddMember("heading", heading, allocator).AddMember("classID", classid, allocator);
                     _entity.AddMember("offscreen", offscreen, allocator);
@@ -840,6 +990,9 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                     _vector.SetArray();
                     _vector.PushBack(bbox2d.left*s_camParams.width, allocator).PushBack(bbox2d.top*s_camParams.height, allocator).PushBack(bbox2d.right*s_camParams.width, allocator).PushBack(bbox2d.bottom*s_camParams.height, allocator);
                     _entity.AddMember("bbox2d", _vector, allocator);
+                    _vector.SetArray();
+                    _vector.PushBack(bbox2dProcessed.left*s_camParams.width, allocator).PushBack(bbox2dProcessed.top*s_camParams.height, allocator).PushBack(bbox2dProcessed.right*s_camParams.width, allocator).PushBack(bbox2dProcessed.bottom*s_camParams.height, allocator);
+                    _entity.AddMember("bbox2dProcessed", _vector, allocator);
                     _entity.AddMember("truncation", truncation, allocator);
                     _entity.AddMember("pointsHit", pointsHit, allocator);
 
@@ -908,7 +1061,7 @@ void Scenario::setPedsList(){
 		if (PED::IS_PED_IN_ANY_VEHICLE(peds[i], TRUE)) continue; //Don't process peds in vehicles!
 
         if (PED::GET_PED_TYPE(peds[i]) == 28) classid = 11; //animal
-        else classid = 10;
+        else classid = PEDESTRIAN_CLASS_ID;
 
         if (RETAIN_ANIMALS || classid != 11) {
             model = ENTITY::GET_ENTITY_MODEL(peds[i]);
@@ -1126,7 +1279,7 @@ void Scenario::setStencilBuffer() {
     ofile.write((char*)m_stencilBuffer, size);
     ofile.close();
 
-    log("After writing stencil buffer", true);
+    log("After writing stencil buffer");
     for (int j = 0; j < s_camParams.height; ++j) {
         for (int i = 0; i < s_camParams.width; ++i) {
             uint8_t val = m_stencilBuffer[j * s_camParams.width + i];
@@ -1143,13 +1296,13 @@ void Scenario::setStencilBuffer() {
         }
     }
 
-    log("Before saving stencil image", true);
+    log("Before saving stencil image");
     std::string imFilename = getStandardFilename("stencilImage", ".png");
     std::vector<std::uint8_t> ImageBuffer;
     lodepng::encode(ImageBuffer, (unsigned char*)m_pStencilImage, s_camParams.width, s_camParams.height, LCT_GREY, 8);
     lodepng::save_file(ImageBuffer, imFilename);
 
-    log("After saving stencil image", true);
+    log("After saving stencil image");
 }
 
 void Scenario::setDepthBuffer(bool prevDepth) {

@@ -200,3 +200,24 @@ static const std::vector<Eigen::Vector3f> coefficients = {
 { 0.5,  0.5, 0.5 },
 { -0.5,  0.5, 0.5 }
 };
+
+static Vector3 getUnitVector(Vector3 vector) {
+    float distance = sqrt(SYSTEM::VDIST2(0, 0, 0, vector.x, vector.y, vector.z));
+    Vector3 unitVec;
+    unitVec.x = vector.x / distance;
+    unitVec.y = vector.y / distance;
+    unitVec.z = vector.z / distance;
+    return unitVec;
+}
+
+static Vector3 subtractVecs(Vector3 first, Vector3 subtract) {
+    Vector3 difference;
+    difference.x = first.x - subtract.x;
+    difference.y = first.y - subtract.y;
+    difference.z = first.z - subtract.z;
+    return difference;
+}
+
+static float dotProd(Vector3 first, Vector3 sec) {
+    return (first.x * sec.x + first.y * sec.y + first.z * sec.z);
+}
