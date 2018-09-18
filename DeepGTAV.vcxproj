@@ -27,7 +27,6 @@
     <ClInclude Include="Constants.h" />
     <ClInclude Include="LiDAR.h" />
     <ClInclude Include="lodepng.h" />
-    <ClInclude Include="RAGETransforms.h" />
     <ClInclude Include="Rewarders\Rewarder.h" />
     <ClInclude Include="Rewarders\GeneralRewarder.h" />
     <ClInclude Include="Rewarders\LaneRewarder.h" />
