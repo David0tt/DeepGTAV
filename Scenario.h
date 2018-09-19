@@ -87,6 +87,8 @@ private:
     uint16_t* m_pDMImage = NULL;
     uint8_t* m_pStencilImage = NULL;
     unsigned char* color_buf = NULL;
+    uint8_t* m_pStencilSeg = NULL;
+    int m_stencilSegLength = 0;
 
     bool vehicles_created = false;
     std::vector<VehicleToCreate> vehiclesToCreate;
@@ -182,9 +184,10 @@ private:
 
     BBox2D BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector, bool &success, float &truncation);
     BBox2D processBBox2D(BBox2D bbox, uint8_t stencilType, Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector,
-        Vector3 xVector, Vector3 yVector, Vector3 zVector);
+        Vector3 xVector, Vector3 yVector, Vector3 zVector, int entityID, int &pointsHit2D);
     bool in3DBox(Vector3 point, Vector3 objPos, Vector3 dim, Vector3 yVector, Vector3 xVector, Vector3 zVector);
     bool checkDirection(Vector3 unit, Vector3 point, Vector3 min, Vector3 max);
+    void printSegImage();
     bool hasLOSToEntity(Entity entityID, Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector);
 
     //Do not use this function. Causes GTA to crash - need to figure out why

@@ -499,6 +499,7 @@ StringBuffer Scenario::generateMessage() {
 	if (location) setLocation();
 	if (time) setTime();
     setFocalLength();
+    if (depthMap && lidar_initialized) printSegImage();
 
     increaseIndex();
     GAMEPLAY::SET_GAME_PAUSED(false);
@@ -729,13 +730,13 @@ bool Scenario::checkDirection(Vector3 unit, Vector3 point, Vector3 min, Vector3 
 
 //Point and objPos should be in world coordinates
 bool Scenario::in3DBox(Vector3 point, Vector3 objPos, Vector3 dim, Vector3 yVector, Vector3 xVector, Vector3 zVector) {
-    Vector3 forward; forward.y = dim.y * 2; forward.x = 0; forward.z = 0;
+    Vector3 forward; forward.y = dim.y; forward.x = 0; forward.z = 0;
     forward = convertCoordinateSystem(forward, yVector, xVector, zVector);
 
-    Vector3 right; right.x = dim.x * 2; right.y = 0; right.z = 0;
+    Vector3 right; right.x = dim.x; right.y = 0; right.z = 0;
     right = convertCoordinateSystem(right, yVector, xVector, zVector);
 
-    Vector3 up; up.z = dim.z * 2; up.x = 0; up.y = 0;
+    Vector3 up; up.z = dim.z; up.x = 0; up.y = 0;
     up = convertCoordinateSystem(up, yVector, xVector, zVector);
 
     Vector3 rearBotLeft;
@@ -763,6 +764,7 @@ bool Scenario::in3DBox(Vector3 point, Vector3 objPos, Vector3 dim, Vector3 yVect
     oss2 << "\nfrontBotLeft: " << frontBotLeft.x << ", " << frontBotLeft.y << ", " << frontBotLeft.z;
     oss2 << "\nrearTopLeft: " << rearTopLeft.x << ", " << rearTopLeft.y << ", " << rearTopLeft.z;
     oss2 << "\nrearBotRight: " << rearBotRight.x << ", " << rearBotRight.y << ", " << rearBotRight.z;
+    oss2 << "\ndim: " << dim.x << ", " << dim.y << ", " << dim.z;
     std::string str2 = oss2.str();
     log(str2);
 
@@ -778,9 +780,11 @@ bool Scenario::in3DBox(Vector3 point, Vector3 objPos, Vector3 dim, Vector3 yVect
 }
 
 BBox2D Scenario::processBBox2D(BBox2D bbox, uint8_t stencilType, Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector,
-                               Vector3 xVector, Vector3 yVector, Vector3 zVector) {
+                               Vector3 xVector, Vector3 yVector, Vector3 zVector, int entityID, int &pointsHit2D) {
+    //position is given at bottom of bounding box (as per kitti)
+    position.z += dim.z;
+
     BBox2D processed;
-    int pointsHit = 0;
     processed.left = 1;
     processed.right = 0;
     processed.top = 1;
@@ -827,9 +831,28 @@ BBox2D Scenario::processBBox2D(BBox2D bbox, uint8_t stencilType, Vector3 positio
                     if (x > processed.right) processed.right = x;
                     if (y < processed.top) processed.top = y;
                     if (y > processed.bottom) processed.bottom = y;
-                    ++pointsHit;
+                    ++pointsHit2D;
 
-                    //TODO Create image with masks for each object
+                    //RGB image is 3 bytes per pixel
+                    int index = 3 * (j * s_camParams.width + i);
+                    uint8_t red = m_pStencilSeg[index];
+                    uint8_t green = m_pStencilSeg[index+1];
+                    uint8_t blue = m_pStencilSeg[index+2];
+                    if (red == 0 && green == 0 && blue == 0) {
+                        int newVal = 47 * entityID; //Just to produce unique but different colours
+                        red = (newVal + 13 * entityID) % 255;
+                        green = (newVal / 255) % 255;
+                        blue = newVal % 255;
+                    }
+                    else {
+                        red = 255;
+                        green = 255;
+                        blue = 255;
+                    }
+                    uint8_t* p = m_pStencilSeg + index;
+                    *p = red;
+                    *(p + 1) = green;
+                    *(p + 2) = blue;
                 }
             }
         }
@@ -838,7 +861,7 @@ BBox2D Scenario::processBBox2D(BBox2D bbox, uint8_t stencilType, Vector3 positio
     std::ostringstream oss;
     oss << "top, bot, right, left: " << top << ", " << bot << ", " << left << ", " << right <<
         "\nProcessed: " << processed.top << ", " << processed.bottom << ", " << processed.left << ", " << processed.right <<
-        "\nStencil points: " << stencilPointCount << " points: " << pointsHit;
+        "\nStencil points: " << stencilPointCount << " points: " << pointsHit2D;
     std::string str = oss.str();
     log(str);
 
@@ -969,7 +992,13 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                     int stencilType = VEHICLE_STENCIL_TYPE;
                     //Pedestrian classid
                     if (classid == PEDESTRIAN_CLASS_ID) stencilType = NPC_STENCIL_TYPE; //For NPCs
-                    BBox2D bbox2dProcessed = processBBox2D(bbox2d, stencilType, position, dim, forwardVector, rightVector, upVector, xVector, yVector, zVector);
+                    int pointsHit2D = 0;
+                    BBox2D bbox2dProcessed = processBBox2D(bbox2d, stencilType, position, dim, forwardVector, rightVector, upVector, xVector, yVector, zVector, entityID, pointsHit2D);
+                    
+                    //Do not allow entity through if it has no points hit on the 2D screen
+                    if (pointsHit2D == 0) {
+                        return false;
+                    }
 
                     Value _vector(kArrayType);
                     _entity.AddMember("speed", speed, allocator).AddMember("heading", heading, allocator).AddMember("classID", classid, allocator);
@@ -1196,6 +1225,9 @@ void Scenario::setupLiDAR() {
         m_pDMPointClouds = (float *)malloc(s_camParams.width * s_camParams.height * FLOATS_PER_POINT * sizeof(float));
         m_pDMImage = (uint16_t *)malloc(s_camParams.width * s_camParams.height * sizeof(uint16_t));
         m_pStencilImage = (uint8_t *)malloc(s_camParams.width * s_camParams.height * sizeof(uint8_t));
+        //RGB Image needs 3 bytes per value
+        m_stencilSegLength = s_camParams.width * s_camParams.height * 3 * sizeof(uint8_t);
+        m_pStencilSeg = (uint8_t *)malloc(m_stencilSegLength);
     }
 }
 
@@ -1608,4 +1640,12 @@ void Scenario::setCamParams() {
     //These values change frame to frame
     s_camParams.theta = CAM::GET_CAM_ROT(camera, 0);
     s_camParams.pos = CAM::GET_CAM_COORD(camera);
+}
+
+void Scenario::printSegImage() {
+    std::string imFilename = getStandardFilename("segImage", ".png");
+    std::vector<std::uint8_t> ImageBuffer;
+    lodepng::encode(ImageBuffer, (unsigned char*)m_pStencilSeg, s_camParams.width, s_camParams.height, LCT_RGB, 8);
+    lodepng::save_file(ImageBuffer, imFilename);
+    memset(m_pStencilSeg, 0, m_stencilSegLength);
 }
