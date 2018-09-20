@@ -902,6 +902,23 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 //Check if we see it (not occluded)
                 GAMEPLAY::GET_MODEL_DIMENSIONS(model, &min, &max);
 
+                //Need to adjust dimensions for pedestrians
+                if (classid == PEDESTRIAN_CLASS_ID) {
+                    float groundZ;
+                    GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(position.x, position.y, position.z, &(groundZ), 0);
+                    min.z = groundZ - position.z;
+
+                    std::ostringstream oss2;
+                    oss2 << "***min: " << min.x << ", " << min.y << ", " << min.z <<
+                        "\nmax: " << max.x << ", " << max.y << ", " << max.z;
+                    std::string str = oss2.str();
+                    log(str, true);
+                }
+                else {
+                    std::string modelString = VEHICLE::GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(model);
+                    //TODO Obtain vehicle class from model string (csv file)
+                }
+
                 //Calculate size
                 dim.x = 0.5*(max.x - min.x);
                 dim.y = 0.5*(max.y - min.y);
