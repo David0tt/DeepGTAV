@@ -470,6 +470,8 @@ StringBuffer Scenario::generateMessage() {
     scriptWait(0);
     CAM::RENDER_SCRIPT_CAMS(TRUE, FALSE, 0, FALSE, FALSE);
     scriptWait(0);
+    CAM::RENDER_SCRIPT_CAMS(TRUE, FALSE, 0, FALSE, FALSE);
+    scriptWait(0);
 
     log("Script cams rendered");
     screenCapturer->capture();
@@ -996,9 +998,9 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                     BBox2D bbox2dProcessed = processBBox2D(bbox2d, stencilType, position, dim, forwardVector, rightVector, upVector, xVector, yVector, zVector, entityID, pointsHit2D);
                     
                     //Do not allow entity through if it has no points hit on the 2D screen
-                    if (pointsHit2D == 0) {
+                    /*if (pointsHit2D == 0) {
                         return false;
-                    }
+                    }*/
 
                     Value _vector(kArrayType);
                     _entity.AddMember("speed", speed, allocator).AddMember("heading", heading, allocator).AddMember("classID", classid, allocator);
@@ -1022,6 +1024,7 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                     _vector.SetArray();
                     _vector.PushBack(bbox2dProcessed.left*s_camParams.width, allocator).PushBack(bbox2dProcessed.top*s_camParams.height, allocator).PushBack(bbox2dProcessed.right*s_camParams.width, allocator).PushBack(bbox2dProcessed.bottom*s_camParams.height, allocator);
                     _entity.AddMember("bbox2dProcessed", _vector, allocator);
+                    _entity.AddMember("pointsHit2D", pointsHit2D, allocator);
                     _entity.AddMember("truncation", truncation, allocator);
                     _entity.AddMember("pointsHit", pointsHit, allocator);
 
