@@ -1,6 +1,9 @@
 #Helper functions for exporting data
-def getText(classID, distance):
-    if distance > 80: #In metres
+def getText(classID, distance, width, height, pixelCount):
+    if (distance > 80 or #In metres
+        height < 25 or
+        width < 25 or
+        pixelCount < 300):
         return "DontCare"
     return {
         0: "Car",
@@ -12,8 +15,15 @@ def getText(classID, distance):
     }.get(classID,"DontCare")
 
 def outputObjectInfo(text_file, instance, altBBox=False):
+    #2D Bounding box
+    bboxNums = instance['bbox2d']
+    if altBBox:
+        bboxNums = instance['bbox2dProcessed']
+
     #TODO Determine actual class of vehicle
-    text = getText(instance['classID'], instance['distance'])
+    width = bboxNums[2] - bboxNums[0]
+    height = bboxNums[3] - bboxNums[1]
+    text = instance['objectType']#getText(instance['classID'], instance['distance'], width, height, instance['pointsHit2D'])
     text_file.write("%s" % text)
 
     #TODO - Determine if truncated
@@ -24,11 +34,6 @@ def outputObjectInfo(text_file, instance, altBBox=False):
     
     #Observation angle alpha TODO
     text_file.write(" %f" % instance['alpha'])
-
-    #2D Bounding box TODO
-    bboxNums = instance['bbox2d']
-    if altBBox:
-        bboxNums = instance['bbox2dProcessed']
 
     for num in bboxNums:
         text_file.write(" %d" % num)

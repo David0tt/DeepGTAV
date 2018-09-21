@@ -13,6 +13,7 @@
 #include "Constants.h"
 #include <Eigen/Core>
 #include "lodepng.h"
+#include <sstream>
 
 extern "C" {
     __declspec(dllimport) int export_get_depth_buffer(void** buf, bool updateWithOffsetDepth);
@@ -272,6 +273,8 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
     d.AddMember("seriesIndex", a, allocator);
 
 	screenCapturer = new ScreenCapturer(s_camParams.width, s_camParams.height);
+
+    initVehicleLookup();
 }
 
 void Scenario::buildScenario() {
@@ -870,7 +873,7 @@ BBox2D Scenario::processBBox2D(BBox2D bbox, uint8_t stencilType, Vector3 positio
     return processed;
 }
 
-bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocator, int entityID, Hash model, int classid) {
+bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocator, int entityID, Hash model, int classid, std::string type) {
     bool success = false;
 
     Vector3 FUR; //Front Upper Right
@@ -913,10 +916,6 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                         "\nmax: " << max.x << ", " << max.y << ", " << max.z;
                     std::string str = oss2.str();
                     log(str, true);
-                }
-                else {
-                    std::string modelString = VEHICLE::GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(model);
-                    //TODO Obtain vehicle class from model string (csv file)
                 }
 
                 //Calculate size
@@ -1045,6 +1044,10 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                     _entity.AddMember("truncation", truncation, allocator);
                     _entity.AddMember("pointsHit", pointsHit, allocator);
 
+                    Value str;
+                    str.SetString(type.c_str(), type.length(), allocator);
+                    _entity.AddMember("objectType", str, allocator);
+
                     if (trackFirstFrame.find(entityID) == trackFirstFrame.end()) {
                         trackFirstFrame.insert(std::pair<int, int>(entityID, instance_index));
                     }
@@ -1085,8 +1088,24 @@ void Scenario::setVehiclesList() {
         else if (VEHICLE::_IS_THIS_MODEL_A_SUBMERSIBLE(model)) classid = 8;
         else classid = 9; //unknown (ufo?)
 
+        //Get the model string, convert it to lowercase then find it in lookup table
+        std::string modelString = VEHICLE::GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(model);
+        std::string before = modelString;
+        std::transform(modelString.begin(), modelString.end(), modelString.begin(), ::tolower);
+        std::string type = "Unknown";
+        auto search = m_vLookup.find(modelString);
+        if (search != m_vLookup.end()) {
+            type = search->second;
+        }
+        else {
+            std::ostringstream oss;
+            oss << "Entity Model/type/hash: " << modelString << ", " << type << ", " << model << ", before: " << before;
+            std::string str = oss.str();
+            log(str, true);
+        }
+
         Value _vehicle(kObjectType);
-        bool success = getEntityVector(_vehicle, allocator, vehicles[i], model, classid);
+        bool success = getEntityVector(_vehicle, allocator, vehicles[i], model, classid, type);
         if (success) {
             _vehicles.PushBack(_vehicle, allocator);
         }
@@ -1109,14 +1128,18 @@ void Scenario::setPedsList(){
 	for (int i = 0; i < count; i++) {
 		if (PED::IS_PED_IN_ANY_VEHICLE(peds[i], TRUE)) continue; //Don't process peds in vehicles!
 
-        if (PED::GET_PED_TYPE(peds[i]) == 28) classid = 11; //animal
+        std::string type = "Pedestrian";
+        if (PED::GET_PED_TYPE(peds[i]) == 28) {
+            classid = 11; //animal
+            type = "Animal";
+        }
         else classid = PEDESTRIAN_CLASS_ID;
 
         if (RETAIN_ANIMALS || classid != 11) {
             model = ENTITY::GET_ENTITY_MODEL(peds[i]);
 
             Value _ped(kObjectType);
-            bool success = getEntityVector(_ped, allocator, peds[i], model, classid);
+            bool success = getEntityVector(_ped, allocator, peds[i], model, classid, type);
             if (success) {
                 _peds.PushBack(_ped, allocator);
             }
@@ -1668,4 +1691,21 @@ void Scenario::printSegImage() {
     lodepng::encode(ImageBuffer, (unsigned char*)m_pStencilSeg, s_camParams.width, s_camParams.height, LCT_RGB, 8);
     lodepng::save_file(ImageBuffer, imFilename);
     memset(m_pStencilSeg, 0, m_stencilSegLength);
+}
+
+void Scenario::initVehicleLookup() {
+    if (!m_vLookupInit) {
+        std::ifstream inFile(VEHICLE_MODEL_TRANSLATION_FILE);
+        std::string line;
+        while (std::getline(inFile, line)) // read whole line into line
+        {
+            std::istringstream iss(line); // string stream
+            std::string model;
+            std::string vehicleType;
+            std::getline(iss, model, ','); // read first part up to comma, ignore the comma
+            iss >> vehicleType; // read the second part
+            m_vLookup.insert(std::pair< std::string, std::string>(model, vehicleType));
+        }
+        m_vLookupInit = true;
+    }
 }

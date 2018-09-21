@@ -112,6 +112,9 @@ private:
     //Camera intrinsic parameters
     float intrinsics[3];
 
+    bool m_vLookupInit = false;
+    std::unordered_map<std::string, std::string> m_vLookup; //Vehicle lookup
+
 public:
 	float rate;
 
@@ -167,7 +170,7 @@ private:
     void drawBoxes(Vector3 BLL, Vector3 FUR, Vector3 dim, Vector3 upVector, Vector3 rightVector, Vector3 forwardVector, Vector3 position, int colour);
     void calcCameraIntrinsics();
     void setFocalLength();
-    bool getEntityVector(Value &_entity, Document::AllocatorType& allocator, int entityID, Hash model, int classid);
+    bool getEntityVector(Value &_entity, Document::AllocatorType& allocator, int entityID, Hash model, int classid, std::string type);
     void setPosition();
     float observationAngle(Vector3 position);
     void drawVectorFromPosition(Vector3 vector, int blue, int green);
@@ -188,7 +191,10 @@ private:
     bool in3DBox(Vector3 point, Vector3 objPos, Vector3 dim, Vector3 yVector, Vector3 xVector, Vector3 zVector);
     bool checkDirection(Vector3 unit, Vector3 point, Vector3 min, Vector3 max);
     void printSegImage();
+
     bool hasLOSToEntity(Entity entityID, Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector);
+
+    void initVehicleLookup();
 
     //Do not use this function. Causes GTA to crash - need to figure out why
     void setColorBuffer();

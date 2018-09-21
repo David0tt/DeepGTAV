@@ -7,6 +7,8 @@
 const int FLOATS_PER_POINT = 4;
 const float MAX_LIDAR_DIST = 120.0f;//in metres
 
+const std::string VEHICLE_MODEL_TRANSLATION_FILE = "C:\\Users\\Braden\\Workspace\\DeepGTAV\\vehicle_labels.csv";
+
 //TODO -> stencil/depth semantic segmentation then use depth map points to shrink 2D bboxes
 
 //Some settings for testing pointcloud generation
@@ -23,4 +25,4 @@ const bool OUTPUT_DM_POINTCLOUD = true;
 const bool OBTAIN_RAY_POINTS_HIT = false;
 
 //Sends animals to client. Client only outputs them in augmented labels at the moment
-const bool RETAIN_ANIMALS = false;
+const bool RETAIN_ANIMALS = true;
