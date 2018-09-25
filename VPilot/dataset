@@ -25,13 +25,13 @@ width = 1920
 height = 1080
 index = 0
 
-tracking = False
+tracking = True
 collectStationary = False
 collectVehicles = True
 collectPeds = True
 collectOffscreen = False
 captureRate = 1
-startIndex = 100
+startIndex = 0
 
 base_folder = "E:\\data\\"
 if tracking:
@@ -153,15 +153,15 @@ if __name__ == '__main__':
                 printInstances(filename, message['vehicles'], False)
             if collectPeds:
                 printInstances(filename, message['peds'], False)
-            filename = "%slabels_processed\\%s.txt" % (base_folder, indexString)
+            filename = "%slabels_unprocessed\\%s.txt" % (base_folder, indexString)
             ensureDirExists(filename)
             text_file = open(filename, "w")
             text_file.write("")
             text_file.close()
             if collectVehicles:
-                printInstances(filename, message['vehicles'], False, False, True)
+                printInstances(filename, message['vehicles'], False, False, False)
             if collectPeds:
-                printInstances(filename, message['peds'], False, False, True)
+                printInstances(filename, message['peds'], False, False, False)
             
             #Output object detections with augmentations
             filename = "%slabels_aug\\%s.txt" % (base_folder, indexString)

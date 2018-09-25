@@ -14,7 +14,7 @@ def getText(classID, distance, width, height, pixelCount):
         10: "Pedestrian"
     }.get(classID,"DontCare")
 
-def outputObjectInfo(text_file, instance, altBBox=False):
+def outputObjectInfo(text_file, instance, altBBox=True):
     #2D Bounding box
     bboxNums = instance['bbox2d']
     if altBBox:
@@ -49,7 +49,7 @@ def outputObjectInfo(text_file, instance, altBBox=False):
     #Rotation_y
     text_file.write(" %f" % instance['rotation_y'])
     
-def printInstances(filename, list, augment, tracking=False, altBBox=False):
+def printInstances(filename, list, augment, tracking=False, altBBox=True):
     text_file = open(filename, "a")
     for instance in list:
         #Only print animals (classId 11) for augmented albels
@@ -57,7 +57,7 @@ def printInstances(filename, list, augment, tracking=False, altBBox=False):
             if tracking:
                 text_file.write("%d" % instance['trackFirstFrame'])
                 text_file.write(" %d " % instance['entityID'])
-                outputObjectInfo(text_file, instance)
+                outputObjectInfo(text_file, instance, altBBox)
             else:
                 if not altBBox or instance['pointsHit2D'] > 0:
                     outputObjectInfo(text_file, instance, altBBox)
