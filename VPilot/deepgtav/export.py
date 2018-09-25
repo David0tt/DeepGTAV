@@ -49,40 +49,38 @@ def outputObjectInfo(text_file, instance, altBBox=True):
     #Rotation_y
     text_file.write(" %f" % instance['rotation_y'])
     
-def printInstances(filename, list, augment, tracking=False, altBBox=True):
+def printInstances(filename, list, augment, tracking=False, frameID=0, altBBox=True):
     text_file = open(filename, "a")
     for instance in list:
-        #Only print animals (classId 11) for augmented albels
-        if instance['classID'] != 11 or augment:
+        if not altBBox or instance['pointsHit2D'] > 0:
             if tracking:
-                text_file.write("%d" % instance['trackFirstFrame'])
+                text_file.write("%d" % frameID)
                 text_file.write(" %d " % instance['entityID'])
                 outputObjectInfo(text_file, instance, altBBox)
             else:
-                if not altBBox or instance['pointsHit2D'] > 0:
-                    outputObjectInfo(text_file, instance, altBBox)
+                outputObjectInfo(text_file, instance, altBBox)
 
-                    if augment:
-                        text_file.write(" Augmentations:")
-                        text_file.write(" %d" % instance['entityID'])
-                        text_file.write(" %d" % instance['pointsHit'])
-                        text_file.write(" %f" % instance['speed'])
-                        text_file.write(" %f" % instance['heading'])
-                        text_file.write(" %d" % instance['classID'])
-                        
-                        if instance['offscreen']:
-                            text_file.write(" 0")
-                        else:
-                            text_file.write(" 1")
-
-                        #3D dimensions offcenter
-                        for num in instance['offcenter']:
-                            text_file.write(" %f" % num)
+                if augment:
+                    text_file.write(" Augmentations:")
+                    text_file.write(" %d" % instance['entityID'])
+                    text_file.write(" %d" % instance['pointsHit'])
+                    text_file.write(" %f" % instance['speed'])
+                    text_file.write(" %f" % instance['heading'])
+                    text_file.write(" %d" % instance['classID'])
                     
-                        # for num in instance['FUR']:
-                        #     text_file.write(" %f" % num)
-                        # for num in instance['BLL']:
-                        #     text_file.write(" %f" % num)
+                    if instance['offscreen']:
+                        text_file.write(" 0")
+                    else:
+                        text_file.write(" 1")
+
+                    #3D dimensions offcenter
+                    for num in instance['offcenter']:
+                        text_file.write(" %f" % num)
+                
+                    # for num in instance['FUR']:
+                    #     text_file.write(" %f" % num)
+                    # for num in instance['BLL']:
+                    #     text_file.write(" %f" % num)
 
             text_file.write("\n")
     text_file.close()

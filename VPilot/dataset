@@ -46,7 +46,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=None)
     parser.add_argument('-l', '--host', default='localhost', help='The IP where DeepGTAV is running')
     parser.add_argument('-p', '--port', default=8000, help='The port where DeepGTAV is running')
-    default_dataset_path = base_folder + 'dataset.pz'
+    default_dataset_path = None#base_folder + 'dataset.pz'
     parser.add_argument('-d', '--dataset_path', default=default_dataset_path, help='Place to store the dataset')
     args = parser.parse_args()
 
@@ -139,9 +139,9 @@ if __name__ == '__main__':
                 text_file.write("")
                 text_file.close()
                 if collectVehicles:
-                    printInstances(filename, message['vehicles'], False, True)
+                    printInstances(filename, message['vehicles'], False, True, index)
                 if collectPeds:
-                    printInstances(filename, message['peds'], False, True)
+                    printInstances(filename, message['peds'], False, True, index)
             
             #Output object detections
             filename = "%slabels\\%s.txt" % (base_folder, indexString)
@@ -153,15 +153,17 @@ if __name__ == '__main__':
                 printInstances(filename, message['vehicles'], False)
             if collectPeds:
                 printInstances(filename, message['peds'], False)
+            
+            #Output unprocessed detections (For testing)
             filename = "%slabels_unprocessed\\%s.txt" % (base_folder, indexString)
             ensureDirExists(filename)
             text_file = open(filename, "w")
             text_file.write("")
             text_file.close()
             if collectVehicles:
-                printInstances(filename, message['vehicles'], False, False, False)
+                printInstances(filename, message['vehicles'], False, False, index, False)
             if collectPeds:
-                printInstances(filename, message['peds'], False, False, False)
+                printInstances(filename, message['peds'], False, False, index, False)
             
             #Output object detections with augmentations
             filename = "%slabels_aug\\%s.txt" % (base_folder, indexString)
