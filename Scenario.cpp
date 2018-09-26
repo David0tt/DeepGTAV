@@ -14,6 +14,7 @@
 #include <Eigen/Core>
 #include "lodepng.h"
 #include <sstream>
+#include "AreaRoaming.h"
 
 extern "C" {
     __declspec(dllimport) int export_get_depth_buffer(void** buf, bool updateWithOffsetDepth);
@@ -70,6 +71,8 @@ void Scenario::parseScenarioConfig(const Value& sc, bool setDefaults) {
 		x = 5000 * ((float)rand() / RAND_MAX) - 2500;
 		y = 8000 * ((float)rand() / RAND_MAX) - 2000;
 	}
+    x = s_locationBounds[0][0][0];
+    y = s_locationBounds[0][1][0];
 
 	if (time.IsArray()) {
 		if (!time[0].IsNull()) hour = time[0].GetInt();
@@ -191,6 +194,11 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
     else if (setDefaults) stationaryScene = _STATIONARY_SCENE_;
     if (!dc["collectTracking"].IsNull()) collectTracking = dc["collectTracking"].GetBool();
     else if (setDefaults) collectTracking = _COLLECT_TRACKING_;
+
+
+    dir.x = s_locationBounds[0][0][m_startArea];
+    dir.y = s_locationBounds[0][1][m_startArea];
+    dir.z = 0.f;
 
     //Export folder for pointcloud/depth map
     baseFolder = "E:\\data\\";
@@ -343,7 +351,10 @@ void Scenario::buildScenario() {
     CAM::RENDER_SCRIPT_CAMS(TRUE, FALSE, 0, TRUE, TRUE);
 
 	AI::CLEAR_PED_TASKS(ped);
-	if (_drivingMode >= 0 && !stationaryScene) AI::TASK_VEHICLE_DRIVE_WANDER(ped, vehicle, _setSpeed, _drivingMode);
+	if (_drivingMode >= 0 && !stationaryScene) {
+        AI::TASK_VEHICLE_DRIVE_TO_COORD(ped, vehicle, dir.x, dir.y, dir.z, _setSpeed, Any(1.f), vehicleHash, _drivingMode, 50.f, true);
+        //AI::TASK_VEHICLE_DRIVE_WANDER(ped, vehicle, _setSpeed, _drivingMode);
+    }
 
     //Overwrite previous time analysis file so it is empty
     FILE* f = fopen(m_timeTrackFile.c_str(), "w");
@@ -391,6 +402,27 @@ void Scenario::config(const Value& sc, const Value& dc) {
 void Scenario::run() {
 	if (running) {
 		std::clock_t now = std::clock();
+
+        if (pow(currentPos.x - dir.x, 2) + pow(currentPos.y - dir.y, 2) < pow(50, 2))
+        {
+            std::vector<std::pair<float, float>> new_points = generate_n_random_points(
+                m_startArea, m_polyGrid, 1, 100, { { currentPos.x , currentPos.y } });
+            dir.x = new_points[0].first;
+            dir.y = new_points[0].second;
+
+            AI::TASK_VEHICLE_DRIVE_TO_COORD(ped, vehicle, dir.x, dir.y, dir.z, _setSpeed, Any(1.f),
+                GAMEPLAY::GET_HASH_KEY((char*)_vehicle), _drivingMode, 1.f, true);
+        }
+        else if (!in_bounds(currentPos.x, currentPos.y, m_startArea, m_polyGrid))
+        {
+            std::vector<std::pair<float, float>> new_points = generate_n_random_points(
+                m_startArea, m_polyGrid, 1, 100, { { currentPos.x , currentPos.y } });
+            dir.x = new_points[0].first;
+            dir.y = new_points[0].second;
+
+            AI::TASK_VEHICLE_DRIVE_TO_COORD(ped, vehicle, dir.x, dir.y, dir.z, _setSpeed, Any(1.f),
+                GAMEPLAY::GET_HASH_KEY((char*)_vehicle), _drivingMode, 1.f, true);
+        }
 
 		if (_drivingMode < 0) {
 			CONTROLS::_SET_CONTROL_NORMAL(27, 71, currentThrottle); //[0,1]

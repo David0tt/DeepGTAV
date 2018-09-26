@@ -73,6 +73,9 @@ private:
 	bool running = false;
 	Document d;
 
+    int m_startArea = 1; //Downtown (see s_locationBounds)
+    std::vector<std::vector<char>> m_polyGrid;
+
     //LiDAR variables
     LiDAR lidar;
     bool lidar_initialized = false;
