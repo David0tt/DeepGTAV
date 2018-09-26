@@ -46,6 +46,7 @@ burrito2,Car
 burrito3,Car
 burrito4,Car
 burrito5,Car
+cavcade,Truck
 cavalcade,Truck
 cavalcade2,Truck
 policet,Car
@@ -54,6 +55,7 @@ cablecar,Void
 caddy,Car
 caddy2,Car
 camper,Truck
+carboniz,Car
 carbonizzare,Car
 cheetah,Car
 comet2,Car
@@ -103,10 +105,11 @@ infernus,Car
 ingot,Car
 intruder,Car
 issi2,Car
-Jackal,Car
+jackal,Car
 journey,Truck
 jb700,Car
 khamelion,Car
+landstal,Car
 landstalker,Car
 lguard,Car
 manana,Car
@@ -154,6 +157,7 @@ ratloader,Truck
 rebel,Truck
 regina,Car
 rebel2,Truck
+rentbus,Bus
 rentalbus,Bus
 ruiner,Car
 rumpo,Car
@@ -170,6 +174,7 @@ sandking,Truck
 sandking2,Truck
 schafter2,Car
 schwarzer,Car
+schwarze,Car
 scrap,Truck
 seminole,Car
 sentinel,Car
@@ -227,7 +232,7 @@ tribike2,Bycicle
 tribike3,Bycicle
 fixter,Bycicle
 cruiser,Bycicle
-BMX,Bycicle
+bmx,Bycicle
 policeb,Moterbike
 akuma,Moterbike
 carbonrs,Moterbike
