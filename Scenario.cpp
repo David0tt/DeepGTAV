@@ -1504,6 +1504,9 @@ Vector3 Scenario::depthToCamCoords(float ndc, float screenX, float screenY) {
     //Distance to near clip (hypotenus)
     float d2nc = sqrt(s_camParams.nearClip * s_camParams.nearClip + ncX * ncX + ncY * ncY);
     float worldDepth = d2nc / ndc;
+    if (ndc <= 0 || worldDepth > s_camParams.farClip) {
+        worldDepth = s_camParams.farClip;
+    }
 
     //X is right, Y is forward, Z is up (GTA coordinate frame)
     Vector3 unitVec;
