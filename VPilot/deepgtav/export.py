@@ -30,7 +30,7 @@ def outputObjectInfo(text_file, instance, altBBox=True):
     text_file.write(" %f" % instance['truncation'])
 
     #TODO - Occlusion
-    text_file.write(" 0")
+    text_file.write(" %f" % instance['occlusion'])
     
     #Observation angle alpha TODO
     text_file.write(" %f" % instance['alpha'])

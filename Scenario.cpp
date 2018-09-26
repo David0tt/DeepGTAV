@@ -34,6 +34,7 @@ const float CAM_OFFSET_UP = 0.8;
 
 const int VEHICLE_STENCIL_TYPE = 2;
 const int NPC_STENCIL_TYPE = 1;
+const int SKY_STENCIL_TYPE = 7;
 const int PEDESTRIAN_CLASS_ID = 10;
 
 char* Scenario::weatherList[14] = { "CLEAR", "EXTRASUNNY", "CLOUDS", "OVERCAST", "RAIN", "CLEARING", "THUNDER", "SMOG", "FOGGY", "XMAS", "SNOWLIGHT", "BLIZZARD", "NEUTRAL", "SNOW" };
@@ -506,6 +507,14 @@ StringBuffer Scenario::generateMessage() {
     setFocalLength();
     if (depthMap && lidar_initialized) printSegImage();
 
+    if (depthMap && lidar_initialized && OUTPUT_OCCLUSION_IMAGE) {
+        std::string imFilename = getStandardFilename("occlusionImage", ".png");
+        std::vector<std::uint8_t> ImageBuffer;
+        lodepng::encode(ImageBuffer, (unsigned char*)m_pOcclusionImage, s_camParams.width, s_camParams.height, LCT_GREY, 8);
+        lodepng::save_file(ImageBuffer, imFilename);
+        memset(m_pOcclusionImage, 0, s_camParams.width * s_camParams.height);
+    }
+
     increaseIndex();
     GAMEPLAY::SET_GAME_PAUSED(false);
 
@@ -784,8 +793,23 @@ bool Scenario::in3DBox(Vector3 point, Vector3 objPos, Vector3 dim, Vector3 yVect
     return true;
 }
 
+bool Scenario::isPointOccluding(Vector3 worldPos, Vector3 position) {
+    float pointDist = sqrt(SYSTEM::VDIST2(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, worldPos.x, worldPos.y, worldPos.z));
+    float distObjCenter = sqrt(SYSTEM::VDIST2(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, position.x, position.y, position.z));
+    if (pointDist < distObjCenter) {
+        float groundZ;
+        GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(worldPos.x, worldPos.y, worldPos.z, &(groundZ), 0);
+        //Check it is not the ground in the image (or the ground is much higher/lower than the object)
+        if ((groundZ + 0.1) < worldPos.z || s_camParams.pos.z > (position.z + 4) || s_camParams.pos.z < (position.z - 2)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+//Position is world position of object center
 BBox2D Scenario::processBBox2D(BBox2D bbox, uint8_t stencilType, Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector,
-                               Vector3 xVector, Vector3 yVector, Vector3 zVector, int entityID, int &pointsHit2D) {
+                               Vector3 xVector, Vector3 yVector, Vector3 zVector, int entityID, int &pointsHit2D, float &occlusion) {
     //position is given at bottom of bounding box (as per kitti)
     position.z += dim.z;
 
@@ -811,17 +835,19 @@ BBox2D Scenario::processBBox2D(BBox2D bbox, uint8_t stencilType, Vector3 positio
     Vector3 zVectorCam = convertCoordinateSystem(worldZ, currentForwardVector, currentRightVector, currentUpVector);
 
     int stencilPointCount = 0;
+    int occlusionPointCount = 0;
 
     for (int j = top; j < bot; ++j) {
         for (int i = left; i < right; ++i) {
             uint8_t stencilVal = m_stencilBuffer[j * s_camParams.width + i];
+            float ndc = depth_map[j * s_camParams.width + i];
+            Vector3 relPos = depthToCamCoords(ndc, i, j);
+            Vector3 worldPos = convertCoordinateSystem(relPos, yVectorCam, xVectorCam, zVectorCam);
+            worldPos.x += s_camParams.pos.x;
+            worldPos.y += s_camParams.pos.y;
+            worldPos.z += s_camParams.pos.z;
+
             if (stencilType == stencilVal) {
-                float ndc = depth_map[j * s_camParams.width + i];
-                Vector3 relPos = depthToCamCoords(ndc, i, j);
-                Vector3 worldPos = convertCoordinateSystem(relPos, yVectorCam, xVectorCam, zVectorCam);
-                worldPos.x += s_camParams.pos.x;
-                worldPos.y += s_camParams.pos.y;
-                worldPos.z += s_camParams.pos.z;
                 ++stencilPointCount;
 
                 if (in3DBox(worldPos, position, dim, yVector, xVector, zVector)) {
@@ -859,8 +885,26 @@ BBox2D Scenario::processBBox2D(BBox2D bbox, uint8_t stencilType, Vector3 positio
                     *(p + 1) = green;
                     *(p + 2) = blue;
                 }
+                else if (isPointOccluding(worldPos, position)) {
+                    ++occlusionPointCount;
+                    if (NPC_STENCIL_TYPE == stencilType) {
+                        m_pOcclusionImage[j * s_camParams.width + i] = 255;
+                    }
+                }
+            }
+            else if (stencilVal != SKY_STENCIL_TYPE && isPointOccluding(worldPos, position)) {
+                ++occlusionPointCount;
+                if (NPC_STENCIL_TYPE == stencilType) {
+                    m_pOcclusionImage[j * s_camParams.width + i] = 255;
+                }
             }
         }
+    }
+
+    occlusion = 1.0;
+    int divisor = occlusionPointCount + pointsHit2D;
+    if (divisor != 0) {
+        occlusion = (float)occlusionPointCount / (float)(occlusionPointCount + pointsHit2D);
     }
 
     std::ostringstream oss;
@@ -1016,7 +1060,8 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                     //Pedestrian classid
                     if (classid == PEDESTRIAN_CLASS_ID) stencilType = NPC_STENCIL_TYPE; //For NPCs
                     int pointsHit2D = 0;
-                    BBox2D bbox2dProcessed = processBBox2D(bbox2d, stencilType, position, dim, forwardVector, rightVector, upVector, xVector, yVector, zVector, entityID, pointsHit2D);
+                    float occlusion = 0;
+                    BBox2D bbox2dProcessed = processBBox2D(bbox2d, stencilType, position, dim, forwardVector, rightVector, upVector, xVector, yVector, zVector, entityID, pointsHit2D, occlusion);
                     
                     //Do not allow entity through if it has no points hit on the 2D screen
                     /*if (pointsHit2D == 0) {
@@ -1048,6 +1093,7 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                     _entity.AddMember("pointsHit2D", pointsHit2D, allocator);
                     _entity.AddMember("truncation", truncation, allocator);
                     _entity.AddMember("pointsHit", pointsHit, allocator);
+                    _entity.AddMember("occlusion", occlusion, allocator);
 
                     Value str;
                     str.SetString(type.c_str(), type.length(), allocator);
@@ -1105,7 +1151,7 @@ void Scenario::setVehiclesList() {
         }
         else {
             std::ostringstream oss;
-            oss << "Entity Model/type/hash: " << modelString << ", " << type << ", " << model << ", before: " << before;
+            oss << "Entity Model/type/hash: " << modelString << ", " << type << ", " << model << ", before: " << before << ", index: " << instance_index;
             std::string str = oss.str();
             log(str, true);
         }
@@ -1274,6 +1320,7 @@ void Scenario::setupLiDAR() {
         m_pDMPointClouds = (float *)malloc(s_camParams.width * s_camParams.height * FLOATS_PER_POINT * sizeof(float));
         m_pDMImage = (uint16_t *)malloc(s_camParams.width * s_camParams.height * sizeof(uint16_t));
         m_pStencilImage = (uint8_t *)malloc(s_camParams.width * s_camParams.height * sizeof(uint8_t));
+        m_pOcclusionImage = (uint8_t *)malloc(s_camParams.width * s_camParams.height * sizeof(uint8_t));
         //RGB Image needs 3 bytes per value
         m_stencilSegLength = s_camParams.width * s_camParams.height * 3 * sizeof(uint8_t);
         m_pStencilSeg = (uint8_t *)malloc(m_stencilSegLength);

@@ -89,6 +89,7 @@ private:
     unsigned char* color_buf = NULL;
     uint8_t* m_pStencilSeg = NULL;
     int m_stencilSegLength = 0;
+    uint8_t* m_pOcclusionImage = NULL;
 
     bool vehicles_created = false;
     std::vector<VehicleToCreate> vehiclesToCreate;
@@ -140,7 +141,7 @@ public:
     //Tracking variables
     bool collectTracking;
     //# of instances in one series
-    const int trSeriesLength = 20;// 500;
+    const int trSeriesLength = 500;
     //# of seconds between series
     const int trSeriesGapTime = 30;
     //Used for keeing track of when to add the gap
@@ -187,7 +188,7 @@ private:
 
     BBox2D BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector, bool &success, float &truncation);
     BBox2D processBBox2D(BBox2D bbox, uint8_t stencilType, Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector,
-        Vector3 xVector, Vector3 yVector, Vector3 zVector, int entityID, int &pointsHit2D);
+        Vector3 xVector, Vector3 yVector, Vector3 zVector, int entityID, int &pointsHit2D, float &occlusion);
     bool in3DBox(Vector3 point, Vector3 objPos, Vector3 dim, Vector3 yVector, Vector3 xVector, Vector3 zVector);
     bool checkDirection(Vector3 unit, Vector3 point, Vector3 min, Vector3 max);
     void printSegImage();
@@ -195,6 +196,7 @@ private:
     bool hasLOSToEntity(Entity entityID, Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector);
 
     void initVehicleLookup();
+    bool isPointOccluding(Vector3 worldPos, Vector3 position);
 
     //Do not use this function. Causes GTA to crash - need to figure out why
     void setColorBuffer();
