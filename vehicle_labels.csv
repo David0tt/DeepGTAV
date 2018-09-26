@@ -37,6 +37,7 @@ bodhi2,Truck
 buccaneer,Car
 buffalo,Car
 buffalo2,Car
+bulldoze,Void
 bulldozer,Void
 bullet,Car
 blimp,Airplane
@@ -60,6 +61,7 @@ cogcabrio,Car
 coquette,Car
 cutter,Void
 gresley,Car
+dilettan,Car
 dilettante,Car
 dilettante2,Car
 dune,Car
@@ -86,6 +88,7 @@ felon2,Car
 feltzer2,Car
 firetruk,Truck
 flatbed,Truck
+fork,Void
 forklift,Void
 fq2,Car
 fusilade,Car
@@ -279,6 +282,7 @@ freightgrain,Railed
 tankercar,Railed
 metrotrain,Railed
 docktrailer,Trailer
+trailer,Trailer
 trailers,Trailer
 trailers2,Trailer
 trailers3,Trailer
@@ -392,6 +396,7 @@ pigalle,Car
 monster,Car
 sovereign,Moterbike
 furoregt,Car
+furore,Car
 hakuchou,Moterbike
 innovation,Moterbike
 besra,Airplane
@@ -425,6 +430,7 @@ dinghy4,Boat
 limo2,Car
 mamba,Car
 nightshade,Car
+schafter,Car
 schafter3,Car
 schafter4,Car
 schafter5,Car
