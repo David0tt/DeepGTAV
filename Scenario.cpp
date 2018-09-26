@@ -909,13 +909,18 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 if (classid == PEDESTRIAN_CLASS_ID) {
                     float groundZ;
                     GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(position.x, position.y, position.z, &(groundZ), 0);
-                    min.z = groundZ - position.z;
+                    float negZ = groundZ - position.z;
+
+                    //Pedestrians on balconies can cause problems
+                    if (negZ > -2.0 && negZ < 0) {
+                        min.z = groundZ - position.z;
+                    }
 
                     std::ostringstream oss2;
                     oss2 << "***min: " << min.x << ", " << min.y << ", " << min.z <<
                         "\nmax: " << max.x << ", " << max.y << ", " << max.z;
                     std::string str = oss2.str();
-                    log(str, true);
+                    log(str);
                 }
 
                 //Calculate size
@@ -1093,6 +1098,7 @@ void Scenario::setVehiclesList() {
         std::string before = modelString;
         std::transform(modelString.begin(), modelString.end(), modelString.begin(), ::tolower);
         std::string type = "Unknown";
+        modelString.erase(remove_if(modelString.begin(), modelString.end(), [](char c) { return !isalpha(c); }), modelString.end());
         auto search = m_vLookup.find(modelString);
         if (search != m_vLookup.end()) {
             type = search->second;
@@ -1703,6 +1709,8 @@ void Scenario::initVehicleLookup() {
             std::string model;
             std::string vehicleType;
             std::getline(iss, model, ','); // read first part up to comma, ignore the comma
+            std::string before = model;
+            model.erase(remove_if(model.begin(), model.end(), [](char c) { return !isalpha(c); }), model.end());
             iss >> vehicleType; // read the second part
             m_vLookup.insert(std::pair< std::string, std::string>(model, vehicleType));
         }

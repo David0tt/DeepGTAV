@@ -140,7 +140,7 @@ public:
     //Tracking variables
     bool collectTracking;
     //# of instances in one series
-    const int trSeriesLength = 500;
+    const int trSeriesLength = 20;// 500;
     //# of seconds between series
     const int trSeriesGapTime = 30;
     //Used for keeing track of when to add the gap
