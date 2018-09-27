@@ -11,6 +11,8 @@ const std::string VEHICLE_MODEL_TRANSLATION_FILE = "C:\\Users\\Braden\\Workspace
 
 //Use the same time of day throughout the collection process
 const bool SAME_TIME_OF_DAY = true;
+//Drive in specified area or wander entire map
+const bool DRIVE_SPEC_AREA = false;
 
 //TODO -> stencil/depth semantic segmentation for depthmap->lidar interpolation
 

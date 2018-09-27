@@ -71,8 +71,10 @@ void Scenario::parseScenarioConfig(const Value& sc, bool setDefaults) {
 		x = 5000 * ((float)rand() / RAND_MAX) - 2500;
 		y = 8000 * ((float)rand() / RAND_MAX) - 2000;
 	}
-    x = s_locationBounds[0][0][0];
-    y = s_locationBounds[0][1][0];
+    if (DRIVE_SPEC_AREA) {
+        x = s_locationBounds[0][0][0];
+        y = s_locationBounds[0][1][0];
+    }
 
 	if (time.IsArray()) {
 		if (!time[0].IsNull()) hour = time[0].GetInt();
@@ -195,10 +197,11 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
     if (!dc["collectTracking"].IsNull()) collectTracking = dc["collectTracking"].GetBool();
     else if (setDefaults) collectTracking = _COLLECT_TRACKING_;
 
-
-    dir.x = s_locationBounds[0][0][m_startArea];
-    dir.y = s_locationBounds[0][1][m_startArea];
-    dir.z = 0.f;
+    if (DRIVE_SPEC_AREA) {
+        dir.x = s_locationBounds[0][0][m_startArea];
+        dir.y = s_locationBounds[0][1][m_startArea];
+        dir.z = 0.f;
+    }
 
     //Export folder for pointcloud/depth map
     baseFolder = "E:\\data\\";
@@ -352,8 +355,13 @@ void Scenario::buildScenario() {
 
 	AI::CLEAR_PED_TASKS(ped);
 	if (_drivingMode >= 0 && !stationaryScene) {
-        AI::TASK_VEHICLE_DRIVE_TO_COORD(ped, vehicle, dir.x, dir.y, dir.z, _setSpeed, Any(1.f), vehicleHash, _drivingMode, 50.f, true);
-        //AI::TASK_VEHICLE_DRIVE_WANDER(ped, vehicle, _setSpeed, _drivingMode);
+        if (DRIVE_SPEC_AREA) {
+            AI::TASK_VEHICLE_DRIVE_TO_COORD(ped, vehicle, dir.x, dir.y, dir.z, _setSpeed, Any(1.f), vehicleHash, _drivingMode, 50.f, true);
+        }
+        else {
+            AI::TASK_VEHICLE_DRIVE_WANDER(ped, vehicle, _setSpeed, _drivingMode);
+        }
+        
     }
 
     //Overwrite previous time analysis file so it is empty
@@ -407,25 +415,27 @@ void Scenario::run() {
             TIME::SET_CLOCK_TIME(hour, minute, 0);
         }
 
-        if (pow(currentPos.x - dir.x, 2) + pow(currentPos.y - dir.y, 2) < pow(50, 2))
-        {
-            std::vector<std::pair<float, float>> new_points = generate_n_random_points(
-                m_startArea, m_polyGrid, 1, 100, { { currentPos.x , currentPos.y } });
-            dir.x = new_points[0].first;
-            dir.y = new_points[0].second;
+        if (DRIVE_SPEC_AREA) {
+            if (pow(currentPos.x - dir.x, 2) + pow(currentPos.y - dir.y, 2) < pow(50, 2))
+            {
+                std::vector<std::pair<float, float>> new_points = generate_n_random_points(
+                    m_startArea, m_polyGrid, 1, 100, { { currentPos.x , currentPos.y } });
+                dir.x = new_points[0].first;
+                dir.y = new_points[0].second;
 
-            AI::TASK_VEHICLE_DRIVE_TO_COORD(ped, vehicle, dir.x, dir.y, dir.z, _setSpeed, Any(1.f),
-                GAMEPLAY::GET_HASH_KEY((char*)_vehicle), _drivingMode, 1.f, true);
-        }
-        else if (!in_bounds(currentPos.x, currentPos.y, m_startArea, m_polyGrid))
-        {
-            std::vector<std::pair<float, float>> new_points = generate_n_random_points(
-                m_startArea, m_polyGrid, 1, 100, { { currentPos.x , currentPos.y } });
-            dir.x = new_points[0].first;
-            dir.y = new_points[0].second;
+                AI::TASK_VEHICLE_DRIVE_TO_COORD(ped, vehicle, dir.x, dir.y, dir.z, _setSpeed, Any(1.f),
+                    GAMEPLAY::GET_HASH_KEY((char*)_vehicle), _drivingMode, 1.f, true);
+            }
+            else if (!in_bounds(currentPos.x, currentPos.y, m_startArea, m_polyGrid))
+            {
+                std::vector<std::pair<float, float>> new_points = generate_n_random_points(
+                    m_startArea, m_polyGrid, 1, 100, { { currentPos.x , currentPos.y } });
+                dir.x = new_points[0].first;
+                dir.y = new_points[0].second;
 
-            AI::TASK_VEHICLE_DRIVE_TO_COORD(ped, vehicle, dir.x, dir.y, dir.z, _setSpeed, Any(1.f),
-                GAMEPLAY::GET_HASH_KEY((char*)_vehicle), _drivingMode, 1.f, true);
+                AI::TASK_VEHICLE_DRIVE_TO_COORD(ped, vehicle, dir.x, dir.y, dir.z, _setSpeed, Any(1.f),
+                    GAMEPLAY::GET_HASH_KEY((char*)_vehicle), _drivingMode, 1.f, true);
+            }
         }
 
 		if (_drivingMode < 0) {
@@ -604,10 +614,17 @@ void Scenario::setPosition() {
     _vector.SetArray();
     _vector.PushBack(currentPos.x, allocator).PushBack(currentPos.y, allocator).PushBack(currentPos.z, allocator);
 
-    float roll = atan2(currentUpVector.z, -currentUpVector.x);
-    float pitch = atan2(-currentForwardVector.z, currentForwardVector.y);
+    float roll = atan2(-currentRightVector.z, sqrt(pow(currentRightVector.y, 2) + pow(currentRightVector.x, 2)));
+    float pitch = atan2(-currentForwardVector.z, sqrt(pow(currentForwardVector.y,2) + pow(currentForwardVector.x,2)));
     //Should use heading2 over heading
     float heading2 = atan2(currentForwardVector.y, currentForwardVector.x);
+
+    std::ostringstream oss;
+    oss << "****Self pitch/roll: " << pitch << ", " << roll <<
+        "\nforward vec X: " << currentForwardVector.x << " Y: " << currentForwardVector.y << " Z: " << currentForwardVector.z <<
+        "\nup vec X: " << currentRightVector.x << " Y: " << currentRightVector.y << " Z: " << currentRightVector.z;
+    std::string str = oss.str();
+    log(str, true);
 
     _vector.PushBack(roll, allocator).PushBack(pitch, allocator).PushBack(heading2, allocator).PushBack(heading, allocator);
 
@@ -1104,8 +1121,18 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                         return false;
                     }*/
 
-                    float roll = atan2(upVector.z, -upVector.x);
-                    float pitch = atan2(-forwardVector.z, forwardVector.y);
+                    float roll = atan2(-rightVector.z, sqrt(pow(rightVector.y, 2) + pow(rightVector.x, 2)));
+                    float pitch = atan2(-forwardVector.z, sqrt(pow(forwardVector.y, 2) + pow(forwardVector.x, 2)));
+                    //To prevent negative zeros
+                    if (abs(roll) <= 0.0001) roll = 0.0f;
+                    if (abs(pitch) <= 0.0001) pitch = 0.0f;
+
+                    std::ostringstream oss;
+                    oss << "pitch/roll: " << pitch << ", " << roll <<
+                        "\nforward vec X: " << forwardVector.x << " Y: " << forwardVector.y << " Z: " << forwardVector.z <<
+                        "\nrightVector X: " << rightVector.x << " Y: " << rightVector.y << " Z: " << rightVector.z;
+                    std::string str = oss.str();
+                    log(str, true);
 
                     Value _vector(kArrayType);
                     _entity.AddMember("speed", speed, allocator).AddMember("heading", heading, allocator).AddMember("classID", classid, allocator);
