@@ -9,6 +9,9 @@ const float MAX_LIDAR_DIST = 120.0f;//in metres
 
 const std::string VEHICLE_MODEL_TRANSLATION_FILE = "C:\\Users\\Braden\\Workspace\\DeepGTAV\\vehicle_labels.csv";
 
+//Use the same time of day throughout the collection process
+const bool SAME_TIME_OF_DAY = true;
+
 //TODO -> stencil/depth semantic segmentation for depthmap->lidar interpolation
 
 //Some settings for testing pointcloud generation

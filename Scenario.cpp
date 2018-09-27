@@ -403,6 +403,10 @@ void Scenario::run() {
 	if (running) {
 		std::clock_t now = std::clock();
 
+        if (SAME_TIME_OF_DAY) {
+            TIME::SET_CLOCK_TIME(hour, minute, 0);
+        }
+
         if (pow(currentPos.x - dir.x, 2) + pow(currentPos.y - dir.y, 2) < pow(50, 2))
         {
             std::vector<std::pair<float, float>> new_points = generate_n_random_points(
