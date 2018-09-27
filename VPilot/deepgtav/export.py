@@ -61,11 +61,11 @@ def printInstances(filename, list, augment, tracking=False, frameID=0, altBBox=T
                 outputObjectInfo(text_file, instance, altBBox)
 
                 if augment:
-                    text_file.write(" Augmentations:")
+                    #text_file.write(" Augmentations:")
                     text_file.write(" %d" % instance['entityID'])
                     text_file.write(" %d" % instance['pointsHit'])
                     text_file.write(" %f" % instance['speed'])
-                    text_file.write(" %f" % instance['heading'])
+                    #text_file.write(" %f" % instance['heading'])
                     text_file.write(" %f" % instance['pitch'])
                     text_file.write(" %f" % instance['roll'])
                     text_file.write(" %s" % instance['modelString'])
