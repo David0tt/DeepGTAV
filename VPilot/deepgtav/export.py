@@ -66,16 +66,18 @@ def printInstances(filename, list, augment, tracking=False, frameID=0, altBBox=T
                     text_file.write(" %d" % instance['pointsHit'])
                     text_file.write(" %f" % instance['speed'])
                     text_file.write(" %f" % instance['heading'])
-                    text_file.write(" %d" % instance['classID'])
+                    text_file.write(" %f" % instance['pitch'])
+                    text_file.write(" %f" % instance['roll'])
+                    text_file.write(" %s" % instance['modelString'])
                     
-                    if instance['offscreen']:
-                        text_file.write(" 0")
-                    else:
-                        text_file.write(" 1")
+                    # if instance['offscreen']:
+                    #     text_file.write(" 0")
+                    # else:
+                    #     text_file.write(" 1")
 
                     #3D dimensions offcenter
-                    for num in instance['offcenter']:
-                        text_file.write(" %f" % num)
+                    #for num in instance['offcenter']:
+                    #    text_file.write(" %f" % num)
                 
                     # for num in instance['FUR']:
                     #     text_file.write(" %f" % num)

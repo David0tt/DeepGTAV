@@ -953,7 +953,7 @@ BBox2D Scenario::processBBox2D(BBox2D bbox, uint8_t stencilType, Vector3 positio
     return processed;
 }
 
-bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocator, int entityID, Hash model, int classid, std::string type) {
+bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocator, int entityID, Hash model, int classid, std::string type, std::string modelString) {
     bool success = false;
 
     Vector3 FUR; //Front Upper Right
@@ -1104,6 +1104,9 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                         return false;
                     }*/
 
+                    float roll = atan2(upVector.z, -upVector.x);
+                    float pitch = atan2(-forwardVector.z, forwardVector.y);
+
                     Value _vector(kArrayType);
                     _entity.AddMember("speed", speed, allocator).AddMember("heading", heading, allocator).AddMember("classID", classid, allocator);
                     _entity.AddMember("offscreen", offscreen, allocator);
@@ -1130,10 +1133,16 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                     _entity.AddMember("truncation", truncation, allocator);
                     _entity.AddMember("pointsHit", pointsHit, allocator);
                     _entity.AddMember("occlusion", occlusion, allocator);
+                    _entity.AddMember("pitch", pitch, allocator);
+                    _entity.AddMember("roll", roll, allocator);
 
-                    Value str;
-                    str.SetString(type.c_str(), type.length(), allocator);
-                    _entity.AddMember("objectType", str, allocator);
+                    Value str1;
+                    str1.SetString(modelString.c_str(), modelString.length(), allocator);
+                    _entity.AddMember("modelString", str1, allocator);
+
+                    Value str2;
+                    str2.SetString(type.c_str(), type.length(), allocator);
+                    _entity.AddMember("objectType", str2, allocator);
 
                     if (trackFirstFrame.find(entityID) == trackFirstFrame.end()) {
                         trackFirstFrame.insert(std::pair<int, int>(entityID, instance_index));
@@ -1192,8 +1201,21 @@ void Scenario::setVehiclesList() {
             log(str, true);
         }
 
+        if (type == "Unknown") {
+            if (VEHICLE::IS_THIS_MODEL_A_CAR(model)) type = "Car";
+            else if (VEHICLE::IS_THIS_MODEL_A_BIKE(model)) type = "Moterbike";
+            else if (VEHICLE::IS_THIS_MODEL_A_BICYCLE(model)) type = "Cyclist";
+            else if (VEHICLE::IS_THIS_MODEL_A_QUADBIKE(model)) type = "Moterbike";
+            else if (VEHICLE::IS_THIS_MODEL_A_BOAT(model)) type = "Boat";
+            else if (VEHICLE::IS_THIS_MODEL_A_PLANE(model)) type = "Airplane";
+            else if (VEHICLE::IS_THIS_MODEL_A_HELI(model)) type = "Airplane";
+            else if (VEHICLE::IS_THIS_MODEL_A_TRAIN(model)) type = "Railed";
+            else if (VEHICLE::_IS_THIS_MODEL_A_SUBMERSIBLE(model)) type = "Boat";
+        }
+
+
         Value _vehicle(kObjectType);
-        bool success = getEntityVector(_vehicle, allocator, vehicles[i], model, classid, type);
+        bool success = getEntityVector(_vehicle, allocator, vehicles[i], model, classid, type, modelString);
         if (success) {
             _vehicles.PushBack(_vehicle, allocator);
         }
@@ -1227,7 +1249,7 @@ void Scenario::setPedsList(){
             model = ENTITY::GET_ENTITY_MODEL(peds[i]);
 
             Value _ped(kObjectType);
-            bool success = getEntityVector(_ped, allocator, peds[i], model, classid, type);
+            bool success = getEntityVector(_ped, allocator, peds[i], model, classid, type, type);
             if (success) {
                 _peds.PushBack(_ped, allocator);
             }
