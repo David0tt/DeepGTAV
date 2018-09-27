@@ -1821,6 +1821,20 @@ void Scenario::initVehicleLookup() {
             model.erase(remove_if(model.begin(), model.end(), [](char c) { return !isalpha(c); }), model.end());
             iss >> vehicleType; // read the second part
             m_vLookup.insert(std::pair< std::string, std::string>(model, vehicleType));
+
+            //Modelstrings seem to be missing last few letters on occasion (this should fix that)
+            if (model.size() >= 2) {
+                model = model.substr(0, model.size() - 1);
+                m_vLookup.insert(std::pair< std::string, std::string>(model, vehicleType));
+            }
+            if (model.size() >= 2) {
+                model = model.substr(0, model.size() - 1);
+                m_vLookup.insert(std::pair< std::string, std::string>(model, vehicleType));
+            }
+            if (model.size() >= 2) {
+                model = model.substr(0, model.size() - 1);
+                m_vLookup.insert(std::pair< std::string, std::string>(model, vehicleType));
+            }
         }
         m_vLookupInit = true;
     }
