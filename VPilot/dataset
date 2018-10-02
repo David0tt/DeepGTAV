@@ -74,7 +74,14 @@ if __name__ == '__main__':
         peds = []
         peds.append([0, 10, 5, 0])
         #peds.append([0, 10, 0, 0])
-        peds.append([0, 10, -5, 0])
+        peds.append([1, 10, -5, 13])
+        peds.append([0, 13, 5, 1])
+        peds.append([2, 7, 5, -3])
+        peds.append([0, 10, -5, 2])
+        peds.append([3, 10, -2, 1])
+        peds.append([0, 10, -4, 60])
+        peds.append([5, 13, 0, 0])
+        peds.append([9, 12, 5, 0])
         lidarParam = 7
         dataset = Dataset(rate=captureRate, frame=[width,height], throttle=True, brake=True, steering=True, vehicles=collectVehicles, peds=collectPeds, reward=[15.0, 0.0],
                         direction=None, speed=True, yawRate=True, location=True, time=True, offscreen=collectOffscreen, showBoxes=False, pointclouds=True,

@@ -9,10 +9,15 @@ const float MAX_LIDAR_DIST = 120.0f;//in metres
 
 const std::string VEHICLE_MODEL_TRANSLATION_FILE = "C:\\Users\\Braden\\Workspace\\DeepGTAV\\vehicle_labels.csv";
 
+const bool SET_PED_BOXES = true;
+const float PED_BOX_WIDTH = 1.2f;
+const float PED_BOX_LENGTH = 0.5f;
+const float PED_BOX_WALKING_LEN = 1.44f;
+
 //Use the same time of day throughout the collection process
 const bool SAME_TIME_OF_DAY = true;
 //Drive in specified area or wander entire map
-const bool DRIVE_SPEC_AREA = false;
+const bool DRIVE_SPEC_AREA = true;
 
 //TODO -> stencil/depth semantic segmentation for depthmap->lidar interpolation
 

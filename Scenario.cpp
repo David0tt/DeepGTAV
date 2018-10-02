@@ -619,13 +619,6 @@ void Scenario::setPosition() {
     //Should use heading2 over heading
     float heading2 = atan2(currentForwardVector.y, currentForwardVector.x);
 
-    std::ostringstream oss;
-    oss << "****Self pitch/roll: " << pitch << ", " << roll <<
-        "\nforward vec X: " << currentForwardVector.x << " Y: " << currentForwardVector.y << " Z: " << currentForwardVector.z <<
-        "\nup vec X: " << currentRightVector.x << " Y: " << currentRightVector.y << " Z: " << currentRightVector.z;
-    std::string str = oss.str();
-    log(str, true);
-
     _vector.PushBack(roll, allocator).PushBack(pitch, allocator).PushBack(heading2, allocator).PushBack(heading, allocator);
 
     d["curPosition"] = _vector;
@@ -998,6 +991,8 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                 maxFront = hitLidarEnt->maxFront;
             }
 
+            speed = ENTITY::GET_ENTITY_SPEED(entityID);
+
             if (!ENTITY::IS_ENTITY_OCCLUDED(entityID) || pointsHit > 0) {
                 //Check if we see it (not occluded)
                 GAMEPLAY::GET_MODEL_DIMENSIONS(model, &min, &max);
@@ -1011,6 +1006,19 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                     //Pedestrians on balconies can cause problems
                     if (negZ > -2.0 && negZ < 0) {
                         min.z = groundZ - position.z;
+                    }
+
+                    if (SET_PED_BOXES) {
+                        min.x = -PED_BOX_WIDTH / 2.0f;
+                        max.x = PED_BOX_WIDTH / 2.0f;
+                        if (speed > 1) {
+                            min.y = -PED_BOX_WALKING_LEN / 2.0f;
+                            max.y = PED_BOX_WALKING_LEN / 2.0f;
+                        }
+                        else {
+                            min.y = -PED_BOX_LENGTH / 2.0f;
+                            max.y = PED_BOX_LENGTH / 2.0f;
+                        }
                     }
 
                     std::ostringstream oss2;
@@ -1054,7 +1062,6 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                     success = true;
 
                     speedVector = ENTITY::GET_ENTITY_SPEED_VECTOR(entityID, false);
-                    speed = ENTITY::GET_ENTITY_SPEED(entityID);
                     if (speed > 0) {
                         heading = GAMEPLAY::GET_HEADING_FROM_VECTOR_2D(speedVector.x - currentForwardVector.x, speedVector.y - currentForwardVector.y);
                     }
@@ -1126,13 +1133,6 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                     //To prevent negative zeros
                     if (abs(roll) <= 0.0001) roll = 0.0f;
                     if (abs(pitch) <= 0.0001) pitch = 0.0f;
-
-                    std::ostringstream oss;
-                    oss << "pitch/roll: " << pitch << ", " << roll <<
-                        "\nforward vec X: " << forwardVector.x << " Y: " << forwardVector.y << " Z: " << forwardVector.z <<
-                        "\nrightVector X: " << rightVector.x << " Y: " << rightVector.y << " Z: " << rightVector.z;
-                    std::string str = oss.str();
-                    log(str, true);
 
                     Value _vector(kArrayType);
                     _entity.AddMember("speed", speed, allocator).AddMember("heading", heading, allocator).AddMember("classID", classid, allocator);
@@ -1362,15 +1362,18 @@ void Scenario::createPed(int model, float relativeForward, float relativeRight, 
     while (!STREAMING::HAS_MODEL_LOADED(hash)) WAIT(0);
     Ped temp = PED::CREATE_PED(4, hash, pos.x, pos.y, pos.z, heading, FALSE, FALSE);
     WAIT(0);
-    AI::TASK_STAND_STILL(temp, -1);
+    AI::TASK_WANDER_STANDARD(ped, 10.0f, 10);
     if (task == 0) {
-        PED::SET_PED_DUCKING(temp, true);
+        AI::TASK_STAND_STILL(temp, -1);
     }
     else if (task == 1) {
         PED::SET_PED_PINNED_DOWN(temp, true, -1);
     }
     else if (task == 2) {
         AI::TASK_WRITHE(temp, player, 999999, false);
+    }
+    else if (task == 3) {
+        PED::SET_PED_DUCKING(temp, true);
     }
     ENTITY::SET_ENTITY_AS_NO_LONGER_NEEDED(&temp);
 }
