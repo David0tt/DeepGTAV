@@ -38,3 +38,6 @@ const bool OUTPUT_UNUSED_PIXELS_IMAGE = true;
 const bool OBTAIN_RAY_POINTS_HIT = false;
 //Overlays adjusted points on top of pointcloud (using raycasting + depth map)
 const bool OUTPUT_ADJUSTED_POINTS = false;
+
+//2d points will be shrunk with stencil cull
+const bool CORRECT_2D_POINTS_BEHIND_CAMERA = false;

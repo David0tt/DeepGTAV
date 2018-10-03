@@ -712,21 +712,23 @@ BBox2D Scenario::BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwa
                     screenY = uv(1);
                 }
 
-                //Corrections for points which are behind camera
-                Vector3 relativePos;
-                relativePos.x = pos.x - currentPos.x;
-                relativePos.y = pos.y - currentPos.y;
-                relativePos.z = pos.z - currentPos.z;
-                relativePos = convertCoordinateSystem(relativePos, currentForwardVector, currentRightVector, currentUpVector);
-                relativePos.y = relativePos.y - CAM_OFFSET_FORWARD;
+                if (CORRECT_2D_POINTS_BEHIND_CAMERA) {
+                    //Corrections for points which are behind camera
+                    Vector3 relativePos;
+                    relativePos.x = pos.x - currentPos.x;
+                    relativePos.y = pos.y - currentPos.y;
+                    relativePos.z = pos.z - currentPos.z;
+                    relativePos = convertCoordinateSystem(relativePos, currentForwardVector, currentRightVector, currentUpVector);
+                    relativePos.y = relativePos.y - CAM_OFFSET_FORWARD;
 
-                //If behind camera update left/right bounds to reflect its position
-                if (relativePos.y < 0) {
-                    if (relativePos.x > 0) {
-                        screenX = 1.0;
-                    }
-                    else {
-                        screenX = 0.0;
+                    //If behind camera update left/right bounds to reflect its position
+                    if (relativePos.y < 0) {
+                        if (relativePos.x > 0) {
+                            screenX = 1.0;
+                        }
+                        else {
+                            screenX = 0.0;
+                        }
                     }
                 }
 
