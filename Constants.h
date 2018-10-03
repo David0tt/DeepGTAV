@@ -33,6 +33,7 @@ const bool RETAIN_ANIMALS = true;
 
 //For testing
 const bool OUTPUT_OCCLUSION_IMAGE = true;
+const bool OUTPUT_UNUSED_PIXELS_IMAGE = true;
 
 //Can be used to get general outline of some objects with raycasting
 //WARNING: NOT ALL VEHICLES ARE HIT WITH RAYCASTING
