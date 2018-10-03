@@ -7,8 +7,6 @@
 const int FLOATS_PER_POINT = 4;
 const float MAX_LIDAR_DIST = 120.0f;//in metres
 
-const std::string VEHICLE_MODEL_TRANSLATION_FILE = "C:\\Users\\Braden\\Workspace\\DeepGTAV\\vehicle_labels.csv";
-
 const bool SET_PED_BOXES = true;
 const float PED_BOX_WIDTH = 1.2f;
 const float PED_BOX_LENGTH = 0.5f;

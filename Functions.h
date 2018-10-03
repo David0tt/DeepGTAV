@@ -3,7 +3,7 @@
 
 #pragma once
 
-static char* logDir = getenv("GTA_LOG_DIR");
+static char* logDir = getenv("DEEPGTAV_LOG_FILE");
 static bool LOGGING = false;
 static bool DEBUG_LOGGING = false;
 static void log(std::string str, bool override = false) {

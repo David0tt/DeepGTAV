@@ -9,6 +9,13 @@
 2. Copy-paste the contents of *bin/Release* under your GTAV installation directory
 3. Replace your saved game data in *Documents/Rockstar Games/GTA V/Profiles/* with the contents of *bin/SaveGame*
 4. Download *[paths.xml](https://drive.google.com/file/d/0B6pR5O2YrmHnNU9EMDBSSFpMV00/view?usp=sharing)* and store it also in the GTAV installation directory. 
+5. Download Eigen (http://eigen.tuxfamily.org/index.php?title=Main_Page) and create an environment variable (EIGEN_DIR) pointing to its directory.
+6. Obtain the VisionNative-Depth Extractor repo (https://github.com/bradenhurl/GTAVisionExport-DepthExtractor). Follow instructions to build the native repository.
+7. Create an environment variable (GTAVisionLib) pointing to the build path of GTAVisionNative.lib (from the previous step).
+8. Create an environment variable (GTAV_INSTALL_DIR) pointing to the GTAV installation directory.
+9. Create an environment variable (DEEPGTAV_DIR) pointing to the directory of this repository.
+10. Create an environment variable (DEEPGTAV_LOG_FILE) pointing to the file for logging (debugging purposes).
+11. Create an environment variable (DEEPGTAV_EXPORT_DIR) pointing to the export location.
 
 ## Recommendations
 

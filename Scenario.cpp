@@ -203,10 +203,12 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
         dir.z = 0.f;
     }
 
-    //Export folder for pointcloud/depth map
-    baseFolder = "E:\\data\\";
+    //Export directory
+    baseFolder = std::string(getenv("DEEPGTAV_EXPORT_DIR"));
+	CreateDirectory(baseFolder.c_str(), NULL);
     if (collectTracking) {
-        baseFolder += "tracking\\";
+        baseFolder += "\\tracking\\";
+		CreateDirectory(baseFolder.c_str(), NULL);
     }
     m_timeTrackFile = baseFolder + "\\TimeAnalysis.txt";
 
@@ -1839,7 +1841,8 @@ void Scenario::printSegImage() {
 
 void Scenario::initVehicleLookup() {
     if (!m_vLookupInit) {
-        std::ifstream inFile(VEHICLE_MODEL_TRANSLATION_FILE);
+        std::string translationFile = std::string(getenv("DEEPGTAV_DIR")) + "\\vehicle_labels.csv";
+        std::ifstream inFile(translationFile);
         std::string line;
         while (std::getline(inFile, line)) // read whole line into line
         {

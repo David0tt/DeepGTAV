@@ -90,7 +90,7 @@
       <AdditionalLibraryDirectories>$(GTAVisionLib);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>copy "bin\Release\DeepGTAV*" "C:\GTA V\"</Command>
+      <Command>copy "bin\Release\DeepGTAV*" "$(GTAV_INSTALL_DIR)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
