@@ -211,6 +211,7 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
 		CreateDirectory(baseFolder.c_str(), NULL);
     }
     m_timeTrackFile = baseFolder + "\\TimeAnalysis.txt";
+    m_usedPixelFile = baseFolder + "\\UsedPixels.txt";
 
     if (stationaryScene) {
         vehiclesToCreate.clear();
@@ -373,6 +374,15 @@ void Scenario::buildScenario() {
     oss << "\nResults are in metres. Frames attempted to capture at 10 Hz.";
     std::string str = oss.str();
     fprintf(f, str.c_str());
+    fprintf(f, "\n");
+    fclose(f);
+
+    //Overwrite previous stencil pixel used file so it is empty
+    f = fopen(m_usedPixelFile.c_str(), "w");
+    std::ostringstream oss1;
+    oss1 << "Unused pixels, index, series (if tracking)";
+    std::string str1 = oss1.str();
+    fprintf(f, str1.c_str());
     fprintf(f, "\n");
     fclose(f);
 }
@@ -554,14 +564,8 @@ StringBuffer Scenario::generateMessage() {
 	if (time) setTime();
     setFocalLength();
     if (depthMap && lidar_initialized) printSegImage();
-
-    if (depthMap && lidar_initialized && OUTPUT_OCCLUSION_IMAGE) {
-        std::string imFilename = getStandardFilename("occlusionImage", ".png");
-        std::vector<std::uint8_t> ImageBuffer;
-        lodepng::encode(ImageBuffer, (unsigned char*)m_pOcclusionImage, s_camParams.width, s_camParams.height, LCT_GREY, 8);
-        lodepng::save_file(ImageBuffer, imFilename);
-        memset(m_pOcclusionImage, 0, s_camParams.width * s_camParams.height);
-    }
+    if (depthMap && lidar_initialized) outputOcclusion();
+    if (depthMap && lidar_initialized) outputUnusedStencilPixels();
 
     increaseIndex();
     GAMEPLAY::SET_GAME_PAUSED(false);
@@ -1411,6 +1415,7 @@ void Scenario::setupLiDAR() {
         m_pDMImage = (uint16_t *)malloc(s_camParams.width * s_camParams.height * sizeof(uint16_t));
         m_pStencilImage = (uint8_t *)malloc(s_camParams.width * s_camParams.height * sizeof(uint8_t));
         m_pOcclusionImage = (uint8_t *)malloc(s_camParams.width * s_camParams.height * sizeof(uint8_t));
+        m_pUnusedStencilImage = (uint8_t *)malloc(s_camParams.width * s_camParams.height * sizeof(uint8_t));
         //RGB Image needs 3 bytes per value
         m_stencilSegLength = s_camParams.width * s_camParams.height * 3 * sizeof(uint8_t);
         m_pStencilSeg = (uint8_t *)malloc(m_stencilSegLength);
@@ -1832,6 +1837,41 @@ void Scenario::setCamParams() {
 }
 
 void Scenario::printSegImage() {
+    int notUsedStencilPoints = 0;
+
+    for (int j = 0; j < s_camParams.height; ++j) {
+        for (int i = 0; i < s_camParams.width; ++i) {
+            uint8_t stencilVal = m_stencilBuffer[j * s_camParams.width + i];
+            if (stencilVal == NPC_STENCIL_TYPE || stencilVal == VEHICLE_STENCIL_TYPE) {
+                if (m_pStencilSeg[3 * (j * s_camParams.width + i)] == 0 &&
+                    m_pStencilSeg[3 * (j * s_camParams.width + i) + 1] == 0 &&
+                    m_pStencilSeg[3 * (j * s_camParams.width + i) + 2] == 0) {
+                    m_pUnusedStencilImage[j * s_camParams.width + i] = 255;
+                    ++notUsedStencilPoints;
+                }
+            }
+        }
+    }
+    if (notUsedStencilPoints > 10000) {
+        std::ostringstream oss;
+        oss << "***Lots of unused stencil points, total unused: " << notUsedStencilPoints << " instance idx: " << instance_index;
+        if (collectTracking) {
+            oss << " seq idx: " << series_index;
+        }
+        std::string str = oss.str();
+        log(str, true);
+    }
+    FILE* f = fopen(m_usedPixelFile.c_str(), "a");
+    std::ostringstream oss;
+    oss << notUsedStencilPoints << " " << instance_index;
+    if (collectTracking) {
+        oss << " " << series_index;
+    }
+    std::string str = oss.str();
+    fprintf(f, str.c_str());
+    fprintf(f, "\n");
+    fclose(f);
+
     std::string imFilename = getStandardFilename("segImage", ".png");
     std::vector<std::uint8_t> ImageBuffer;
     lodepng::encode(ImageBuffer, (unsigned char*)m_pStencilSeg, s_camParams.width, s_camParams.height, LCT_RGB, 8);
@@ -1870,5 +1910,25 @@ void Scenario::initVehicleLookup() {
             }
         }
         m_vLookupInit = true;
+    }
+}
+
+void Scenario::outputOcclusion() {
+    if (OUTPUT_OCCLUSION_IMAGE) {
+        std::string imFilename = getStandardFilename("occlusionImage", ".png");
+        std::vector<std::uint8_t> ImageBuffer;
+        lodepng::encode(ImageBuffer, (unsigned char*)m_pOcclusionImage, s_camParams.width, s_camParams.height, LCT_GREY, 8);
+        lodepng::save_file(ImageBuffer, imFilename);
+        memset(m_pOcclusionImage, 0, s_camParams.width * s_camParams.height);
+    }
+}
+
+void Scenario::outputUnusedStencilPixels() {
+    if (OUTPUT_UNUSED_PIXELS_IMAGE) {
+        std::string imFilename = getStandardFilename("unusedPixelsImage", ".png");
+        std::vector<std::uint8_t> ImageBuffer;
+        lodepng::encode(ImageBuffer, (unsigned char*)m_pUnusedStencilImage, s_camParams.width, s_camParams.height, LCT_GREY, 8);
+        lodepng::save_file(ImageBuffer, imFilename);
+        memset(m_pUnusedStencilImage, 0, s_camParams.width * s_camParams.height);
     }
 }

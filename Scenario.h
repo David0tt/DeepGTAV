@@ -93,6 +93,7 @@ private:
     uint8_t* m_pStencilSeg = NULL;
     int m_stencilSegLength = 0;
     uint8_t* m_pOcclusionImage = NULL;
+    uint8_t* m_pUnusedStencilImage = NULL;
 
     bool vehicles_created = false;
     std::vector<VehicleToCreate> vehiclesToCreate;
@@ -112,6 +113,7 @@ private:
     int m_trackLastIndex = -1;
     int m_trackLastSeqIndex = 0;
     std::string m_timeTrackFile;
+    std::string m_usedPixelFile;
 
     //Camera intrinsic parameters
     float intrinsics[3];
@@ -200,6 +202,8 @@ private:
 
     void initVehicleLookup();
     bool isPointOccluding(Vector3 worldPos, Vector3 position);
+    void outputOcclusion();
+    void outputUnusedStencilPixels();
 
     //Do not use this function. Causes GTA to crash - need to figure out why
     void setColorBuffer();
