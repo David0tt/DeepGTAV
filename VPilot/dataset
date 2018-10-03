@@ -25,7 +25,7 @@ width = 1920
 height = 1080
 index = 0
 
-tracking = True
+tracking = False
 collectStationary = False
 collectVehicles = True
 collectPeds = True
@@ -34,14 +34,16 @@ captureRate = 1
 startIndex = 0
 driveMode = 786603 #Normal?
 
-base_folder = os.environ['DEEPGTAV_EXPORT_DIR']
+base_folder = os.environ['DEEPGTAV_EXPORT_DIR'] + "\\"
 if tracking:
-    base_folder = base_folder + "\\tracking\\"
+    base_folder = base_folder + "tracking\\"
     collectVehicles = True
     collectPeds = True
     collectOffscreen = False
     captureRate = 25
     driveMode = 537657771 #stop at lights; use blinkers; avoid highways
+else:
+    base_folder = base_folder + "object\\"
 
 # Stores a dataset file with data coming from DeepGTAV
 if __name__ == '__main__':

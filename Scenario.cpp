@@ -204,12 +204,15 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
     }
 
     //Export directory
-    baseFolder = std::string(getenv("DEEPGTAV_EXPORT_DIR"));
+    baseFolder = std::string(getenv("DEEPGTAV_EXPORT_DIR")) + "\\";
 	CreateDirectory(baseFolder.c_str(), NULL);
     if (collectTracking) {
-        baseFolder += "\\tracking\\";
-		CreateDirectory(baseFolder.c_str(), NULL);
+        baseFolder += "tracking\\";
     }
+    else {
+        baseFolder += "object\\";
+    }
+    CreateDirectory(baseFolder.c_str(), NULL);
     m_timeTrackFile = baseFolder + "\\TimeAnalysis.txt";
     m_usedPixelFile = baseFolder + "\\UsedPixels.txt";
 
@@ -546,6 +549,7 @@ StringBuffer Scenario::generateMessage() {
     setPosition();
     setCamParams();
     outputRealSpeed();
+    //setColorBuffer();
     if (depthMap && lidar_initialized) setDepthBuffer();
     if (depthMap && lidar_initialized) setStencilBuffer();
     if (pointclouds && lidar_initialized) collectLiDAR();
@@ -1482,12 +1486,15 @@ void Scenario::collectLiDAR() {
 
 //TODO Calls to export_get_color_buffer are causing GTA to crash
 void Scenario::setColorBuffer() {
+    log("Before color buffer", true);
     int size = export_get_color_buffer((void**)&color_buf);
+    log("Mid color buffer", true);
 
     std::string filename = getStandardFilename("colorBuffer", ".png");
     std::vector<std::uint8_t> ImageBuffer;
     lodepng::encode(ImageBuffer, color_buf, s_camParams.width, s_camParams.height);
     lodepng::save_file(ImageBuffer, filename);
+    log("After color buffer", true);
 }
 
 void Scenario::setStencilBuffer() {
