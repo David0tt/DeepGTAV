@@ -16,6 +16,7 @@ const float PED_BOX_WALKING_LEN = 1.44f;
 const bool SAME_TIME_OF_DAY = true;
 //Drive in specified area or wander entire map
 const bool DRIVE_SPEC_AREA = true;
+const bool START_SPEC_AREA = true;
 
 //TODO -> stencil/depth semantic segmentation for depthmap->lidar interpolation
 

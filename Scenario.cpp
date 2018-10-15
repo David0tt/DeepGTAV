@@ -361,7 +361,7 @@ void Scenario::buildScenario() {
 
 	AI::CLEAR_PED_TASKS(ped);
 	if (_drivingMode >= 0 && !stationaryScene) {
-        if (DRIVE_SPEC_AREA) {
+        if (DRIVE_SPEC_AREA && !START_SPEC_AREA) {
             AI::TASK_VEHICLE_DRIVE_TO_COORD(ped, vehicle, dir.x, dir.y, dir.z, _setSpeed, Any(1.f), vehicleHash, _drivingMode, 50.f, true);
         }
         else {
@@ -430,7 +430,7 @@ void Scenario::run() {
             TIME::SET_CLOCK_TIME(hour, minute, 0);
         }
 
-        if (DRIVE_SPEC_AREA) {
+        if (DRIVE_SPEC_AREA && !START_SPEC_AREA) {
             if (pow(currentPos.x - dir.x, 2) + pow(currentPos.y - dir.y, 2) < pow(50, 2))
             {
                 std::vector<std::pair<float, float>> new_points = generate_n_random_points(
