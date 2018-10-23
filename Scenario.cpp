@@ -343,14 +343,14 @@ void Scenario::buildScenario() {
 
 	GAMEPLAY::SET_WEATHER_TYPE_NOW_PERSIST((char*)_weather);
 
-	rotation = ENTITY::GET_ENTITY_ROTATION(vehicle, 1);
+	rotation = ENTITY::GET_ENTITY_ROTATION(vehicle, 0);
 	CAM::DESTROY_ALL_CAMS(TRUE);
 	camera = CAM::CREATE_CAM("DEFAULT_SCRIPTED_CAMERA", TRUE);
 	if (strcmp(_vehicle, "packer") == 0) CAM::ATTACH_CAM_TO_ENTITY(camera, vehicle, 0, 2.35, 1.7, TRUE);
 	else CAM::ATTACH_CAM_TO_ENTITY(camera, vehicle, 0, CAM_OFFSET_FORWARD, CAM_OFFSET_UP, TRUE);
 	CAM::SET_CAM_FOV(camera, VERT_CAM_FOV);
 	CAM::SET_CAM_ACTIVE(camera, TRUE);
-	CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 1);
+	CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 0);
 	CAM::SET_CAM_INHERIT_ROLL_VEHICLE(camera, TRUE);
 
     if (stationaryScene) {
@@ -388,6 +388,22 @@ void Scenario::buildScenario() {
     fprintf(f, str1.c_str());
     fprintf(f, "\n");
     fclose(f);
+
+    //while (!CAM::IS_GAMEPLAY_CAM_RENDERING()) {
+    //    camera = CAM::GET_RENDERING_CAM();// CAM::CREATE_CAM("DEFAULT_SCRIPTED_CAMERA", TRUE);
+    //    if (strcmp(_vehicle, "packer") == 0) CAM::ATTACH_CAM_TO_ENTITY(camera, vehicle, 0, 2.35, 1.7, TRUE);
+    //    else CAM::ATTACH_CAM_TO_ENTITY(camera, vehicle, 0, CAM_OFFSET_FORWARD, CAM_OFFSET_UP, TRUE);
+    //    CAM::SET_CAM_FOV(camera, VERT_CAM_FOV);
+    //    CAM::SET_CAM_ACTIVE(camera, TRUE);
+    //    //CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 0);
+    //    CAM::SET_CAM_INHERIT_ROLL_VEHICLE(camera, TRUE);
+    //    CAM::SET_GAMEPLAY_CAM_RELATIVE_HEADING(0);
+    //    CAM::SET_GAMEPLAY_CAM_RELATIVE_PITCH(0, 0x3F800000);//Constant taken from nativedb
+    //}
+
+    if (RECORD_SCENARIO) {
+        UNK1::_SET_RECORDING_MODE(1);
+    }
 }
 
 void Scenario::start(const Value& sc, const Value& dc) {
@@ -424,6 +440,11 @@ void Scenario::config(const Value& sc, const Value& dc) {
 
 void Scenario::run() {
 	if (running) {
+        if (RECORD_SCENARIO) {
+            Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(vehicle, 0);
+            CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 0);
+        }
+
 		std::clock_t now = std::clock();
 
         if (SAME_TIME_OF_DAY) {
@@ -522,13 +543,20 @@ StringBuffer Scenario::generateMessage() {
 	StringBuffer buffer;
 	buffer.Clear();
 	Writer<StringBuffer> writer(buffer);
+
+    if (RECORD_SCENARIO) {
+        Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(vehicle, 0);
+        CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 0);
+        return buffer;
+    }
 	
     log("About to pause game");
     GAMEPLAY::SET_GAME_PAUSED(true);
 
     //Need to ensure camera rotation aligns with vehicle after game is paused
-    Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(vehicle, 1);
-    CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 1);
+    Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(vehicle, 0);
+    CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 0);
+    Vector3 camRot = CAM::GET_CAM_ROT(camera, 0);
 
     //Time synchronization seems to be correct with 2 render calls
     CAM::RENDER_SCRIPT_CAMS(TRUE, FALSE, 0, FALSE, FALSE);
@@ -537,6 +565,15 @@ StringBuffer Scenario::generateMessage() {
     scriptWait(0);
     CAM::RENDER_SCRIPT_CAMS(TRUE, FALSE, 0, FALSE, FALSE);
     scriptWait(0);
+
+    ////Can check whether camera and vehicle are aligned
+    //Vector3 camRot2 = CAM::GET_CAM_ROT(camera, 0);
+    //std::ostringstream oss1;
+    //oss1 << "entityRotation X: " << rotation.x << " Y: " << rotation.y << " Z: " << rotation.z <<
+    //    "\n camRot X: " << camRot.x << " Y: " << camRot.y << " Z: " << camRot.z <<
+    //    "\n camRot2 X: " << camRot2.x << " Y: " << camRot2.y << " Z: " << camRot2.z;
+    //std::string str1 = oss1.str();
+    //log(str1);
 
     log("Script cams rendered");
     screenCapturer->capture();
@@ -1838,6 +1875,13 @@ void Scenario::setCamParams() {
         s_camParams.ncHeight = 2 * s_camParams.nearClip * tan(s_camParams.fov / 2. * (PI / 180.)); // field of view is returned vertically
         s_camParams.ncWidth = s_camParams.ncHeight * GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false);
         s_camParams.init = true;
+
+        if (RECORD_SCENARIO) {
+            std::ostringstream oss;
+            oss << "NC, FC, FOV: " << s_camParams.nearClip << ", " << s_camParams.farClip << ", " << s_camParams.fov;
+            std::string str = oss.str();
+            log(str, true);
+        }
     }
 
     //These values change frame to frame

@@ -42,3 +42,6 @@ const bool OUTPUT_ADJUSTED_POINTS = false;
 
 //2d points will be shrunk with stencil cull
 const bool CORRECT_2D_POINTS_BEHIND_CAMERA = false;
+
+//Mode where clips are recorded and nothing is output
+const bool RECORD_SCENARIO = true;
