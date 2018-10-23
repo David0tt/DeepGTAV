@@ -88,7 +88,7 @@ if __name__ == '__main__':
         lidarParam = 7
         dataset = Dataset(rate=captureRate, frame=[width,height], throttle=True, brake=True, steering=True, vehicles=collectVehicles, peds=collectPeds, reward=[15.0, 0.0],
                         direction=None, speed=True, yawRate=True, location=True, time=True, offscreen=collectOffscreen, showBoxes=False, pointclouds=True,
-                        stationaryScene=True, collectTracking=tracking, vehiclesToCreate=vehicles, pedsToCreate=peds, startIndex=startIndex, lidarParam=lidarParam)
+                        stationaryScene=True, collectTracking=tracking, vehiclesToCreate=vehicles, pedsToCreate=peds, startIndex=startIndex, lidarParam=lidarParam, recordScenario=recordScenario)
         #List of locations
         #Nearplane
         # startLocation = [320.0,3600.0]
@@ -106,7 +106,7 @@ if __name__ == '__main__':
     else:
         dataset = Dataset(rate=captureRate, frame=[width,height], throttle=True, brake=True, steering=True, vehicles=collectVehicles, peds=collectPeds, reward=[15.0, 0.0],
                         direction=None, speed=True, yawRate=True, location=True, time=True, offscreen=collectOffscreen, showBoxes=False, pointclouds=True,
-                        stationaryScene=False, collectTracking=tracking, startIndex=startIndex)
+                        stationaryScene=False, collectTracking=tracking, startIndex=startIndex, recordScenario=recordScenario)
 
         scenario = Scenario(drivingMode=[driveMode,15.0]) # Driving style is set to normal, with a speed of 15.0 mph. All other scenario options are random.
     # Send the Start request to DeepGTAV.

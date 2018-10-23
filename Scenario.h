@@ -152,6 +152,9 @@ public:
     //Used for keeing track of when to add the gap
     bool trSeriesGap = false;
 
+    //Mode for recording clips (data not generated)
+    bool m_recordScenario;
+
 private:
 	void parseScenarioConfig(const Value& sc, bool setDefaults);
 	void parseDatasetConfig(const Value& dc, bool setDefaults);

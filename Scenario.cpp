@@ -196,6 +196,8 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
     else if (setDefaults) stationaryScene = _STATIONARY_SCENE_;
     if (!dc["collectTracking"].IsNull()) collectTracking = dc["collectTracking"].GetBool();
     else if (setDefaults) collectTracking = _COLLECT_TRACKING_;
+    if (!dc["recordScenario"].IsNull()) m_recordScenario = dc["recordScenario"].GetBool();
+    else if (setDefaults) m_recordScenario = _RECORD_SCENARIO_;
 
     if (DRIVE_SPEC_AREA) {
         dir.x = s_locationBounds[0][0][m_startArea];
@@ -401,7 +403,7 @@ void Scenario::buildScenario() {
     //    CAM::SET_GAMEPLAY_CAM_RELATIVE_PITCH(0, 0x3F800000);//Constant taken from nativedb
     //}
 
-    if (RECORD_SCENARIO) {
+    if (m_recordScenario) {
         UNK1::_SET_RECORDING_MODE(1);
     }
 }
@@ -440,7 +442,7 @@ void Scenario::config(const Value& sc, const Value& dc) {
 
 void Scenario::run() {
 	if (running) {
-        if (RECORD_SCENARIO) {
+        if (m_recordScenario) {
             Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(vehicle, 0);
             CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 0);
         }
@@ -544,7 +546,7 @@ StringBuffer Scenario::generateMessage() {
 	buffer.Clear();
 	Writer<StringBuffer> writer(buffer);
 
-    if (RECORD_SCENARIO) {
+    if (m_recordScenario) {
         Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(vehicle, 0);
         CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 0);
         return buffer;
@@ -1876,7 +1878,7 @@ void Scenario::setCamParams() {
         s_camParams.ncWidth = s_camParams.ncHeight * GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false);
         s_camParams.init = true;
 
-        if (RECORD_SCENARIO) {
+        if (m_recordScenario) {
             std::ostringstream oss;
             oss << "NC, FC, FOV: " << s_camParams.nearClip << ", " << s_camParams.farClip << ", " << s_camParams.fov;
             std::string str = oss.str();

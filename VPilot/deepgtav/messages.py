@@ -17,7 +17,7 @@ class Dataset:
     def __init__(self, rate=None, frame=None, vehicles=None, peds=None, trafficSigns=None, direction=None, reward=None, 
             throttle=None, brake=None, steering=None, speed=None, yawRate=None, drivingMode=None, location=None, time=None,
             offscreen=None, showBoxes=None, pointclouds=None, stationaryScene=None, vehiclesToCreate=None, pedsToCreate=None,
-            startIndex=None, lidarParam=None, collectTracking=None):
+            startIndex=None, lidarParam=None, collectTracking=None, recordScenario=None):
         self.rate = rate #Hz
         self.frame = frame #[width, height]
         self.vehicles = vehicles #boolean
@@ -42,6 +42,7 @@ class Dataset:
         self.startIndex = startIndex #int
         self.lidarParam = lidarParam #int
         self.collectTracking = collectTracking #boolean
+        self.recordScenario = recordScenario #boolean (for recording clips)
 
 class Start:
     def __init__(self, scenario=None, dataset=None):
