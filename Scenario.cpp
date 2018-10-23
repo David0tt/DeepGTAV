@@ -30,8 +30,8 @@ const float VERT_CAM_FOV = 59; //In degrees
 //90 degrees horizontal (KITTI) corresponds to 59 degrees vertical (https://www.gtaall.com/info/fov-calculator.html).
 const float HOR_CAM_FOV = 90; //In degrees
 
-const float CAM_OFFSET_FORWARD = 0.5;
-const float CAM_OFFSET_UP = 0.8;
+const float CAM_OFFSET_FORWARD = 0;// .5;
+const float CAM_OFFSET_UP = 1.065;
 
 const int VEHICLE_STENCIL_TYPE = 2;
 const int NPC_STENCIL_TYPE = 1;
@@ -93,7 +93,7 @@ void Scenario::parseScenarioConfig(const Value& sc, bool setDefaults) {
     else if (setDefaults) _weather = "CLEAR";// weatherList[rand() % 14];
 
 	if (!vehicle.IsNull()) _vehicle = vehicle.GetString();
-	else if (setDefaults) _vehicle = vehicleList[rand() % 3];
+    else if (setDefaults) _vehicle = "ingot";// vehicleList[rand() % 3];
 
 	if (drivingMode.IsArray()) {
 		if (!drivingMode[0].IsNull()) _drivingMode = drivingMode[0].GetInt();
@@ -1889,6 +1889,15 @@ void Scenario::setCamParams() {
     //These values change frame to frame
     s_camParams.theta = CAM::GET_CAM_ROT(camera, 0);
     s_camParams.pos = CAM::GET_CAM_COORD(camera);
+
+    //For measuring height of camera (LiDAR) to ground plane
+    /*float groundZ;
+    GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, &(groundZ), 0);
+    
+    std::ostringstream oss;
+    oss << "LiDAR height: " << s_camParams.pos.z - groundZ;
+    std::string str = oss.str();
+    log(str);*/
 }
 
 void Scenario::printSegImage() {
