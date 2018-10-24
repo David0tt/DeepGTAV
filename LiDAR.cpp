@@ -12,7 +12,7 @@
 #include "Functions.h"
 #include "Constants.h"
 
-LiDAR::LiDAR()
+LiDAR::LiDAR() : m_gDistribution(DEPTH_NOISE_MEAN, DEPTH_NOISE_STDDEV)
 {
     m_pPointClouds = NULL;
     m_pRaycastPointCloud = NULL;
@@ -376,6 +376,16 @@ float LiDAR::getDepthFromScreenPos(float screenX, float screenY) {
         int y = (int)floor(screenY * s_camParams.height);
 
         depth = depthFromNDC(x, y, screenX, screenY);
+    }
+
+    if (LIDAR_GAUSSIAN_NOISE) {
+        float before = depth;
+        depth += m_gDistribution(m_generator);
+
+        /*std::ostringstream oss1;
+        oss1 << "Depth before/after dist: " << before << ", " << depth;
+        std::string str1 = oss1.str();
+        log(str1, true);*/
     }
     return depth;
 }

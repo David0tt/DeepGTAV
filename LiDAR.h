@@ -10,6 +10,7 @@ https://github.com/gdpinchina/A-virtual-LiDAR-for-DeepGTAV
 #include <unordered_map>
 #include <Eigen/Core>
 #include "CamParams.h"
+#include <random>
 
 #define _LIDAR_NOT_INIT_YET_ 0
 #define _LIDAR_INIT_AS_2D_ 1
@@ -140,4 +141,8 @@ private:
     float getDepthFromScreenPos(float screenX, float screenY);
 
     Vector3 get3DFromDepthTarget(Vector3 target, Eigen::Vector2f target2D);
+
+    // Define random generator with Gaussian distribution
+    std::default_random_engine m_generator;
+    std::normal_distribution<double> m_gDistribution;
 };

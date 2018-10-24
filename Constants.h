@@ -42,3 +42,7 @@ const bool OUTPUT_ADJUSTED_POINTS = false;
 
 //2d points will be shrunk with stencil cull
 const bool CORRECT_2D_POINTS_BEHIND_CAMERA = false;
+
+const bool LIDAR_GAUSSIAN_NOISE = true;
+const double DEPTH_NOISE_STDDEV = 0.006;//3 standard deviations is approximately 2cm
+const double DEPTH_NOISE_MEAN = 0.0;
