@@ -1124,6 +1124,11 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                     float kittiHeight = 2 * dim.z;
                     float kittiWidth = 2 * dim.x;
                     float kittiLength = 2 * dim.y;
+                    
+                    //Have only seen sitting people with height <= 1.0
+                    if (classid == PEDESTRIAN_CLASS_ID && kittiHeight <= 1.0) {
+                        type = "Person_sitting";
+                    }
 
                     if (abs(offcenter.y) > 0.5 && classid == 0) {
                         std::ostringstream oss2;
