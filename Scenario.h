@@ -121,6 +121,8 @@ private:
     bool m_vLookupInit = false;
     std::unordered_map<std::string, std::string> m_vLookup; //Vehicle lookup
 
+    std::unordered_map<Vehicle, std::vector<Ped>> m_pedsInVehicles;
+
 public:
 	float rate;
 

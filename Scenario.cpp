@@ -592,8 +592,8 @@ StringBuffer Scenario::generateMessage() {
     if (depthMap && lidar_initialized) setDepthBuffer();
     if (depthMap && lidar_initialized) setStencilBuffer();
     if (pointclouds && lidar_initialized) collectLiDAR();
-	if (vehicles) setVehiclesList();
 	if (peds) setPedsList();
+    if (vehicles) setVehiclesList();
 	if (trafficSigns); //TODO
 	if (direction) setDirection();
 	if (reward) setReward();
@@ -1179,6 +1179,15 @@ bool Scenario::getEntityVector(Value &_entity, Document::AllocatorType& allocato
                     float occlusion = 0;
                     BBox2D bbox2dProcessed = processBBox2D(bbox2d, stencilType, position, dim, forwardVector, rightVector, upVector, xVector, yVector, zVector, entityID, pointsHit2D, occlusion);
                     
+                    if (PROCESS_PEDS_ON_BIKES) {
+                        if (m_pedsInVehicles.find(entityID) != m_pedsInVehicles.end()) {
+                            std::vector<Ped> pedsOnV = m_pedsInVehicles[entityID];
+
+                            for (auto ped : pedsOnV) {
+                                //Extend 3D/2D boxes with peds, change id in segmentation image
+                            }
+                        }
+                    }
                     //Do not allow entity through if it has no points hit on the 2D screen
                     /*if (pointsHit2D == 0) {
                         return false;
@@ -1319,7 +1328,24 @@ void Scenario::setPedsList(){
 
 	int count = worldGetAllPeds(peds, ARR_SIZE);
 	for (int i = 0; i < count; i++) {
-		if (PED::IS_PED_IN_ANY_VEHICLE(peds[i], TRUE)) continue; //Don't process peds in vehicles!
+        if (PED::IS_PED_IN_ANY_VEHICLE(peds[i], TRUE)) {
+            Vehicle vehPedIsIn = PED::GET_VEHICLE_PED_IS_IN(peds[i], FALSE);
+            Hash vModel = ENTITY::GET_ENTITY_MODEL(vehPedIsIn);
+
+            //Update bounding boxes/stencils for all bike type vehicles
+            if (VEHICLE::IS_THIS_MODEL_A_BIKE(vModel) ||
+                VEHICLE::IS_THIS_MODEL_A_BICYCLE(vModel) ||
+                VEHICLE::IS_THIS_MODEL_A_QUADBIKE(vModel)) {
+
+                if (m_pedsInVehicles.find(vehPedIsIn) != m_pedsInVehicles.end()) {
+                    m_pedsInVehicles[vehPedIsIn].push_back(peds[i]);
+                }
+                else {
+                    m_pedsInVehicles.insert(std::pair<Vehicle, std::vector<Ped>>(vehPedIsIn, { peds[i] }));
+                }
+            }
+            continue; //Don't add peds in vehicles as unique objects!
+        }
 
         std::string type = "Pedestrian";
         if (PED::GET_PED_TYPE(peds[i]) == 28) {

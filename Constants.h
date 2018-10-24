@@ -46,3 +46,6 @@ const bool CORRECT_2D_POINTS_BEHIND_CAMERA = false;
 const bool LIDAR_GAUSSIAN_NOISE = true;
 const double DEPTH_NOISE_STDDEV = 0.006;//3 standard deviations is approximately 2cm
 const double DEPTH_NOISE_MEAN = 0.0;
+
+//Extends bboxes/segmentation for bike type vehicles with rider (ped) information
+const bool PROCESS_PEDS_ON_BIKES = true;
