@@ -1,9 +1,9 @@
 //DATASET
 #define _RATE_ 10
-#define _WIDTH_ 320
-#define _HEIGHT_ 160
-#define _VEHICLES_ false
-#define _PEDS_ false
+#define _WIDTH_ 1920
+#define _HEIGHT_ 1080
+#define _VEHICLES_ true
+#define _PEDS_ true
 #define _TRAFFIC_SIGNS_ false
 #define _DIRECTION_ false
 #define _REWARD_ false
@@ -15,7 +15,7 @@
 #define _DRIVING_MODE_ false
 #define _LOCATION_ false
 #define _TIME_ false
-#define _OFFSCREEN_ true
+#define _OFFSCREEN_ false
 #define _SHOWBOXES_ false
 #define _POINTCLOUDS_ true
 #define _STATIONARY_SCENE_ false

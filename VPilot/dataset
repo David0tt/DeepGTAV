@@ -25,7 +25,8 @@ width = 1920
 height = 1080
 index = 0
 
-recordScenario = True
+oldExport = False
+recordScenario = False
 tracking = False
 collectStationary = False
 collectVehicles = True
@@ -145,91 +146,92 @@ if __name__ == '__main__':
                 cv2.imwrite(filename, image)
                 print("image written index %d" % index)
                 
-                #Output tracking labels
-                if tracking:
-                    filename = "%slabels_tracking\\%04d.txt" % (base_folder, message['seriesIndex'])
+                if oldExport:
+                    #Output tracking labels
+                    if tracking:
+                        filename = "%slabels_tracking\\%04d.txt" % (base_folder, message['seriesIndex'])
+                        ensureDirExists(filename)
+                        text_file = open(filename, "a")
+                        text_file.write("")
+                        text_file.close()
+                        if collectVehicles:
+                            printInstances(filename, message['vehicles'], False, True, index)
+                        if collectPeds:
+                            printInstances(filename, message['peds'], False, True, index)
+                    
+                    #Output object detections
+                    filename = "%slabels\\%s.txt" % (base_folder, indexString)
                     ensureDirExists(filename)
-                    text_file = open(filename, "a")
+                    text_file = open(filename, "w")
                     text_file.write("")
                     text_file.close()
                     if collectVehicles:
-                        printInstances(filename, message['vehicles'], False, True, index)
+                        printInstances(filename, message['vehicles'], False)
                     if collectPeds:
-                        printInstances(filename, message['peds'], False, True, index)
-                
-                #Output object detections
-                filename = "%slabels\\%s.txt" % (base_folder, indexString)
-                ensureDirExists(filename)
-                text_file = open(filename, "w")
-                text_file.write("")
-                text_file.close()
-                if collectVehicles:
-                    printInstances(filename, message['vehicles'], False)
-                if collectPeds:
-                    printInstances(filename, message['peds'], False)
-                
-                #Output unprocessed detections (For testing)
-                filename = "%slabels_unprocessed\\%s.txt" % (base_folder, indexString)
-                ensureDirExists(filename)
-                text_file = open(filename, "w")
-                text_file.write("")
-                text_file.close()
-                if collectVehicles:
-                    printInstances(filename, message['vehicles'], False, False, index, False)
-                if collectPeds:
-                    printInstances(filename, message['peds'], False, False, index, False)
-                
-                #Output object detections with augmentations
-                filename = "%slabels_aug\\%s.txt" % (base_folder, indexString)
-                ensureDirExists(filename)
-                text_file = open(filename, "w")
-                text_file.write("")
-                text_file.close()
-                if collectVehicles:
-                    printInstances(filename, message['vehicles'], True)
-                if collectPeds:
-                    printInstances(filename, message['peds'], True)
+                        printInstances(filename, message['peds'], False)
+                    
+                    #Output unprocessed detections (For testing)
+                    filename = "%slabels_unprocessed\\%s.txt" % (base_folder, indexString)
+                    ensureDirExists(filename)
+                    text_file = open(filename, "w")
+                    text_file.write("")
+                    text_file.close()
+                    if collectVehicles:
+                        printInstances(filename, message['vehicles'], False, False, index, False)
+                    if collectPeds:
+                        printInstances(filename, message['peds'], False, False, index, False)
+                    
+                    #Output object detections with augmentations
+                    filename = "%slabels_aug\\%s.txt" % (base_folder, indexString)
+                    ensureDirExists(filename)
+                    text_file = open(filename, "w")
+                    text_file.write("")
+                    text_file.close()
+                    if collectVehicles:
+                        printInstances(filename, message['vehicles'], True)
+                    if collectPeds:
+                        printInstances(filename, message['peds'], True)
 
-                #Print calib file
-                if tracking:
-                    if index == 0:
-                        filename = "%scalib\\%04d.txt" % (base_folder, message['seriesIndex'])
+                    #Print calib file
+                    if tracking:
+                        if index == 0:
+                            filename = "%scalib\\%04d.txt" % (base_folder, message['seriesIndex'])
+                            ensureDirExists(filename)
+                            printCalib(filename, message['focalLen'], width, height)
+                    else:
+                        filename = "%scalib\\%s.txt" % (base_folder, indexString)
                         ensureDirExists(filename)
                         printCalib(filename, message['focalLen'], width, height)
-                else:
-                    filename = "%scalib\\%s.txt" % (base_folder, indexString)
-                    ensureDirExists(filename)
-                    printCalib(filename, message['focalLen'], width, height)
 
-                curPosition = message['curPosition']
-                if tracking:
-                    # TODO: there is no in-game time reference that properly correlates night/day and real time between frames
-                    # filename = "%s\\oxts\\%04d\\timestamps.txt" % (base_folder, message['seriesIndex'])
-                    # ensureDirExists(filename)
-                    # text_file = open(filename, "a")
-                    # text = message['time']
-                    # dateString = datetime.date.today().strftime("%Y-%m-%d")
-                    # text_file.write("%s %s\n" % (dateString, text))
-                    # text_file.close()
+                    curPosition = message['curPosition']
+                    if tracking:
+                        # TODO: there is no in-game time reference that properly correlates night/day and real time between frames
+                        # filename = "%s\\oxts\\%04d\\timestamps.txt" % (base_folder, message['seriesIndex'])
+                        # ensureDirExists(filename)
+                        # text_file = open(filename, "a")
+                        # text = message['time']
+                        # dateString = datetime.date.today().strftime("%Y-%m-%d")
+                        # text_file.write("%s %s\n" % (dateString, text))
+                        # text_file.close()
 
-                    filename = "%soxts\\data\\%s.txt" % (base_folder, indexString)
-                    ensureDirExists(filename)
-                    text_file = open(filename, "w")
-                    #
-                    text_file.write("%f %f %f %f %f %f %f\n" % (curPosition[0], curPosition[1], curPosition[2],
-                        curPosition[3], curPosition[4], curPosition[5], message['speed']))
-                    text_file.close()
+                        filename = "%soxts\\data\\%s.txt" % (base_folder, indexString)
+                        ensureDirExists(filename)
+                        text_file = open(filename, "w")
+                        #
+                        text_file.write("%f %f %f %f %f %f %f\n" % (curPosition[0], curPosition[1], curPosition[2],
+                            curPosition[3], curPosition[4], curPosition[5], message['speed']))
+                        text_file.close()
 
 
-                #Output current location:
-                outputCurrLocation = False
-                if outputCurrLocation:
-                    filename = "%slocation.txt" % (base_folder)
-                    ensureDirExists(filename)
-                    text_file = open(filename, "w")
-                    text_file.write("x: %d, y: %d, z: %d, heading %d" % (curPosition[0], curPosition[1], curPosition[2], curPosition[3]))
-                    text_file.close()
-                print("ending index %d" % index)
+                    #Output current location:
+                    outputCurrLocation = False
+                    if outputCurrLocation:
+                        filename = "%slocation.txt" % (base_folder)
+                        ensureDirExists(filename)
+                        text_file = open(filename, "w")
+                        text_file.write("x: %d, y: %d, z: %d, heading %d" % (curPosition[0], curPosition[1], curPosition[2], curPosition[3]))
+                        text_file.close()
+                    print("ending index %d" % index)
 
             except KeyboardInterrupt:
                 break

@@ -10,7 +10,6 @@
 
 typedef DWORD Void;
 typedef DWORD Any;
-typedef DWORD uint;
 typedef DWORD Hash;
 typedef int Entity;
 typedef int Player;

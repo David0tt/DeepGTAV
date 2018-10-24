@@ -6,7 +6,6 @@ https://github.com/gdpinchina/A-virtual-LiDAR-for-DeepGTAV
 */
 
 #pragma once
-#include "lib/script.h"
 #include <unordered_map>
 #include <Eigen/Core>
 #include "CamParams.h"
@@ -115,7 +114,6 @@ private:
 
     Cam m_camera;
     Entity m_ownCar;
-    Vector3 m_curPos;
     float m_quaterion[4];
     float m_rotDCM[9];//convert n-coord to b-coord
     int m_initType;

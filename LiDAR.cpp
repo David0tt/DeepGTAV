@@ -1,7 +1,7 @@
 #define NOMINMAX
 
 #include "LiDAR.h"
-#include "Scenario.h"
+#include "ObjectDetection.h"
 #include <math.h>
 #include <stdio.h>
 #include <cmath>
@@ -394,7 +394,7 @@ Vector3 LiDAR::adjustEndCoord(Vector3 pos, Vector3 relPos) {
     float scrX, scrY;
     //Use this function over native function as native function fails at edges of screen
     Eigen::Vector2f uv = get_2d_from_3d(Eigen::Vector3f(pos.x, pos.y, pos.z),
-        Eigen::Vector3f(m_curPos.x, m_curPos.y, m_curPos.z),
+        Eigen::Vector3f(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z),
         Eigen::Vector3f(s_camParams.theta.x, s_camParams.theta.y, s_camParams.theta.z), s_camParams.nearClip, s_camParams.fov);
 
     scrX = uv(0);
@@ -432,10 +432,10 @@ Vector3 LiDAR::adjustEndCoord(Vector3 pos, Vector3 relPos) {
 
 Vector3 LiDAR::get3DFromDepthTarget(Vector3 target, Eigen::Vector2f target2D){
     Vector3 unitVec;
-    float distance = sqrt(SYSTEM::VDIST2(m_curPos.x, m_curPos.y, m_curPos.z, target.x, target.y, target.z));
-    unitVec.x = (target.x - m_curPos.x) / distance;
-    unitVec.y = (target.y - m_curPos.y) / distance;
-    unitVec.z = (target.z - m_curPos.z) / distance;
+    float distance = sqrt(SYSTEM::VDIST2(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, target.x, target.y, target.z));
+    unitVec.x = (target.x - s_camParams.pos.x) / distance;
+    unitVec.y = (target.y - s_camParams.pos.y) / distance;
+    unitVec.z = (target.z - s_camParams.pos.z) / distance;
 
     float depth = getDepthFromScreenPos(target2D(0), target2D(1));
 
@@ -452,7 +452,7 @@ Vector3 LiDAR::get3DFromDepthTarget(Vector3 target, Eigen::Vector2f target2D){
     oss2 << "***unitVec is: " << unitVec.x << ", " << unitVec.y << ", " << unitVec.z <<
     "\n depthEndCoord is: " << depthEndCoord.x << ", " << depthEndCoord.y << ", " << depthEndCoord.z <<
     "\nvec is: " << vec.x << ", " << vec.y << ", " << vec.z <<
-    "\n m_curPos is: " << m_curPos.x << ", " << m_curPos.y << ", " << m_curPos.z;
+    "\n s_camParams.pos is: " << s_camParams.pos.x << ", " << s_camParams.pos.y << ", " << s_camParams.pos.z;
     std::string str = oss2.str();
     log(str);*/
     return vec_cam_coord;
@@ -473,13 +473,13 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
     endCoord.y = m_maxRange * sin(phi_rad) * cos(theta_rad);	//forward(north) is positive
     endCoord.z = m_maxRange * cos(phi_rad);						//upward(up) is positive
 
-    target.x = m_rotDCM[0] * endCoord.x + m_rotDCM[1] * endCoord.y + m_rotDCM[2] * endCoord.z + m_curPos.x;
-    target.y = m_rotDCM[3] * endCoord.x + m_rotDCM[4] * endCoord.y + m_rotDCM[5] * endCoord.z + m_curPos.y;
-    target.z = m_rotDCM[6] * endCoord.x + m_rotDCM[7] * endCoord.y + m_rotDCM[8] * endCoord.z + m_curPos.z;
+    target.x = m_rotDCM[0] * endCoord.x + m_rotDCM[1] * endCoord.y + m_rotDCM[2] * endCoord.z + s_camParams.pos.x;
+    target.y = m_rotDCM[3] * endCoord.x + m_rotDCM[4] * endCoord.y + m_rotDCM[5] * endCoord.z + s_camParams.pos.y;
+    target.z = m_rotDCM[6] * endCoord.x + m_rotDCM[7] * endCoord.y + m_rotDCM[8] * endCoord.z + s_camParams.pos.z;
 
     //options: -1=everything
     //New function is called _START_SHAPE_TEST_RAY
-    raycast_handle = WORLDPROBE::_CAST_RAY_POINT_TO_POINT(m_curPos.x, m_curPos.y, m_curPos.z, target.x, target.y, target.z, -1, m_ownCar, native_param);
+    raycast_handle = WORLDPROBE::_CAST_RAY_POINT_TO_POINT(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, target.x, target.y, target.z, -1, m_ownCar, native_param);
 
     //New function is called GET_SHAPE_TEST_RESULT
     WORLDPROBE::_GET_RAYCAST_RESULT(raycast_handle, &isHit, &endCoord, &surfaceNorm, &hitEntity);
@@ -487,7 +487,7 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
     //The 2D screen coords of the target
     //This is what should be used for sampling depth map as endCoord will not hit same points as depth map
     Eigen::Vector2f target2D = get_2d_from_3d(Eigen::Vector3f(target.x, target.y, target.z),
-        Eigen::Vector3f(m_curPos.x, m_curPos.y, m_curPos.z),
+        Eigen::Vector3f(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z),
         Eigen::Vector3f(s_camParams.theta.x, s_camParams.theta.y, s_camParams.theta.z), s_camParams.nearClip, s_camParams.fov);
 
     if (GENERATE_2D_POINTMAP) {
@@ -498,7 +498,7 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
 
     /*std::ostringstream oss2;
     oss2 << "***Endcoord is: " << endCoord.x << ", " << endCoord.y << ", " << endCoord.z <<
-        "\n Current position is: " << m_curPos.x << ", " << m_curPos.y << ", " << m_curPos.z;
+        "\n Current position is: " << s_camParams.pos.x << ", " << s_camParams.pos.y << ", " << s_camParams.pos.z;
     std::string str = oss2.str();
     */
     //log(str);
@@ -531,9 +531,9 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
         }
 
         Vector3 vec;
-        vec.x = endCoord.x - m_curPos.x;
-        vec.y = endCoord.y - m_curPos.y;
-        vec.z = endCoord.z - m_curPos.z;
+        vec.x = endCoord.x - s_camParams.pos.x;
+        vec.y = endCoord.y - s_camParams.pos.y;
+        vec.z = endCoord.z - s_camParams.pos.z;
 
         //To convert from world coordinates to GTA vehicle coordinates (where y axis is forward)
         Vector3 vec_cam_coord = convertCoordinateSystem(vec, currentForwardVec, currentRightVec, currentUpVec);
@@ -592,7 +592,7 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
                 Vector3 upVector;
                 Vector3 position;
                 ENTITY::GET_ENTITY_MATRIX(entityID, &forwardVector, &rightVector, &upVector, &position); //Blue or red pill
-                position = subtractVector(position, m_curPos);
+                position = subtractVector(position, s_camParams.pos);
                 HitLidarEntity* hitEnt = new HitLidarEntity(forwardVector, position);
                 m_entitiesHit->insert(std::pair<int, HitLidarEntity*>(entityID, hitEnt));
             }
@@ -614,8 +614,6 @@ void LiDAR::GenerateHorizPointClouds(float phi, float *p)
 {
     int i, j;
     float theta = 0.0, quaterion[4];
-
-    m_curPos = CAM::GET_CAM_COORD(m_camera);
     calcDCM();
 
     //Right side:
