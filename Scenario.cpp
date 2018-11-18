@@ -12,7 +12,6 @@
 #include "Functions.h"
 #include "Constants.h"
 #include <Eigen/Core>
-#include "lodepng.h"
 #include <sstream>
 #include "AreaRoaming.h"
 

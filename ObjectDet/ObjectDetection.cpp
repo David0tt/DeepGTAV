@@ -1,7 +1,7 @@
 #define NOMINMAX
 
 #include "ObjectDetection.h"
-#include "ObjectDetIncludes.h"
+#include "..\ObjectDetIncludes.h"
 #include <Windows.h>
 #include <time.h>
 #include <fstream>

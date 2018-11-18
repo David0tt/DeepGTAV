@@ -7,9 +7,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="LiDAR.cpp" />
-    <ClCompile Include="lodepng.cpp" />
-    <ClCompile Include="ObjectDetection.cpp" />
+    <ClCompile Include="ObjectDet\LiDAR.cpp" />
+    <ClCompile Include="ObjectDet\lodepng.cpp" />
+    <ClCompile Include="ObjectDet\ObjectDetection.cpp" />
     <ClCompile Include="Rewarders\GeneralRewarder.cpp" />
     <ClCompile Include="Rewarders\LaneRewarder.cpp" />
     <ClCompile Include="lib\main.cpp" />
@@ -23,15 +23,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AreaRoaming.h" />
-    <ClInclude Include="CamParams.h" />
     <ClInclude Include="defaults.h" />
-    <ClInclude Include="FrameObjectInfo.h" />
-    <ClInclude Include="Functions.h" />
-    <ClInclude Include="Constants.h" />
-    <ClInclude Include="LiDAR.h" />
-    <ClInclude Include="lodepng.h" />
-    <ClInclude Include="ObjectDetection.h" />
     <ClInclude Include="ObjectDetIncludes.h" />
+    <ClInclude Include="ObjectDet\CamParams.h" />
+    <ClInclude Include="ObjectDet\Constants.h" />
+    <ClInclude Include="ObjectDet\FrameObjectInfo.h" />
+    <ClInclude Include="ObjectDet\Functions.h" />
+    <ClInclude Include="ObjectDet\LiDAR.h" />
+    <ClInclude Include="ObjectDet\lodepng.h" />
+    <ClInclude Include="ObjectDet\ObjectDetection.h" />
     <ClInclude Include="Rewarders\Rewarder.h" />
     <ClInclude Include="Rewarders\GeneralRewarder.h" />
     <ClInclude Include="Rewarders\LaneRewarder.h" />
@@ -42,6 +42,9 @@
     <ClInclude Include="Server.h" />
     <ClInclude Include="lib\tinyxml2.h" />
     <ClInclude Include="lib\utils.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ObjectDet\vehicle_labels.csv" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{8D82F34A-1D64-465B-84B1-37F89AD3D20B}</ProjectGuid>
@@ -83,7 +86,7 @@
       <PreprocessorDefinitions>_WINSOCKAPI_;WIN32;NDEBUG;_WINDOWS;_USRDLL;NativeSpeedo_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <AdditionalIncludeDirectories>$(OpenCV_DIR)include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OpenCV_DIR)include;ObjectDet;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

@@ -6,7 +6,7 @@ https://github.com/gdpinchina/A-virtual-LiDAR-for-DeepGTAV
 */
 
 #pragma once
-#include "ObjectDetIncludes.h"
+#include "..\ObjectDetIncludes.h"
 #include <unordered_map>
 #include <Eigen/Core>
 #include "CamParams.h"
