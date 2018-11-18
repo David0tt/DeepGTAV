@@ -1,0 +1,3 @@
+[submodule "ObjectDet"]
+	path = ObjectDet
+	url = https://github.com/wavelab/gta_object_detection
