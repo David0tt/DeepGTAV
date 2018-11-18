@@ -3,8 +3,6 @@
 #include <stdlib.h>
 #include <ctime>
 
-#include "lib/script.h"
-#include "lib/utils.h"
 #include "LiDAR.h"
 #include "Functions.h"
 #include "CamParams.h"
@@ -18,6 +16,9 @@ public:
     ~ObjectDetection();
 private:
     FrameObjectInfo m_curFrame;
+    bool m_initialized = false;
+    bool m_eve = false;
+    Vector3 m_eveForwardVector;
 
     Vehicle vehicle = NULL;
     Player player = NULL;
@@ -40,9 +41,13 @@ private:
     float currentSteering = 0.0;
 
     Vector3 currentPos;
-    Vector3 currentForwardVector;
-    Vector3 currentUpVector;
-    Vector3 currentRightVector;
+    Vector3 vehicleForwardVector;
+    Vector3 vehicleUpVector;
+    Vector3 vehicleRightVector;
+
+    Vector3 m_camForwardVector;
+    Vector3 m_camRightVector;
+    Vector3 m_camUpVector;
 
     bool running = false;
 
@@ -97,7 +102,8 @@ private:
     std::unordered_map<Vehicle, std::vector<Ped>> m_pedsInVehicles;
 
 public:
-    void initCollection(UINT camWidth, UINT camHeight, bool exportEVE);
+    void initCollection(UINT camWidth, UINT camHeight, bool exportEVE = true);
+    void setCamParams(float* forwardVec = NULL, float* rightVec = NULL, float* upVec = NULL);
 
     //Depth buffer fn/var needs to be accessed by server
     void setDepthBuffer(bool prevDepth = false);
@@ -149,7 +155,6 @@ private:
     Vector3 depthToCamCoords(float depth, float screenX, float screenY);
     std::string getStandardFilename(std::string subDir, std::string extension);
     void outputRealSpeed();
-    void setCamParams();
     void setStencilBuffer();
 
     BBox2D BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector, bool &success, float &truncation);

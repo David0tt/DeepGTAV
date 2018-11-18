@@ -1,6 +1,7 @@
 #define NOMINMAX
 
 #include "ObjectDetection.h"
+#include "ObjectDetIncludes.h"
 #include <Windows.h>
 #include <time.h>
 #include <fstream>
@@ -37,7 +38,12 @@ const int NPC_STENCIL_TYPE = 1;
 const int SKY_STENCIL_TYPE = 7;
 const int PEDESTRIAN_CLASS_ID = 10;
 
-void ObjectDetection::initCollection(UINT camWidth, UINT camHeight, bool exportEVE = true) {
+void ObjectDetection::initCollection(UINT camWidth, UINT camHeight, bool exportEVE) {
+    if (m_initialized) {
+        return;
+    }
+    m_eve = exportEVE;
+
     ped = PLAYER::PLAYER_PED_ID();
     vehicle = PED::GET_VEHICLE_PED_IS_IN(ped, false);
 
@@ -99,6 +105,7 @@ void ObjectDetection::initCollection(UINT camWidth, UINT camHeight, bool exportE
     initVehicleLookup();
     //Setup LiDAR before collecting
     setupLiDAR();
+    m_initialized = true;
 }
 
 FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStencil) {
@@ -137,15 +144,15 @@ FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStenci
 
 //Returns the angle between a relative position vector and the forward vector (rotated about up axis)
 float ObjectDetection::observationAngle(Vector3 position) {
-    float x1 = currentRightVector.x;
-    float y1 = currentRightVector.y;
-    float z1 = currentRightVector.z;
+    float x1 = m_camRightVector.x;
+    float y1 = m_camRightVector.y;
+    float z1 = m_camRightVector.z;
     float x2 = position.x;
     float y2 = position.y;
     float z2 = position.z;
-    float xn = currentUpVector.x;
-    float yn = currentUpVector.y;
-    float zn = currentUpVector.z;
+    float xn = m_camUpVector.x;
+    float yn = m_camUpVector.y;
+    float zn = m_camUpVector.z;
 
     float dot = x1 * x2 + y1 * y2 + z1 * z2;
     float det = x1 * y2*zn + x2 * yn*z1 + xn * y1*z2 - z1 * y2*xn - z2 * yn*x1 - zn * y1*x2;
@@ -164,23 +171,56 @@ float ObjectDetection::observationAngle(Vector3 position) {
 }
 
 void ObjectDetection::drawVectorFromPosition(Vector3 vector, int blue, int green) {
-    GRAPHICS::DRAW_LINE(currentPos.x, currentPos.y, currentPos.z, vector.x * 1000 + currentPos.x, vector.y * 1000 + currentPos.y, vector.z * 1000 + currentPos.z, 0, green, blue, 200);
+    GRAPHICS::DRAW_LINE(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, vector.x * 1000 + s_camParams.pos.x, vector.y * 1000 + s_camParams.pos.y, vector.z * 1000 + s_camParams.pos.z, 0, green, blue, 200);
     WAIT(0);
 }
 
 //Saves the position and vectors of the capture vehicle
 void ObjectDetection::setPosition() {
     //NOTE: The forward and right vectors are swapped (compared to native function labels) to keep consistency with coordinate system
-    ENTITY::GET_ENTITY_MATRIX(vehicle, &currentForwardVector, &currentRightVector, &currentUpVector, &currentPos); //Blue or red pill
+    if (m_eve) {
+        ENTITY::GET_ENTITY_MATRIX(vehicle, &vehicleForwardVector, &vehicleRightVector, &vehicleUpVector, &currentPos); //Blue or red pill
+
+        /*LOG(LL_ERR, "Eve Forward vector: ", m_eveForwardVector.x, " Y: ", m_eveForwardVector.y, " Z: ", m_eveForwardVector.z);
+        LOG(LL_ERR, "Forward vector: ", vehicleForwardVector.x, " Y: ", vehicleForwardVector.y, " Z: ", vehicleForwardVector.z);
+        LOG(LL_ERR, "Right vector: ", vehicleRightVector.x, " Y: ", vehicleRightVector.y, " Z: ", vehicleRightVector.z);
+        LOG(LL_ERR, "Up vector: ", vehicleUpVector.x, " Y: ", vehicleUpVector.y, " Z: ", vehicleUpVector.z);
+        LOG(LL_ERR, "Cam Forward vector: ", m_camForwardVector.x, " Y: ", m_camForwardVector.y, " Z: ", m_camForwardVector.z);
+        LOG(LL_ERR, "Cam Right vector: ", m_camRightVector.x, " Y: ", m_camRightVector.y, " Z: ", m_camRightVector.z);
+        LOG(LL_ERR, "Cam Up vector: ", m_camUpVector.x, " Y: ", m_camUpVector.y, " Z: ", m_camUpVector.z);
+        LOG(LL_ERR, "Curr position: ", s_camParams.pos.x, " Y: ", s_camParams.pos.y, " Z: ", s_camParams.pos.z);
+        LOG(LL_ERR, "Theta: ", s_camParams.theta.x, " Y: ", s_camParams.theta.y, " Z: ", s_camParams.theta.z);*/
+
+        float ogThetaZ = tan(-vehicleForwardVector.x / vehicleForwardVector.y) * 180 / PI;
+        float newThetaZ = tan(-m_eveForwardVector.x / m_eveForwardVector.y) * 180 / PI;
+        float ogThetaZ2 = atan2(-vehicleForwardVector.x, vehicleForwardVector.y) * 180 / PI;
+        float newThetaZ2 = atan2(-m_eveForwardVector.x, m_eveForwardVector.y) * 180 / PI;
+        float ogThetaX2 = atan2(vehicleForwardVector.z, sqrt(pow(vehicleForwardVector.y, 2) + pow(vehicleForwardVector.x, 2))) * 180 / PI;
+        float newThetaX2 = atan2(m_eveForwardVector.z, sqrt(pow(m_eveForwardVector.y, 2) + pow(m_eveForwardVector.x, 2))) * 180 / PI;
+        float ogThetaX = tan(vehicleForwardVector.z / sqrt(pow(vehicleForwardVector.y, 2) + pow(vehicleForwardVector.x, 2))) * 180 / PI;
+        float newThetaX = tan(m_eveForwardVector.z / sqrt(pow(m_eveForwardVector.y, 2) + pow(m_eveForwardVector.x, 2))) * 180 / PI;
+        //LOG(LL_ERR, "Theta og/new Z: ", ogThetaZ, ", ", newThetaZ, " og/new Z2: ", ogThetaZ2, ", ", newThetaZ2, " og, new X: ", ogThetaX, ", ", newThetaX, " og, new ThetaX2: ", ogThetaX2, ", ", newThetaX2);
+
+        float ogThetaY2 = atan2(vehicleRightVector.z, sqrt(pow(vehicleRightVector.y, 2) + pow(vehicleRightVector.x, 2))) * 180 / PI;
+        float newThetaY2 = atan2(-m_camRightVector.z, sqrt(pow(m_camRightVector.y, 2) + pow(m_camRightVector.x, 2))) * 180 / PI;
+        //LOG(LL_ERR, "Theta og/new Y2: ", ogThetaY2, ", ", newThetaY2);
+        s_camParams.theta.x = newThetaX2;
+        s_camParams.theta.y = newThetaY2;
+        s_camParams.theta.z = newThetaZ2;
+        //LOG(LL_ERR, "Theta: ", s_camParams.theta.x, " Y: ", s_camParams.theta.y, " Z: ", s_camParams.theta.z);
+    }
+    else {
+        ENTITY::GET_ENTITY_MATRIX(vehicle, &vehicleForwardVector, &vehicleRightVector, &vehicleUpVector, &currentPos); //Blue or red pill
+    }
 
     m_curFrame.position = currentPos;
 
-    m_curFrame.roll = atan2(-currentRightVector.z, sqrt(pow(currentRightVector.y, 2) + pow(currentRightVector.x, 2)));
-    m_curFrame.pitch = atan2(-currentForwardVector.z, sqrt(pow(currentForwardVector.y, 2) + pow(currentForwardVector.x, 2)));
+    m_curFrame.roll = atan2(-vehicleRightVector.z, sqrt(pow(vehicleRightVector.y, 2) + pow(vehicleRightVector.x, 2)));
+    m_curFrame.pitch = atan2(-vehicleForwardVector.z, sqrt(pow(vehicleForwardVector.y, 2) + pow(vehicleForwardVector.x, 2)));
 
     //Should use atan2 over gameplay heading
-    //float heading = GAMEPLAY::GET_HEADING_FROM_VECTOR_2D(currentForwardVector.x, currentForwardVector.y);
-    m_curFrame.heading = atan2(currentForwardVector.y, currentForwardVector.x);
+    //float heading = GAMEPLAY::GET_HEADING_FROM_VECTOR_2D(vehicleForwardVector.x, vehicleForwardVector.y);
+    m_curFrame.heading = atan2(vehicleForwardVector.y, vehicleForwardVector.x);
 }
 
 void ObjectDetection::setSpeed() {
@@ -277,11 +317,10 @@ BBox2D ObjectDetection::BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector
                 if (CORRECT_2D_POINTS_BEHIND_CAMERA) {
                     //Corrections for points which are behind camera
                     Vector3 relativePos;
-                    relativePos.x = pos.x - currentPos.x;
-                    relativePos.y = pos.y - currentPos.y;
-                    relativePos.z = pos.z - currentPos.z;
-                    relativePos = convertCoordinateSystem(relativePos, currentForwardVector, currentRightVector, currentUpVector);
-                    relativePos.y = relativePos.y - CAM_OFFSET_FORWARD;
+                    relativePos.x = pos.x - s_camParams.pos.x;
+                    relativePos.y = pos.y - s_camParams.pos.y;
+                    relativePos.z = pos.z - s_camParams.pos.z;
+                    relativePos = convertCoordinateSystem(relativePos, m_camForwardVector, m_camRightVector, m_camUpVector);
 
                     //If behind camera update left/right bounds to reflect its position
                     if (relativePos.y < 0) {
@@ -441,9 +480,9 @@ BBox2D ObjectDetection::processBBox2D(BBox2D bbox, uint8_t stencilType, Vector3 
     Vector3 worldX; worldX.x = 1; worldX.y = 0; worldX.z = 0;
     Vector3 worldY; worldY.x = 0; worldY.y = 1; worldY.z = 0;
     Vector3 worldZ; worldZ.x = 0; worldZ.y = 0; worldZ.z = 1;
-    Vector3 xVectorCam = convertCoordinateSystem(worldX, currentForwardVector, currentRightVector, currentUpVector);
-    Vector3 yVectorCam = convertCoordinateSystem(worldY, currentForwardVector, currentRightVector, currentUpVector);
-    Vector3 zVectorCam = convertCoordinateSystem(worldZ, currentForwardVector, currentRightVector, currentUpVector);
+    Vector3 xVectorCam = convertCoordinateSystem(worldX, m_camForwardVector, m_camRightVector, m_camUpVector);
+    Vector3 yVectorCam = convertCoordinateSystem(worldY, m_camForwardVector, m_camRightVector, m_camUpVector);
+    Vector3 zVectorCam = convertCoordinateSystem(worldZ, m_camForwardVector, m_camRightVector, m_camUpVector);
 
     int stencilPointCount = 0;
     int occlusionPointCount = 0;
@@ -544,7 +583,7 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
     if (isOnScreen) {
         //Check if it is in screen
         ENTITY::GET_ENTITY_MATRIX(entityID, &forwardVector, &rightVector, &upVector, &position); //Blue or red pill
-        float distance = sqrt(SYSTEM::VDIST2(currentPos.x, currentPos.y, currentPos.z, position.x, position.y, position.z));
+        float distance = sqrt(SYSTEM::VDIST2(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, position.x, position.y, position.z));
         if (distance < 200) {
             int pointsHit = 0;
             float maxBack = 0;
@@ -628,10 +667,10 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
 
                     speedVector = ENTITY::GET_ENTITY_SPEED_VECTOR(entityID, false);
                     if (speed > 0) {
-                        heading = GAMEPLAY::GET_HEADING_FROM_VECTOR_2D(speedVector.x - currentForwardVector.x, speedVector.y - currentForwardVector.y);
+                        heading = GAMEPLAY::GET_HEADING_FROM_VECTOR_2D(speedVector.x - vehicleForwardVector.x, speedVector.y - vehicleForwardVector.y);
                     }
                     else {
-                        heading = GAMEPLAY::GET_HEADING_FROM_VECTOR_2D(forwardVector.x - currentForwardVector.x, forwardVector.y - currentForwardVector.y);
+                        heading = GAMEPLAY::GET_HEADING_FROM_VECTOR_2D(forwardVector.x - vehicleForwardVector.x, forwardVector.y - vehicleForwardVector.y);
                     }
 
                     //Kitti dimensions
@@ -655,18 +694,18 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
                     }
 
                     Vector3 relativePos;
-                    relativePos.x = position.x - currentPos.x;
-                    relativePos.y = position.y - currentPos.y;
-                    relativePos.z = position.z - currentPos.z;
+                    relativePos.x = position.x - s_camParams.pos.x;
+                    relativePos.y = position.y - s_camParams.pos.y;
+                    relativePos.z = position.z - s_camParams.pos.z;
 
-                    Vector3 kittiForwardVector = convertCoordinateSystem(forwardVector, currentForwardVector, currentRightVector, currentUpVector);
+                    Vector3 kittiForwardVector = convertCoordinateSystem(forwardVector, m_camForwardVector, m_camRightVector, m_camUpVector);
                     float rot_y = -atan2(kittiForwardVector.y, kittiForwardVector.x);
 
-                    relativePos = convertCoordinateSystem(relativePos, currentForwardVector, currentRightVector, currentUpVector);
+                    relativePos = convertCoordinateSystem(relativePos, m_camForwardVector, m_camRightVector, m_camUpVector);
 
                     //Update object position to be consistent with KITTI (symmetrical dimensions except for z which is ground)
-                    relativePos.y = relativePos.y - CAM_OFFSET_FORWARD;
-                    relativePos.z = relativePos.z - CAM_OFFSET_UP;
+                    //relativePos.y = relativePos.y - CAM_OFFSET_FORWARD;
+                    //relativePos.z = relativePos.z - CAM_OFFSET_UP;
 
                     //Convert to KITTI camera coordinates
                     Vector3 kittiPos;
@@ -903,7 +942,7 @@ void ObjectDetection::setupLiDAR() {
 
 void ObjectDetection::collectLiDAR() {
     entitiesHit.clear();
-    lidar.updateCurrentPosition(currentForwardVector, currentRightVector, currentUpVector);
+    lidar.updateCurrentPosition(m_camForwardVector, m_camRightVector, m_camUpVector);
     float * pointCloud = lidar.GetPointClouds(pointCloudSize, &entitiesHit, lidar_param, m_pDepth);
 
     std::string filename = getStandardFilename("velodyne", ".bin");
@@ -1074,6 +1113,22 @@ Vector3 ObjectDetection::depthToCamCoords(float ndc, float screenX, float screen
     if (ndc <= 0 || worldDepth > s_camParams.farClip) {
         worldDepth = s_camParams.farClip;
     }
+    float fcRatio = (s_camParams.farClip - s_camParams.nearClip) / s_camParams.farClip;
+    worldDepth = worldDepth;//TODO: Figure out depth values - Possibly divide by 1.065?
+
+    /*float angle = tan(s_camParams.fov / 2. * (PI / 180.));
+    float projData[16] = { 1/(GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false) * angle), 0, 0, 0,
+        0, 1/angle, 0, 0,
+        0, 0, -1 / fcRatio, -1 * s_camParams.nearClip / fcRatio,
+        0, 0, -1, 0 };
+    cv::Size size = { 3, 4 };
+    cv::Mat projMat = cv::Mat(4, 4, CV_32F, projData);
+
+    float pointData[4] = { normScreenX, -normScreenY, ndc, 1 };
+    cv::Mat ndcPoint = cv::Mat(4, 1, CV_32F, pointData);
+
+    cv::Mat inverse = projMat.inv();
+    cv::Mat camRelPoint = inverse * ndcPoint;*/
 
     //X is right, Y is forward, Z is up (GTA coordinate frame)
     Vector3 unitVec;
@@ -1085,6 +1140,18 @@ Vector3 ObjectDetection::depthToCamCoords(float ndc, float screenX, float screen
     relPos.x = unitVec.x * worldDepth;
     relPos.y = unitVec.y * worldDepth;
     relPos.z = unitVec.z * worldDepth;
+
+    /*std::ostringstream oss1;
+    oss1 << "camera projection: " << camRelPoint.at<float>(0, 0) << ", " << camRelPoint.at<float>(0, 1) << ", "
+        << camRelPoint.at<float>(0, 2) << ", " << camRelPoint.at<float>(0, 3) << ", " << worldDepth << ", " << angle << 
+        "\n" << projMat <<
+        "\n Inv: " << inverse;
+    std::string str1 = oss1.str();
+    log(str1, true);
+
+    relPos.x = camRelPoint.at<float>(0, 0);
+    relPos.y = camRelPoint.at<float>(0, 2);
+    relPos.z = camRelPoint.at<float>(0, 1);*/
 
     /*std::ostringstream oss1;
     oss1 << "\nAdjust depth ScreenX: " << screenX << " screenY: " << screenY <<
@@ -1198,7 +1265,7 @@ void ObjectDetection::outputRealSpeed() {
 
     //Initialize for every sequence (after printing)
     if (instance_index == 0) {
-        m_trackLastPos = currentPos;
+        m_trackLastPos = s_camParams.pos;
         m_trackLastIndex = instance_index;
         m_trackLastRealSpeed = ENTITY::GET_ENTITY_SPEED(vehicle) / 10;
         return;
@@ -1224,17 +1291,17 @@ void ObjectDetection::outputRealSpeed() {
     //Update values
     //Average of speed at last frame and current frame
     m_trackRealSpeed += (ENTITY::GET_ENTITY_SPEED(vehicle) / 10 + m_trackLastRealSpeed) / 2;
-    m_trackDist += sqrt(SYSTEM::VDIST2(currentPos.x, currentPos.y, currentPos.z, m_trackLastPos.x, m_trackLastPos.y, m_trackLastPos.z));
+    m_trackDist += sqrt(SYSTEM::VDIST2(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, m_trackLastPos.x, m_trackLastPos.y, m_trackLastPos.z));
     m_trackDistErrorTotal += m_trackDist - m_trackRealSpeed;
     m_trackDistErrorTotalVar += pow((m_trackDist - m_trackRealSpeed), 2);
     m_trackDistErrorTotalCount++;
 
-    m_trackLastPos = currentPos;
+    m_trackLastPos = s_camParams.pos;
     m_trackLastIndex = instance_index;
     m_trackLastRealSpeed = ENTITY::GET_ENTITY_SPEED(vehicle) / 10;
 }
 
-void ObjectDetection::setCamParams() {
+void ObjectDetection::setCamParams(float* forwardVec, float* rightVec, float* upVec) {
     //These values stay the same throughout a collection period
     if (!s_camParams.init) {
         s_camParams.nearClip = 0.15;// CAM::_0xD0082607100D7193(); //CAM::GET_CAM_NEAR_CLIP(camera);
@@ -1245,14 +1312,40 @@ void ObjectDetection::setCamParams() {
         s_camParams.init = true;
     }
 
+    ENTITY::GET_ENTITY_MATRIX(vehicle, &m_camForwardVector, &m_camRightVector, &m_camUpVector, &s_camParams.pos);
+
+    if (forwardVec) {
+        m_eveForwardVector.x = forwardVec[0];
+        m_eveForwardVector.y = forwardVec[1];
+        m_eveForwardVector.z = forwardVec[2];
+        m_camForwardVector.x = forwardVec[0];
+        m_camForwardVector.y = forwardVec[1];
+        m_camForwardVector.z = forwardVec[2];
+
+        if (rightVec && upVec) {
+            m_camRightVector.x = rightVec[0];
+            m_camRightVector.y = rightVec[1];
+            m_camRightVector.z = rightVec[2];
+            m_camUpVector.x = upVec[0];
+            m_camUpVector.y = upVec[1];
+            m_camUpVector.z = upVec[2];
+        }
+    }
+    else {
+        ENTITY::GET_ENTITY_MATRIX(vehicle, &m_eveForwardVector, &m_camRightVector, &m_camUpVector, &currentPos);
+    }
+
     //These values change frame to frame
     //Camera functions do not work in eve. Need to use vehicle and offsets.
     //Recordings need to always have the camera aligned with the vehicle for export to be aligned properly.
-    s_camParams.theta = ENTITY::GET_ENTITY_ROTATION(vehicle, 0); //CAM::GET_GAMEPLAY_CAM_ROT(0); //CAM::GET_CAM_ROT(camera, 0);
-    s_camParams.pos = currentPos;// CAM::GET_GAMEPLAY_CAM_COORD();// CAM::GET_CAM_COORD(camera);
-    s_camParams.pos.x = s_camParams.pos.x + CAM_OFFSET_FORWARD * currentForwardVector.x + CAM_OFFSET_UP * currentUpVector.x;
-    s_camParams.pos.y = s_camParams.pos.y + CAM_OFFSET_FORWARD * currentForwardVector.y + CAM_OFFSET_UP * currentUpVector.y;
-    s_camParams.pos.z = s_camParams.pos.z + CAM_OFFSET_FORWARD * currentForwardVector.z + CAM_OFFSET_UP * currentUpVector.z;
+    if (!m_eve) {
+        s_camParams.theta = ENTITY::GET_ENTITY_ROTATION(vehicle, 0); //CAM::GET_GAMEPLAY_CAM_ROT(0); //CAM::GET_CAM_ROT(camera, 0);
+    }
+    //s_camParams.pos = currentPos;// CAM::GET_GAMEPLAY_CAM_COORD();// CAM::GET_CAM_COORD(camera);
+    //Use vehicleForwardVector since it corresponds to vehicle forwardVector
+    s_camParams.pos.x = s_camParams.pos.x + CAM_OFFSET_FORWARD * vehicleForwardVector.x + CAM_OFFSET_UP * vehicleUpVector.x;
+    s_camParams.pos.y = s_camParams.pos.y + CAM_OFFSET_FORWARD * vehicleForwardVector.y + CAM_OFFSET_UP * vehicleUpVector.y;
+    s_camParams.pos.z = s_camParams.pos.z + CAM_OFFSET_FORWARD * vehicleForwardVector.z + CAM_OFFSET_UP * vehicleUpVector.z;
 
     Vector3 theta = CAM::GET_CAM_ROT(camera, 0);
     Vector3 pos1 = CAM::GET_CAM_COORD(camera);
@@ -1266,7 +1359,8 @@ void ObjectDetection::setCamParams() {
         "\nrotation gameplay: " << s_camParams.theta.x << " Y: " << s_camParams.theta.y << " Z: " << s_camParams.theta.z <<
         "\nrotation rendering: " << theta.x << " Y: " << theta.y << " Z: " << theta.z <<
         "\nrotation vehicle: " << rotation.x << " Y: " << rotation.y << " Z: " << rotation.z <<
-        "\n AspectRatio: " << GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false);
+        "\n AspectRatio: " << GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false) <<
+        "\nforwardVector: " << vehicleForwardVector.x << " Y: " << vehicleForwardVector.y << " Z: " << vehicleForwardVector.z;
     std::string str1 = oss1.str();
     log(str1);
 }
@@ -1426,20 +1520,10 @@ void ObjectDetection::exportDetections() {
 
 void ObjectDetection::exportImage(BYTE* data) {
 
-
-    std::ostringstream oss1;
-    oss1 << "\ns_camParams width/height: " << s_camParams.width << ", " << s_camParams.height;
-    std::string str1 = oss1.str();
-    log(str1, true);
-
     cv::Mat tempMat(cv::Size(s_camParams.width, s_camParams.height), CV_8UC4, data);
-    log("export1", true);
     cv::Mat output;
     cv::cvtColor(tempMat, output, CV_BGRA2BGR);
-    log("export2", true);
 
     std::string filename = getStandardFilename("images", ".png");
-    log("export3", true);
     cv::imwrite(filename, output);
-    log("export4", true);
 }

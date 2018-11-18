@@ -6,6 +6,7 @@ https://github.com/gdpinchina/A-virtual-LiDAR-for-DeepGTAV
 */
 
 #pragma once
+#include "ObjectDetIncludes.h"
 #include <unordered_map>
 #include <Eigen/Core>
 #include "CamParams.h"
@@ -85,7 +86,7 @@ public:
     int getHorizSmplNum();
     int getCurType();
 
-    void updateCurrentPosition(Vector3 currentForwardVector, Vector3 currentRightVector, Vector3 currentUpVector);
+    void updateCurrentPosition(Vector3 cameraForwardVec, Vector3 cameraRightVector, Vector3 cameraUpVector);
 
 
 private:
@@ -119,9 +120,9 @@ private:
     int m_initType;
     bool m_isAttach;
 
-    Vector3 currentForwardVec;
-    Vector3 currentUpVec;
-    Vector3 currentRightVec;
+    Vector3 cameraForwardVec;
+    Vector3 cameraUpVec;
+    Vector3 cameraRightVec;
 
     float m_max_dist;
     float m_min_dist;

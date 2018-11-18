@@ -320,6 +320,7 @@ float LiDAR::depthFromNDC(int x, int y, float screenX, float screenY) {
 
     //Actual depth in camera coordinates
     float depth = d2nc / ndc;
+    depth = depth;//TODO: Figure out depth values - Possibly divide by 1.065?
 
     return depth;
 }
@@ -446,7 +447,7 @@ Vector3 LiDAR::get3DFromDepthTarget(Vector3 target, Eigen::Vector2f target2D){
     depthEndCoord.z = unitVec.z * depth;
 
     //To convert from world coordinates to GTA vehicle coordinates (where y axis is forward)
-    Vector3 vec_cam_coord = convertCoordinateSystem(depthEndCoord, currentForwardVec, currentRightVec, currentUpVec);
+    Vector3 vec_cam_coord = convertCoordinateSystem(depthEndCoord, cameraForwardVec, cameraRightVec, cameraUpVec);
 
     /*std::ostringstream oss2;
     oss2 << "***unitVec is: " << unitVec.x << ", " << unitVec.y << ", " << unitVec.z <<
@@ -536,7 +537,7 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
         vec.z = endCoord.z - s_camParams.pos.z;
 
         //To convert from world coordinates to GTA vehicle coordinates (where y axis is forward)
-        Vector3 vec_cam_coord = convertCoordinateSystem(vec, currentForwardVec, currentRightVec, currentUpVec);
+        Vector3 vec_cam_coord = convertCoordinateSystem(vec, cameraForwardVec, cameraRightVec, cameraUpVec);
 
         if (!targetOnScreen) {
             //Note: The y/x axes are changed to conform with KITTI velodyne axes
@@ -560,7 +561,7 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
         //Likely just for testing purposes
         if (OUTPUT_ADJUSTED_POINTS) {
             //To convert from world coordinates to GTA vehicle coordinates (where y axis is forward)
-            vec_cam_coord = convertCoordinateSystem(vec, currentForwardVec, currentRightVec, currentUpVec);
+            vec_cam_coord = convertCoordinateSystem(vec, cameraForwardVec, cameraRightVec, cameraUpVec);
 
             vec_cam_coord = adjustEndCoord(endCoord, vec_cam_coord);
 
@@ -658,8 +659,8 @@ void LiDAR::calcDCM()
     m_rotDCM[8] = q00 - q11 - q22 + q33;
 }
 
-void LiDAR::updateCurrentPosition(Vector3 currentForwardVector, Vector3 currentRightVector, Vector3 currentUpVector) {
-    currentForwardVec = currentForwardVector;
-    currentRightVec = currentRightVector;
-    currentUpVec = currentUpVector;
+void LiDAR::updateCurrentPosition(Vector3 cameraForwardVector, Vector3 cameraRightVector, Vector3 cameraUpVector) {
+    cameraForwardVec = cameraForwardVector;
+    cameraRightVec = cameraRightVector;
+    cameraUpVec = cameraUpVector;
 }

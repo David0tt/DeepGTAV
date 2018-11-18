@@ -1,8 +1,6 @@
 //File for camera parameters
 #pragma once
 
-#include "lib/script.h"
-
 struct CamParams {
     bool firstInit = false;
     bool init; //initialized
