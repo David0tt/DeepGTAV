@@ -75,6 +75,10 @@ if __name__ == '__main__':
         vehicles.append(["benson", 80, -15, 0, 0, 0])
         vehicles.append(["benson", 100, -50, 0, 0, 0])
         vehicles.append(["benson", -10, 0, 0, 0, 0])
+        vehicles.append(["benson", 5, -4, 90, 0, 0])
+        vehicles.append(["benson", 0, 4, 90, 0, 0])
+        vehicles.append(["bmx", 7, 2, 0, 0, 0])
+        vehicles.append(["bmx", 7, -2, 0, 0, 0])
         peds = []
         peds.append([0, 10, 5, 0])
         #peds.append([0, 10, 0, 0])

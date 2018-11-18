@@ -68,10 +68,6 @@ void Scenario::parseScenarioConfig(const Value& sc, bool setDefaults) {
 		x = 5000 * ((float)rand() / RAND_MAX) - 2500;
 		y = 8000 * ((float)rand() / RAND_MAX) - 2000;
 	}
-    if (DRIVE_SPEC_AREA) {
-        x = s_locationBounds[0][0][0];
-        y = s_locationBounds[0][1][0];
-    }
 
 	if (time.IsArray()) {
 		if (!time[0].IsNull()) hour = time[0].GetInt();
@@ -192,10 +188,12 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
     if (!dc["recordScenario"].IsNull()) m_recordScenario = dc["recordScenario"].GetBool();
     else if (setDefaults) m_recordScenario = _RECORD_SCENARIO_;
 
-    if (DRIVE_SPEC_AREA) {
+    if (DRIVE_SPEC_AREA && !stationaryScene) {
         dir.x = s_locationBounds[0][0][m_startArea];
         dir.y = s_locationBounds[0][1][m_startArea];
         dir.z = 0.f;
+        x = s_locationBounds[0][0][0];
+        y = s_locationBounds[0][1][0];
     }
 
     if (stationaryScene) {
@@ -604,6 +602,8 @@ void Scenario::setReward() {
 	d["reward"] = rewarder->computeReward(vehicle);
 }
 
+static int bike_num = 0;
+
 void Scenario::createVehicle(const char* model, float relativeForward, float relativeRight, float heading, int color, int color2) {
     Hash vehicleHash = GAMEPLAY::GET_HASH_KEY(const_cast<char*>(model));
     Vector3 pos;
@@ -618,6 +618,20 @@ void Scenario::createVehicle(const char* model, float relativeForward, float rel
         VEHICLE::SET_VEHICLE_COLOURS(tempV, color, color2);
     }
     VEHICLE::SET_VEHICLE_ON_GROUND_PROPERLY(tempV);
+
+    if (VEHICLE::IS_THIS_MODEL_A_BICYCLE(vehicleHash)) {
+        log("Trying to set ped on bike", true);
+        Hash hash = 0x505603B9;// GAMEPLAY::GET_HASH_KEY(const_cast<char*>(model));
+        STREAMING::REQUEST_MODEL(hash);
+        Ped tempP = PED::CREATE_PED(4, hash, pos.x, pos.y, pos.z, heading, FALSE, FALSE);
+        WAIT(0);
+        if (bike_num == 0) {
+            bike_num++;
+            AI::TASK_ENTER_VEHICLE(tempP, tempV, 0, -1, 2.0f, 16, 0);
+        }
+        AI::TASK_VEHICLE_DRIVE_WANDER(tempP, tempV, 2.0f, 16777216);
+    }
+
     ENTITY::SET_ENTITY_AS_NO_LONGER_NEEDED(&tempV);
 }
 
