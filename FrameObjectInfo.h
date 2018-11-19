@@ -20,6 +20,7 @@ struct ObjEntity {
     
     float distance;
     BBox2D bbox2d;
+    BBox2D bbox2dUnprocessed;
     
     int pointsHit3D;
     int pointsHit2D;

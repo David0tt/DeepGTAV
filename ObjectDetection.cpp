@@ -772,15 +772,15 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
                     entity.distance = distance;
 
                     //TODO This is way it should be when stencil buffer is working
-                    /*entity.bbox2d.left = bbox2dProcessed.left * s_camParams.width;
+                    entity.bbox2d.left = bbox2dProcessed.left * s_camParams.width;
                     entity.bbox2d.top = bbox2dProcessed.top * s_camParams.height;
                     entity.bbox2d.right = bbox2dProcessed.right * s_camParams.width;
-                    entity.bbox2d.bottom = bbox2dProcessed.bottom * s_camParams.height;*/
+                    entity.bbox2d.bottom = bbox2dProcessed.bottom * s_camParams.height;
                     
-                    entity.bbox2d.left = bbox2d.left * s_camParams.width;
-                    entity.bbox2d.top = bbox2d.top * s_camParams.height;
-                    entity.bbox2d.right = bbox2d.right * s_camParams.width;
-                    entity.bbox2d.bottom = bbox2d.bottom * s_camParams.height;
+                    entity.bbox2dUnprocessed.left = bbox2d.left * s_camParams.width;
+                    entity.bbox2dUnprocessed.top = bbox2d.top * s_camParams.height;
+                    entity.bbox2dUnprocessed.right = bbox2d.right * s_camParams.width;
+                    entity.bbox2dUnprocessed.bottom = bbox2d.bottom * s_camParams.height;
 
                     entity.pointsHit2D = pointsHit2D;
                     entity.truncation = truncation;
@@ -1462,20 +1462,26 @@ void ObjectDetection::outputUnusedStencilPixels() {
     }
 }
 
-void ObjectDetection::exportEntity(ObjEntity e, std::ostringstream& oss) {
+void ObjectDetection::exportEntity(ObjEntity e, std::ostringstream& oss, bool unprocessed) {
+    BBox2D b = e.bbox2d;
+    if (unprocessed) b = e.bbox2dUnprocessed;
+
+    if ((int)b.left >= s_camParams.width || (int)b.right == 0 || (int)b.bottom == 0 || (int)b.top >= s_camParams.height) return;
+    if ((int)b.left == (int)b.right || (int)b.top == (int)b.bottom) return;
+
     oss << e.objType << " " << e.truncation << " " << e.occlusion << " " << e.alpha << " " <<
-        (int)e.bbox2d.left << " " << (int)e.bbox2d.top << " " <<
-        (int)e.bbox2d.right << " " << (int)e.bbox2d.bottom << " " <<
+        (int)b.left << " " << (int)b.top << " " <<
+        (int)b.right << " " << (int)b.bottom << " " <<
         e.height << " " << e.width << " " << e.length << " " <<
         e.location.x << " " << e.location.y << " " << e.location.z << " " <<
         e.rotation_y << "\n";
 }
 
-void ObjectDetection::exportEntities(EntityMap entMap, std::ostringstream& oss){
+void ObjectDetection::exportEntities(EntityMap entMap, std::ostringstream& oss, bool unprocessed) {
     for (EntityMap::const_iterator it = entMap.begin(); it != entMap.end(); ++it)
     {
         ObjEntity entity = it->second;
-        exportEntity(entity, oss);
+        exportEntity(entity, oss, unprocessed);
     }
 }
 
@@ -1513,6 +1519,18 @@ void ObjectDetection::exportDetections() {
 
     std::string str = oss.str();
     fprintf(f, str.c_str());
+    fclose(f);
+
+    filename = getStandardFilename("labelsP", ".txt");
+
+    f = fopen(filename.c_str(), "w");
+    std::ostringstream oss1;
+
+    exportEntities(m_curFrame.vehicles, oss1, true);
+    exportEntities(m_curFrame.peds, oss1, true);
+
+    std::string str1 = oss1.str();
+    fprintf(f, str1.c_str());
     fclose(f);
 
     exportCalib();
