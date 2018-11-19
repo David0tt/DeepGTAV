@@ -9,10 +9,16 @@
 #include <sstream>
 #include <algorithm>
 
+#include <boost/random.hpp>
+#include <boost/math/distributions/normal.hpp>
+
 #include "Functions.h"
 #include "Constants.h"
 
-LiDAR::LiDAR() : m_gDistribution(DEPTH_NOISE_MEAN, DEPTH_NOISE_STDDEV)
+boost::random::mt19937 s_rng;
+boost::random::normal_distribution<> s_nDist(DEPTH_NOISE_MEAN, DEPTH_NOISE_STDDEV);
+
+LiDAR::LiDAR()
 {
     m_pPointClouds = NULL;
     m_pRaycastPointCloud = NULL;
@@ -381,7 +387,7 @@ float LiDAR::getDepthFromScreenPos(float screenX, float screenY) {
 
     if (LIDAR_GAUSSIAN_NOISE) {
         float before = depth;
-        depth += m_gDistribution(m_generator);
+        depth += s_nDist(s_rng);
 
         /*std::ostringstream oss1;
         oss1 << "Depth before/after dist: " << before << ", " << depth;
