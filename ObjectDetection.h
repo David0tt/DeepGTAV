@@ -190,7 +190,7 @@ private:
     void outputUnusedStencilPixels();
 
     //Export functions
-    void exportEntity(ObjEntity e, std::ostringstream& oss);
-    void exportEntities(EntityMap entMap, std::ostringstream& oss);
+    void exportEntity(ObjEntity e, std::ostringstream& oss, bool unprocessed);
+    void exportEntities(EntityMap entMap, std::ostringstream& oss, bool unprocessed = false);
     void exportCalib();
 };
