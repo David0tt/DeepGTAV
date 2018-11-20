@@ -85,6 +85,7 @@ private:
     std::string m_unusedPixelsFilename;
     std::string m_calibFilename;
     std::string m_labelsFilename;
+    std::string m_labelsUnprocessedFilename;
 
     std::string m_veloFilenameU;
     std::string m_depthPCFilenameU;

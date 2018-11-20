@@ -953,6 +953,7 @@ void ObjectDetection::setFilenames() {
     m_unusedPixelsFilename = getStandardFilename("unusedPixelsImage", ".png");
     m_calibFilename = getStandardFilename("calib", ".txt");
     m_labelsFilename = getStandardFilename("labels", ".txt");
+    m_labelsUnprocessedFilename = getStandardFilename("labelsUnprocessed", ".txt");
 
     m_veloFilenameU = getStandardFilename("velodyneU", ".bin");
     m_depthPCFilenameU = getStandardFilename("depthPCU", ".bin");
@@ -1552,9 +1553,7 @@ void ObjectDetection::exportDetections() {
     fprintf(f, str.c_str());
     fclose(f);
 
-    filename = getStandardFilename("labelsP", ".txt");
-
-    f = fopen(filename.c_str(), "w");
+    f = fopen(m_labelsUnprocessedFilename.c_str(), "w");
     std::ostringstream oss1;
 
     exportEntities(m_curFrame.vehicles, oss1, true);
