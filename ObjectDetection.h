@@ -18,7 +18,6 @@ private:
     FrameObjectInfo m_curFrame;
     bool m_initialized = false;
     bool m_eve = false;
-    Vector3 m_eveForwardVector;
 
     Vehicle vehicle = NULL;
     Player player = NULL;

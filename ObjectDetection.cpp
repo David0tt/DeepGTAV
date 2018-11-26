@@ -202,7 +202,7 @@ void ObjectDetection::setPosition() {
     if (m_eve) {
         ENTITY::GET_ENTITY_MATRIX(vehicle, &vehicleForwardVector, &vehicleRightVector, &vehicleUpVector, &currentPos); //Blue or red pill
 
-        /*LOG(LL_ERR, "Eve Forward vector: ", m_eveForwardVector.x, " Y: ", m_eveForwardVector.y, " Z: ", m_eveForwardVector.z);
+        /*LOG(LL_ERR, "Eve Forward vector: ", m_camForwardVector.x, " Y: ", m_camForwardVector.y, " Z: ", m_camForwardVector.z);
         LOG(LL_ERR, "Forward vector: ", vehicleForwardVector.x, " Y: ", vehicleForwardVector.y, " Z: ", vehicleForwardVector.z);
         LOG(LL_ERR, "Right vector: ", vehicleRightVector.x, " Y: ", vehicleRightVector.y, " Z: ", vehicleRightVector.z);
         LOG(LL_ERR, "Up vector: ", vehicleUpVector.x, " Y: ", vehicleUpVector.y, " Z: ", vehicleUpVector.z);
@@ -213,13 +213,13 @@ void ObjectDetection::setPosition() {
         LOG(LL_ERR, "Theta: ", s_camParams.theta.x, " Y: ", s_camParams.theta.y, " Z: ", s_camParams.theta.z);*/
 
         float ogThetaZ = tan(-vehicleForwardVector.x / vehicleForwardVector.y) * 180 / PI;
-        float newThetaZ = tan(-m_eveForwardVector.x / m_eveForwardVector.y) * 180 / PI;
+        float newThetaZ = tan(-m_camForwardVector.x / m_camForwardVector.y) * 180 / PI;
         float ogThetaZ2 = atan2(-vehicleForwardVector.x, vehicleForwardVector.y) * 180 / PI;
-        float newThetaZ2 = atan2(-m_eveForwardVector.x, m_eveForwardVector.y) * 180 / PI;
+        float newThetaZ2 = atan2(-m_camForwardVector.x, m_camForwardVector.y) * 180 / PI;
         float ogThetaX2 = atan2(vehicleForwardVector.z, sqrt(pow(vehicleForwardVector.y, 2) + pow(vehicleForwardVector.x, 2))) * 180 / PI;
-        float newThetaX2 = atan2(m_eveForwardVector.z, sqrt(pow(m_eveForwardVector.y, 2) + pow(m_eveForwardVector.x, 2))) * 180 / PI;
+        float newThetaX2 = atan2(m_camForwardVector.z, sqrt(pow(m_camForwardVector.y, 2) + pow(m_camForwardVector.x, 2))) * 180 / PI;
         float ogThetaX = tan(vehicleForwardVector.z / sqrt(pow(vehicleForwardVector.y, 2) + pow(vehicleForwardVector.x, 2))) * 180 / PI;
-        float newThetaX = tan(m_eveForwardVector.z / sqrt(pow(m_eveForwardVector.y, 2) + pow(m_eveForwardVector.x, 2))) * 180 / PI;
+        float newThetaX = tan(m_camForwardVector.z / sqrt(pow(m_camForwardVector.y, 2) + pow(m_camForwardVector.x, 2))) * 180 / PI;
         //LOG(LL_ERR, "Theta og/new Z: ", ogThetaZ, ", ", newThetaZ, " og/new Z2: ", ogThetaZ2, ", ", newThetaZ2, " og, new X: ", ogThetaX, ", ", newThetaX, " og, new ThetaX2: ", ogThetaX2, ", ", newThetaX2);
 
         float ogThetaY2 = atan2(vehicleRightVector.z, sqrt(pow(vehicleRightVector.y, 2) + pow(vehicleRightVector.x, 2))) * 180 / PI;
@@ -231,6 +231,8 @@ void ObjectDetection::setPosition() {
         //LOG(LL_ERR, "Theta: ", s_camParams.theta.x, " Y: ", s_camParams.theta.y, " Z: ", s_camParams.theta.z);
     }
     else {
+        //If not eve, the camera and vehicle are aligned by pausing and flushing the buffers
+        ENTITY::GET_ENTITY_MATRIX(vehicle, &m_camForwardVector, &m_camRightVector, &m_camUpVector, &currentPos);
         ENTITY::GET_ENTITY_MATRIX(vehicle, &vehicleForwardVector, &vehicleRightVector, &vehicleUpVector, &currentPos); //Blue or red pill
     }
 
@@ -1352,9 +1354,6 @@ void ObjectDetection::setCamParams(float* forwardVec, float* rightVec, float* up
     ENTITY::GET_ENTITY_MATRIX(vehicle, &m_camForwardVector, &m_camRightVector, &m_camUpVector, &s_camParams.pos);
 
     if (forwardVec) {
-        m_eveForwardVector.x = forwardVec[0];
-        m_eveForwardVector.y = forwardVec[1];
-        m_eveForwardVector.z = forwardVec[2];
         m_camForwardVector.x = forwardVec[0];
         m_camForwardVector.y = forwardVec[1];
         m_camForwardVector.z = forwardVec[2];
@@ -1369,7 +1368,7 @@ void ObjectDetection::setCamParams(float* forwardVec, float* rightVec, float* up
         }
     }
     else {
-        ENTITY::GET_ENTITY_MATRIX(vehicle, &m_eveForwardVector, &m_camRightVector, &m_camUpVector, &currentPos);
+        ENTITY::GET_ENTITY_MATRIX(vehicle, &m_camForwardVector, &m_camRightVector, &m_camUpVector, &currentPos);
     }
 
     //These values change frame to frame
