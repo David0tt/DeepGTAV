@@ -1153,7 +1153,7 @@ Vector3 ObjectDetection::depthToCamCoords(float ndc, float screenX, float screen
         worldDepth = s_camParams.farClip;
     }
     float fcRatio = (s_camParams.farClip - s_camParams.nearClip) / s_camParams.farClip;
-    worldDepth = worldDepth;//TODO: Figure out depth values - Possibly divide by 1.065?
+    worldDepth = worldDepth / DEPTH_DIVISOR;//TODO: Figure out depth values - Possibly divide by 1.0065?
 
     /*float angle = tan(s_camParams.fov / 2. * (PI / 180.));
     float projData[16] = { 1/(GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false) * angle), 0, 0, 0,

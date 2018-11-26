@@ -360,7 +360,7 @@ float LiDAR::depthFromNDC(int x, int y, float screenX, float screenY) {
 
     //Actual depth in camera coordinates
     float depth = d2nc / ndc;
-    depth = depth;//TODO: Figure out depth values - Possibly divide by 1.065?
+    depth = depth / DEPTH_DIVISOR;//TODO: Figure out depth values - Possibly divide by 1.0065?
 
     return depth;
 }
