@@ -551,7 +551,7 @@ StringBuffer Scenario::generateMessage() {
 
     if (!m_pObjDet) {
         m_pObjDet.reset(new ObjectDetection());
-        m_pObjDet->initCollection(s_camParams.width, s_camParams.height, false);
+        m_pObjDet->initCollection(s_camParams.width, s_camParams.height, false, instance_index);
     }
     FrameObjectInfo fObjInfo = m_pObjDet->generateMessage(depth_map, m_stencilBuffer);
     log("After generate msg", true);
