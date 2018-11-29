@@ -109,6 +109,29 @@ void ObjectDetection::initCollection(UINT camWidth, UINT camHeight, bool exportE
     m_initialized = true;
 }
 
+//For updating all depth/stencil related variables when depth/stencil buffer are one frame after game functions
+FrameObjectInfo ObjectDetection::setDepthAndStencil(bool prevDepth, float* pDepth, uint8_t* pStencil) {
+    if (prevDepth) {
+        m_pDepth = pDepth;
+        m_pStencil = pStencil;
+    }
+    else {
+        setFilenames();
+    }
+
+    if (lidar_initialized) setDepthBuffer(prevDepth);
+    if (lidar_initialized) setStencilBuffer();
+    //TODO: Need to update 2D bboxes after receiving new depth image
+
+    if (prevDepth) {
+        if (lidar_initialized) printSegImage();
+        if (lidar_initialized) outputOcclusion();
+        if (lidar_initialized) outputUnusedStencilPixels();
+    }
+
+    return m_curFrame;
+}
+
 FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStencil) {
     //LOG(LL_ERR, "Depth data generate: ", pDepth[0], pDepth[1], pDepth[2], pDepth[3], pDepth[4], pDepth[5], pDepth[6], pDepth[7]);
     m_pDepth = pDepth;
@@ -120,14 +143,12 @@ FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStenci
     setIndex();
     setPosition();
     outputRealSpeed();
-    if (depthMap && lidar_initialized) setDepthBuffer();
-    if (depthMap && lidar_initialized) setStencilBuffer();
+    setDepthAndStencil();
     if (pointclouds && lidar_initialized) collectLiDAR();
     setVehiclesList();
     setPedsList();
     //setDirection();
     //setSteering();
-    log("After setting peds list");
     setSpeed();
     setYawRate();
     setTime();
@@ -182,7 +203,7 @@ void ObjectDetection::setPosition() {
     if (m_eve) {
         ENTITY::GET_ENTITY_MATRIX(vehicle, &vehicleForwardVector, &vehicleRightVector, &vehicleUpVector, &currentPos); //Blue or red pill
 
-        /*LOG(LL_ERR, "Eve Forward vector: ", m_eveForwardVector.x, " Y: ", m_eveForwardVector.y, " Z: ", m_eveForwardVector.z);
+        /*LOG(LL_ERR, "Eve Forward vector: ", m_camForwardVector.x, " Y: ", m_camForwardVector.y, " Z: ", m_camForwardVector.z);
         LOG(LL_ERR, "Forward vector: ", vehicleForwardVector.x, " Y: ", vehicleForwardVector.y, " Z: ", vehicleForwardVector.z);
         LOG(LL_ERR, "Right vector: ", vehicleRightVector.x, " Y: ", vehicleRightVector.y, " Z: ", vehicleRightVector.z);
         LOG(LL_ERR, "Up vector: ", vehicleUpVector.x, " Y: ", vehicleUpVector.y, " Z: ", vehicleUpVector.z);
@@ -193,13 +214,13 @@ void ObjectDetection::setPosition() {
         LOG(LL_ERR, "Theta: ", s_camParams.theta.x, " Y: ", s_camParams.theta.y, " Z: ", s_camParams.theta.z);*/
 
         float ogThetaZ = tan(-vehicleForwardVector.x / vehicleForwardVector.y) * 180 / PI;
-        float newThetaZ = tan(-m_eveForwardVector.x / m_eveForwardVector.y) * 180 / PI;
+        float newThetaZ = tan(-m_camForwardVector.x / m_camForwardVector.y) * 180 / PI;
         float ogThetaZ2 = atan2(-vehicleForwardVector.x, vehicleForwardVector.y) * 180 / PI;
-        float newThetaZ2 = atan2(-m_eveForwardVector.x, m_eveForwardVector.y) * 180 / PI;
+        float newThetaZ2 = atan2(-m_camForwardVector.x, m_camForwardVector.y) * 180 / PI;
         float ogThetaX2 = atan2(vehicleForwardVector.z, sqrt(pow(vehicleForwardVector.y, 2) + pow(vehicleForwardVector.x, 2))) * 180 / PI;
-        float newThetaX2 = atan2(m_eveForwardVector.z, sqrt(pow(m_eveForwardVector.y, 2) + pow(m_eveForwardVector.x, 2))) * 180 / PI;
+        float newThetaX2 = atan2(m_camForwardVector.z, sqrt(pow(m_camForwardVector.y, 2) + pow(m_camForwardVector.x, 2))) * 180 / PI;
         float ogThetaX = tan(vehicleForwardVector.z / sqrt(pow(vehicleForwardVector.y, 2) + pow(vehicleForwardVector.x, 2))) * 180 / PI;
-        float newThetaX = tan(m_eveForwardVector.z / sqrt(pow(m_eveForwardVector.y, 2) + pow(m_eveForwardVector.x, 2))) * 180 / PI;
+        float newThetaX = tan(m_camForwardVector.z / sqrt(pow(m_camForwardVector.y, 2) + pow(m_camForwardVector.x, 2))) * 180 / PI;
         //LOG(LL_ERR, "Theta og/new Z: ", ogThetaZ, ", ", newThetaZ, " og/new Z2: ", ogThetaZ2, ", ", newThetaZ2, " og, new X: ", ogThetaX, ", ", newThetaX, " og, new ThetaX2: ", ogThetaX2, ", ", newThetaX2);
 
         float ogThetaY2 = atan2(vehicleRightVector.z, sqrt(pow(vehicleRightVector.y, 2) + pow(vehicleRightVector.x, 2))) * 180 / PI;
@@ -211,6 +232,8 @@ void ObjectDetection::setPosition() {
         //LOG(LL_ERR, "Theta: ", s_camParams.theta.x, " Y: ", s_camParams.theta.y, " Z: ", s_camParams.theta.z);
     }
     else {
+        //If not eve, the camera and vehicle are aligned by pausing and flushing the buffers
+        ENTITY::GET_ENTITY_MATRIX(vehicle, &m_camForwardVector, &m_camRightVector, &m_camUpVector, &currentPos);
         ENTITY::GET_ENTITY_MATRIX(vehicle, &vehicleForwardVector, &vehicleRightVector, &vehicleUpVector, &currentPos); //Blue or red pill
     }
 
@@ -773,15 +796,15 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
                     entity.distance = distance;
 
                     //TODO This is way it should be when stencil buffer is working
-                    /*entity.bbox2d.left = bbox2dProcessed.left * s_camParams.width;
+                    entity.bbox2d.left = bbox2dProcessed.left * s_camParams.width;
                     entity.bbox2d.top = bbox2dProcessed.top * s_camParams.height;
                     entity.bbox2d.right = bbox2dProcessed.right * s_camParams.width;
-                    entity.bbox2d.bottom = bbox2dProcessed.bottom * s_camParams.height;*/
+                    entity.bbox2d.bottom = bbox2dProcessed.bottom * s_camParams.height;
                     
-                    entity.bbox2d.left = bbox2d.left * s_camParams.width;
-                    entity.bbox2d.top = bbox2d.top * s_camParams.height;
-                    entity.bbox2d.right = bbox2d.right * s_camParams.width;
-                    entity.bbox2d.bottom = bbox2d.bottom * s_camParams.height;
+                    entity.bbox2dUnprocessed.left = bbox2d.left * s_camParams.width;
+                    entity.bbox2dUnprocessed.top = bbox2d.top * s_camParams.height;
+                    entity.bbox2dUnprocessed.right = bbox2d.right * s_camParams.width;
+                    entity.bbox2dUnprocessed.bottom = bbox2d.bottom * s_camParams.height;
 
                     entity.pointsHit2D = pointsHit2D;
                     entity.truncation = truncation;
@@ -920,6 +943,25 @@ void ObjectDetection::setPedsList() {
     }
 }
 
+void ObjectDetection::setFilenames() {
+    m_imgFilename = getStandardFilename("images", ".png");
+    m_veloFilename = getStandardFilename("velodyne", ".bin");
+    m_depthFilename = getStandardFilename("depth", ".bin");
+    m_depthPCFilename = getStandardFilename("depthPC", ".bin");
+    m_depthImgFilename = getStandardFilename("depthImage", ".png");
+    m_stencilFilename = getStandardFilename("stencil", ".raw");
+    m_stencilImgFilename = getStandardFilename("stencilImage", ".png");
+    m_segImgFilename = getStandardFilename("segImage", ".png");
+    m_occImgFilename = getStandardFilename("occlusionImage", ".png");
+    m_unusedPixelsFilename = getStandardFilename("unusedPixelsImage", ".png");
+    m_calibFilename = getStandardFilename("calib", ".txt");
+    m_labelsFilename = getStandardFilename("labels", ".txt");
+    m_labelsUnprocessedFilename = getStandardFilename("labelsUnprocessed", ".txt");
+
+    m_veloFilenameU = getStandardFilename("velodyneU", ".bin");
+    m_depthPCFilenameU = getStandardFilename("depthPCU", ".bin");
+}
+
 void ObjectDetection::setupLiDAR() {
     if (pointclouds && !lidar_initialized) //flag if activate the LiDAR
     {
@@ -946,8 +988,7 @@ void ObjectDetection::collectLiDAR() {
     lidar.updateCurrentPosition(m_camForwardVector, m_camRightVector, m_camUpVector);
     float * pointCloud = lidar.GetPointClouds(pointCloudSize, &entitiesHit, lidar_param, m_pDepth);
 
-    std::string filename = getStandardFilename("velodyne", ".bin");
-    std::ofstream ofile(filename, std::ios::binary);
+    std::ofstream ofile(m_veloFilename, std::ios::binary);
     ofile.write((char*)pointCloud, FLOATS_PER_POINT * sizeof(float)*pointCloudSize);
     ofile.close();
 
@@ -966,7 +1007,7 @@ void ObjectDetection::collectLiDAR() {
         int size;
         float * points2D = lidar.Get2DPoints(size);
 
-        filename = getStandardFilename("2dpoints", ".bin");
+        std::string filename = getStandardFilename("2dpoints", ".bin");
         std::ofstream ofile2(filename, std::ios::binary);
         ofile2.write((char*)points2D, 2 * sizeof(float) * size);
         ofile2.close();
@@ -1000,13 +1041,10 @@ void ObjectDetection::collectLiDAR() {
 }
 
 void ObjectDetection::setStencilBuffer() {
-    std::string filename;
-    log("About to get stencil buffer");
-    filename = getStandardFilename("stencil", ".raw");
+    log("About to set stencil buffer");
     int size = s_camParams.width * s_camParams.height;
-    log("After getting stencil buffer");
 
-    std::ofstream ofile(filename, std::ios::binary);
+    std::ofstream ofile(m_stencilFilename, std::ios::binary);
     ofile.write((char*)m_pStencil, size);
     ofile.close();
 
@@ -1028,25 +1066,27 @@ void ObjectDetection::setStencilBuffer() {
     }
 
     log("Before saving stencil image");
-    std::string imFilename = getStandardFilename("stencilImage", ".png");
     std::vector<std::uint8_t> ImageBuffer;
     lodepng::encode(ImageBuffer, (unsigned char*)m_pStencilImage, s_camParams.width, s_camParams.height, LCT_GREY, 8);
-    lodepng::save_file(ImageBuffer, imFilename);
+    lodepng::save_file(ImageBuffer, m_stencilImgFilename);
 
     log("After saving stencil image");
 }
 
 void ObjectDetection::setDepthBuffer(bool prevDepth) {
     int size = s_camParams.width * s_camParams.height;
-    std::string filename;
-    std::string pcFilename;
-    log("About to get depth buffer");
-    filename = getStandardFilename("depth", ".raw");
-    pcFilename = getStandardFilename("depthPC", ".bin");
+    log("About to set depth buffer");
 
-    log("After getting depth buffer");
+    std::string depthPCFilename = m_depthPCFilename;
+    if (prevDepth) {
+        float * pointCloud = lidar.UpdatePointCloud(pointCloudSize, m_pDepth);
+        std::ofstream ofile1(m_veloFilenameU, std::ios::binary);
+        ofile1.write((char*)pointCloud, FLOATS_PER_POINT * sizeof(float) * pointCloudSize);
+        ofile1.close();
+        depthPCFilename = m_depthPCFilenameU;
+    }
 
-    std::ofstream ofile(filename, std::ios::binary);
+    std::ofstream ofile(m_depthFilename, std::ios::binary);
     ofile.write((char*)m_pDepth, size * sizeof(float));
     ofile.close();
 
@@ -1087,14 +1127,13 @@ void ObjectDetection::setDepthBuffer(bool prevDepth) {
         std::string str = oss.str();
         log(str);
 
-        std::ofstream ofile1(pcFilename, std::ios::binary);
+        std::ofstream ofile1(depthPCFilename, std::ios::binary);
         ofile1.write((char*)m_pDMPointClouds, FLOATS_PER_POINT * sizeof(float) * pointCount);
         ofile1.close();
 
-        std::string filename = getStandardFilename("depthImage", ".png");
         std::vector<std::uint8_t> ImageBuffer;
         lodepng::encode(ImageBuffer, (unsigned char*)m_pDMImage, s_camParams.width, s_camParams.height, LCT_GREY, 16);
-        lodepng::save_file(ImageBuffer, filename);
+        lodepng::save_file(ImageBuffer, m_depthImgFilename);
 
         log("After saving DM pointcloud");
     }
@@ -1115,7 +1154,7 @@ Vector3 ObjectDetection::depthToCamCoords(float ndc, float screenX, float screen
         worldDepth = s_camParams.farClip;
     }
     float fcRatio = (s_camParams.farClip - s_camParams.nearClip) / s_camParams.farClip;
-    worldDepth = worldDepth;//TODO: Figure out depth values - Possibly divide by 1.065?
+    worldDepth = worldDepth / DEPTH_DIVISOR;//TODO: Figure out depth values - Possibly divide by 1.0065?
 
     /*float angle = tan(s_camParams.fov / 2. * (PI / 180.));
     float projData[16] = { 1/(GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false) * angle), 0, 0, 0,
@@ -1316,9 +1355,6 @@ void ObjectDetection::setCamParams(float* forwardVec, float* rightVec, float* up
     ENTITY::GET_ENTITY_MATRIX(vehicle, &m_camForwardVector, &m_camRightVector, &m_camUpVector, &s_camParams.pos);
 
     if (forwardVec) {
-        m_eveForwardVector.x = forwardVec[0];
-        m_eveForwardVector.y = forwardVec[1];
-        m_eveForwardVector.z = forwardVec[2];
         m_camForwardVector.x = forwardVec[0];
         m_camForwardVector.y = forwardVec[1];
         m_camForwardVector.z = forwardVec[2];
@@ -1333,7 +1369,7 @@ void ObjectDetection::setCamParams(float* forwardVec, float* rightVec, float* up
         }
     }
     else {
-        ENTITY::GET_ENTITY_MATRIX(vehicle, &m_eveForwardVector, &m_camRightVector, &m_camUpVector, &currentPos);
+        ENTITY::GET_ENTITY_MATRIX(vehicle, &m_camForwardVector, &m_camRightVector, &m_camUpVector, &currentPos);
     }
 
     //These values change frame to frame
@@ -1402,16 +1438,15 @@ void ObjectDetection::printSegImage() {
     fprintf(f, "\n");
     fclose(f);
 
-    std::string imFilename = getStandardFilename("segImage", ".png");
     std::vector<std::uint8_t> ImageBuffer;
     lodepng::encode(ImageBuffer, (unsigned char*)m_pStencilSeg, s_camParams.width, s_camParams.height, LCT_RGB, 8);
-    lodepng::save_file(ImageBuffer, imFilename);
+    lodepng::save_file(ImageBuffer, m_segImgFilename);
     memset(m_pStencilSeg, 0, m_stencilSegLength);
 }
 
 void ObjectDetection::initVehicleLookup() {
     if (!m_vLookupInit) {
-        std::string translationFile = std::string(getenv("DEEPGTAV_DIR")) + "\\vehicle_labels.csv";
+        std::string translationFile = std::string(getenv("DEEPGTAV_DIR")) + "ObjectDet\\vehicle_labels.csv";
         std::ifstream inFile(translationFile);
         std::string line;
         while (std::getline(inFile, line)) // read whole line into line
@@ -1445,44 +1480,47 @@ void ObjectDetection::initVehicleLookup() {
 
 void ObjectDetection::outputOcclusion() {
     if (OUTPUT_OCCLUSION_IMAGE) {
-        std::string imFilename = getStandardFilename("occlusionImage", ".png");
         std::vector<std::uint8_t> ImageBuffer;
         lodepng::encode(ImageBuffer, (unsigned char*)m_pOcclusionImage, s_camParams.width, s_camParams.height, LCT_GREY, 8);
-        lodepng::save_file(ImageBuffer, imFilename);
+        lodepng::save_file(ImageBuffer, m_occImgFilename);
         memset(m_pOcclusionImage, 0, s_camParams.width * s_camParams.height);
     }
 }
 
 void ObjectDetection::outputUnusedStencilPixels() {
     if (OUTPUT_UNUSED_PIXELS_IMAGE) {
-        std::string imFilename = getStandardFilename("unusedPixelsImage", ".png");
         std::vector<std::uint8_t> ImageBuffer;
         lodepng::encode(ImageBuffer, (unsigned char*)m_pUnusedStencilImage, s_camParams.width, s_camParams.height, LCT_GREY, 8);
-        lodepng::save_file(ImageBuffer, imFilename);
+        lodepng::save_file(ImageBuffer, m_unusedPixelsFilename);
         memset(m_pUnusedStencilImage, 0, s_camParams.width * s_camParams.height);
     }
 }
 
-void ObjectDetection::exportEntity(ObjEntity e, std::ostringstream& oss) {
+void ObjectDetection::exportEntity(ObjEntity e, std::ostringstream& oss, bool unprocessed) {
+    BBox2D b = e.bbox2d;
+    if (unprocessed) b = e.bbox2dUnprocessed;
+
+    if ((int)b.left >= s_camParams.width || (int)b.right == 0 || (int)b.bottom == 0 || (int)b.top >= s_camParams.height) return;
+    if ((int)b.left == (int)b.right || (int)b.top == (int)b.bottom) return;
+
     oss << e.objType << " " << e.truncation << " " << e.occlusion << " " << e.alpha << " " <<
-        (int)e.bbox2d.left << " " << (int)e.bbox2d.top << " " <<
-        (int)e.bbox2d.right << " " << (int)e.bbox2d.bottom << " " <<
+        (int)b.left << " " << (int)b.top << " " <<
+        (int)b.right << " " << (int)b.bottom << " " <<
         e.height << " " << e.width << " " << e.length << " " <<
         e.location.x << " " << e.location.y << " " << e.location.z << " " <<
         e.rotation_y << "\n";
 }
 
-void ObjectDetection::exportEntities(EntityMap entMap, std::ostringstream& oss){
+void ObjectDetection::exportEntities(EntityMap entMap, std::ostringstream& oss, bool unprocessed) {
     for (EntityMap::const_iterator it = entMap.begin(); it != entMap.end(); ++it)
     {
         ObjEntity entity = it->second;
-        exportEntity(entity, oss);
+        exportEntity(entity, oss, unprocessed);
     }
 }
 
 void ObjectDetection::exportCalib() {
-    std::string filename = getStandardFilename("calib", ".txt");
-    FILE* f = fopen(filename.c_str(), "w");
+    FILE* f = fopen(m_calibFilename.c_str(), "w");
     std::ostringstream oss;
 
     for (int i = 0; i <= 3; ++i) {
@@ -1501,12 +1539,11 @@ void ObjectDetection::exportCalib() {
 }
 
 void ObjectDetection::exportDetections() {
-    std::string filename = getStandardFilename("labels", ".txt");
     if (collectTracking) {
         //TODO
     }
 
-    FILE* f = fopen(filename.c_str(), "w");
+    FILE* f = fopen(m_labelsFilename.c_str(), "w");
     std::ostringstream oss;
 
     exportEntities(m_curFrame.vehicles, oss);
@@ -1514,6 +1551,16 @@ void ObjectDetection::exportDetections() {
 
     std::string str = oss.str();
     fprintf(f, str.c_str());
+    fclose(f);
+
+    f = fopen(m_labelsUnprocessedFilename.c_str(), "w");
+    std::ostringstream oss1;
+
+    exportEntities(m_curFrame.vehicles, oss1, true);
+    exportEntities(m_curFrame.peds, oss1, true);
+
+    std::string str1 = oss1.str();
+    fprintf(f, str1.c_str());
     fclose(f);
 
     exportCalib();
@@ -1524,7 +1571,5 @@ void ObjectDetection::exportImage(BYTE* data) {
     cv::Mat tempMat(cv::Size(s_camParams.width, s_camParams.height), CV_8UC4, data);
     cv::Mat output;
     cv::cvtColor(tempMat, output, CV_BGRA2BGR);
-
-    std::string filename = getStandardFilename("images", ".png");
-    cv::imwrite(filename, output);
+    cv::imwrite(m_imgFilename, output);
 }

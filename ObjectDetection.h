@@ -18,7 +18,6 @@ private:
     FrameObjectInfo m_curFrame;
     bool m_initialized = false;
     bool m_eve = false;
-    Vector3 m_eveForwardVector;
 
     Vehicle vehicle = NULL;
     Player player = NULL;
@@ -73,6 +72,23 @@ private:
     uint8_t* m_pOcclusionImage = NULL;
     uint8_t* m_pUnusedStencilImage = NULL;
 
+    std::string m_imgFilename;
+    std::string m_veloFilename;
+    std::string m_depthFilename;
+    std::string m_depthPCFilename;
+    std::string m_depthImgFilename;
+    std::string m_stencilFilename;
+    std::string m_stencilImgFilename;
+    std::string m_segImgFilename;
+    std::string m_occImgFilename;
+    std::string m_unusedPixelsFilename;
+    std::string m_calibFilename;
+    std::string m_labelsFilename;
+    std::string m_labelsUnprocessedFilename;
+
+    std::string m_veloFilenameU;
+    std::string m_depthPCFilenameU;
+
     bool vehicles_created = false;
     std::vector<VehicleToCreate> vehiclesToCreate;
     std::vector<PedToCreate> pedsToCreate;
@@ -105,6 +121,7 @@ public:
     void initCollection(UINT camWidth, UINT camHeight, bool exportEVE = true, int startIndex = 0);
     void setCamParams(float* forwardVec = NULL, float* rightVec = NULL, float* upVec = NULL);
 
+    FrameObjectInfo setDepthAndStencil(bool prevDepth = false, float* pDepth = NULL, uint8_t* pStencil = NULL);
     //Depth buffer fn/var needs to be accessed by server
     void setDepthBuffer(bool prevDepth = false);
     bool m_prevDepth = false;
@@ -156,6 +173,7 @@ private:
     std::string getStandardFilename(std::string subDir, std::string extension);
     void outputRealSpeed();
     void setStencilBuffer();
+    void setFilenames();
 
     BBox2D BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector, bool &success, float &truncation);
     BBox2D processBBox2D(BBox2D bbox, uint8_t stencilType, Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector,
@@ -172,7 +190,7 @@ private:
     void outputUnusedStencilPixels();
 
     //Export functions
-    void exportEntity(ObjEntity e, std::ostringstream& oss);
-    void exportEntities(EntityMap entMap, std::ostringstream& oss);
+    void exportEntity(ObjEntity e, std::ostringstream& oss, bool unprocessed);
+    void exportEntities(EntityMap entMap, std::ostringstream& oss, bool unprocessed = false);
     void exportCalib();
 };
