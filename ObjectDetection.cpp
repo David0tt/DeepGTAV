@@ -38,11 +38,12 @@ const int NPC_STENCIL_TYPE = 1;
 const int SKY_STENCIL_TYPE = 7;
 const int PEDESTRIAN_CLASS_ID = 10;
 
-void ObjectDetection::initCollection(UINT camWidth, UINT camHeight, bool exportEVE) {
+void ObjectDetection::initCollection(UINT camWidth, UINT camHeight, bool exportEVE, int startIndex) {
     if (m_initialized) {
         return;
     }
     m_eve = exportEVE;
+    instance_index = startIndex;
 
     ped = PLAYER::PLAYER_PED_ID();
     vehicle = PED::GET_VEHICLE_PED_IS_IN(ped, false);

@@ -102,7 +102,7 @@ private:
     std::unordered_map<Vehicle, std::vector<Ped>> m_pedsInVehicles;
 
 public:
-    void initCollection(UINT camWidth, UINT camHeight, bool exportEVE = true);
+    void initCollection(UINT camWidth, UINT camHeight, bool exportEVE = true, int startIndex = 0);
     void setCamParams(float* forwardVec = NULL, float* rightVec = NULL, float* upVec = NULL);
 
     //Depth buffer fn/var needs to be accessed by server
