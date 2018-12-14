@@ -35,6 +35,9 @@ struct ObjEntity {
     //These are in world coords right now (probably needs to be changed)
     float pitch;
     float roll;
+
+    bool isPedInV = false;
+    int vPedIsIn;
 };
 
 typedef std::map<int, ObjEntity> EntityMap;
