@@ -1690,23 +1690,21 @@ void ObjectDetection::setGroundPlanePoints() {
     std::ostringstream oss;
 
     for (auto point : points) {
-        Vector3 worldpoint = convertCoordinateSystem(point, yVectorCam, xVectorCam, zVectorCam);
+        Vector3 worldpoint = convertCoordinateSystem(point, m_camRightVector, m_camForwardVector, zVectorCam);
 
         //Transition from relative to world
         worldpoint.x += s_camParams.pos.x;
         worldpoint.y += s_camParams.pos.y;
         worldpoint.z += s_camParams.pos.z + 2;
+
+        //Obtain groundz at world position
         float groundZ;
-        GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, &(groundZ), 0);
+        GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(worldpoint.x, worldpoint.y, worldpoint.z, &(groundZ), 0);
         worldpoint.z = groundZ;
+        float relZ = groundZ - s_camParams.pos.z;
 
-        worldpoint.x -= s_camParams.pos.x;
-        worldpoint.y -= s_camParams.pos.y;
-        worldpoint.z -= s_camParams.pos.z;
-
-        Vector3 relPoint = convertCoordinateSystem(worldpoint, m_camForwardVector, m_camRightVector, m_camUpVector);
-
-        oss << worldpoint.y << ", " << -worldpoint.x << ", " << worldpoint.z << "\n";
+        //Output kitti velodyne coords relative position with ground z
+        oss << point.x << ", " << -point.y << ", " << relZ << "\n";
     }
     std::string str = oss.str();
     fprintf(f, str.c_str());
