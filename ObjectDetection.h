@@ -193,4 +193,7 @@ private:
     void exportEntity(ObjEntity e, std::ostringstream& oss, bool unprocessed);
     void exportEntities(EntityMap entMap, std::ostringstream& oss, bool unprocessed = false);
     void exportCalib();
+
+    //Ground plane points
+    void setGroundPlanePoints();
 };

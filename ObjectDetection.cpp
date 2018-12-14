@@ -162,6 +162,8 @@ FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStenci
     if (depthMap && lidar_initialized) outputUnusedStencilPixels();
     log("After output unused stencil");
 
+    setGroundPlanePoints();
+
     return m_curFrame;
 }
 
@@ -1651,4 +1653,62 @@ void ObjectDetection::exportImage(BYTE* data) {
     cv::Mat output;
     cv::cvtColor(tempMat, output, CV_BGRA2BGR);
     cv::imwrite(m_imgFilename, output);
+}
+
+static Vector3 createVec3(float x, float y, float z) {
+    Vector3 vec;
+    vec.x = x;
+    vec.y = y;
+    vec.z = z;
+    return vec;
+}
+
+void ObjectDetection::setGroundPlanePoints() {
+    //Vector of directions to test ground plane
+    //Forward, right (up should always be 0 since it will be tested with get_ground_z
+    std::vector<Vector3> points;
+    points.push_back(createVec3(2.0, -2.f, 0.f));
+    points.push_back(createVec3(2.0, 2.f, 0.f));
+    points.push_back(createVec3(15.0, 0.f, 0.f));
+    points.push_back(createVec3(15.0, 3.f, 0.f));
+    points.push_back(createVec3(15.0, -3.f, 0.f));
+    points.push_back(createVec3(25.0, -2, 0));
+    points.push_back(createVec3(25.0, 2, 0));
+
+    //World coordinate vectors
+    Vector3 worldX; worldX.x = 1; worldX.y = 0; worldX.z = 0;
+    Vector3 worldY; worldY.x = 0; worldY.y = 1; worldY.z = 0;
+    Vector3 worldZ; worldZ.x = 0; worldZ.y = 0; worldZ.z = 1;
+    Vector3 xVectorCam = convertCoordinateSystem(worldX, m_camForwardVector, m_camRightVector, m_camUpVector);
+    Vector3 yVectorCam = convertCoordinateSystem(worldY, m_camForwardVector, m_camRightVector, m_camUpVector);
+    Vector3 zVectorCam = convertCoordinateSystem(worldZ, m_camForwardVector, m_camRightVector, m_camUpVector);
+
+    //World coordinates have: y north, x east
+    std::string filename = getStandardFilename("ground_points", ".txt");
+
+    FILE* f = fopen(filename.c_str(), "w");
+    std::ostringstream oss;
+
+    for (auto point : points) {
+        Vector3 worldpoint = convertCoordinateSystem(point, yVectorCam, xVectorCam, zVectorCam);
+
+        //Transition from relative to world
+        worldpoint.x += s_camParams.pos.x;
+        worldpoint.y += s_camParams.pos.y;
+        worldpoint.z += s_camParams.pos.z + 2;
+        float groundZ;
+        GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, &(groundZ), 0);
+        worldpoint.z = groundZ;
+
+        worldpoint.x -= s_camParams.pos.x;
+        worldpoint.y -= s_camParams.pos.y;
+        worldpoint.z -= s_camParams.pos.z;
+
+        Vector3 relPoint = convertCoordinateSystem(worldpoint, m_camForwardVector, m_camRightVector, m_camUpVector);
+
+        oss << worldpoint.y << ", " << -worldpoint.x << ", " << worldpoint.z << "\n";
+    }
+    std::string str = oss.str();
+    fprintf(f, str.c_str());
+    fclose(f);
 }

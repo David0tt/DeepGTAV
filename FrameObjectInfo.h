@@ -62,4 +62,6 @@ struct FrameObjectInfo
     //It will enable quicker checking to see if entity is already discovered
     EntityMap vehicles;
     EntityMap peds;
+
+    std::vector<Vector3> groundPlanePoints;
 };
