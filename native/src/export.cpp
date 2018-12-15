@@ -43,7 +43,7 @@ static time_point<high_resolution_clock> last_depth_time;
 static time_point<high_resolution_clock> last_color_time;
 static time_point<high_resolution_clock> last_constant_time;
 
-static char* logDir = getenv("GTA_LOG_DIR");
+static char* logDir = getenv("GTAV_LOG_FILE");
 static bool LOGGING = false;
 static void log(std::string str) {
     if (LOGGING && logDir != NULL) {
