@@ -164,7 +164,7 @@ private:
     void setIndex();
     void calcCameraIntrinsics();
     void setFocalLength();
-    bool getEntityVector(ObjEntity &entity, int entityID, Hash model, int classid, std::string type, std::string modelString);
+    bool getEntityVector(ObjEntity &entity, int entityID, Hash model, int classid, std::string type, std::string modelString, bool isPedInV, Vehicle vPedIsIn);
     void setPosition();
     float observationAngle(Vector3 position);
     void drawVectorFromPosition(Vector3 vector, int blue, int green);
@@ -177,7 +177,7 @@ private:
 
     BBox2D BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector, bool &success, float &truncation);
     BBox2D processBBox2D(BBox2D bbox, uint8_t stencilType, Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector,
-        Vector3 xVector, Vector3 yVector, Vector3 zVector, int entityID, int &pointsHit2D, float &occlusion);
+        Vector3 xVector, Vector3 yVector, Vector3 zVector, int entityID, int &pointsHit2D, float &occlusion, bool pedOnBike);
     bool in3DBox(Vector3 point, Vector3 objPos, Vector3 dim, Vector3 yVector, Vector3 xVector, Vector3 zVector);
     bool checkDirection(Vector3 unit, Vector3 point, Vector3 min, Vector3 max);
     void printSegImage();
@@ -193,4 +193,7 @@ private:
     void exportEntity(ObjEntity e, std::ostringstream& oss, bool unprocessed);
     void exportEntities(EntityMap entMap, std::ostringstream& oss, bool unprocessed = false);
     void exportCalib();
+
+    //Ground plane points
+    void setGroundPlanePoints();
 };

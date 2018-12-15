@@ -145,8 +145,9 @@ FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStenci
     outputRealSpeed();
     setDepthAndStencil();
     if (pointclouds && lidar_initialized) collectLiDAR();
-    setVehiclesList();
+    //Need to set peds list first for integrating peds on bikes
     setPedsList();
+    setVehiclesList();
     //setDirection();
     //setSteering();
     setSpeed();
@@ -160,6 +161,8 @@ FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStenci
     log("After output occlusion");
     if (depthMap && lidar_initialized) outputUnusedStencilPixels();
     log("After output unused stencil");
+
+    setGroundPlanePoints();
 
     return m_curFrame;
 }
@@ -483,7 +486,7 @@ bool ObjectDetection::isPointOccluding(Vector3 worldPos, Vector3 position) {
 
 //Position is world position of object center
 BBox2D ObjectDetection::processBBox2D(BBox2D bbox, uint8_t stencilType, Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector,
-    Vector3 xVector, Vector3 yVector, Vector3 zVector, int entityID, int &pointsHit2D, float &occlusion) {
+    Vector3 xVector, Vector3 yVector, Vector3 zVector, int entityID, int &pointsHit2D, float &occlusion, bool pedOnBike) {
     //position is given at bottom of bounding box (as per kitti)
     position.z += dim.z;
 
@@ -521,7 +524,7 @@ BBox2D ObjectDetection::processBBox2D(BBox2D bbox, uint8_t stencilType, Vector3 
             worldPos.y += s_camParams.pos.y;
             worldPos.z += s_camParams.pos.z;
 
-            if (stencilType == stencilVal) {
+            if (stencilType == stencilVal || (pedOnBike && stencilVal == NPC_STENCIL_TYPE)) {
                 ++stencilPointCount;
 
                 if (in3DBox(worldPos, position, dim, yVector, xVector, zVector)) {
@@ -591,7 +594,23 @@ BBox2D ObjectDetection::processBBox2D(BBox2D bbox, uint8_t stencilType, Vector3 
     return processed;
 }
 
-bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash model, int classid, std::string type, std::string modelString) {
+//dim is in full width/height/length
+static void updatePosition(float &origPos, float pedPos, float &origDim, float pedDim) {
+    float diffPos = pedPos + pedDim / 2 - (origPos + origDim / 2);
+    float diffNeg = pedPos - pedDim / 2 - (origPos - origDim / 2);
+    if (diffPos > 0) { //If ped dim is outside original bike dimension
+        origPos += diffPos / 2;
+        origDim += diffPos;
+    }
+    if (diffNeg < 0) { //If ped dim is outside original bike dimension
+        //If it is negative we need to add the position (since it is relative)
+        //but subtract the dimension (really make it bigger since diffNeg < 0 if it is bigger)
+        origPos += diffNeg / 2;
+        origDim -= diffNeg;
+    }
+}
+
+bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash model, int classid, std::string type, std::string modelString, bool isPedInV, int vPedIsIn) {
     bool success = false;
 
     Vector3 FUR; //Front Upper Right
@@ -741,6 +760,73 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
                     float beta_kitti = atan2(kittiPos.z, kittiPos.x);
                     float alpha_kitti = rot_y + beta_kitti - PI / 2;
 
+                    log("After processBBox2D");
+                    bool foundPedOnBike = false;
+                    if (PROCESS_PEDS_ON_BIKES) {
+                        if (m_pedsInVehicles.find(entityID) != m_pedsInVehicles.end()) {
+                            std::vector<Ped> pedsOnV = m_pedsInVehicles[entityID];
+
+                            for (auto ped : pedsOnV) {
+                                std::ostringstream oss;
+                                oss << "Found ped on bike at index: " << instance_index;
+                                std::string str = oss.str();
+                                log(str, true);
+                                log("Found ped on bike", true);
+                                foundPedOnBike = true;
+                                //Extend 3D/2D boxes with peds, change id in segmentation image
+
+                                if (m_curFrame.peds.find(ped) != m_curFrame.peds.end()) {
+                                    ObjEntity pedO = m_curFrame.peds[ped];
+
+                                    float horizDist = sqrt(pow(pedO.location.x - kittiPos.x, 2) + pow(pedO.location.z - kittiPos.z, 2));
+                                    float vertDist = pedO.location.y - kittiPos.y;
+                                    if (horizDist < 0.5 && vertDist <= 2.0) {
+                                        foundPedOnBike = true;
+                                        m_curFrame.peds[ped].isPedInV = true;
+                                        m_curFrame.peds[ped].vPedIsIn = entityID;
+
+                                        //This method assume the pedestrian x/z coordinates are the same as the vehicles (only update relative height position)
+                                        kittiWidth = kittiWidth > pedO.width ? kittiWidth : pedO.width;
+                                        kittiLength = kittiLength > pedO.length ? kittiLength : pedO.length;
+                                        updatePosition(kittiPos.y, pedO.location.y, kittiHeight, pedO.height);
+
+                                        //This method would need to be changed to accommodate object coordinate system vs kitti coordinate system
+                                        /*updatePosition(kittiPos.x, pedO.location.x, kittiWidth, pedO.width);
+                                        updatePosition(kittiPos.y, pedO.location.y, kittiWidth, pedO.width);
+                                        updatePosition(kittiPos.z, pedO.location.z, kittiWidth, pedO.width);*/
+                                    }
+                                }
+                            }
+                        }
+                        else if (TESTING_PEDS_ON_BIKES && classid == 1 || classid == 2 || classid == 3) { //bicycle, bike, or quadbike
+                            for (auto ped : m_curFrame.peds) {
+                                ObjEntity pedO = ped.second;
+                                float horizDist = sqrt(pow(pedO.location.x - kittiPos.x, 2) + pow(pedO.location.z - kittiPos.z, 2));
+                                float vertDist = pedO.location.y - kittiPos.y;
+                                if (horizDist < 0.5 && vertDist <= 2.0) {
+                                    m_curFrame.peds[ped.first].isPedInV = true;
+                                    m_curFrame.peds[ped.first].vPedIsIn = entityID;
+                                    foundPedOnBike = true;
+                                    std::ostringstream oss;
+                                    oss << "Alternate Found ped on bike at index: " << instance_index;
+                                    std::string str = oss.str();
+                                    log(str, true);
+                                    
+                                    //This method assume the pedestrian x/z coordinates are the same as the vehicles (only update relative height position)
+                                    kittiWidth = kittiWidth > pedO.width ? kittiWidth : pedO.width;
+                                    kittiLength = kittiLength > pedO.length ? kittiLength : pedO.length;
+                                    updatePosition(kittiPos.y, pedO.location.y, kittiHeight, pedO.height);
+
+                                    //This method would need to be changed to accommodate object coordinate system vs kitti coordinate system
+                                    /*updatePosition(kittiPos.x, pedO.location.x, kittiWidth, pedO.width);
+                                    updatePosition(kittiPos.y, pedO.location.y, kittiWidth, pedO.width);
+                                    updatePosition(kittiPos.z, pedO.location.z, kittiWidth, pedO.width);*/
+                                }
+                            }
+                        }
+                    }
+                    log("After pedsonbikes");
+
                     //Attempts to find bbox on screen, if entire 2D box is offscreen returns false
                     float truncation = 0;
                     BBox2D bbox2d = BBox2DFrom3DObject(position, dim, forwardVector, rightVector, upVector, success, truncation);
@@ -754,20 +840,7 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
                     if (classid == PEDESTRIAN_CLASS_ID) stencilType = NPC_STENCIL_TYPE; //For NPCs
                     int pointsHit2D = 0;
                     float occlusion = 0;
-                    BBox2D bbox2dProcessed = processBBox2D(bbox2d, stencilType, position, dim, forwardVector, rightVector, upVector, xVector, yVector, zVector, entityID, pointsHit2D, occlusion);
-
-                    log("After processBBox2D");
-                    if (PROCESS_PEDS_ON_BIKES) {
-                        if (m_pedsInVehicles.find(entityID) != m_pedsInVehicles.end()) {
-                            std::vector<Ped> pedsOnV = m_pedsInVehicles[entityID];
-
-                            for (auto ped : pedsOnV) {
-                                log("Found ped on bike");
-                                //Extend 3D/2D boxes with peds, change id in segmentation image
-                            }
-                        }
-                    }
-                    log("After pedsonbikes");
+                    BBox2D bbox2dProcessed = processBBox2D(bbox2d, stencilType, position, dim, forwardVector, rightVector, upVector, xVector, yVector, zVector, entityID, pointsHit2D, occlusion, foundPedOnBike);
                     //Do not allow entity through if it has no points hit on the 2D screen
                     /*if (pointsHit2D == 0) {
                         return false;
@@ -819,6 +892,9 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
                         trackFirstFrame.insert(std::pair<int, int>(entityID, instance_index));
                     }
                     entity.trackFirstFrame = trackFirstFrame[entityID];
+
+                    entity.isPedInV = isPedInV;
+                    entity.vPedIsIn = vPedIsIn;
                     log("End of getEntityVector");
                 }
             }
@@ -883,7 +959,7 @@ void ObjectDetection::setVehiclesList() {
         }
 
         ObjEntity objEntity;
-        bool success = getEntityVector(objEntity, vehicles[i], model, classid, type, modelString);
+        bool success = getEntityVector(objEntity, vehicles[i], model, classid, type, modelString, false, -1);
         if (success) {
             if (m_curFrame.vehicles.find(objEntity.entityID) == m_curFrame.vehicles.end()) {
                 m_curFrame.vehicles.insert(std::pair<int, ObjEntity>(objEntity.entityID, objEntity));
@@ -903,23 +979,26 @@ void ObjectDetection::setPedsList() {
 
     int count = worldGetAllPeds(peds, ARR_SIZE);
     for (int i = 0; i < count; i++) {
+        bool isPedInV = false;
+        Vehicle vPedIsIn = -1;
         if (PED::IS_PED_IN_ANY_VEHICLE(peds[i], TRUE)) {
-            Vehicle vehPedIsIn = PED::GET_VEHICLE_PED_IS_IN(peds[i], FALSE);
-            Hash vModel = ENTITY::GET_ENTITY_MODEL(vehPedIsIn);
+            vPedIsIn = PED::GET_VEHICLE_PED_IS_IN(peds[i], FALSE);
+            Hash vModel = ENTITY::GET_ENTITY_MODEL(vPedIsIn);
 
             //Update bounding boxes/stencils for all bike type vehicles
             if (VEHICLE::IS_THIS_MODEL_A_BIKE(vModel) ||
                 VEHICLE::IS_THIS_MODEL_A_BICYCLE(vModel) ||
                 VEHICLE::IS_THIS_MODEL_A_QUADBIKE(vModel)) {
 
-                if (m_pedsInVehicles.find(vehPedIsIn) != m_pedsInVehicles.end()) {
-                    m_pedsInVehicles[vehPedIsIn].push_back(peds[i]);
+                if (m_pedsInVehicles.find(vPedIsIn) != m_pedsInVehicles.end()) {
+                    log("Putting ped in a vehicle in list.", true);
+                    m_pedsInVehicles[vPedIsIn].push_back(peds[i]);
                 }
                 else {
-                    m_pedsInVehicles.insert(std::pair<Vehicle, std::vector<Ped>>(vehPedIsIn, { peds[i] }));
+                    m_pedsInVehicles.insert(std::pair<Vehicle, std::vector<Ped>>(vPedIsIn, { peds[i] }));
                 }
             }
-            continue; //Don't add peds in vehicles as unique objects!
+            isPedInV = true; //Don't add peds in vehicles as unique objects!
         }
 
         std::string type = "Pedestrian";
@@ -933,7 +1012,7 @@ void ObjectDetection::setPedsList() {
             model = ENTITY::GET_ENTITY_MODEL(peds[i]);
 
             ObjEntity objEntity;
-            bool success = getEntityVector(objEntity, peds[i], model, classid, type, type);
+            bool success = getEntityVector(objEntity, peds[i], model, classid, type, type, isPedInV, vPedIsIn);
             if (success) {
                 if (m_curFrame.peds.find(objEntity.entityID) == m_curFrame.peds.end()) {
                     m_curFrame.peds.insert(std::pair<int, ObjEntity>(objEntity.entityID, objEntity));
@@ -1517,7 +1596,9 @@ void ObjectDetection::exportEntities(EntityMap entMap, std::ostringstream& oss, 
     for (EntityMap::const_iterator it = entMap.begin(); it != entMap.end(); ++it)
     {
         ObjEntity entity = it->second;
-        exportEntity(entity, oss, unprocessed);
+        if (!entity.isPedInV) {
+            exportEntity(entity, oss, unprocessed);
+        }
     }
 }
 
@@ -1574,4 +1655,60 @@ void ObjectDetection::exportImage(BYTE* data) {
     cv::Mat output;
     cv::cvtColor(tempMat, output, CV_BGRA2BGR);
     cv::imwrite(m_imgFilename, output);
+}
+
+static Vector3 createVec3(float x, float y, float z) {
+    Vector3 vec;
+    vec.x = x;
+    vec.y = y;
+    vec.z = z;
+    return vec;
+}
+
+void ObjectDetection::setGroundPlanePoints() {
+    //Vector of directions to test ground plane
+    //Forward, right (up should always be 0 since it will be tested with get_ground_z
+    std::vector<Vector3> points;
+    points.push_back(createVec3(2.0, -2.f, 0.f));
+    points.push_back(createVec3(2.0, 2.f, 0.f));
+    points.push_back(createVec3(15.0, 0.f, 0.f));
+    points.push_back(createVec3(15.0, 3.f, 0.f));
+    points.push_back(createVec3(15.0, -3.f, 0.f));
+    points.push_back(createVec3(25.0, -2, 0));
+    points.push_back(createVec3(25.0, 2, 0));
+
+    //World coordinate vectors
+    Vector3 worldX; worldX.x = 1; worldX.y = 0; worldX.z = 0;
+    Vector3 worldY; worldY.x = 0; worldY.y = 1; worldY.z = 0;
+    Vector3 worldZ; worldZ.x = 0; worldZ.y = 0; worldZ.z = 1;
+    Vector3 xVectorCam = convertCoordinateSystem(worldX, m_camForwardVector, m_camRightVector, m_camUpVector);
+    Vector3 yVectorCam = convertCoordinateSystem(worldY, m_camForwardVector, m_camRightVector, m_camUpVector);
+    Vector3 zVectorCam = convertCoordinateSystem(worldZ, m_camForwardVector, m_camRightVector, m_camUpVector);
+
+    //World coordinates have: y north, x east
+    std::string filename = getStandardFilename("ground_points", ".txt");
+
+    FILE* f = fopen(filename.c_str(), "w");
+    std::ostringstream oss;
+
+    for (auto point : points) {
+        Vector3 worldpoint = convertCoordinateSystem(point, m_camRightVector, m_camForwardVector, zVectorCam);
+
+        //Transition from relative to world
+        worldpoint.x += s_camParams.pos.x;
+        worldpoint.y += s_camParams.pos.y;
+        worldpoint.z += s_camParams.pos.z + 2;
+
+        //Obtain groundz at world position
+        float groundZ;
+        GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(worldpoint.x, worldpoint.y, worldpoint.z, &(groundZ), 0);
+        worldpoint.z = groundZ;
+        float relZ = groundZ - s_camParams.pos.z;
+
+        //Output kitti velodyne coords relative position with ground z
+        oss << point.x << ", " << -point.y << ", " << relZ << "\n";
+    }
+    std::string str = oss.str();
+    fprintf(f, str.c_str());
+    fclose(f);
 }

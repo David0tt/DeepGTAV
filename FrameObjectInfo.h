@@ -35,6 +35,9 @@ struct ObjEntity {
     //These are in world coords right now (probably needs to be changed)
     float pitch;
     float roll;
+
+    bool isPedInV = false;
+    int vPedIsIn;
 };
 
 typedef std::map<int, ObjEntity> EntityMap;
@@ -59,4 +62,6 @@ struct FrameObjectInfo
     //It will enable quicker checking to see if entity is already discovered
     EntityMap vehicles;
     EntityMap peds;
+
+    std::vector<Vector3> groundPlanePoints;
 };

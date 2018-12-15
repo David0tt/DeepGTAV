@@ -49,6 +49,7 @@ const double DEPTH_NOISE_MEAN = 0.0;
 
 //Extends bboxes/segmentation for bike type vehicles with rider (ped) information
 const bool PROCESS_PEDS_ON_BIKES = true;
+const bool TESTING_PEDS_ON_BIKES = true;
 
 //Set to 1 if desire no depth adjustment
 const float DEPTH_DIVISOR = 1.0065;
