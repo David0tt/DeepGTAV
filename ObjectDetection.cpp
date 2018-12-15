@@ -1023,7 +1023,7 @@ void ObjectDetection::setPedsList() {
 }
 
 void ObjectDetection::setFilenames() {
-    m_imgFilename = getStandardFilename("images", ".png");
+    m_imgFilename = getStandardFilename("image_2", ".png");
     m_veloFilename = getStandardFilename("velodyne", ".bin");
     m_depthFilename = getStandardFilename("depth", ".bin");
     m_depthPCFilename = getStandardFilename("depthPC", ".bin");
@@ -1034,7 +1034,7 @@ void ObjectDetection::setFilenames() {
     m_occImgFilename = getStandardFilename("occlusionImage", ".png");
     m_unusedPixelsFilename = getStandardFilename("unusedPixelsImage", ".png");
     m_calibFilename = getStandardFilename("calib", ".txt");
-    m_labelsFilename = getStandardFilename("labels", ".txt");
+    m_labelsFilename = getStandardFilename("label_2", ".txt");
     m_labelsUnprocessedFilename = getStandardFilename("labelsUnprocessed", ".txt");
 
     m_veloFilenameU = getStandardFilename("velodyneU", ".bin");
