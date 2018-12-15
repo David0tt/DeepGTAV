@@ -1446,9 +1446,11 @@ void ObjectDetection::printSegImage() {
 
 void ObjectDetection::initVehicleLookup() {
     if (!m_vLookupInit) {
-        std::string translationFile = std::string(getenv("DEEPGTAV_DIR")) + "ObjectDet\\vehicle_labels.csv";
+        std::string translationFile = std::string(getenv("DEEPGTAV_DIR")) + "\\ObjectDet\\vehicle_labels.csv";
         std::ifstream inFile(translationFile);
         std::string line;
+        log("Translation file:", true);
+        log(translationFile, true);
         while (std::getline(inFile, line)) // read whole line into line
         {
             std::istringstream iss(line); // string stream
