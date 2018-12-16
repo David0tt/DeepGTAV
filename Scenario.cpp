@@ -618,7 +618,7 @@ void Scenario::createVehicle(const char* model, float relativeForward, float rel
     }
     VEHICLE::SET_VEHICLE_ON_GROUND_PROPERLY(tempV);
 
-    if (VEHICLE::IS_THIS_MODEL_A_BICYCLE(vehicleHash)) {
+    if (VEHICLE::IS_THIS_MODEL_A_BICYCLE(vehicleHash) || VEHICLE::IS_THIS_MODEL_A_BIKE(vehicleHash)) {
         log("Trying to set ped on bike", true);
         Hash hash = 0x505603B9;// GAMEPLAY::GET_HASH_KEY(const_cast<char*>(model));
         STREAMING::REQUEST_MODEL(hash);
@@ -628,7 +628,9 @@ void Scenario::createVehicle(const char* model, float relativeForward, float rel
             bike_num++;
             AI::TASK_ENTER_VEHICLE(tempP, tempV, 0, -1, 2.0f, 16, 0);
         }
-        AI::TASK_VEHICLE_DRIVE_WANDER(tempP, tempV, 2.0f, 16777216);
+        else {
+            AI::TASK_VEHICLE_DRIVE_WANDER(tempP, tempV, 2.0f, 16777216);
+        }
     }
 
     ENTITY::SET_ENTITY_AS_NO_LONGER_NEEDED(&tempV);
