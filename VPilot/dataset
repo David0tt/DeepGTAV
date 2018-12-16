@@ -23,7 +23,8 @@ def ensureDirExists(filename):
 
 width = 1920
 height = 1080
-index = 0
+index = 0 #Use startIndex to change index to start on
+startIndex = 0
 
 oldExport = False
 recordScenario = False
@@ -33,7 +34,6 @@ collectVehicles = True
 collectPeds = True
 collectOffscreen = False
 captureRate = 1
-startIndex = 0
 driveMode = 786603 #Normal?
 
 base_folder = os.environ['DEEPGTAV_EXPORT_DIR'] + "\\"
