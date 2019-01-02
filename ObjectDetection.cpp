@@ -1669,13 +1669,13 @@ void ObjectDetection::setGroundPlanePoints() {
     //Vector of directions to test ground plane
     //Forward, right (up should always be 0 since it will be tested with get_ground_z
     std::vector<Vector3> points;
-    points.push_back(createVec3(2.0, -2.f, 0.f));
-    points.push_back(createVec3(2.0, 2.f, 0.f));
-    points.push_back(createVec3(15.0, 0.f, 0.f));
-    points.push_back(createVec3(15.0, 3.f, 0.f));
-    points.push_back(createVec3(15.0, -3.f, 0.f));
-    points.push_back(createVec3(25.0, -2, 0));
-    points.push_back(createVec3(25.0, 2, 0));
+    points.push_back(createVec3(-2.f, 5.0, 0.f));
+    points.push_back(createVec3(2.f, 5.0, 0.f));
+    points.push_back(createVec3(0.f, 15.0, 0.f));
+    points.push_back(createVec3(3.f, 15.0, 0.f));
+    points.push_back(createVec3(-3.f, 15.0, 0.f));
+    points.push_back(createVec3(-2, 25.0, 0));
+    points.push_back(createVec3(2, 25.0, 0));
 
     //World coordinate vectors
     Vector3 worldX; worldX.x = 1; worldX.y = 0; worldX.z = 0;
@@ -1692,7 +1692,7 @@ void ObjectDetection::setGroundPlanePoints() {
     std::ostringstream oss;
 
     for (auto point : points) {
-        Vector3 worldpoint = convertCoordinateSystem(point, m_camRightVector, m_camForwardVector, zVectorCam);
+        Vector3 worldpoint = convertCoordinateSystem(point, yVectorCam, xVectorCam, zVectorCam);
 
         //Transition from relative to world
         worldpoint.x += s_camParams.pos.x;
@@ -1703,10 +1703,15 @@ void ObjectDetection::setGroundPlanePoints() {
         float groundZ;
         GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(worldpoint.x, worldpoint.y, worldpoint.z, &(groundZ), 0);
         worldpoint.z = groundZ;
-        float relZ = groundZ - s_camParams.pos.z;
+
+        worldpoint.x -= s_camParams.pos.x;
+        worldpoint.y -= s_camParams.pos.y;
+        worldpoint.z -= s_camParams.pos.z;
+
+        Vector3 relPoint = convertCoordinateSystem(worldpoint, m_camForwardVector, m_camRightVector, m_camUpVector);
 
         //Output kitti velodyne coords relative position with ground z
-        oss << point.x << ", " << -point.y << ", " << relZ << "\n";
+        oss << relPoint.y << ", " << -relPoint.x << ", " << relPoint.z << "\n";
     }
     std::string str = oss.str();
     fprintf(f, str.c_str());
