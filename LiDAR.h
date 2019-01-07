@@ -36,6 +36,7 @@ struct HitLidarEntity {
 struct Hit2DDepth {
     Vector3 target;
     Eigen::Vector2f target2D;
+    float groundDist;
 };
 
 class LiDAR

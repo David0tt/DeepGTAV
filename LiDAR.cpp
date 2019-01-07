@@ -230,7 +230,7 @@ float* LiDAR::UpdatePointCloud(int &size, float* depthMap) {
             *p = vec_cam_coord.y;
             *(p + 1) = -vec_cam_coord.x;
             *(p + 2) = vec_cam_coord.z;
-            *(p + 3) = 0;//We don't have the entityID if we're using the depth map
+            *(p + 3) = m_hitDepthPoints[i].groundDist;//We don't have the entityID if we're using the depth map
             ++m_updatedPointCount;
         }
     }
@@ -525,6 +525,10 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
     //New function is called GET_SHAPE_TEST_RESULT
     WORLDPROBE::_GET_RAYCAST_RESULT(raycast_handle, &isHit, &endCoord, &surfaceNorm, &hitEntity);
 
+    float groundZ;
+    GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(endCoord.x, endCoord.y, endCoord.z, &(groundZ), 0);
+    float groundDist = endCoord.z - groundZ;
+
     //The 2D screen coords of the target
     //This is what should be used for sampling depth map as endCoord will not hit same points as depth map
     Eigen::Vector2f target2D = get_2d_from_3d(Eigen::Vector3f(target.x, target.y, target.z),
@@ -549,6 +553,7 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
         Hit2DDepth hitDepth;
         hitDepth.target = target;
         hitDepth.target2D = target2D;
+        hitDepth.groundDist = groundDist;
         m_hitDepthPoints.push_back(hitDepth);
 
         Vector3 vec_cam_coord = get3DFromDepthTarget(target, target2D);
@@ -559,7 +564,7 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
             *p = vec_cam_coord.y;
             *(p + 1) = -vec_cam_coord.x;
             *(p + 2) = vec_cam_coord.z;
-            *(p + 3) = 0;//We don't have the entityID if we're using the depth map
+            *(p + 3) = groundDist;//We don't have the entityID if we're using the depth map
             ++m_pointsHit;
             ++m_depthMapPoints;
         }
