@@ -145,7 +145,7 @@ if __name__ == '__main__':
                 
                 # The frame is a numpy array and can be displayed using OpenCV or similar       
                 image = frame2numpy(message['frame'], (width,height))
-                filename = "%simages\\%s.png" % (base_folder, indexString)
+                filename = "%simage_2\\%s.png" % (base_folder, indexString)
                 ensureDirExists(filename)
                 cv2.imwrite(filename, image)
                 print("image written index %d" % index)
