@@ -10,6 +10,30 @@
 
 //#define DEBUG 1
 
+struct WorldObject {
+    Entity e;
+    std::string type;
+    Hash model;
+};
+
+static Vector3 createVec3(float x, float y, float z) {
+    Vector3 vec;
+    vec.x = x;
+    vec.y = y;
+    vec.z = z;
+    return vec;
+}
+
+struct SubsetInfo {
+    Vector3 kittiPos;
+    float kittiHeight;
+    float kittiWidth;
+    float kittiLength;
+    float beta_kitti;
+    float rot_y;
+    float alpha_kitti;
+};
+
 class ObjectDetection {
 public:
     ObjectDetection();
@@ -146,6 +170,10 @@ public:
     //Used for keeing track of when to add the gap
     bool trSeriesGap = false;
 
+    //Other vehicle detection labels
+    std::vector<WorldObject> m_worldVehicles;
+    std::vector<WorldObject> m_worldPeds;
+
 private:
     void setVehiclesList();
     void setPedsList();
@@ -182,7 +210,7 @@ private:
     bool checkDirection(Vector3 unit, Vector3 point, Vector3 min, Vector3 max);
     void printSegImage();
 
-    bool hasLOSToEntity(Entity entityID, Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector);
+    bool hasLOSToEntity(Entity entityID, Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector, bool useOrigin = false, Vector3 origin = createVec3(0,0,0));
 
     void initVehicleLookup();
     bool isPointOccluding(Vector3 worldPos, Vector3 position);
@@ -197,4 +225,10 @@ private:
     //Ground plane points
     Vector3 getGroundPoint(Vector3 point, Vector3 yVectorCam, Vector3 xVectorCam, Vector3 zVectorCam);
     void setGroundPlanePoints();
+
+    //Other vehicle detections
+    void getNearbyVehicles();
+    void checkEntity(Vehicle p, WorldObject e, Vector3 pPos, std::ostringstream& oss);
+    SubsetInfo getObjectInfoSubset(Vector3 position, Vector3 forwardVector, Vector3 dim);
+    Vector3 getVehicleDims(Entity e, Hash model, Vector3 &min, Vector3 &max);
 };
