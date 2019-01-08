@@ -32,6 +32,7 @@ const float HOR_CAM_FOV = 90; //In degrees
 
 const float CAM_OFFSET_FORWARD = 0;// .5;
 const float CAM_OFFSET_UP = 1.065;
+const float CAR_CENTER_OFFSET_UP = 0.665;//Distance to ground is ~1.73m (as per kitti specs for lidar)
 
 const int VEHICLE_STENCIL_TYPE = 2;
 const int NPC_STENCIL_TYPE = 1;
@@ -1665,7 +1666,42 @@ static Vector3 createVec3(float x, float y, float z) {
     return vec;
 }
 
+Vector3 ObjectDetection::getGroundPoint(Vector3 point, Vector3 yVectorCam, Vector3 xVectorCam, Vector3 zVectorCam) {
+
+    //The closer to the ground the less vehicle/world z discrepancy there will be
+    point.z -= (CAM_OFFSET_UP + CAR_CENTER_OFFSET_UP);
+
+    Vector3 worldpoint = convertCoordinateSystem(point, yVectorCam, xVectorCam, zVectorCam);
+
+    //Transition from relative to world
+    worldpoint.x += s_camParams.pos.x;
+    worldpoint.y += s_camParams.pos.y;
+    worldpoint.z += s_camParams.pos.z;
+
+    //Obtain groundz at world position
+    float groundZ;
+    GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(worldpoint.x, worldpoint.y, worldpoint.z, &(groundZ), 0);
+    worldpoint.z = groundZ;
+
+    worldpoint.x -= s_camParams.pos.x;
+    worldpoint.y -= s_camParams.pos.y;
+    worldpoint.z -= s_camParams.pos.z;
+
+    Vector3 relPoint = convertCoordinateSystem(worldpoint, m_camForwardVector, m_camRightVector, m_camUpVector);
+
+    return relPoint;
+}
+
 void ObjectDetection::setGroundPlanePoints() {
+    //Distance to ground is ~1.73
+    //See CAR_CENTER_OFFSET_UP
+    /*float groundZ;
+    GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, &(groundZ), 0);
+    float groundDiff = s_camParams.pos.z - groundZ;
+    std::ostringstream osst;
+    osst << "Distance to ground: " << groundDiff;
+    log(osst.str(), true);*/
+
     //Vector of directions to test ground plane
     //Forward, right (up should always be 0 since it will be tested with get_ground_z
     std::vector<Vector3> points;
@@ -1692,23 +1728,7 @@ void ObjectDetection::setGroundPlanePoints() {
     std::ostringstream oss;
 
     for (auto point : points) {
-        Vector3 worldpoint = convertCoordinateSystem(point, yVectorCam, xVectorCam, zVectorCam);
-
-        //Transition from relative to world
-        worldpoint.x += s_camParams.pos.x;
-        worldpoint.y += s_camParams.pos.y;
-        worldpoint.z += s_camParams.pos.z + 2;
-
-        //Obtain groundz at world position
-        float groundZ;
-        GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(worldpoint.x, worldpoint.y, worldpoint.z, &(groundZ), 0);
-        worldpoint.z = groundZ;
-
-        worldpoint.x -= s_camParams.pos.x;
-        worldpoint.y -= s_camParams.pos.y;
-        worldpoint.z -= s_camParams.pos.z;
-
-        Vector3 relPoint = convertCoordinateSystem(worldpoint, m_camForwardVector, m_camRightVector, m_camUpVector);
+        Vector3 relPoint = getGroundPoint(point, yVectorCam, xVectorCam, zVectorCam);
 
         //Output kitti velodyne coords relative position with ground z
         oss << relPoint.y << ", " << -relPoint.x << ", " << relPoint.z << "\n";
@@ -1716,4 +1736,25 @@ void ObjectDetection::setGroundPlanePoints() {
     std::string str = oss.str();
     fprintf(f, str.c_str());
     fclose(f);
+
+    //**********************Creating ground point grid****************************************
+    //World coordinates have: y north, x east
+    std::string filename2 = getStandardFilename("ground_points_grid", ".txt");
+    FILE* f2 = fopen(filename2.c_str(), "w");
+    std::ostringstream oss2;
+
+    int pointInterval = 2; //Distance between ground points (approximately in metres - game coordinates)
+    for (int x = -MAX_LIDAR_DIST; x <= MAX_LIDAR_DIST; x += pointInterval) {
+        for (int y = 0; y <= MAX_LIDAR_DIST; y += pointInterval) {
+            Vector3 point = createVec3(x, y, 0.0f);
+            Vector3 relPoint = getGroundPoint(point, yVectorCam, xVectorCam, zVectorCam);
+
+            //Output kitti velodyne coords relative position with ground z
+            oss2 << relPoint.y << ", " << -relPoint.x << ", " << relPoint.z << "\n";
+        }
+    }
+
+    std::string str2 = oss2.str();
+    fprintf(f2, str2.c_str());
+    fclose(f2);
 }

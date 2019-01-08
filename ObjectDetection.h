@@ -195,5 +195,6 @@ private:
     void exportCalib();
 
     //Ground plane points
+    Vector3 getGroundPoint(Vector3 point, Vector3 yVectorCam, Vector3 xVectorCam, Vector3 zVectorCam);
     void setGroundPlanePoints();
 };
