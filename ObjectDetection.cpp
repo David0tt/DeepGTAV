@@ -1746,7 +1746,7 @@ void ObjectDetection::setGroundPlanePoints() {
         Vector3 relPoint = getGroundPoint(point, yVectorCam, xVectorCam, zVectorCam);
 
         //Output kitti velodyne coords relative position with ground z
-        oss << relPoint.y << ", " << -relPoint.x << ", " << relPoint.z << "\n";
+        oss << relPoint.y << ", " << relPoint.x << ", " << relPoint.z << "\n";
     }
     std::string str = oss.str();
     fprintf(f, str.c_str());
@@ -1765,7 +1765,7 @@ void ObjectDetection::setGroundPlanePoints() {
             Vector3 relPoint = getGroundPoint(point, yVectorCam, xVectorCam, zVectorCam);
 
             //Output kitti velodyne coords relative position with ground z
-            oss2 << relPoint.y << ", " << -relPoint.x << ", " << relPoint.z << "\n";
+            oss2 << relPoint.y << ", " << relPoint.x << ", " << relPoint.z << "\n";
         }
     }
 
