@@ -53,3 +53,5 @@ const bool TESTING_PEDS_ON_BIKES = true;
 
 //Set to 1 if desire no depth adjustment
 const float DEPTH_DIVISOR = 1.0065;
+const bool USE_DEPTH_DIVISOR = false;
+const bool OUTPUT_DEPTH_STATS = true;

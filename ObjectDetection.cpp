@@ -1141,6 +1141,10 @@ void ObjectDetection::collectLiDAR() {
         fprintf(f, str.c_str());
         fclose(f);
     }
+
+    if (OUTPUT_DEPTH_STATS) {
+        lidar.printDepthStats();
+    }
 }
 
 void ObjectDetection::setStencilBuffer() {
@@ -1257,8 +1261,19 @@ Vector3 ObjectDetection::depthToCamCoords(float ndc, float screenX, float screen
         worldDepth = s_camParams.farClip;
     }
     float fcRatio = (s_camParams.farClip - s_camParams.nearClip) / s_camParams.farClip;
-    worldDepth = worldDepth / DEPTH_DIVISOR;//TODO: Figure out depth values - Possibly divide by 1.0065?
 
+    if (USE_DEPTH_DIVISOR) {
+        worldDepth = worldDepth / DEPTH_DIVISOR;//TODO: Figure out depth values - Possibly divide by 1.0065?
+    }
+    
+    if (ndc > 0 && OUTPUT_DEPTH_STATS) {
+        float depth2 = s_camParams.farClip - pow(s_camParams.farClip, 1 - ndc);
+        std::ostringstream oss;
+        oss << "World depth: " << worldDepth << " depth2: " << depth2 << " ndc: " << ndc <<
+            " screenX/Y: " << screenX << "/" << screenY;
+        std::string str = oss.str();
+        //log(str, true);
+    }
     /*float angle = tan(s_camParams.fov / 2. * (PI / 180.));
     float projData[16] = { 1/(GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false) * angle), 0, 0, 0,
         0, 1/angle, 0, 0,
@@ -1448,7 +1463,7 @@ void ObjectDetection::setCamParams(float* forwardVec, float* rightVec, float* up
     //These values stay the same throughout a collection period
     if (!s_camParams.init) {
         s_camParams.nearClip = 0.15;// CAM::_0xD0082607100D7193(); //CAM::GET_CAM_NEAR_CLIP(camera);
-        s_camParams.farClip = 800;// CAM::_0xDFC8CBC606FDB0FC(); //CAM::GET_CAM_FAR_CLIP(camera);
+        s_camParams.farClip = 10001.5;// 800;// CAM::_0xDFC8CBC606FDB0FC(); //CAM::GET_CAM_FAR_CLIP(camera);
         s_camParams.fov = 59;// CAM::GET_GAMEPLAY_CAM_FOV();//CAM::GET_CAM_FOV(camera);
         s_camParams.ncHeight = 2 * s_camParams.nearClip * tan(s_camParams.fov / 2. * (PI / 180.)); // field of view is returned vertically
         s_camParams.ncWidth = s_camParams.ncHeight * GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false);
@@ -1684,7 +1699,7 @@ void ObjectDetection::exportImage(BYTE* data) {
 Vector3 ObjectDetection::getGroundPoint(Vector3 point, Vector3 yVectorCam, Vector3 xVectorCam, Vector3 zVectorCam) {
 
     //The closer to the ground the less vehicle/world z discrepancy there will be
-    point.z -= (CAM_OFFSET_UP + CAR_CENTER_OFFSET_UP);
+    //point.z -= (CAM_OFFSET_UP + CAR_CENTER_OFFSET_UP);
 
     Vector3 worldpoint = convertCoordinateSystem(point, yVectorCam, xVectorCam, zVectorCam);
 

@@ -37,6 +37,7 @@ struct Hit2DDepth {
     Vector3 target;
     Eigen::Vector2f target2D;
     float groundDist;
+    float rayCastDepth;
 };
 
 class LiDAR
@@ -89,6 +90,8 @@ public:
 
     void updateCurrentPosition(Vector3 cameraForwardVec, Vector3 cameraRightVector, Vector3 cameraUpVector);
 
+    //Print stats on disparity between depth calculations/raycast distance
+    void printDepthStats();
 
 private:
 

@@ -240,6 +240,60 @@ float* LiDAR::UpdatePointCloud(int &size, float* depthMap) {
     return m_updatedPointCloud;
 }
 
+void LiDAR::printDepthStats() {
+    float totalRatio = 0;
+    float ratio10 = 0;
+    float ratio40 = 0;
+    float ratio120 = 0;
+    float ratioAbove100 = 0;
+    int countTotal = 0;
+    int count10 = 0;
+    int count40 = 0;
+    int count120 = 0;
+    int countAbove100 = 0;
+    for (int i = 0; i < m_hitDepthPoints.size(); i++) {
+        Vector3 vec_cam_coord = get3DFromDepthTarget(m_hitDepthPoints[i].target, m_hitDepthPoints[i].target2D);
+
+        float newDistance = sqrt(SYSTEM::VDIST2(0, 0, 0, vec_cam_coord.x, vec_cam_coord.y, vec_cam_coord.z));
+
+        //Only use ground points since they aren't affected by object models
+        if (m_hitDepthPoints[i].groundDist > 0) continue;
+
+        float ratio = newDistance / m_hitDepthPoints[i].rayCastDepth;
+        if (ratio < 1.1 && ratio > 0.9) {
+            totalRatio += ratio;
+            countTotal++;
+        }
+        if (newDistance > 100) {
+            ratioAbove100 += ratio;
+            countAbove100++;
+        }
+
+        if (newDistance <= MAX_LIDAR_DIST && ratio < 1.05 && ratio > 0.95) {
+            if (newDistance <= 10) {
+                ratio10 += ratio;
+                count10++;
+            }
+            else if (newDistance <= 40) {
+                ratio40 += ratio;
+                count40++;
+            }
+            else {
+                ratio120 += ratio;
+                count120++;
+            }
+        }
+    }
+
+    std::ostringstream oss;
+    oss << "Avg distance ratio: " << totalRatio/(float)countTotal <<
+        "\nOver 100: " << ratioAbove100/(float)countAbove100 <<
+        "\nUnder 120: " << ratio120/(float)count120 <<
+        "\nUnder 40: " << ratio40/(float)count40 <<
+        "\nUnder 10: " << ratio10/(float)count10;
+    log(oss.str(), true);
+}
+
 float * LiDAR::GetPointClouds(int &size, std::unordered_map<int, HitLidarEntity*> *entitiesHit, int param, float* depthMap)
 {
     m_depthMap = depthMap;
@@ -360,7 +414,9 @@ float LiDAR::depthFromNDC(int x, int y, float screenX, float screenY) {
 
     //Actual depth in camera coordinates
     float depth = d2nc / ndc;
-    depth = depth / DEPTH_DIVISOR;//TODO: Figure out depth values - Possibly divide by 1.0065?
+    if (USE_DEPTH_DIVISOR) {
+        depth = depth / DEPTH_DIVISOR;//TODO: Figure out depth values - Possibly divide by 1.0065?
+    }
 
     return depth;
 }
@@ -554,6 +610,8 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
         hitDepth.target = target;
         hitDepth.target2D = target2D;
         hitDepth.groundDist = groundDist;
+        float rayDist = sqrt(SYSTEM::VDIST2(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, endCoord.x, endCoord.y, endCoord.z));
+        hitDepth.rayCastDepth = rayDist;
         m_hitDepthPoints.push_back(hitDepth);
 
         Vector3 vec_cam_coord = get3DFromDepthTarget(target, target2D);
