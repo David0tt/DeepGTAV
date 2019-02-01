@@ -41,9 +41,10 @@ The next 6 columns are the augmented data and represent:
 ----------------------------------------------------------------------------
    1    entity_id    Unique entity identifier
    1    points_2d    Number of 2D points in the image associated with this object
+   1    points_3d    Number of 3D points in the pointcloud associated with this object
    1    speed        Speed of the object (m/s)
-   1    roll         roll angle (rad),    0 = level, positive = left side up,      range: -pi   .. +pi     (in terms of world coordinates)
-   1    pitch        pitch angle (rad),   0 = level, positive = front down,        range: -pi/2 .. +pi/2   (in terms of world coordinates)
+   1    roll         roll angle (rad),    0 = level, positive = left side up,      range: -pi   .. +pi     (in terms of cam coordinates)
+   1    pitch        pitch angle (rad),   0 = level, positive = front down,        range: -pi/2 .. +pi/2   (in terms of cam coordinates)
    1    model        String defining the object model
 
 
