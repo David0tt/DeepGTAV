@@ -109,6 +109,7 @@ private:
     std::string m_calibFilename;
     std::string m_labelsFilename;
     std::string m_labelsUnprocessedFilename;
+    std::string m_labelsAugFilename;
 
     std::string m_veloFilenameU;
     std::string m_depthPCFilenameU;
@@ -210,6 +211,8 @@ private:
     bool checkDirection(Vector3 unit, Vector3 point, Vector3 min, Vector3 max);
     void printSegImage();
 
+    void getRollAndPitch(Vector3 rightVector, Vector3 forwardVector, Vector3 upVector, float &pitch, float &roll);
+
     bool hasLOSToEntity(Entity entityID, Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector, bool useOrigin = false, Vector3 origin = createVec3(0,0,0));
 
     void initVehicleLookup();
@@ -218,8 +221,8 @@ private:
     void outputUnusedStencilPixels();
 
     //Export functions
-    void exportEntity(ObjEntity e, std::ostringstream& oss, bool unprocessed);
-    void exportEntities(EntityMap entMap, std::ostringstream& oss, bool unprocessed = false);
+    void exportEntity(ObjEntity e, std::ostringstream& oss, bool unprocessed, bool augmented);
+    void exportEntities(EntityMap entMap, std::ostringstream& oss, bool unprocessed = false, bool augmented = false);
     void exportCalib();
 
     //Ground plane points

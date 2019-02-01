@@ -620,6 +620,14 @@ static void updatePosition(float &origPos, float pedPos, float &origDim, float p
     }
 }
 
+void ObjectDetection::getRollAndPitch(Vector3 rightVector, Vector3 forwardVector, Vector3 upVector, float &pitch, float &roll) {
+    Vector3 kittiForwardVector = convertCoordinateSystem(forwardVector, m_camForwardVector, m_camRightVector, m_camUpVector);
+    Vector3 kittiRightVector = convertCoordinateSystem(rightVector, m_camForwardVector, m_camRightVector, m_camUpVector);
+
+    roll = atan2(-kittiRightVector.z, sqrt(pow(kittiRightVector.y, 2) + pow(kittiRightVector.x, 2)));
+    pitch = atan2(-kittiForwardVector.z, sqrt(pow(kittiForwardVector.y, 2) + pow(kittiForwardVector.x, 2)));
+}
+
 bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash model, int classid, std::string type, std::string modelString, bool isPedInV, int vPedIsIn) {
     bool success = false;
 
@@ -858,6 +866,7 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
 
                     float roll = atan2(-rightVector.z, sqrt(pow(rightVector.y, 2) + pow(rightVector.x, 2)));
                     float pitch = atan2(-forwardVector.z, sqrt(pow(forwardVector.y, 2) + pow(forwardVector.x, 2)));
+                    getRollAndPitch(rightVector, forwardVector, upVector, pitch, roll);
                     //To prevent negative zeros
                     if (abs(roll) <= 0.0001) roll = 0.0f;
                     if (abs(pitch) <= 0.0001) pitch = 0.0f;
@@ -1060,6 +1069,7 @@ void ObjectDetection::setFilenames() {
     m_calibFilename = getStandardFilename("calib", ".txt");
     m_labelsFilename = getStandardFilename("label_2", ".txt");
     m_labelsUnprocessedFilename = getStandardFilename("labelsUnprocessed", ".txt");
+    m_labelsAugFilename = getStandardFilename("label_aug_2", ".txt");
 
     m_veloFilenameU = getStandardFilename("velodyneU", ".bin");
     m_depthPCFilenameU = getStandardFilename("depthPCU", ".bin");
@@ -1616,7 +1626,7 @@ void ObjectDetection::outputUnusedStencilPixels() {
     }
 }
 
-void ObjectDetection::exportEntity(ObjEntity e, std::ostringstream& oss, bool unprocessed) {
+void ObjectDetection::exportEntity(ObjEntity e, std::ostringstream& oss, bool unprocessed, bool augmented) {
     BBox2D b = e.bbox2d;
     if (unprocessed) b = e.bbox2dUnprocessed;
 
@@ -1628,15 +1638,21 @@ void ObjectDetection::exportEntity(ObjEntity e, std::ostringstream& oss, bool un
         (int)b.right << " " << (int)b.bottom << " " <<
         e.height << " " << e.width << " " << e.length << " " <<
         e.location.x << " " << e.location.y << " " << e.location.z << " " <<
-        e.rotation_y << "\n";
+        e.rotation_y;
+
+    if (augmented) {
+        oss << " " << e.entityID << " " << e.pointsHit2D << " " << e.pointsHit3D << " " << e.speed << " "
+            << e.roll << " " << e.pitch << " " << e.modelString;
+    }
+    oss << "\n";
 }
 
-void ObjectDetection::exportEntities(EntityMap entMap, std::ostringstream& oss, bool unprocessed) {
+void ObjectDetection::exportEntities(EntityMap entMap, std::ostringstream& oss, bool unprocessed, bool augmented) {
     for (EntityMap::const_iterator it = entMap.begin(); it != entMap.end(); ++it)
     {
         ObjEntity entity = it->second;
         if (!entity.isPedInV) {
-            exportEntity(entity, oss, unprocessed);
+            exportEntity(entity, oss, unprocessed, augmented);
         }
     }
 }
@@ -1683,6 +1699,16 @@ void ObjectDetection::exportDetections() {
 
     std::string str1 = oss1.str();
     fprintf(f, str1.c_str());
+    fclose(f);
+
+    f = fopen(m_labelsAugFilename.c_str(), "w");
+    std::ostringstream oss2;
+
+    exportEntities(m_curFrame.vehicles, oss2, false, true);
+    exportEntities(m_curFrame.peds, oss2, false, true);
+
+    std::string str2 = oss2.str();
+    fprintf(f, str2.c_str());
     fclose(f);
 
     exportCalib();
