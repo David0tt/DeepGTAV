@@ -108,6 +108,7 @@ public:
     std::string series_string = "0000";
     std::string instance_string;
     int baseTrackingIndex = instance_index;
+    int m_startIndex;
 
     //Tracking variables
     bool collectTracking;
@@ -120,6 +121,8 @@ public:
 
     //Mode for recording clips (data not generated)
     bool m_recordScenario;
+    //Mode for outputting current position/heading (data not generated)
+    bool m_positionScenario;
 
 private:
 	void parseScenarioConfig(const Value& sc, bool setDefaults);

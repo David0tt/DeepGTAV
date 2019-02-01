@@ -28,8 +28,9 @@ startIndex = 0
 
 oldExport = False
 recordScenario = False
+positionScenario = False
 tracking = False
-collectStationary = False
+collectStationary = True
 collectVehicles = True
 collectPeds = True
 collectOffscreen = False
@@ -67,33 +68,35 @@ if __name__ == '__main__':
     if collectStationary:
         vehicles = []
         # model, forward, right, heading, color (-1 default, 27 red, 64blue, 0 black)
-        vehicles.append(["voltic", 20, 10, 90, 27, 0])
-        vehicles.append(["voltic", 15, 10, 90, 64, 0])
-        vehicles.append(["benson", 25, 5, 0, 0, 0])
-        vehicles.append(["benson", 50, 0, 0, 0, 0])
-        #vehicles.append(["trash", 60, -20, 0, 0, 0])
-        vehicles.append(["benson", 80, -15, 0, 0, 0])
-        vehicles.append(["benson", 100, -50, 0, 0, 0])
-        vehicles.append(["benson", -10, 0, 0, 0, 0])
-        vehicles.append(["benson", 5, -4, 90, 0, 0])
-        vehicles.append(["benson", 0, 4, 90, 0, 0])
-        vehicles.append(["vindicator", 7, 2, 0, 0, 0])
-        vehicles.append(["bmx", 7, -2, 0, 0, 0])
+        # vehicles.append(["voltic", 20, 10, 90, 27, 0])
+        #vehicles.append(["voltic", 15, 10, 90, 64, 0])
+        vehicles.append(["bus", 18, 0, 0, 0, 0])
+        # vehicles.append(["benson", 50, 0, 0, 0, 0])
+        # #vehicles.append(["trash", 60, -20, 0, 0, 0])
+        # vehicles.append(["benson", 80, -15, 0, 0, 0])
+        # vehicles.append(["benson", 100, -50, 0, 0, 0])
+        # vehicles.append(["benson", -10, 0, 0, 0, 0])
+        # vehicles.append(["benson", 5, -4, 90, 0, 0])
+        # vehicles.append(["benson", 0, 4, 90, 0, 0])
+        #vehicles.append(["vindicator", 7, 1, 0, 0, 0])
         peds = []
-        peds.append([0, 10, 5, 0])
+        #peds.append([0, 10, 5, 0])
         #peds.append([0, 10, 0, 0])
-        peds.append([1, 10, -5, 13])
-        peds.append([0, 13, 5, 1])
-        peds.append([2, 7, 5, -3])
-        peds.append([0, 10, -5, 2])
-        peds.append([3, 10, -2, 1])
-        peds.append([0, 10, -4, 60])
-        peds.append([5, 13, 0, 0])
-        peds.append([9, 12, 5, 0])
+        #peds.append([1, 10, -5, 13])
+        #peds.append([0, 13, 5, 1])
+        #peds.append([2, 7, 5, -3])
+        #peds.append([0, 10, -5, 2])
+        #peds.append([0, 10, -4, 60])
+        #peds.append([9, 12, 5, 120])
+        #For graphics
+        #vehicles.append(["bmx", 9, -1, 0, 0, 0])
+        #peds.append([3, 10, 1, 180])
+        #peds.append([5, 8, 0, 270])
         lidarParam = 7
         dataset = Dataset(rate=captureRate, frame=[width,height], throttle=True, brake=True, steering=True, vehicles=collectVehicles, peds=collectPeds, reward=[15.0, 0.0],
                         direction=None, speed=True, yawRate=True, location=True, time=True, offscreen=collectOffscreen, showBoxes=False, pointclouds=True,
-                        stationaryScene=True, collectTracking=tracking, vehiclesToCreate=vehicles, pedsToCreate=peds, startIndex=startIndex, lidarParam=lidarParam, recordScenario=recordScenario)
+                        stationaryScene=True, collectTracking=tracking, vehiclesToCreate=vehicles, pedsToCreate=peds, startIndex=startIndex, lidarParam=lidarParam,
+                        recordScenario=recordScenario, positionScenario=positionScenario)
         #List of locations
         #Nearplane
         # startLocation = [320.0,3600.0]
@@ -107,13 +110,27 @@ if __name__ == '__main__':
         # Airport
         startLocation = [-942, -3500, 45]
 
+        # Pitch view
+        startLocation = [-697.306, 995.426, 241, 25.1029]
+        startLocation = [-539.831, 665.427, 142.673, 0]
+        startLocation = [-554.445, 134.722, 62.6856, 313.719]
+
+        startLocation = [-564.368, 26.8335, 47, 295.413]
+
+
+
         scenario = Scenario(drivingMode=[-1,0], location=startLocation) #Stationary/manual mode
     else:
         dataset = Dataset(rate=captureRate, frame=[width,height], throttle=True, brake=True, steering=True, vehicles=collectVehicles, peds=collectPeds, reward=[15.0, 0.0],
                         direction=None, speed=True, yawRate=True, location=True, time=True, offscreen=collectOffscreen, showBoxes=False, pointclouds=True,
-                        stationaryScene=False, collectTracking=tracking, startIndex=startIndex, recordScenario=recordScenario)
+                        stationaryScene=False, collectTracking=tracking, startIndex=startIndex, recordScenario=recordScenario, positionScenario=positionScenario)
 
-        scenario = Scenario(drivingMode=[driveMode,15.0]) # Driving style is set to normal, with a speed of 15.0 mph. All other scenario options are random.
+        # Pitch view
+        startLocation = [-697.306, 995.426, 239, 55.1029]
+        startLocation = [-539.831, 665.427, 142.673, 278.001]
+        startLocation = [-554.445, 134.722, 62.6856, 313.719]
+        startLocation = [-564.368, 26.8335, 44, 295.413]
+        scenario = Scenario(drivingMode=[driveMode,15.0], location=startLocation) # Driving style is set to normal, with a speed of 15.0 mph. All other scenario options are random.
     # Send the Start request to DeepGTAV.
     client.sendMessage(Start(dataset=dataset,scenario=scenario))
 
@@ -131,7 +148,7 @@ if __name__ == '__main__':
     # Start listening for messages coming from DeepGTAV. We do it for 80 hours
     stoptime = time.time() + 80*3600
     while time.time() < stoptime:
-        if not recordScenario:
+        if not recordScenario and not positionScenario:
             try:
                 # We receive a message as a Python dictionary
                 message = client.recvMessage()  

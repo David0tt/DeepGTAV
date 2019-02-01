@@ -16,7 +16,7 @@
 #include "AreaRoaming.h"
 
 extern "C" {
-    __declspec(dllimport) int export_get_depth_buffer(void** buf, bool updateWithOffsetDepth);
+    __declspec(dllimport) int export_get_depth_buffer(void** buf);
     __declspec(dllexport) int export_get_color_buffer(void** buf);
     __declspec(dllexport) int export_get_stencil_buffer(void** buf);
 }
@@ -186,6 +186,8 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
     else if (setDefaults) collectTracking = _COLLECT_TRACKING_;
     if (!dc["recordScenario"].IsNull()) m_recordScenario = dc["recordScenario"].GetBool();
     else if (setDefaults) m_recordScenario = _RECORD_SCENARIO_;
+    if (!dc["positionScenario"].IsNull()) m_positionScenario = dc["positionScenario"].GetBool();
+    else if (setDefaults) m_positionScenario = _POSITION_SCENARIO_;
 
     if (DRIVE_SPEC_AREA && !stationaryScene) {
         dir.x = s_locationBounds[0][0][m_startArea];
@@ -290,7 +292,7 @@ void Scenario::buildScenario() {
     if (stationaryScene) {
         pos.x = x;
         pos.y = y;
-        pos.z = 0;
+        pos.z = z;
         heading = startHeading;
         std::ostringstream oss;
         oss << "Start heading: " << startHeading;
@@ -298,15 +300,12 @@ void Scenario::buildScenario() {
         log(str);
         vehicles_created = false;
     }
-	while (!ENTITY::DOES_ENTITY_EXIST(vehicle)) {
-		vehicle = VEHICLE::CREATE_VEHICLE(vehicleHash, pos.x, pos.y, pos.z, heading, FALSE, FALSE);
-		WAIT(0);
-	}
+	vehicle = VEHICLE::CREATE_VEHICLE(vehicleHash, pos.x, pos.y, pos.z, heading, FALSE, FALSE);
 	VEHICLE::SET_VEHICLE_ON_GROUND_PROPERLY(vehicle);
 
 	while (!ENTITY::DOES_ENTITY_EXIST(ped)) {
 		ped = PLAYER::PLAYER_PED_ID();
-		WAIT(0);
+        WAIT(0);
 	}
 
 	player = PLAYER::PLAYER_ID();
@@ -337,7 +336,7 @@ void Scenario::buildScenario() {
     CAM::RENDER_SCRIPT_CAMS(TRUE, FALSE, 0, TRUE, TRUE);
 
 	AI::CLEAR_PED_TASKS(ped);
-	if (_drivingMode >= 0 && !stationaryScene) {
+	if (_drivingMode >= 0 && !stationaryScene && !m_positionScenario) {
         if (DRIVE_SPEC_AREA && !START_SPEC_AREA) {
             AI::TASK_VEHICLE_DRIVE_TO_COORD(ped, vehicle, dir.x, dir.y, dir.z, _setSpeed, Any(1.f), vehicleHash, _drivingMode, 50.f, true);
         }
@@ -471,9 +470,6 @@ void Scenario::run() {
 			// Driving characteristics
 			PED::SET_DRIVER_AGGRESSIVENESS(ped, 0.0);
 			PED::SET_DRIVER_ABILITY(ped, 100.0);
-
-            //Create vehicles if it is a stationary scenario
-            createVehicles();
 		}
 	}
 	scriptWait(0);
@@ -500,6 +496,28 @@ StringBuffer Scenario::generateMessage() {
 	Writer<StringBuffer> writer(buffer);
 
     if (m_recordScenario) {
+        Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(vehicle, 0);
+        CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 0);
+        return buffer;
+    }
+
+    if (m_positionScenario) {
+        Vector3 currentPos;
+        Vector3 vehicleForwardVector, vehicleRightVector, vehicleUpVector;
+
+        ENTITY::GET_ENTITY_MATRIX(vehicle, &vehicleForwardVector, &vehicleRightVector, &vehicleUpVector, &currentPos);
+        float heading = GAMEPLAY::GET_HEADING_FROM_VECTOR_2D(vehicleForwardVector.x, vehicleForwardVector.y);
+
+        std::string baseFolder = std::string(getenv("DEEPGTAV_EXPORT_DIR")) + "\\";
+        std::string filename = baseFolder + "object\\" + "location.txt";
+        FILE* f = fopen(filename.c_str(), "w");
+        std::ostringstream oss;
+        oss << currentPos.x << ", " << currentPos.y << ", " << currentPos.z << ", " << heading;
+        std::string str = oss.str();
+        fprintf(f, str.c_str());
+        fprintf(f, "\n");
+        fclose(f);
+
         Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(vehicle, 0);
         CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 0);
         return buffer;
@@ -552,20 +570,26 @@ StringBuffer Scenario::generateMessage() {
     if (!m_pObjDet) {
         m_pObjDet.reset(new ObjectDetection());
         m_pObjDet->initCollection(s_camParams.width, s_camParams.height, false, instance_index);
+        m_startIndex = instance_index;
     }
     FrameObjectInfo fObjInfo = m_pObjDet->generateMessage(depth_map, m_stencilBuffer);
-    log("After generate msg", true);
+    log("After generate msg");
     m_pObjDet->exportDetections();
-    log("After export detections", true);
+    log("After export detections");
     std::ostringstream oss1;
     oss1 << "screencap length: " << screenCapturer->length << " width/height: " << screenCapturer->imageWidth << "/" << screenCapturer->imageHeight;
     std::string str1 = oss1.str();
-    log(str1, true);
+    log(str1);
     //m_pObjDet->exportImage(screenCapturer->pixels);
-    log("After exportImage", true);
+    log("After exportImage");
     m_pObjDet->increaseIndex();
-    log("After generate msg", true);
+    log("After generate msg");
     d["index"] = fObjInfo.instanceIdx;
+
+    if (fObjInfo.instanceIdx == m_startIndex + 2) {
+        //Create vehicles if it is a stationary scenario
+        createVehicles();
+    }
 
     GAMEPLAY::SET_GAME_PAUSED(false);
 
@@ -618,20 +642,20 @@ void Scenario::createVehicle(const char* model, float relativeForward, float rel
     }
     VEHICLE::SET_VEHICLE_ON_GROUND_PROPERLY(tempV);
 
-    if (VEHICLE::IS_THIS_MODEL_A_BICYCLE(vehicleHash) || VEHICLE::IS_THIS_MODEL_A_BIKE(vehicleHash)) {
-        log("Trying to set ped on bike", true);
-        Hash hash = 0x505603B9;// GAMEPLAY::GET_HASH_KEY(const_cast<char*>(model));
-        STREAMING::REQUEST_MODEL(hash);
-        Ped tempP = PED::CREATE_PED(4, hash, pos.x, pos.y, pos.z, heading, FALSE, FALSE);
-        WAIT(0);
-        if (bike_num == 0) {
-            bike_num++;
-            AI::TASK_ENTER_VEHICLE(tempP, tempV, 0, -1, 2.0f, 16, 0);
-        }
-        else {
-            AI::TASK_VEHICLE_DRIVE_WANDER(tempP, tempV, 2.0f, 16777216);
-        }
-    }
+    //if (VEHICLE::IS_THIS_MODEL_A_BICYCLE(vehicleHash) || VEHICLE::IS_THIS_MODEL_A_BIKE(vehicleHash)) {
+    //    log("Trying to set ped on bike", true);
+    //    Hash hash = 0x505603B9;// GAMEPLAY::GET_HASH_KEY(const_cast<char*>(model));
+    //    STREAMING::REQUEST_MODEL(hash);
+    //    Ped tempP = PED::CREATE_PED(4, hash, pos.x, pos.y, pos.z, heading, FALSE, FALSE);
+    //    WAIT(0);
+    //    if (bike_num == 0) {
+    //        bike_num++;
+    //        AI::TASK_ENTER_VEHICLE(tempP, tempV, 0, -1, 2.0f, 16, 0);
+    //    }
+    //    else {
+    //        AI::TASK_VEHICLE_DRIVE_WANDER(tempP, tempV, 2.0f, 16777216);
+    //    }
+    //}
 
     ENTITY::SET_ENTITY_AS_NO_LONGER_NEEDED(&tempV);
 }
@@ -694,21 +718,15 @@ void Scenario::setColorBuffer() {
 }
 
 void Scenario::setStencilBuffer() {
-    int size;
-    std::string filename;
     log("About to get stencil buffer");
-    size = export_get_stencil_buffer((void**)&m_stencilBuffer);
+    int size = export_get_stencil_buffer((void**)&m_stencilBuffer);
     log("After getting stencil buffer");
 }
 
 void Scenario::setDepthBuffer(bool prevDepth) {
-    int size;
-    std::string filename;
-    std::string pcFilename;
     log("About to get depth buffer");
-    size = export_get_depth_buffer((void**)&depth_map, false);
+    int size = export_get_depth_buffer((void**)&depth_map);
 
-    //TODO Use stencil buffer
     log("After getting depth buffer");
 }
 
@@ -774,15 +792,16 @@ void Scenario::setCamParams() {
     //These values stay the same throughout a collection period
     if (!s_camParams.init) {
         s_camParams.nearClip = CAM::GET_CAM_NEAR_CLIP(camera);
-        s_camParams.farClip = 10000;// CAM::GET_CAM_FAR_CLIP(camera);
+        s_camParams.farClip = 10001.5;// CAM::GET_CAM_FAR_CLIP(camera);
         s_camParams.fov = CAM::GET_CAM_FOV(camera);
         s_camParams.ncHeight = 2 * s_camParams.nearClip * tan(s_camParams.fov / 2. * (PI / 180.)); // field of view is returned vertically
         s_camParams.ncWidth = s_camParams.ncHeight * GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false);
         s_camParams.init = true;
 
         if (m_recordScenario) {
+            float gameFC = CAM::GET_CAM_FAR_CLIP(camera);
             std::ostringstream oss;
-            oss << "NC, FC, FOV: " << s_camParams.nearClip << ", " << s_camParams.farClip << ", " << s_camParams.fov;
+            oss << "NC, FC (gameFC), FOV: " << s_camParams.nearClip << ", " << s_camParams.farClip << " (" << gameFC << "), " << s_camParams.fov;
             std::string str = oss.str();
             log(str, true);
         }
@@ -799,7 +818,7 @@ void Scenario::setCamParams() {
         "\nrotation gameplay: " << s_camParams.theta.x << " Y: " << s_camParams.theta.y << " Z: " << s_camParams.theta.z <<
         "\n AspectRatio: " << GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false);
     std::string str1 = oss1.str();
-    log(str1, true);
+    log(str1);
 
     //For measuring height of camera (LiDAR) to ground plane
     /*float groundZ;
