@@ -55,3 +55,7 @@ const bool TESTING_PEDS_ON_BIKES = true;
 const float DEPTH_DIVISOR = 1.0065;
 const bool USE_DEPTH_DIVISOR = false;
 const bool OUTPUT_DEPTH_STATS = true;
+
+//Maximum distance from ground to be considered ground point:
+const float GROUND_POINT_MAX_DIST = 0.1;//in metres
+const float OUTPUT_GROUND_PIXELS = true;

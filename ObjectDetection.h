@@ -95,6 +95,7 @@ private:
     int m_stencilSegLength = 0;
     uint8_t* m_pOcclusionImage = NULL;
     uint8_t* m_pUnusedStencilImage = NULL;
+    uint8_t* m_pGroundPointsImage = NULL;
 
     std::string m_imgFilename;
     std::string m_veloFilename;
@@ -110,6 +111,7 @@ private:
     std::string m_labelsFilename;
     std::string m_labelsUnprocessedFilename;
     std::string m_labelsAugFilename;
+    std::string m_groundPointsFilename;
 
     std::string m_veloFilenameU;
     std::string m_depthPCFilenameU;

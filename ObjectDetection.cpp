@@ -1070,6 +1070,7 @@ void ObjectDetection::setFilenames() {
     m_labelsFilename = getStandardFilename("label_2", ".txt");
     m_labelsUnprocessedFilename = getStandardFilename("labelsUnprocessed", ".txt");
     m_labelsAugFilename = getStandardFilename("label_aug_2", ".txt");
+    m_groundPointsFilename = getStandardFilename("groundPointsImg", ".png");
 
     m_veloFilenameU = getStandardFilename("velodyneU", ".bin");
     m_depthPCFilenameU = getStandardFilename("depthPCU", ".bin");
@@ -1093,6 +1094,7 @@ void ObjectDetection::setupLiDAR() {
         //RGB Image needs 3 bytes per value
         m_stencilSegLength = s_camParams.width * s_camParams.height * 3 * sizeof(uint8_t);
         m_pStencilSeg = (uint8_t *)malloc(m_stencilSegLength);
+        m_pGroundPointsImage = (uint8_t *)malloc(s_camParams.width * s_camParams.height * FLOATS_PER_POINT * sizeof(uint8_t));
     }
 }
 
@@ -1208,7 +1210,7 @@ void ObjectDetection::setDepthBuffer(bool prevDepth) {
     ofile.close();
 
     int nonzero = 0;
-    if (OUTPUT_DM_POINTCLOUD) {
+    if (OUTPUT_DM_POINTCLOUD || OUTPUT_GROUND_PIXELS) {
         int pointCount = 0;
         float maxDepth = 0;
         float minDepth = 1;
@@ -1220,39 +1222,64 @@ void ObjectDetection::setDepthBuffer(bool prevDepth) {
                 }
                 Vector3 relPos = depthToCamCoords(ndc, i, j);
 
-                float distance = sqrt(SYSTEM::VDIST2(0, 0, 0, relPos.x, relPos.y, relPos.z));
-                if (distance <= MAX_LIDAR_DIST && distance >= 1) {
-                    float* p = m_pDMPointClouds + (pointCount * 4);
-                    *p = relPos.y;
-                    *(p + 1) = -relPos.x;
-                    *(p + 2) = relPos.z;
-                    *(p + 3) = 0;
-                    pointCount++;
+                if (OUTPUT_GROUND_PIXELS) {
+                    Vector3 worldPos = camToWorld(relPos, m_camForwardVector, m_camRightVector, m_camUpVector);
+                    float groundZ;
+                    //Note should always do +2 to ensure it hits the proper ground point
+                    GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(worldPos.x, worldPos.y, worldPos.z + 2, &(groundZ), 0);
+                    bool groundPoint = (worldPos.z - groundZ) < GROUND_POINT_MAX_DIST;
+                    uint8_t pointVal = groundPoint ? 255 : 0;
+                    m_pGroundPointsImage[j * s_camParams.width + i] = pointVal;
                 }
 
-                uint16_t* p = m_pDMImage + (j * s_camParams.width) + i;
-                float distClipped = 1 - std::min<float>(1.0f, (distance - s_camParams.nearClip) / (s_camParams.farClip - s_camParams.nearClip));
-                uint16_t num = (uint16_t)floor(distClipped * 65535);
-                uint16_t swapped = (num >> 8) | (num << 8);
-                *p = swapped;
+                if (OUTPUT_DM_POINTCLOUD) {
+                    float distance = sqrt(SYSTEM::VDIST2(0, 0, 0, relPos.x, relPos.y, relPos.z));
+                    if (distance <= MAX_LIDAR_DIST && distance >= 1) {
+                        float* p = m_pDMPointClouds + (pointCount * 4);
+                        *p = relPos.y;
+                        *(p + 1) = -relPos.x;
+                        *(p + 2) = relPos.z;
+                        *(p + 3) = 0;
+                        pointCount++;
+                    }
+
+                    uint16_t* p = m_pDMImage + (j * s_camParams.width) + i;
+                    float distClipped = 1 - std::min<float>(1.0f, (distance - s_camParams.nearClip) / (s_camParams.farClip - s_camParams.nearClip));
+                    uint16_t num = (uint16_t)floor(distClipped * 65535);
+                    uint16_t swapped = (num >> 8) | (num << 8);
+                    *p = swapped;
+                }
             }
         }
-        std::ostringstream oss;
-        oss << "Min depth: " << minDepth << " max: " << maxDepth << " pointCount: " << pointCount <<
-            " height: " << s_camParams.height << " width: " << s_camParams.width << " size: " << size <<
-            "\n Nonzero depth values: " << nonzero;
-        std::string str = oss.str();
-        log(str);
 
-        std::ofstream ofile1(depthPCFilename, std::ios::binary);
-        ofile1.write((char*)m_pDMPointClouds, FLOATS_PER_POINT * sizeof(float) * pointCount);
-        ofile1.close();
+        if (OUTPUT_GROUND_PIXELS) {
+            std::ofstream ofile1(depthPCFilename, std::ios::binary);
+            ofile1.write((char*)m_pDMPointClouds, FLOATS_PER_POINT * sizeof(float) * pointCount);
+            ofile1.close();
 
-        std::vector<std::uint8_t> ImageBuffer;
-        lodepng::encode(ImageBuffer, (unsigned char*)m_pDMImage, s_camParams.width, s_camParams.height, LCT_GREY, 16);
-        lodepng::save_file(ImageBuffer, m_depthImgFilename);
+            std::vector<std::uint8_t> ImageBuffer;
+            lodepng::encode(ImageBuffer, (unsigned char*)m_pGroundPointsImage, s_camParams.width, s_camParams.height, LCT_GREY, 8);
+            lodepng::save_file(ImageBuffer, m_groundPointsFilename);
+        }
+        
+        if (OUTPUT_DM_POINTCLOUD) {
+            std::ostringstream oss;
+            oss << "Min depth: " << minDepth << " max: " << maxDepth << " pointCount: " << pointCount <<
+                " height: " << s_camParams.height << " width: " << s_camParams.width << " size: " << size <<
+                "\n Nonzero depth values: " << nonzero;
+            std::string str = oss.str();
+            log(str);
 
-        log("After saving DM pointcloud");
+            std::ofstream ofile1(depthPCFilename, std::ios::binary);
+            ofile1.write((char*)m_pDMPointClouds, FLOATS_PER_POINT * sizeof(float) * pointCount);
+            ofile1.close();
+
+            std::vector<std::uint8_t> ImageBuffer;
+            lodepng::encode(ImageBuffer, (unsigned char*)m_pDMImage, s_camParams.width, s_camParams.height, LCT_GREY, 16);
+            lodepng::save_file(ImageBuffer, m_depthImgFilename);
+
+            log("After saving DM pointcloud");
+        }
     }
 }
 

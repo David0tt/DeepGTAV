@@ -221,3 +221,19 @@ static Vector3 subtractVecs(Vector3 first, Vector3 subtract) {
 static float dotProd(Vector3 first, Vector3 sec) {
     return (first.x * sec.x + first.y * sec.y + first.z * sec.z);
 }
+
+static Vector3 camToWorld(Vector3 relPos, Vector3 camForward, Vector3 camRight, Vector3 camUp) {
+    Vector3 worldX; worldX.x = 1; worldX.y = 0; worldX.z = 0;
+    Vector3 worldY; worldY.x = 0; worldY.y = 1; worldY.z = 0;
+    Vector3 worldZ; worldZ.x = 0; worldZ.y = 0; worldZ.z = 1;
+    Vector3 xVectorCam = convertCoordinateSystem(worldX, camForward, camRight, camUp);
+    Vector3 yVectorCam = convertCoordinateSystem(worldY, camForward, camRight, camUp);
+    Vector3 zVectorCam = convertCoordinateSystem(worldZ, camForward, camRight, camUp);
+
+    Vector3 worldPos = convertCoordinateSystem(relPos, yVectorCam, xVectorCam, zVectorCam);
+    worldPos.x += s_camParams.pos.x;
+    worldPos.y += s_camParams.pos.y;
+    worldPos.z += s_camParams.pos.z;
+
+    return worldPos;
+}
