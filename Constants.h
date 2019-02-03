@@ -58,4 +58,9 @@ const bool OUTPUT_DEPTH_STATS = true;
 
 //Maximum distance from ground to be considered ground point:
 const float GROUND_POINT_MAX_DIST = 0.1;//in metres
-const float OUTPUT_GROUND_PIXELS = true;
+const bool OUTPUT_GROUND_PIXELS = true;
+
+//Outputs separate stencil segmentation images for each stencil value
+const bool OUTPUT_SEPARATE_STENCILS = true;
+//Needs OUTPUT_SEPARATE_STENCILS to be true, only outputs for values which are unknown 
+const bool ONLY_OUTPUT_UNKNOWN_STENCILS = true;

@@ -34,9 +34,17 @@ const float CAM_OFFSET_FORWARD = 0;// .5;
 const float CAM_OFFSET_UP = 1.065;
 const float CAR_CENTER_OFFSET_UP = 0.665;//Distance to ground is ~1.73m (as per kitti specs for lidar)
 
-const int VEHICLE_STENCIL_TYPE = 2;
-const int NPC_STENCIL_TYPE = 1;
-const int SKY_STENCIL_TYPE = 7;
+//Known stencil types
+const int STENCIL_TYPE_DEFAULT = 0;//Ground, buildings, etc...
+const int STENCIL_TYPE_NPC = 1;
+const int STENCIL_TYPE_VEHICLE = 2;
+const int STENCIL_TYPE_VEGETATION = 3;
+const int STENCIL_TYPE_FLOOR = 4;//Seems to be floors and some boulevards
+const int STENCIL_TYPE_SKY = 7;
+const int STENCIL_TYPE_SELF = 123;
+const int STENCIL_TYPE_OWNCAR = 130;
+const std::vector<int> KNOWN_STENCIL_TYPES = { STENCIL_TYPE_DEFAULT, STENCIL_TYPE_NPC, STENCIL_TYPE_VEHICLE, STENCIL_TYPE_VEGETATION, STENCIL_TYPE_FLOOR, STENCIL_TYPE_SKY, STENCIL_TYPE_SELF, STENCIL_TYPE_OWNCAR };
+
 const int PEDESTRIAN_CLASS_ID = 10;
 
 void ObjectDetection::initCollection(UINT camWidth, UINT camHeight, bool exportEVE, int startIndex) {
@@ -534,7 +542,7 @@ BBox2D ObjectDetection::processBBox2D(BBox2D bbox, uint8_t stencilType, Vector3 
             worldPos.y += s_camParams.pos.y;
             worldPos.z += s_camParams.pos.z;
 
-            if (stencilType == stencilVal || (pedOnBike && stencilVal == NPC_STENCIL_TYPE)) {
+            if (stencilType == stencilVal || (pedOnBike && stencilVal == STENCIL_TYPE_NPC)) {
                 ++stencilPointCount;
 
                 if (in3DBox(worldPos, position, dim, yVector, xVector, zVector)) {
@@ -574,14 +582,14 @@ BBox2D ObjectDetection::processBBox2D(BBox2D bbox, uint8_t stencilType, Vector3 
                 }
                 else if (isPointOccluding(worldPos, position)) {
                     ++occlusionPointCount;
-                    if (NPC_STENCIL_TYPE == stencilType) {
+                    if (STENCIL_TYPE_NPC == stencilType) {
                         m_pOcclusionImage[j * s_camParams.width + i] = 255;
                     }
                 }
             }
-            else if (stencilVal != SKY_STENCIL_TYPE && isPointOccluding(worldPos, position)) {
+            else if (stencilVal != STENCIL_TYPE_SKY && isPointOccluding(worldPos, position)) {
                 ++occlusionPointCount;
-                if (NPC_STENCIL_TYPE == stencilType) {
+                if (STENCIL_TYPE_NPC == stencilType) {
                     m_pOcclusionImage[j * s_camParams.width + i] = 255;
                 }
             }
@@ -853,9 +861,9 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
                     }
 
                     //stencil type for vehicles like cars, bikes...
-                    int stencilType = VEHICLE_STENCIL_TYPE;
+                    int stencilType = STENCIL_TYPE_VEHICLE;
                     //Pedestrian classid
-                    if (classid == PEDESTRIAN_CLASS_ID) stencilType = NPC_STENCIL_TYPE; //For NPCs
+                    if (classid == PEDESTRIAN_CLASS_ID) stencilType = STENCIL_TYPE_NPC; //For NPCs
                     int pointsHit2D = 0;
                     float occlusion = 0;
                     BBox2D bbox2dProcessed = processBBox2D(bbox2d, stencilType, position, dim, forwardVector, rightVector, upVector, xVector, yVector, zVector, entityID, pointsHit2D, occlusion, foundPedOnBike);
@@ -1167,11 +1175,13 @@ void ObjectDetection::setStencilBuffer() {
     ofile.write((char*)m_pStencil, size);
     ofile.close();
 
+    std::vector<int> stencilValues;
     log("After writing stencil buffer");
     for (int j = 0; j < s_camParams.height; ++j) {
         for (int i = 0; i < s_camParams.width; ++i) {
             uint8_t val = m_pStencil[j * s_camParams.width + i];
             uint8_t* p = m_pStencilImage + (j * s_camParams.width) + i;
+
             if (val == 2) {
                 *p = 255; //Vehicles
             }
@@ -1181,6 +1191,19 @@ void ObjectDetection::setStencilBuffer() {
             else {
                 *p = val;
             }
+
+            if (OUTPUT_SEPARATE_STENCILS) {
+                bool newValue = true;
+                if (ONLY_OUTPUT_UNKNOWN_STENCILS && std::find(KNOWN_STENCIL_TYPES.begin(), KNOWN_STENCIL_TYPES.end(), val) != KNOWN_STENCIL_TYPES.end()) {
+                    newValue = false;
+                }
+                if (std::find(stencilValues.begin(), stencilValues.end(), val) != stencilValues.end()) {
+                    newValue = false;
+                }
+                if (newValue) {
+                    stencilValues.push_back(val);
+                }
+            }
         }
     }
 
@@ -1188,8 +1211,50 @@ void ObjectDetection::setStencilBuffer() {
     std::vector<std::uint8_t> ImageBuffer;
     lodepng::encode(ImageBuffer, (unsigned char*)m_pStencilImage, s_camParams.width, s_camParams.height, LCT_GREY, 8);
     lodepng::save_file(ImageBuffer, m_stencilImgFilename);
-
     log("After saving stencil image");
+
+    if (OUTPUT_SEPARATE_STENCILS) {
+        for (int s : stencilValues) {
+            for (int j = 0; j < s_camParams.height; ++j) {
+                for (int i = 0; i < s_camParams.width; ++i) {
+                    uint8_t val = m_pStencil[j * s_camParams.width + i];
+                    uint8_t* p = m_pStencilImage + (j * s_camParams.width) + i;
+                    if (val == s) {
+                        *p = 255; //Stencil value
+                    }
+                    else {
+                        *p = 0;
+                    }
+                }
+            }
+
+            std::string filename = baseFolder + "stencilImage" + "\\";
+            CreateDirectory(filename.c_str(), NULL);
+            filename.append("\\");
+            filename.append(instance_string);
+            filename.append("-");
+            filename.append(std::to_string(s));
+            filename.append(".png");
+            std::vector<std::uint8_t> ImageBuffer;
+            lodepng::encode(ImageBuffer, (unsigned char*)m_pStencilImage, s_camParams.width, s_camParams.height, LCT_GREY, 8);
+            lodepng::save_file(ImageBuffer, filename);
+
+            if (ONLY_OUTPUT_UNKNOWN_STENCILS) {
+                std::ostringstream oss;
+                oss << "***************************************unknown stencil type: " << s << " at index: " << instance_index;
+                log(oss.str(), true);
+            }
+        }
+    }
+
+    if (ONLY_OUTPUT_UNKNOWN_STENCILS) {
+        std::ostringstream oss;
+        oss << "Stencil types: ";
+        for (int s : KNOWN_STENCIL_TYPES) {
+            oss << s << ", ";
+        }
+        log(oss.str(), true);
+    }
 }
 
 void ObjectDetection::setDepthBuffer(bool prevDepth) {
@@ -1563,7 +1628,7 @@ void ObjectDetection::printSegImage() {
     for (int j = 0; j < s_camParams.height; ++j) {
         for (int i = 0; i < s_camParams.width; ++i) {
             uint8_t stencilVal = m_pStencil[j * s_camParams.width + i];
-            if (stencilVal == NPC_STENCIL_TYPE || stencilVal == VEHICLE_STENCIL_TYPE) {
+            if (stencilVal == STENCIL_TYPE_NPC || stencilVal == STENCIL_TYPE_VEHICLE) {
                 if (m_pStencilSeg[3 * (j * s_camParams.width + i)] == 0 &&
                     m_pStencilSeg[3 * (j * s_camParams.width + i) + 1] == 0 &&
                     m_pStencilSeg[3 * (j * s_camParams.width + i) + 2] == 0) {
