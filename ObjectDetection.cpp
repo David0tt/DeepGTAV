@@ -1323,11 +1323,19 @@ void ObjectDetection::setDepthBuffer(bool prevDepth) {
                 Vector3 relPos = depthToCamCoords(ndc, i, j);
 
                 if (OUTPUT_GROUND_PIXELS) {
-                    Vector3 worldPos = camToWorld(relPos, m_camForwardVector, m_camRightVector, m_camUpVector);
-                    float groundZ;
-                    //Note should always do +2 to ensure it hits the proper ground point
-                    GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(worldPos.x, worldPos.y, worldPos.z + 2, &(groundZ), 0);
-                    bool groundPoint = (worldPos.z - groundZ) < GROUND_POINT_MAX_DIST;
+                    int s = m_pStencil[j * s_camParams.width + i];
+                    bool groundPoint;
+                    if (s == STENCIL_TYPE_SKY || s == STENCIL_TYPE_NPC || s == STENCIL_TYPE_OWNCAR ||
+                        s == STENCIL_TYPE_VEGETATION || s == STENCIL_TYPE_VEHICLE || s == STENCIL_TYPE_SELF) {
+                        groundPoint = false;
+                    }
+                    else {
+                        Vector3 worldPos = camToWorld(relPos, m_camForwardVector, m_camRightVector, m_camUpVector);
+                        float groundZ;
+                        //Note should always do +2 to ensure it hits the proper ground point
+                        GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(worldPos.x, worldPos.y, worldPos.z + 2, &(groundZ), 0);
+                        groundPoint = (worldPos.z - groundZ) < GROUND_POINT_MAX_DIST;
+                    }
                     uint8_t pointVal = groundPoint ? 255 : 0;
                     m_pGroundPointsImage[j * s_camParams.width + i] = pointVal;
                 }
