@@ -1132,11 +1132,15 @@ void ObjectDetection::setupLiDAR() {
         m_pStencilImage = (uint8_t *)malloc(s_camParams.width * s_camParams.height * sizeof(uint8_t));
         m_pOcclusionImage = (uint8_t *)malloc(s_camParams.width * s_camParams.height * sizeof(uint8_t));
         m_pUnusedStencilImage = (uint8_t *)malloc(s_camParams.width * s_camParams.height * sizeof(uint8_t));
+        
         //RGB Image needs 3 bytes per value
         m_stencilSegLength = s_camParams.width * s_camParams.height * 3 * sizeof(uint8_t);
         m_instanceSegLength = s_camParams.width * s_camParams.height * sizeof(uint32_t);
+        m_instanceSegImgLength = s_camParams.width * s_camParams.height * 3 * sizeof(uint8_t);
+
         m_pStencilSeg = (uint8_t *)malloc(m_stencilSegLength);
-        m_pInstanceSeg = (uint32_t *)malloc(s_camParams.width * s_camParams.height * sizeof(uint32_t));
+        m_pInstanceSeg = (uint32_t *)malloc(m_instanceSegLength);
+        m_pInstanceSegImg = (uint8_t *)malloc(m_instanceSegImgLength);
         m_pGroundPointsImage = (uint8_t *)malloc(s_camParams.width * s_camParams.height * FLOATS_PER_POINT * sizeof(uint8_t));
     }
 }
@@ -1719,19 +1723,35 @@ void ObjectDetection::printSegImage() {
     cv::Mat tempMat(cv::Size(s_camParams.width, s_camParams.height), CV_32SC1, m_pInstanceSeg);
     imwrite(m_instSegFilename, tempMat);
 
-    //TODO Print out instance seg image in colour for visualization
-    log("About to print seg image2", true);
-    //cv::Mat colorImg;
-    //cv::cvtColor(tempMat, colorImg, CV_GRAY2BGR);
-    log("About to print seg image2.5", true);
-    //imwrite(m_instSegImgFilename, colorImg);
-    //std::vector<std::uint8_t> ImageBuffer;
-    //lodepng::encode(ImageBuffer, (unsigned char*)m_pInstanceSeg, s_camParams.width, s_camParams.height, LCT_GREY, 32);
-    //lodepng::save_file(ImageBuffer, m_instSegFilename);
+
+    //Create and print out instance seg image in colour for visualization
+    for (int j = 0; j < s_camParams.height; ++j) {
+        for (int i = 0; i < s_camParams.width; ++i) {
+            //RGB image is 3 bytes per pixel
+            int idx = j * s_camParams.width + i;
+            int segIdx = 3 * idx;
+            int entityID = m_pInstanceSeg[idx];
+
+            int newVal = 47 * entityID; //Just to produce unique but different colours
+            int red = (newVal + 13 * entityID) % 255;
+            int green = (newVal / 255) % 255;
+            int blue = newVal % 255;
+            uint8_t* p = m_pInstanceSegImg + segIdx;
+            *p = red;
+            *(p + 1) = green;
+            *(p + 2) = blue;
+        }
+    }
+
+    cv::Mat colorImg(cv::Size(s_camParams.width, s_camParams.height), CV_8UC3, m_pInstanceSegImg);
+    log("About to print seg image3", true);
+    imwrite(m_instSegImgFilename, colorImg);
+
 
     //Clear all maps and seg image arrays
     memset(m_pStencilSeg, 0, m_stencilSegLength);
     memset(m_pInstanceSeg, 0, m_instanceSegLength);
+    memset(m_pInstanceSegImg, 0, m_instanceSegImgLength);
     m_coarseInstancePoints.clear();
     m_duplicateBoxPoints.clear();
 }

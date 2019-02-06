@@ -95,6 +95,8 @@ private:
     int m_stencilSegLength = 0;
     uint32_t* m_pInstanceSeg = NULL;
     int m_instanceSegLength = 0;
+    uint8_t* m_pInstanceSegImg = NULL;
+    int m_instanceSegImgLength = 0;
     uint8_t* m_pOcclusionImage = NULL;
     uint8_t* m_pUnusedStencilImage = NULL;
     uint8_t* m_pGroundPointsImage = NULL;
