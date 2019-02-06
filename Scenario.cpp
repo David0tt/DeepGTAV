@@ -28,10 +28,6 @@ const float HOR_CAM_FOV = 90; //In degrees
 
 const float CAM_OFFSET_FORWARD = 0;// .5;
 const float CAM_OFFSET_UP = 1.065;
-
-const int VEHICLE_STENCIL_TYPE = 2;
-const int NPC_STENCIL_TYPE = 1;
-const int SKY_STENCIL_TYPE = 7;
 const int PEDESTRIAN_CLASS_ID = 10;
 
 char* Scenario::weatherList[14] = { "CLEAR", "EXTRASUNNY", "CLOUDS", "OVERCAST", "RAIN", "CLEARING", "THUNDER", "SMOG", "FOGGY", "XMAS", "SNOWLIGHT", "BLIZZARD", "NEUTRAL", "SNOW" };
@@ -573,15 +569,8 @@ StringBuffer Scenario::generateMessage() {
         m_startIndex = instance_index;
     }
     FrameObjectInfo fObjInfo = m_pObjDet->generateMessage(depth_map, m_stencilBuffer);
-    log("After generate msg");
     m_pObjDet->exportDetections();
-    log("After export detections");
-    std::ostringstream oss1;
-    oss1 << "screencap length: " << screenCapturer->length << " width/height: " << screenCapturer->imageWidth << "/" << screenCapturer->imageHeight;
-    std::string str1 = oss1.str();
-    log(str1);
     //m_pObjDet->exportImage(screenCapturer->pixels);
-    log("After exportImage");
     m_pObjDet->increaseIndex();
     log("After generate msg");
     d["index"] = fObjInfo.instanceIdx;
