@@ -93,9 +93,14 @@ private:
     unsigned char* color_buf = NULL;
     uint8_t* m_pStencilSeg = NULL;
     int m_stencilSegLength = 0;
+    uint32_t* m_pInstanceSeg = NULL;
+    int m_instanceSegLength = 0;
     uint8_t* m_pOcclusionImage = NULL;
     uint8_t* m_pUnusedStencilImage = NULL;
     uint8_t* m_pGroundPointsImage = NULL;
+    //Map of point index and entities that are potentially associated with it
+    std::unordered_map<int, std::vector<int>> m_coarseInstancePoints;
+    std::unordered_map<int, std::vector<int>> m_duplicateBoxPoints;
 
     std::string m_imgFilename;
     std::string m_veloFilename;
@@ -112,6 +117,8 @@ private:
     std::string m_labelsUnprocessedFilename;
     std::string m_labelsAugFilename;
     std::string m_groundPointsFilename;
+    std::string m_instSegFilename;
+    std::string m_instSegImgFilename;
 
     std::string m_veloFilenameU;
     std::string m_depthPCFilenameU;

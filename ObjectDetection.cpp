@@ -545,6 +545,9 @@ BBox2D ObjectDetection::processBBox2D(BBox2D bbox, uint8_t stencilType, Vector3 
             if (stencilType == stencilVal || (pedOnBike && stencilVal == STENCIL_TYPE_NPC)) {
                 ++stencilPointCount;
 
+                //Index of point
+                int idx = j * s_camParams.width + i;
+
                 if (in3DBox(worldPos, position, dim, yVector, xVector, zVector)) {
                     float x = (float)i / (float)s_camParams.width;
                     float y = (float)j / (float)s_camParams.height;
@@ -559,11 +562,26 @@ BBox2D ObjectDetection::processBBox2D(BBox2D bbox, uint8_t stencilType, Vector3 
                     if (y > processed.bottom) processed.bottom = y;
                     ++pointsHit2D;
 
+                    uint32_t val = m_pInstanceSeg[idx];
+                    if (val != 0) {
+                        if (m_duplicateBoxPoints.find(idx) == m_duplicateBoxPoints.end()) {
+                            std::vector<int> vec;
+                            vec.push_back(val);
+                            //TODO test if entityID is larger than max value
+                            vec.push_back(entityID);
+                            m_duplicateBoxPoints.insert(std::pair<int, std::vector<int>>(idx, vec));
+                        }
+                        else {
+                            m_duplicateBoxPoints[idx].push_back(entityID);
+                        }
+                    }
+                    m_pInstanceSeg[j * s_camParams.width + i] = (uint32_t)entityID;
+
                     //RGB image is 3 bytes per pixel
-                    int index = 3 * (j * s_camParams.width + i);
-                    uint8_t red = m_pStencilSeg[index];
-                    uint8_t green = m_pStencilSeg[index + 1];
-                    uint8_t blue = m_pStencilSeg[index + 2];
+                    int segIdx = 3 * idx;
+                    uint8_t red = m_pStencilSeg[segIdx];
+                    uint8_t green = m_pStencilSeg[segIdx + 1];
+                    uint8_t blue = m_pStencilSeg[segIdx + 2];
                     if (red == 0 && green == 0 && blue == 0) {
                         int newVal = 47 * entityID; //Just to produce unique but different colours
                         red = (newVal + 13 * entityID) % 255;
@@ -575,15 +593,28 @@ BBox2D ObjectDetection::processBBox2D(BBox2D bbox, uint8_t stencilType, Vector3 
                         green = 255;
                         blue = 255;
                     }
-                    uint8_t* p = m_pStencilSeg + index;
+                    uint8_t* p = m_pStencilSeg + segIdx;
                     *p = red;
                     *(p + 1) = green;
                     *(p + 2) = blue;
                 }
-                else if (isPointOccluding(worldPos, position)) {
-                    ++occlusionPointCount;
-                    if (STENCIL_TYPE_NPC == stencilType) {
-                        m_pOcclusionImage[j * s_camParams.width + i] = 255;
+                else {
+                    if (m_coarseInstancePoints.find(idx) == m_coarseInstancePoints.end()) {
+                        std::vector<int> vec;
+                        //TODO test if entityID is larger than max value
+                        vec.push_back(entityID);
+                        m_coarseInstancePoints.insert(std::pair<int, std::vector<int>>(idx, vec));
+                    }
+                    else {
+                        m_coarseInstancePoints[idx].push_back(entityID);
+                    }
+
+                    //TODO this should probably be moved until after all points are decided
+                    if (isPointOccluding(worldPos, position)) {
+                        ++occlusionPointCount;
+                        if (STENCIL_TYPE_NPC == stencilType) {
+                            m_pOcclusionImage[j * s_camParams.width + i] = 255;
+                        }
                     }
                 }
             }
@@ -1079,6 +1110,8 @@ void ObjectDetection::setFilenames() {
     m_labelsUnprocessedFilename = getStandardFilename("labelsUnprocessed", ".txt");
     m_labelsAugFilename = getStandardFilename("label_aug_2", ".txt");
     m_groundPointsFilename = getStandardFilename("groundPointsImg", ".png");
+    m_instSegFilename = getStandardFilename("instSeg", ".png");
+    m_instSegImgFilename = getStandardFilename("instSegImage", ".png");
 
     m_veloFilenameU = getStandardFilename("velodyneU", ".bin");
     m_depthPCFilenameU = getStandardFilename("depthPCU", ".bin");
@@ -1101,7 +1134,9 @@ void ObjectDetection::setupLiDAR() {
         m_pUnusedStencilImage = (uint8_t *)malloc(s_camParams.width * s_camParams.height * sizeof(uint8_t));
         //RGB Image needs 3 bytes per value
         m_stencilSegLength = s_camParams.width * s_camParams.height * 3 * sizeof(uint8_t);
+        m_instanceSegLength = s_camParams.width * s_camParams.height * sizeof(uint32_t);
         m_pStencilSeg = (uint8_t *)malloc(m_stencilSegLength);
+        m_pInstanceSeg = (uint32_t *)malloc(s_camParams.width * s_camParams.height * sizeof(uint32_t));
         m_pGroundPointsImage = (uint8_t *)malloc(s_camParams.width * s_camParams.height * FLOATS_PER_POINT * sizeof(uint8_t));
     }
 }
@@ -1661,7 +1696,36 @@ void ObjectDetection::printSegImage() {
     std::vector<std::uint8_t> ImageBuffer;
     lodepng::encode(ImageBuffer, (unsigned char*)m_pStencilSeg, s_camParams.width, s_camParams.height, LCT_RGB, 8);
     lodepng::save_file(ImageBuffer, m_segImgFilename);
+
+    //Loop through coarse instance points, if there's points that only belong to one instance then put that value in
+    for (auto point : m_coarseInstancePoints) {
+        int idx = point.first;
+        std::vector<int> entities = point.second;
+
+        if (m_pInstanceSeg[idx] == 0 && entities.size() == 1) {
+            m_pInstanceSeg[idx] = entities[0];
+        }
+    }
+
+    //Print instance segmented image
+    cv::Mat tempMat(cv::Size(s_camParams.width, s_camParams.height), CV_32SC1, m_pInstanceSeg);
+    imwrite(m_instSegFilename, tempMat);
+
+    //TODO Print out instance seg image in colour for visualization
+    log("About to print seg image2", true);
+    //cv::Mat colorImg;
+    //cv::cvtColor(tempMat, colorImg, CV_GRAY2BGR);
+    log("About to print seg image2.5", true);
+    //imwrite(m_instSegImgFilename, colorImg);
+    //std::vector<std::uint8_t> ImageBuffer;
+    //lodepng::encode(ImageBuffer, (unsigned char*)m_pInstanceSeg, s_camParams.width, s_camParams.height, LCT_GREY, 32);
+    //lodepng::save_file(ImageBuffer, m_instSegFilename);
+
+    //Clear all maps and seg image arrays
     memset(m_pStencilSeg, 0, m_stencilSegLength);
+    memset(m_pInstanceSeg, 0, m_instanceSegLength);
+    m_coarseInstancePoints.clear();
+    m_duplicateBoxPoints.clear();
 }
 
 void ObjectDetection::initVehicleLookup() {
