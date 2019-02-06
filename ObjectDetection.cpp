@@ -1747,7 +1747,6 @@ void ObjectDetection::printSegImage() {
     log("About to print seg image3", true);
     imwrite(m_instSegImgFilename, colorImg);
 
-
     //Clear all maps and seg image arrays
     memset(m_pStencilSeg, 0, m_stencilSegLength);
     memset(m_pInstanceSeg, 0, m_instanceSegLength);
@@ -1899,11 +1898,8 @@ void ObjectDetection::exportDetections() {
 }
 
 void ObjectDetection::exportImage(BYTE* data) {
-
-    cv::Mat tempMat(cv::Size(s_camParams.width, s_camParams.height), CV_8UC4, data);
-    cv::Mat output;
-    cv::cvtColor(tempMat, output, CV_BGRA2BGR);
-    cv::imwrite(m_imgFilename, output);
+    cv::Mat tempMat(cv::Size(s_camParams.width, s_camParams.height), CV_8UC3, data);
+    cv::imwrite(m_imgFilename, tempMat);
 }
 
 Vector3 ObjectDetection::getGroundPoint(Vector3 point, Vector3 yVectorCam, Vector3 xVectorCam, Vector3 zVectorCam) {
