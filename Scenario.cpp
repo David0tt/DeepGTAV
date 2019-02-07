@@ -26,8 +26,6 @@ const float VERT_CAM_FOV = 59; //In degrees
 //90 degrees horizontal (KITTI) corresponds to 59 degrees vertical (https://www.gtaall.com/info/fov-calculator.html).
 const float HOR_CAM_FOV = 90; //In degrees
 
-const float CAM_OFFSET_FORWARD = 0;// .5;
-const float CAM_OFFSET_UP = 1.065;
 const int PEDESTRIAN_CLASS_ID = 10;
 
 char* Scenario::weatherList[14] = { "CLEAR", "EXTRASUNNY", "CLOUDS", "OVERCAST", "RAIN", "CLEARING", "THUNDER", "SMOG", "FOGGY", "XMAS", "SNOWLIGHT", "BLIZZARD", "NEUTRAL", "SNOW" };
@@ -318,8 +316,8 @@ void Scenario::buildScenario() {
 	rotation = ENTITY::GET_ENTITY_ROTATION(vehicle, 0);
 	CAM::DESTROY_ALL_CAMS(TRUE);
 	camera = CAM::CREATE_CAM("DEFAULT_SCRIPTED_CAMERA", TRUE);
-	if (strcmp(_vehicle, "packer") == 0) CAM::ATTACH_CAM_TO_ENTITY(camera, vehicle, 0, 2.35, 1.7, TRUE);
-	else CAM::ATTACH_CAM_TO_ENTITY(camera, vehicle, 0, CAM_OFFSET_FORWARD, CAM_OFFSET_UP, TRUE);
+	//if (strcmp(_vehicle, "packer") == 0) CAM::ATTACH_CAM_TO_ENTITY(camera, vehicle, 0, 2.35, 1.7, TRUE);
+	//else CAM::ATTACH_CAM_TO_ENTITY(camera, vehicle, 0, CAM_OFFSET_FORWARD, CAM_OFFSET_UP, TRUE);
 	CAM::SET_CAM_FOV(camera, VERT_CAM_FOV);
 	CAM::SET_CAM_ACTIVE(camera, TRUE);
 	CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 0);
@@ -521,19 +519,9 @@ StringBuffer Scenario::generateMessage() {
 	
     log("About to pause game");
     GAMEPLAY::SET_GAME_PAUSED(true);
+    GAMEPLAY::SET_TIME_SCALE(0.0f);
 
-    //Need to ensure camera rotation aligns with vehicle after game is paused
-    Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(vehicle, 0);
-    CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 0);
-    Vector3 camRot = CAM::GET_CAM_ROT(camera, 0);
-
-    //Time synchronization seems to be correct with 2 render calls
-    CAM::RENDER_SCRIPT_CAMS(TRUE, FALSE, 0, FALSE, FALSE);
-    scriptWait(0);
-    CAM::RENDER_SCRIPT_CAMS(TRUE, FALSE, 0, FALSE, FALSE);
-    scriptWait(0);
-    CAM::RENDER_SCRIPT_CAMS(TRUE, FALSE, 0, FALSE, FALSE);
-    scriptWait(0);
+    setRenderingCam(vehicle, CAM_OFFSET_UP, CAM_OFFSET_FORWARD);
 
     ////Can check whether camera and vehicle are aligned
     //Vector3 camRot2 = CAM::GET_CAM_ROT(camera, 0);
@@ -545,7 +533,7 @@ StringBuffer Scenario::generateMessage() {
     //log(str1);
 
     log("Script cams rendered");
-    screenCapturer->capture();
+    capture();
     log("Screen captured");
 
     //TODO pass this through
@@ -569,22 +557,92 @@ StringBuffer Scenario::generateMessage() {
         m_startIndex = instance_index;
     }
     FrameObjectInfo fObjInfo = m_pObjDet->generateMessage(depth_map, m_stencilBuffer);
-    m_pObjDet->exportDetections();
+    m_pObjDet->exportDetections(fObjInfo);
     //m_pObjDet->exportImage(screenCapturer->pixels);
-    m_pObjDet->increaseIndex();
     log("After generate msg");
     d["index"] = fObjInfo.instanceIdx;
 
-    if (fObjInfo.instanceIdx == m_startIndex + 2) {
+    if (fObjInfo.instanceIdx == m_startIndex) {
         //Create vehicles if it is a stationary scenario
         createVehicles();
     }
 
     GAMEPLAY::SET_GAME_PAUSED(false);
 
+    int count = 0;
+    for (EntityMapEntry entry : fObjInfo.vehicles) {
+        generateSecondaryPerspective(entry.second.entityID, entry.second.height, entry.second.length);
+        if (count > 10) break;
+        ++count;
+    }
+
+    generateSecondaryPerspective(vehicle, CAM_OFFSET_UP*2);
+
+    //CAM::ATTACH_CAM_TO_ENTITY(camera, vehicle, 0, CAM_OFFSET_FORWARD, CAM_OFFSET_UP, TRUE);
+    m_pObjDet->increaseIndex();
+    GAMEPLAY::SET_TIME_SCALE(1.0f);
+
 	d.Accept(writer);
 
 	return buffer;
+}
+
+void Scenario::setRenderingCam(Vehicle v, int height, int length) {
+    Vector3 position;
+    Vector3 fVec, rVec, uVec;
+    Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(v, 0);
+    ENTITY::GET_ENTITY_MATRIX(v, &fVec, &rVec, &uVec, &position);
+
+    Vector3 offset;
+    offset.x = 0;
+    offset.y = length / 2;
+    offset.z = height;
+    Vector3 offsetWorld = camToWorld(offset, fVec, rVec, uVec);
+    //Since it's offset need to subtract the cam position
+    offsetWorld.x -= s_camParams.pos.x;
+    offsetWorld.y -= s_camParams.pos.y;
+    offsetWorld.z -= s_camParams.pos.z;
+
+    CAM::SET_CAM_COORD(camera, position.x + offsetWorld.x, position.y + offsetWorld.y, position.z + offsetWorld.z);
+    CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 0);
+    scriptWait(0);
+    Sleep(500);
+
+    std::ostringstream oss;
+    oss << "EntityID/rotation/position: " << v << "\n" <<
+        position.x << ", " << position.y << ", " << position.z <<
+        "\n" << rotation.x << ", " << rotation.y << ", " << rotation.z <<
+        "\nOffset: " << offset.x << ", " << offset.y << ", " << offset.z <<
+        "\nOffsetworld: " << offsetWorld.x << ", " << offsetWorld.y << ", " << offsetWorld.z;
+    log(oss.str(), true);
+}
+
+void Scenario::capture() {
+    //Time synchronization seems to be correct with 2 render calls
+    CAM::RENDER_SCRIPT_CAMS(TRUE, FALSE, 0, FALSE, FALSE);
+    scriptWait(0);
+    CAM::RENDER_SCRIPT_CAMS(TRUE, FALSE, 0, FALSE, FALSE);
+    scriptWait(0);
+    CAM::RENDER_SCRIPT_CAMS(TRUE, FALSE, 0, FALSE, FALSE);
+    scriptWait(0);
+    screenCapturer->capture();
+}
+
+void Scenario::generateSecondaryPerspective(Vehicle v, int height, int length) {
+    setRenderingCam(v, height, length);
+
+    GAMEPLAY::SET_GAME_PAUSED(true);
+    capture();
+
+    setCamParams();
+    setDepthBuffer();
+    setStencilBuffer();
+
+    //FrameObjectInfo fObjInfo = m_pObjDet->generateMessage(depth_map, m_stencilBuffer);
+    //m_pObjDet->exportDetections(fObjInfo, v);
+    std::string filename = m_pObjDet->getStandardFilename("image_2_alt", ".png", v, "image_2");
+    m_pObjDet->exportImage(screenCapturer->pixels, filename);
+    GAMEPLAY::SET_GAME_PAUSED(false);
 }
 
 void Scenario::setThrottle(){

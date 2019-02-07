@@ -16,6 +16,7 @@
 #include "CamParams.h"
 #include <memory>
 #include "ObjectDetection.h"
+#include "Constants.h"
 
 using namespace rapidjson;
 
@@ -102,6 +103,10 @@ public:
 
 	ScreenCapturer* screenCapturer;
 	StringBuffer generateMessage();
+
+    void setRenderingCam(Vehicle v, int height, int length);
+    void generateSecondaryPerspective(Vehicle v, int height = CAM_OFFSET_UP, int length = CAM_OFFSET_FORWARD);
+    void capture();
 
     int instance_index = 0;
     int series_index = 0;
