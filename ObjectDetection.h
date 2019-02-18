@@ -125,6 +125,7 @@ private:
     std::string m_groundPointsFilename;
     std::string m_instSegFilename;
     std::string m_instSegImgFilename;
+    std::string m_posFilename;
 
     std::string m_veloFilenameU;
     std::string m_depthPCFilenameU;
@@ -242,6 +243,7 @@ private:
     void exportEntity(ObjEntity e, std::ostringstream& oss, bool unprocessed, bool augmented);
     void exportEntities(EntityMap entMap, std::ostringstream& oss, bool unprocessed = false, bool augmented = false);
     void exportCalib();
+    void exportPosition();
 
     //Ground plane points
     Vector3 getGroundPoint(Vector3 point, Vector3 yVectorCam, Vector3 xVectorCam, Vector3 zVectorCam);

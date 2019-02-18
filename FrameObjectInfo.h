@@ -53,6 +53,11 @@ struct FrameObjectInfo
     float roll;
     float pitch;
 
+    //In world coordinates
+    Vector3 forwardVec;
+    Vector3 rightVec;
+    Vector3 upVec;
+
     float speed;
     float yawRate;
 

@@ -265,6 +265,10 @@ void ObjectDetection::setPosition() {
     //Should use atan2 over gameplay heading
     //float heading = GAMEPLAY::GET_HEADING_FROM_VECTOR_2D(vehicleForwardVector.x, vehicleForwardVector.y);
     m_curFrame.heading = atan2(vehicleForwardVector.y, vehicleForwardVector.x);
+
+    m_curFrame.forwardVec = vehicleForwardVector;
+    m_curFrame.upVec = vehicleUpVector;
+    m_curFrame.rightVec = vehicleRightVector;
 }
 
 void ObjectDetection::setSpeed() {
@@ -1119,6 +1123,7 @@ void ObjectDetection::setFilenames() {
     m_groundPointsFilename = getStandardFilename("groundPointsImg", ".png");
     m_instSegFilename = getStandardFilename("instSeg", ".png");
     m_instSegImgFilename = getStandardFilename("instSegImage", ".png");
+    m_posFilename = getStandardFilename("position_world", ".txt");
 
     m_veloFilenameU = getStandardFilename("velodyneU", ".bin");
     m_depthPCFilenameU = getStandardFilename("depthPCU", ".bin");
@@ -1875,6 +1880,20 @@ void ObjectDetection::exportEntities(EntityMap entMap, std::ostringstream& oss, 
     }
 }
 
+void ObjectDetection::exportPosition() {
+    FILE* f = fopen(m_posFilename.c_str(), "w");
+    std::ostringstream oss;
+
+    oss << m_curFrame.position.x << " " << m_curFrame.position.y << " " << m_curFrame.position.z << "\n"
+        << m_curFrame.forwardVec.x << " " << m_curFrame.forwardVec.y << " " << m_curFrame.forwardVec.z << "\n"
+        << m_curFrame.rightVec.x << " " << m_curFrame.rightVec.y << " " << m_curFrame.rightVec.z << "\n"
+        << m_curFrame.upVec.x << " " << m_curFrame.upVec.y << " " << m_curFrame.upVec.z;
+
+    std::string str = oss.str();
+    fprintf(f, str.c_str());
+    fclose(f);
+}
+
 void ObjectDetection::exportCalib() {
     FILE* f = fopen(m_calibFilename.c_str(), "w");
     std::ostringstream oss;
@@ -1929,6 +1948,7 @@ void ObjectDetection::exportDetections(FrameObjectInfo fObjInfo) {
     fclose(f);
 
     exportCalib();
+    exportPosition();
 }
 
 void ObjectDetection::exportImage(BYTE* data, std::string filename) {
