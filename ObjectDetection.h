@@ -43,7 +43,8 @@ private:
     bool m_initialized = false;
     bool m_eve = false;
 
-    Vehicle vehicle = NULL;
+    Vehicle m_vehicle = NULL;
+    Vehicle m_ownVehicle = NULL;
     Player player = NULL;
     Ped ped = NULL;
     Cam camera = NULL;
@@ -83,6 +84,9 @@ private:
     int pointCloudSize = 0;
     std::unordered_map<int, HitLidarEntity*> entitiesHit;
     int lidar_param = 7;
+
+    //Perspective variables
+    int m_vPerspective = -1;//Entity ID of perspective vehicle (-1 if self)
 
     //Depth Map variables
     float* m_pDepth = NULL;
@@ -162,10 +166,11 @@ public:
     void setDepthBuffer(bool prevDepth = false);
     bool m_prevDepth = false;
 
-    FrameObjectInfo generateMessage(float* pDepth, uint8_t* pStencil);
-    void exportDetections();
-    void exportImage(BYTE* data);
+    FrameObjectInfo generateMessage(float* pDepth, uint8_t* pStencil, int entityID = -1);
+    void exportDetections(FrameObjectInfo fObjInfo);
+    void exportImage(BYTE* data, std::string filename = "");
     void increaseIndex();
+    std::string getStandardFilename(std::string subDir, std::string extension);
 
     int instance_index = 0;
     int series_index = 0;
@@ -210,7 +215,6 @@ private:
     void drawVectorFromPosition(Vector3 vector, int blue, int green);
     void setDepthParams();
     Vector3 depthToCamCoords(float depth, float screenX, float screenY);
-    std::string getStandardFilename(std::string subDir, std::string extension);
     void outputRealSpeed();
     void setStencilBuffer();
     void setFilenames();

@@ -30,10 +30,6 @@ const float VERT_CAM_FOV = 59; //In degrees
                                //90 degrees horizontal (KITTI) corresponds to 59 degrees vertical (https://www.gtaall.com/info/fov-calculator.html).
 const float HOR_CAM_FOV = 90; //In degrees
 
-const float CAM_OFFSET_FORWARD = 0;// .5;
-const float CAM_OFFSET_UP = 1.065;
-const float CAR_CENTER_OFFSET_UP = 0.665;//Distance to ground is ~1.73m (as per kitti specs for lidar)
-
 //Known stencil types
 const int STENCIL_TYPE_DEFAULT = 0;//Ground, buildings, etc...
 const int STENCIL_TYPE_NPC = 1;
@@ -41,7 +37,7 @@ const int STENCIL_TYPE_VEHICLE = 2;
 const int STENCIL_TYPE_VEGETATION = 3;
 const int STENCIL_TYPE_FLOOR = 4;//Seems to be floors and some boulevards
 const int STENCIL_TYPE_SKY = 7;
-const int STENCIL_TYPE_SELF = 123;
+const int STENCIL_TYPE_SELF = 129;
 const int STENCIL_TYPE_OWNCAR = 130;
 const std::vector<int> KNOWN_STENCIL_TYPES = { STENCIL_TYPE_DEFAULT, STENCIL_TYPE_NPC, STENCIL_TYPE_VEHICLE, STENCIL_TYPE_VEGETATION, STENCIL_TYPE_FLOOR, STENCIL_TYPE_SKY, STENCIL_TYPE_SELF, STENCIL_TYPE_OWNCAR };
 
@@ -55,7 +51,8 @@ void ObjectDetection::initCollection(UINT camWidth, UINT camHeight, bool exportE
     instance_index = startIndex;
 
     ped = PLAYER::PLAYER_PED_ID();
-    vehicle = PED::GET_VEHICLE_PED_IS_IN(ped, false);
+    m_ownVehicle = PED::GET_VEHICLE_PED_IS_IN(ped, false);
+    m_vehicle = m_ownVehicle;
 
     char temp[] = "%06d";
     char strComp[sizeof temp + 100];
@@ -141,10 +138,17 @@ FrameObjectInfo ObjectDetection::setDepthAndStencil(bool prevDepth, float* pDept
     return m_curFrame;
 }
 
-FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStencil) {
+FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStencil, int entityID) {
     //LOG(LL_ERR, "Depth data generate: ", pDepth[0], pDepth[1], pDepth[2], pDepth[3], pDepth[4], pDepth[5], pDepth[6], pDepth[7]);
     m_pDepth = pDepth;
     m_pStencil = pStencil;
+    m_vPerspective = entityID;
+    if (entityID != -1) {
+        m_vehicle = entityID;
+    }
+    else {
+        m_vehicle = m_ownVehicle;
+    }
 
     //TODO pass this through
     bool depthMap = true;
@@ -214,7 +218,7 @@ void ObjectDetection::drawVectorFromPosition(Vector3 vector, int blue, int green
 void ObjectDetection::setPosition() {
     //NOTE: The forward and right vectors are swapped (compared to native function labels) to keep consistency with coordinate system
     if (m_eve) {
-        ENTITY::GET_ENTITY_MATRIX(vehicle, &vehicleForwardVector, &vehicleRightVector, &vehicleUpVector, &currentPos); //Blue or red pill
+        ENTITY::GET_ENTITY_MATRIX(m_vehicle, &vehicleForwardVector, &vehicleRightVector, &vehicleUpVector, &currentPos); //Blue or red pill
 
         /*LOG(LL_ERR, "Eve Forward vector: ", m_camForwardVector.x, " Y: ", m_camForwardVector.y, " Z: ", m_camForwardVector.z);
         LOG(LL_ERR, "Forward vector: ", vehicleForwardVector.x, " Y: ", vehicleForwardVector.y, " Z: ", vehicleForwardVector.z);
@@ -246,8 +250,8 @@ void ObjectDetection::setPosition() {
     }
     else {
         //If not eve, the camera and vehicle are aligned by pausing and flushing the buffers
-        ENTITY::GET_ENTITY_MATRIX(vehicle, &m_camForwardVector, &m_camRightVector, &m_camUpVector, &currentPos);
-        ENTITY::GET_ENTITY_MATRIX(vehicle, &vehicleForwardVector, &vehicleRightVector, &vehicleUpVector, &currentPos); //Blue or red pill
+        ENTITY::GET_ENTITY_MATRIX(m_vehicle, &m_camForwardVector, &m_camRightVector, &m_camUpVector, &currentPos);
+        ENTITY::GET_ENTITY_MATRIX(m_vehicle, &vehicleForwardVector, &vehicleRightVector, &vehicleUpVector, &currentPos); //Blue or red pill
     }
 
     m_curFrame.position = currentPos;
@@ -261,11 +265,11 @@ void ObjectDetection::setPosition() {
 }
 
 void ObjectDetection::setSpeed() {
-    m_curFrame.speed = ENTITY::GET_ENTITY_SPEED(vehicle);
+    m_curFrame.speed = ENTITY::GET_ENTITY_SPEED(m_vehicle);
 }
 
 void ObjectDetection::setYawRate() {
-    Vector3 rates = ENTITY::GET_ENTITY_ROTATION_VELOCITY(vehicle);
+    Vector3 rates = ENTITY::GET_ENTITY_ROTATION_VELOCITY(m_vehicle);
     m_curFrame.yawRate = rates.z*180.0 / 3.14159265359;
 }
 
@@ -305,7 +309,7 @@ bool ObjectDetection::hasLOSToEntity(Entity entityID, Vector3 position, Vector3 
 
                 //options: -1=everything
                 //New function is called _START_SHAPE_TEST_RAY
-                int raycast_handle = WORLDPROBE::_CAST_RAY_POINT_TO_POINT(oPos.x, oPos.y, oPos.z, target.x, target.y, target.z, -1, vehicle, 7);
+                int raycast_handle = WORLDPROBE::_CAST_RAY_POINT_TO_POINT(oPos.x, oPos.y, oPos.z, target.x, target.y, target.z, -1, m_vehicle, 7);
 
                 //New function is called GET_SHAPE_TEST_RESULT
                 WORLDPROBE::_GET_RAYCAST_RESULT(raycast_handle, &isHit, &endCoord, &surfaceNorm, &hitEntity);
@@ -761,7 +765,7 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
                 //HAS_ENTITY_CLEAR_LOS_TO_ENTITY is from vehicle, NOT camera perspective
                 //pointsHit misses some objects
                 //hasLOSToEntity retrieves from camera perspective however 3D bboxes are larger than object
-                if (ENTITY::HAS_ENTITY_CLEAR_LOS_TO_ENTITY(vehicle, entityID, 19) || pointsHit > 0 ||
+                if (ENTITY::HAS_ENTITY_CLEAR_LOS_TO_ENTITY(m_vehicle, entityID, 19) || pointsHit > 0 ||
                     hasLOSToEntity(entityID, position, dim, forwardVector, rightVector, upVector)) {
                     success = true;
 
@@ -865,7 +869,7 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
                                     m_curFrame.peds[ped.first].vPedIsIn = entityID;
                                     foundPedOnBike = true;
                                     std::ostringstream oss;
-                                    oss << "Alternate Found ped on bike at index: " << instance_index;
+                                    oss << "****************************Alternate Found ped on bike at index: " << instance_index;
                                     std::string str = oss.str();
                                     log(str, true);
                                     
@@ -973,7 +977,7 @@ void ObjectDetection::setVehiclesList() {
 
     int count = worldGetAllVehicles(vehicles, ARR_SIZE);
     for (int i = 0; i < count; i++) {
-        if (vehicles[i] == vehicle) continue; //Don't process own car!
+        if (vehicles[i] == m_vehicle) continue; //Don't process perspective car!
 
         model = ENTITY::GET_ENTITY_MODEL(vehicles[i]);
         if (VEHICLE::IS_THIS_MODEL_A_CAR(model)) classid = 0;
@@ -1532,7 +1536,25 @@ void ObjectDetection::setFocalLength() {
 }
 
 std::string ObjectDetection::getStandardFilename(std::string subDir, std::string extension) {
-    std::string filename = baseFolder + subDir + "\\";
+    std::string filename = baseFolder;
+    CreateDirectory(filename.c_str(), NULL);
+
+    if (m_vPerspective != -1) {
+        char temp[] = "%07d";
+        char strComp[sizeof temp + 100];
+        sprintf(strComp, temp, m_vPerspective);
+        std::string entityStr = strComp;
+
+        filename.append("alt_perspective");
+        filename.append("\\");
+        CreateDirectory(filename.c_str(), NULL);
+        filename.append(entityStr);
+        filename.append("\\");
+        CreateDirectory(filename.c_str(), NULL);
+    }
+
+    filename.append(subDir);
+    filename.append("\\");
     CreateDirectory(filename.c_str(), NULL);
     if (collectTracking) {
         filename.append(series_string);
@@ -1574,7 +1596,7 @@ void ObjectDetection::outputRealSpeed() {
     if (instance_index == 0) {
         m_trackLastPos = s_camParams.pos;
         m_trackLastIndex = instance_index;
-        m_trackLastRealSpeed = ENTITY::GET_ENTITY_SPEED(vehicle) / 10;
+        m_trackLastRealSpeed = ENTITY::GET_ENTITY_SPEED(m_vehicle) / 10;
         return;
     }
 
@@ -1597,7 +1619,7 @@ void ObjectDetection::outputRealSpeed() {
 
     //Update values
     //Average of speed at last frame and current frame
-    m_trackRealSpeed += (ENTITY::GET_ENTITY_SPEED(vehicle) / 10 + m_trackLastRealSpeed) / 2;
+    m_trackRealSpeed += (ENTITY::GET_ENTITY_SPEED(m_vehicle) / 10 + m_trackLastRealSpeed) / 2;
     m_trackDist += sqrt(SYSTEM::VDIST2(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, m_trackLastPos.x, m_trackLastPos.y, m_trackLastPos.z));
     m_trackDistErrorTotal += m_trackDist - m_trackRealSpeed;
     m_trackDistErrorTotalVar += pow((m_trackDist - m_trackRealSpeed), 2);
@@ -1605,7 +1627,7 @@ void ObjectDetection::outputRealSpeed() {
 
     m_trackLastPos = s_camParams.pos;
     m_trackLastIndex = instance_index;
-    m_trackLastRealSpeed = ENTITY::GET_ENTITY_SPEED(vehicle) / 10;
+    m_trackLastRealSpeed = ENTITY::GET_ENTITY_SPEED(m_vehicle) / 10;
 }
 
 void ObjectDetection::setCamParams(float* forwardVec, float* rightVec, float* upVec) {
@@ -1619,7 +1641,7 @@ void ObjectDetection::setCamParams(float* forwardVec, float* rightVec, float* up
         s_camParams.init = true;
     }
 
-    ENTITY::GET_ENTITY_MATRIX(vehicle, &m_camForwardVector, &m_camRightVector, &m_camUpVector, &s_camParams.pos);
+    ENTITY::GET_ENTITY_MATRIX(m_vehicle, &m_camForwardVector, &m_camRightVector, &m_camUpVector, &s_camParams.pos);
 
     if (forwardVec) {
         m_camForwardVector.x = forwardVec[0];
@@ -1636,14 +1658,14 @@ void ObjectDetection::setCamParams(float* forwardVec, float* rightVec, float* up
         }
     }
     else {
-        ENTITY::GET_ENTITY_MATRIX(vehicle, &m_camForwardVector, &m_camRightVector, &m_camUpVector, &currentPos);
+        ENTITY::GET_ENTITY_MATRIX(m_vehicle, &m_camForwardVector, &m_camRightVector, &m_camUpVector, &currentPos);
     }
 
     //These values change frame to frame
     //Camera functions do not work in eve. Need to use vehicle and offsets.
     //Recordings need to always have the camera aligned with the vehicle for export to be aligned properly.
     if (!m_eve) {
-        s_camParams.theta = ENTITY::GET_ENTITY_ROTATION(vehicle, 0); //CAM::GET_GAMEPLAY_CAM_ROT(0); //CAM::GET_CAM_ROT(camera, 0);
+        s_camParams.theta = ENTITY::GET_ENTITY_ROTATION(m_vehicle, 0); //CAM::GET_GAMEPLAY_CAM_ROT(0); //CAM::GET_CAM_ROT(camera, 0);
     }
     //s_camParams.pos = currentPos;// CAM::GET_GAMEPLAY_CAM_COORD();// CAM::GET_CAM_COORD(camera);
     //Use vehicleForwardVector since it corresponds to vehicle forwardVector
@@ -1653,7 +1675,7 @@ void ObjectDetection::setCamParams(float* forwardVec, float* rightVec, float* up
 
     Vector3 theta = CAM::GET_CAM_ROT(camera, 0);
     Vector3 pos1 = CAM::GET_CAM_COORD(camera);
-    Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(vehicle, 0);
+    Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(m_vehicle, 0);
 
     std::ostringstream oss1;
     oss1 << "\ns_camParams.pos X: " << s_camParams.pos.x << " Y: " << s_camParams.pos.y << " Z: " << s_camParams.pos.z <<
@@ -1859,16 +1881,15 @@ void ObjectDetection::exportCalib() {
     fclose(f);
 }
 
-void ObjectDetection::exportDetections() {
+void ObjectDetection::exportDetections(FrameObjectInfo fObjInfo) {
     if (collectTracking) {
         //TODO
     }
-
     FILE* f = fopen(m_labelsFilename.c_str(), "w");
     std::ostringstream oss;
 
-    exportEntities(m_curFrame.vehicles, oss);
-    exportEntities(m_curFrame.peds, oss);
+    exportEntities(fObjInfo.vehicles, oss);
+    exportEntities(fObjInfo.peds, oss);
 
     std::string str = oss.str();
     fprintf(f, str.c_str());
@@ -1877,8 +1898,8 @@ void ObjectDetection::exportDetections() {
     f = fopen(m_labelsUnprocessedFilename.c_str(), "w");
     std::ostringstream oss1;
 
-    exportEntities(m_curFrame.vehicles, oss1, true);
-    exportEntities(m_curFrame.peds, oss1, true);
+    exportEntities(fObjInfo.vehicles, oss1, true);
+    exportEntities(fObjInfo.peds, oss1, true);
 
     std::string str1 = oss1.str();
     fprintf(f, str1.c_str());
@@ -1887,8 +1908,8 @@ void ObjectDetection::exportDetections() {
     f = fopen(m_labelsAugFilename.c_str(), "w");
     std::ostringstream oss2;
 
-    exportEntities(m_curFrame.vehicles, oss2, false, true);
-    exportEntities(m_curFrame.peds, oss2, false, true);
+    exportEntities(fObjInfo.vehicles, oss2, false, true);
+    exportEntities(fObjInfo.peds, oss2, false, true);
 
     std::string str2 = oss2.str();
     fprintf(f, str2.c_str());
@@ -1897,9 +1918,12 @@ void ObjectDetection::exportDetections() {
     exportCalib();
 }
 
-void ObjectDetection::exportImage(BYTE* data) {
+void ObjectDetection::exportImage(BYTE* data, std::string filename) {
     cv::Mat tempMat(cv::Size(s_camParams.width, s_camParams.height), CV_8UC3, data);
-    cv::imwrite(m_imgFilename, tempMat);
+    if (filename.empty()) {
+        filename = m_imgFilename;
+    }
+    cv::imwrite(filename, tempMat);
 }
 
 Vector3 ObjectDetection::getGroundPoint(Vector3 point, Vector3 yVectorCam, Vector3 xVectorCam, Vector3 zVectorCam) {

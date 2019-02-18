@@ -40,6 +40,7 @@ struct ObjEntity {
     int vPedIsIn;
 };
 
+typedef std::pair<int, ObjEntity> EntityMapEntry;
 typedef std::map<int, ObjEntity> EntityMap;
 
 struct FrameObjectInfo
