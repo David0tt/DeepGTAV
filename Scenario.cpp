@@ -279,7 +279,7 @@ void Scenario::buildScenario() {
         PATHFIND::GET_CLOSEST_VEHICLE_NODE_WITH_HEADING(x, y, 0, &pos, &heading, 0, 0, 0);
     }
 
-	ENTITY::DELETE_ENTITY(&vehicle);
+	ENTITY::DELETE_ENTITY(&m_ownVehicle);
 	vehicleHash = GAMEPLAY::GET_HASH_KEY((char*)_vehicle);
 	STREAMING::REQUEST_MODEL(vehicleHash);
 	while (!STREAMING::HAS_MODEL_LOADED(vehicleHash)) WAIT(0);
@@ -294,8 +294,8 @@ void Scenario::buildScenario() {
         log(str);
         vehicles_created = false;
     }
-	vehicle = VEHICLE::CREATE_VEHICLE(vehicleHash, pos.x, pos.y, pos.z, heading, FALSE, FALSE);
-	VEHICLE::SET_VEHICLE_ON_GROUND_PROPERLY(vehicle);
+	m_ownVehicle = VEHICLE::CREATE_VEHICLE(vehicleHash, pos.x, pos.y, pos.z, heading, FALSE, FALSE);
+	VEHICLE::SET_VEHICLE_ON_GROUND_PROPERLY(m_ownVehicle);
 
 	while (!ENTITY::DOES_ENTITY_EXIST(ped)) {
 		ped = PLAYER::PLAYER_PED_ID();
@@ -306,14 +306,14 @@ void Scenario::buildScenario() {
 	PLAYER::START_PLAYER_TELEPORT(player, pos.x, pos.y, pos.z, heading, 0, 0, 0);
 	while (PLAYER::IS_PLAYER_TELEPORT_ACTIVE()) WAIT(0);
 
-	PED::SET_PED_INTO_VEHICLE(ped, vehicle, -1);
+	PED::SET_PED_INTO_VEHICLE(ped, m_ownVehicle, -1);
 	STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED(vehicleHash);
 
 	TIME::SET_CLOCK_TIME(hour, minute, 0);
 
 	GAMEPLAY::SET_WEATHER_TYPE_NOW_PERSIST((char*)_weather);
 
-	rotation = ENTITY::GET_ENTITY_ROTATION(vehicle, 0);
+	rotation = ENTITY::GET_ENTITY_ROTATION(m_ownVehicle, 0);
 	CAM::DESTROY_ALL_CAMS(TRUE);
 	camera = CAM::CREATE_CAM("DEFAULT_SCRIPTED_CAMERA", TRUE);
 	//if (strcmp(_vehicle, "packer") == 0) CAM::ATTACH_CAM_TO_ENTITY(camera, vehicle, 0, 2.35, 1.7, TRUE);
@@ -332,10 +332,10 @@ void Scenario::buildScenario() {
 	AI::CLEAR_PED_TASKS(ped);
 	if (_drivingMode >= 0 && !stationaryScene && !m_positionScenario) {
         if (DRIVE_SPEC_AREA && !START_SPEC_AREA) {
-            AI::TASK_VEHICLE_DRIVE_TO_COORD(ped, vehicle, dir.x, dir.y, dir.z, _setSpeed, Any(1.f), vehicleHash, _drivingMode, 50.f, true);
+            AI::TASK_VEHICLE_DRIVE_TO_COORD(ped, m_ownVehicle, dir.x, dir.y, dir.z, _setSpeed, Any(1.f), vehicleHash, _drivingMode, 50.f, true);
         }
         else {
-            AI::TASK_VEHICLE_DRIVE_WANDER(ped, vehicle, _setSpeed, _drivingMode);
+            AI::TASK_VEHICLE_DRIVE_WANDER(ped, m_ownVehicle, _setSpeed, _drivingMode);
         }
         
     }
@@ -392,7 +392,7 @@ void Scenario::config(const Value& sc, const Value& dc) {
 void Scenario::run() {
 	if (running) {
         if (m_recordScenario) {
-            Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(vehicle, 0);
+            Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(m_ownVehicle, 0);
             CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 0);
         }
 
@@ -410,7 +410,7 @@ void Scenario::run() {
                 dir.x = new_points[0].first;
                 dir.y = new_points[0].second;
 
-                AI::TASK_VEHICLE_DRIVE_TO_COORD(ped, vehicle, dir.x, dir.y, dir.z, _setSpeed, Any(1.f),
+                AI::TASK_VEHICLE_DRIVE_TO_COORD(ped, m_ownVehicle, dir.x, dir.y, dir.z, _setSpeed, Any(1.f),
                     GAMEPLAY::GET_HASH_KEY((char*)_vehicle), _drivingMode, 1.f, true);
             }
             else if (!in_bounds(currentPos.x, currentPos.y, m_startArea, m_polyGrid))
@@ -420,7 +420,7 @@ void Scenario::run() {
                 dir.x = new_points[0].first;
                 dir.y = new_points[0].second;
 
-                AI::TASK_VEHICLE_DRIVE_TO_COORD(ped, vehicle, dir.x, dir.y, dir.z, _setSpeed, Any(1.f),
+                AI::TASK_VEHICLE_DRIVE_TO_COORD(ped, m_ownVehicle, dir.x, dir.y, dir.z, _setSpeed, Any(1.f),
                     GAMEPLAY::GET_HASH_KEY((char*)_vehicle), _drivingMode, 1.f, true);
             }
         }
@@ -450,13 +450,13 @@ void Scenario::run() {
 			PED::SET_PED_CONFIG_FLAG(ped, 32, FALSE);
 
 			// Invincible vehicle
-			VEHICLE::SET_VEHICLE_TYRES_CAN_BURST(vehicle, FALSE);
-			VEHICLE::SET_VEHICLE_WHEELS_CAN_BREAK(vehicle, FALSE);
-			VEHICLE::SET_VEHICLE_HAS_STRONG_AXLES(vehicle, TRUE);
+			VEHICLE::SET_VEHICLE_TYRES_CAN_BURST(m_ownVehicle, FALSE);
+			VEHICLE::SET_VEHICLE_WHEELS_CAN_BREAK(m_ownVehicle, FALSE);
+			VEHICLE::SET_VEHICLE_HAS_STRONG_AXLES(m_ownVehicle, TRUE);
 
-			VEHICLE::SET_VEHICLE_CAN_BE_VISIBLY_DAMAGED(vehicle, FALSE);
-			ENTITY::SET_ENTITY_INVINCIBLE(vehicle, TRUE);
-			ENTITY::SET_ENTITY_PROOFS(vehicle, 1, 1, 1, 1, 1, 1, 1, 1);
+			VEHICLE::SET_VEHICLE_CAN_BE_VISIBLY_DAMAGED(m_ownVehicle, FALSE);
+			ENTITY::SET_ENTITY_INVINCIBLE(m_ownVehicle, TRUE);
+			ENTITY::SET_ENTITY_PROOFS(m_ownVehicle, 1, 1, 1, 1, 1, 1, 1, 1);
 
 			// Player invincible
 			PLAYER::SET_PLAYER_INVINCIBLE(player, TRUE);
@@ -490,7 +490,7 @@ StringBuffer Scenario::generateMessage() {
 	Writer<StringBuffer> writer(buffer);
 
     if (m_recordScenario) {
-        Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(vehicle, 0);
+        Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(m_ownVehicle, 0);
         CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 0);
         return buffer;
     }
@@ -499,7 +499,7 @@ StringBuffer Scenario::generateMessage() {
         Vector3 currentPos;
         Vector3 vehicleForwardVector, vehicleRightVector, vehicleUpVector;
 
-        ENTITY::GET_ENTITY_MATRIX(vehicle, &vehicleForwardVector, &vehicleRightVector, &vehicleUpVector, &currentPos);
+        ENTITY::GET_ENTITY_MATRIX(m_ownVehicle, &vehicleForwardVector, &vehicleRightVector, &vehicleUpVector, &currentPos);
         float heading = GAMEPLAY::GET_HEADING_FROM_VECTOR_2D(vehicleForwardVector.x, vehicleForwardVector.y);
 
         std::string baseFolder = std::string(getenv("DEEPGTAV_EXPORT_DIR")) + "\\";
@@ -512,7 +512,7 @@ StringBuffer Scenario::generateMessage() {
         fprintf(f, "\n");
         fclose(f);
 
-        Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(vehicle, 0);
+        Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(m_ownVehicle, 0);
         CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 0);
         return buffer;
     }
@@ -521,7 +521,7 @@ StringBuffer Scenario::generateMessage() {
     GAMEPLAY::SET_GAME_PAUSED(true);
     GAMEPLAY::SET_TIME_SCALE(0.0f);
 
-    setRenderingCam(vehicle, CAM_OFFSET_UP, CAM_OFFSET_FORWARD);
+    setRenderingCam(m_ownVehicle, CAM_OFFSET_UP, CAM_OFFSET_FORWARD);
 
     ////Can check whether camera and vehicle are aligned
     //Vector3 camRot2 = CAM::GET_CAM_ROT(camera, 0);
@@ -576,7 +576,7 @@ StringBuffer Scenario::generateMessage() {
         ++count;
     }
 
-    generateSecondaryPerspective(vehicle, CAM_OFFSET_UP*2);
+    generateSecondaryPerspective(m_ownVehicle, CAM_OFFSET_UP*2);
 
     //CAM::ATTACH_CAM_TO_ENTITY(camera, vehicle, 0, CAM_OFFSET_FORWARD, CAM_OFFSET_UP, TRUE);
     m_pObjDet->increaseIndex();
@@ -638,23 +638,24 @@ void Scenario::generateSecondaryPerspective(Vehicle v, int height, int length) {
     setDepthBuffer();
     setStencilBuffer();
 
-    //FrameObjectInfo fObjInfo = m_pObjDet->generateMessage(depth_map, m_stencilBuffer);
-    //m_pObjDet->exportDetections(fObjInfo, v);
-    std::string filename = m_pObjDet->getStandardFilename("image_2_alt", ".png", v, "image_2");
+    FrameObjectInfo fObjInfo = m_pObjDet->generateMessage(depth_map, m_stencilBuffer, v);
+    m_pObjDet->exportDetections(fObjInfo);
+    std::string filename = m_pObjDet->getStandardFilename("image_2", ".png");
     m_pObjDet->exportImage(screenCapturer->pixels, filename);
+
     GAMEPLAY::SET_GAME_PAUSED(false);
 }
 
 void Scenario::setThrottle(){
-	d["throttle"] = getFloatValue(vehicle, 0x92C);
+	d["throttle"] = getFloatValue(m_ownVehicle, 0x92C);
 }
 
 void Scenario::setBrake(){
-	d["brake"] = getFloatValue(vehicle, 0x930);
+	d["brake"] = getFloatValue(m_ownVehicle, 0x930);
 }
 
 void Scenario::setSteering(){
-	d["steering"] = -getFloatValue(vehicle, 0x924) / 0.6981317008;
+	d["steering"] = -getFloatValue(m_ownVehicle, 0x924) / 0.6981317008;
 }
 
 void Scenario::setDirection(){
@@ -669,7 +670,7 @@ void Scenario::setDirection(){
 }
 
 void Scenario::setReward() {
-	d["reward"] = rewarder->computeReward(vehicle);
+	d["reward"] = rewarder->computeReward(m_ownVehicle);
 }
 
 static int bike_num = 0;
@@ -754,7 +755,7 @@ void Scenario::createVehicles() {
 //Saves the position and vectors of the capture vehicle
 void Scenario::setPosition() {
     //NOTE: The forward and right vectors are swapped (compared to native function labels) to keep consistency with coordinate system
-    ENTITY::GET_ENTITY_MATRIX(vehicle, &currentForwardVector, &currentRightVector, &currentUpVector, &currentPos); //Blue or red pill
+    ENTITY::GET_ENTITY_MATRIX(m_ownVehicle, &currentForwardVector, &currentRightVector, &currentUpVector, &currentPos); //Blue or red pill
 }
 
 //TODO Calls to export_get_color_buffer are causing GTA to crash

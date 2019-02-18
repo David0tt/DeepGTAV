@@ -29,7 +29,7 @@ private:
 	static char* weatherList[14];
 	static char* vehicleList[3];
 
-	Vehicle vehicle = NULL;
+	Vehicle m_ownVehicle = NULL;
 	Player player = NULL;
 	Ped ped = NULL;
 	Cam camera = NULL;
