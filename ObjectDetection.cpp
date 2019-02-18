@@ -127,6 +127,7 @@ FrameObjectInfo ObjectDetection::setDepthAndStencil(bool prevDepth, float* pDept
 
     if (lidar_initialized) setDepthBuffer(prevDepth);
     if (lidar_initialized) setStencilBuffer();
+    if (lidar_initialized) getContours();
     //TODO: Need to update 2D bboxes after receiving new depth image
 
     if (prevDepth) {
@@ -168,6 +169,8 @@ FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStenci
     setTime();
     setFocalLength();
     log("After focalLength");
+    //if (depthMap && lidar_initialized) outputGroundSeg();
+    //if (depthMap && lidar_initialized) updateSegImage();
     if (depthMap && lidar_initialized) printSegImage();
     log("After printSeg");
     if (depthMap && lidar_initialized) outputOcclusion();
@@ -1208,6 +1211,16 @@ void ObjectDetection::collectLiDAR() {
     if (OUTPUT_DEPTH_STATS) {
         lidar.printDepthStats();
     }
+}
+
+//Maybe todo. Need to see results of other detection first
+void ObjectDetection::getContours() {
+    /*cv::Mat tempMat(cv::Size(s_camParams.width, s_camParams.height), CV_8UC1, m_pStencil);
+    std::vector<std::vector<cv::Point> > contours;
+    cv::Mat output;
+    im2, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE);*/
+
+    //Print separate segmentation images using drawContours
 }
 
 void ObjectDetection::setStencilBuffer() {

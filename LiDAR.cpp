@@ -585,6 +585,7 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
     GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(endCoord.x, endCoord.y, endCoord.z, &(groundZ), 0);
     float groundDist = endCoord.z - groundZ;
 
+    //TODO Try using endpoint with this, comparing the two
     //The 2D screen coords of the target
     //This is what should be used for sampling depth map as endCoord will not hit same points as depth map
     Eigen::Vector2f target2D = get_2d_from_3d(Eigen::Vector3f(target.x, target.y, target.z),

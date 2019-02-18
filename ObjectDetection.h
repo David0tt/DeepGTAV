@@ -225,6 +225,9 @@ private:
     bool in3DBox(Vector3 point, Vector3 objPos, Vector3 dim, Vector3 yVector, Vector3 xVector, Vector3 zVector);
     bool checkDirection(Vector3 unit, Vector3 point, Vector3 min, Vector3 max);
     void printSegImage();
+    void getContours();
+    //void outputGroundSeg();
+    //void updateSegImage();
 
     void getRollAndPitch(Vector3 rightVector, Vector3 forwardVector, Vector3 upVector, float &pitch, float &roll);
 
