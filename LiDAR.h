@@ -79,7 +79,7 @@ public:
 
     void DestroyLiDAR();
 
-    float* GetPointClouds(int &size, std::unordered_map<int, HitLidarEntity*> *entitiesHit, int param, float* depthMap);
+    float* GetPointClouds(int &size, std::unordered_map<int, HitLidarEntity*> *entitiesHit, int param, float* depthMap, Entity perspectiveVehicle = -1);
     float* Get2DPoints(int &size);
     float* GetRaycastPointcloud(int & size);
     float* UpdatePointCloud(int &size, float* depthMap);
@@ -118,7 +118,7 @@ private:
     float m_horizResolu;//deg, horizontal angle resolution
 
     Cam m_camera;
-    Entity m_ownCar;
+    Entity m_lidarVehicle;
     float m_quaterion[4];
     float m_rotDCM[9];//convert n-coord to b-coord
     int m_initType;

@@ -35,7 +35,7 @@ LiDAR::LiDAR()
     m_vertiResolu = 0;
     m_horizResolu = 0;
     m_camera = 0;
-    m_ownCar = 0;
+    m_lidarVehicle = 0;
     m_initType = _LIDAR_NOT_INIT_YET_;
     m_isAttach = false;
 }
@@ -70,7 +70,7 @@ void LiDAR::Init2DLiDAR_SmplNum(float maxRange, int horizSmplNum, float horizLeL
 #ifdef DEBUG_CONFIG
     printf("\nDEBUG_CONFIG: function: %s", __FUNCTION__);
     printf("\ncamera=%d, ownCar=%d, maxRange=%f, horizSmplNum=%d, horizLeLimit=%f, horizRiLimit=%f",
-        m_camera, m_ownCar, m_maxRange, m_horizSmplNum, m_horizLeLimit, m_horizRiLimit);
+        m_camera, m_lidarVehicle, m_maxRange, m_horizSmplNum, m_horizLeLimit, m_horizRiLimit);
     printf("\nHorizontal FOV(yaw definition): %f to %f", -m_horizLeLimit, 360.0 - m_horizRiLimit);
     printf("\nHorizontal angel resolution(deg): %f", m_horizResolu);
     printf("\n");
@@ -141,7 +141,7 @@ void LiDAR::Init3DLiDAR_SmplNum(float maxRange, int horizSmplNum, float horizLeL
 #ifdef DEBUG_CONFIG
     printf("\nDEBUG_CONFIG: function: %s", __FUNCTION__);
     printf("\ncamera=%d, ownCar=%d, maxRange=%f, horizSmplNum=%d, horizLeLimit=%f, horizRiLimit=%f, vertiSmplNum=%d, vertiUpLimit=%f, vertiUnLimit=%f",
-        m_camera, m_ownCar, m_maxRange, m_horizSmplNum, m_horizLeLimit, m_horizRiLimit, m_vertiSmplNum, m_vertiUpLimit, m_vertiUnLimit);
+        m_camera, m_lidarVehicle, m_maxRange, m_horizSmplNum, m_horizLeLimit, m_horizRiLimit, m_vertiSmplNum, m_vertiUpLimit, m_vertiUnLimit);
     printf("\nHorizontal FOV(yaw definition): %f to %f", -m_horizLeLimit, 360.0 - m_horizRiLimit);
     printf("\nVertical FOV(pitch definition): %f to %f", 90.0 - m_vertiUpLimit, 90.0 - m_vertiUnLimit);
     printf("\nHorizontal angel resolution(deg): %f", m_horizResolu);
@@ -165,7 +165,7 @@ void LiDAR::AttachLiDAR2Camera(Cam camera, Entity ownCar)
     if (!m_isAttach)
     {
         m_camera = camera;
-        m_ownCar = ownCar;
+        m_lidarVehicle = ownCar;
         m_isAttach = true;
         log("LiDAR attached to car");
     }
@@ -203,7 +203,7 @@ void LiDAR::DestroyLiDAR()
     m_vertiResolu = 0;
     m_horizResolu = 0;
     m_camera = 0;
-    m_ownCar = 0;
+    m_lidarVehicle = 0;
     m_initType = _LIDAR_NOT_INIT_YET_;
     m_isAttach = false;
 }
@@ -294,8 +294,12 @@ void LiDAR::printDepthStats() {
     log(oss.str(), true);
 }
 
-float * LiDAR::GetPointClouds(int &size, std::unordered_map<int, HitLidarEntity*> *entitiesHit, int param, float* depthMap)
+float * LiDAR::GetPointClouds(int &size, std::unordered_map<int, HitLidarEntity*> *entitiesHit, int param, float* depthMap, Entity perspectiveVehicle)
 {
+    if (perspectiveVehicle != -1) {
+        m_lidarVehicle = perspectiveVehicle;
+    }
+
     m_depthMap = depthMap;
     native_param = param;
 
@@ -576,7 +580,7 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
 
     //options: -1=everything
     //New function is called _START_SHAPE_TEST_RAY
-    raycast_handle = WORLDPROBE::_CAST_RAY_POINT_TO_POINT(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, target.x, target.y, target.z, -1, m_ownCar, native_param);
+    raycast_handle = WORLDPROBE::_CAST_RAY_POINT_TO_POINT(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, target.x, target.y, target.z, -1, m_lidarVehicle, native_param);
 
     //New function is called GET_SHAPE_TEST_RESULT
     WORLDPROBE::_GET_RAYCAST_RESULT(raycast_handle, &isHit, &endCoord, &surfaceNorm, &hitEntity);
@@ -753,7 +757,7 @@ void LiDAR::GenerateHorizPointClouds(float phi, float *p)
 
 void LiDAR::calcDCM()
 {
-    ENTITY::GET_ENTITY_QUATERNION(m_ownCar, &m_quaterion[0], &m_quaterion[1], &m_quaterion[2], &m_quaterion[3]);
+    ENTITY::GET_ENTITY_QUATERNION(m_lidarVehicle, &m_quaterion[0], &m_quaterion[1], &m_quaterion[2], &m_quaterion[3]);
     //m_quaterion: R - coord spins to b - coord
     float q00 = m_quaterion[3] * m_quaterion[3], q11 = m_quaterion[0] * m_quaterion[0], q22 = m_quaterion[1] * m_quaterion[1], q33 = m_quaterion[2] * m_quaterion[2];
     float q01 = m_quaterion[3] * m_quaterion[0], q02 = m_quaterion[3] * m_quaterion[1], q03 = m_quaterion[3] * m_quaterion[2], q12 = m_quaterion[0] * m_quaterion[1];

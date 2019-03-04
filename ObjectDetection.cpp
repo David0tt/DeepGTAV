@@ -1182,7 +1182,7 @@ void ObjectDetection::setupLiDAR() {
 void ObjectDetection::collectLiDAR() {
     entitiesHit.clear();
     lidar.updateCurrentPosition(m_camForwardVector, m_camRightVector, m_camUpVector);
-    float * pointCloud = lidar.GetPointClouds(pointCloudSize, &entitiesHit, lidar_param, m_pDepth);
+    float * pointCloud = lidar.GetPointClouds(pointCloudSize, &entitiesHit, lidar_param, m_pDepth, m_vehicle);
 
     std::ofstream ofile(m_veloFilename, std::ios::binary);
     ofile.write((char*)pointCloud, FLOATS_PER_POINT * sizeof(float)*pointCloudSize);
