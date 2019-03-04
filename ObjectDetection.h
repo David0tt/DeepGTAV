@@ -212,6 +212,7 @@ private:
     void setFocalLength();
     bool getEntityVector(ObjEntity &entity, int entityID, Hash model, int classid, std::string type, std::string modelString, bool isPedInV, Vehicle vPedIsIn);
     void setPosition();
+    Vector3 correctOffcenter(Vector3 position, Vector3 min, Vector3 max, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector, Vector3 &offcenter);
     float observationAngle(Vector3 position);
     void drawVectorFromPosition(Vector3 vector, int blue, int green);
     void setDepthParams();

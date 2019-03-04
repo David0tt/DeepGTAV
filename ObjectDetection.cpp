@@ -269,6 +269,14 @@ void ObjectDetection::setPosition() {
     m_curFrame.forwardVec = vehicleForwardVector;
     m_curFrame.upVec = vehicleUpVector;
     m_curFrame.rightVec = vehicleRightVector;
+    m_curFrame.camPos = s_camParams.pos;
+
+    //Check if we see it (not occluded)
+    Vector3 min, max, offcenter;
+    Hash model = ENTITY::GET_ENTITY_MODEL(m_vehicle);
+    GAMEPLAY::GET_MODEL_DIMENSIONS(model, &min, &max);
+    Vector3 kittiWorldPos = correctOffcenter(currentPos, min, max, vehicleForwardVector, vehicleRightVector, vehicleUpVector, offcenter);
+    m_curFrame.kittiWorldPos = kittiWorldPos;
 }
 
 void ObjectDetection::setSpeed() {
@@ -678,6 +686,29 @@ void ObjectDetection::getRollAndPitch(Vector3 rightVector, Vector3 forwardVector
     pitch = atan2(-kittiForwardVector.z, sqrt(pow(kittiForwardVector.y, 2) + pow(kittiForwardVector.x, 2)));
 }
 
+Vector3 ObjectDetection::correctOffcenter(Vector3 position, Vector3 min, Vector3 max, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector, Vector3 &offcenter) {
+    //Amount dimensions are offcenter
+    offcenter.x = (max.x + min.x) / 2;
+    offcenter.y = (max.y + min.y) / 2;
+    offcenter.z = min.z; //KITTI position is at object ground plane
+
+    //Converting vehicle dimensions from vehicle to world coordinates for offset position
+    Vector3 worldX; worldX.x = 1; worldX.y = 0; worldX.z = 0;
+    Vector3 worldY; worldY.x = 0; worldY.y = 1; worldY.z = 0;
+    Vector3 worldZ; worldZ.x = 0; worldZ.y = 0; worldZ.z = 1;
+    Vector3 xVector = convertCoordinateSystem(worldX, forwardVector, rightVector, upVector);
+    Vector3 yVector = convertCoordinateSystem(worldY, forwardVector, rightVector, upVector);
+    Vector3 zVector = convertCoordinateSystem(worldZ, forwardVector, rightVector, upVector);
+    Vector3 offcenterPosition = convertCoordinateSystem(offcenter, yVector, xVector, zVector);
+
+    //Update object position to be consistent with KITTI (symmetrical dimensions except for z which is ground)
+    position.x = position.x + offcenterPosition.x;
+    position.y = position.y + offcenterPosition.y;
+    position.z = position.z + offcenterPosition.z;
+
+    return position;
+}
+
 bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash model, int classid, std::string type, std::string modelString, bool isPedInV, int vPedIsIn) {
     bool success = false;
 
@@ -748,12 +779,7 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
                 dim.y = 0.5*(max.y - min.y);
                 dim.z = 0.5*(max.z - min.z);
 
-                //Amount dimensions are offcenter
-                Vector3 offcenter;
-                offcenter.x = (max.x + min.x) / 2;
-                offcenter.y = (max.y + min.y) / 2;
-                offcenter.z = min.z; //KITTI position is at object ground plane
-
+                //TODO Remove these calculations and put x/y/zVector and m_camRight/Forward/UpVector in s_camParams
                 //Converting vehicle dimensions from vehicle to world coordinates for offset position
                 Vector3 worldX; worldX.x = 1; worldX.y = 0; worldX.z = 0;
                 Vector3 worldY; worldY.x = 0; worldY.y = 1; worldY.z = 0;
@@ -761,13 +787,9 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
                 Vector3 xVector = convertCoordinateSystem(worldX, forwardVector, rightVector, upVector);
                 Vector3 yVector = convertCoordinateSystem(worldY, forwardVector, rightVector, upVector);
                 Vector3 zVector = convertCoordinateSystem(worldZ, forwardVector, rightVector, upVector);
-                Vector3 offcenterPosition = convertCoordinateSystem(offcenter, yVector, xVector, zVector);
 
-                //Seems like the offcenter is not actually correct
-                //Update object position to be consistent with KITTI (symmetrical dimensions except for z which is ground)
-                position.x = position.x + offcenterPosition.x;
-                position.y = position.y + offcenterPosition.y;
-                position.z = position.z + offcenterPosition.z;
+                Vector3 offcenter;
+                position = correctOffcenter(position, min, max, forwardVector, rightVector, upVector, offcenter);
 
                 //HAS_ENTITY_CLEAR_LOS_TO_ENTITY is from vehicle, NOT camera perspective
                 //pointsHit misses some objects
@@ -1884,7 +1906,8 @@ void ObjectDetection::exportPosition() {
     FILE* f = fopen(m_posFilename.c_str(), "w");
     std::ostringstream oss;
 
-    oss << m_curFrame.position.x << " " << m_curFrame.position.y << " " << m_curFrame.position.z << "\n"
+    oss << m_curFrame.kittiWorldPos.x << " " << m_curFrame.kittiWorldPos.y << " " << m_curFrame.kittiWorldPos.z << "\n"
+        << m_curFrame.camPos.x << " " << m_curFrame.camPos.y << " " << m_curFrame.camPos.z << "\n"
         << m_curFrame.forwardVec.x << " " << m_curFrame.forwardVec.y << " " << m_curFrame.forwardVec.z << "\n"
         << m_curFrame.rightVec.x << " " << m_curFrame.rightVec.y << " " << m_curFrame.rightVec.z << "\n"
         << m_curFrame.upVec.x << " " << m_curFrame.upVec.y << " " << m_curFrame.upVec.z;

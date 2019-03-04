@@ -57,6 +57,8 @@ struct FrameObjectInfo
     Vector3 forwardVec;
     Vector3 rightVec;
     Vector3 upVec;
+    Vector3 camPos;
+    Vector3 kittiWorldPos;//Bottom center (after correcting for offset) in GTA world coords
 
     float speed;
     float yawRate;
