@@ -569,16 +569,13 @@ StringBuffer Scenario::generateMessage() {
 
     GAMEPLAY::SET_GAME_PAUSED(false);
 
-    int count = 0;
     for (EntityMapEntry entry : fObjInfo.vehicles) {
         generateSecondaryPerspective(entry.second.entityID, entry.second.height, entry.second.length);
-        if (count > 10) break;
-        ++count;
     }
 
-    generateSecondaryPerspective(m_ownVehicle, CAM_OFFSET_UP*2);
+    //For testing to ensure secondary ownvehicle aligns with main perspective
+    //generateSecondaryPerspective(m_ownVehicle, CAM_OFFSET_UP*2);
 
-    //CAM::ATTACH_CAM_TO_ENTITY(camera, vehicle, 0, CAM_OFFSET_FORWARD, CAM_OFFSET_UP, TRUE);
     m_pObjDet->increaseIndex();
     GAMEPLAY::SET_TIME_SCALE(1.0f);
 
