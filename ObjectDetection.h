@@ -49,6 +49,7 @@ private:
     Ped ped = NULL;
     Cam camera = NULL;
     Vector3 dir;
+    ObjEntity m_ownVehicleObj;
 
     float x, y, z;
     float startHeading;
@@ -126,6 +127,7 @@ private:
     std::string m_instSegFilename;
     std::string m_instSegImgFilename;
     std::string m_posFilename;
+    std::string m_egoObjectFilename;
 
     std::string m_veloFilenameU;
     std::string m_depthPCFilenameU;
@@ -161,6 +163,7 @@ private:
 public:
     void initCollection(UINT camWidth, UINT camHeight, bool exportEVE = true, int startIndex = 0);
     void setCamParams(float* forwardVec = NULL, float* rightVec = NULL, float* upVec = NULL);
+    void setOwnVehicleObject();
 
     FrameObjectInfo setDepthAndStencil(bool prevDepth = false, float* pDepth = NULL, uint8_t* pStencil = NULL);
     //Depth buffer fn/var needs to be accessed by server
@@ -168,7 +171,7 @@ public:
     bool m_prevDepth = false;
 
     FrameObjectInfo generateMessage(float* pDepth, uint8_t* pStencil, int entityID = -1);
-    void exportDetections(FrameObjectInfo fObjInfo);
+    void exportDetections(FrameObjectInfo fObjInfo, ObjEntity vPerspective = ObjEntity(-1));
     void exportImage(BYTE* data, std::string filename = "");
     void increaseIndex();
     std::string getStandardFilename(std::string subDir, std::string extension);
@@ -245,6 +248,7 @@ private:
     void exportEntities(EntityMap entMap, std::ostringstream& oss, bool unprocessed = false, bool augmented = false);
     void exportCalib();
     void exportPosition();
+    void exportEgoObject(ObjEntity vPerspective);
 
     //Ground plane points
     Vector3 getGroundPoint(Vector3 point, Vector3 yVectorCam, Vector3 xVectorCam, Vector3 zVectorCam);

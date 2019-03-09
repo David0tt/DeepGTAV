@@ -38,6 +38,9 @@ struct ObjEntity {
 
     bool isPedInV = false;
     int vPedIsIn;
+
+    ObjEntity(int _entityID) : entityID(_entityID) {};
+    ObjEntity() {};
 };
 
 typedef std::pair<int, ObjEntity> EntityMapEntry;

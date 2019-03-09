@@ -53,6 +53,7 @@ void ObjectDetection::initCollection(UINT camWidth, UINT camHeight, bool exportE
     ped = PLAYER::PLAYER_PED_ID();
     m_ownVehicle = PED::GET_VEHICLE_PED_IS_IN(ped, false);
     m_vehicle = m_ownVehicle;
+    setOwnVehicleObject();
 
     char temp[] = "%06d";
     char strComp[sizeof temp + 100];
@@ -113,6 +114,50 @@ void ObjectDetection::initCollection(UINT camWidth, UINT camHeight, bool exportE
     //Setup LiDAR before collecting
     setupLiDAR();
     m_initialized = true;
+}
+
+//Set own object info for exporting position_world
+void ObjectDetection::setOwnVehicleObject() {
+    Vector3 min, max;
+    Hash model = ENTITY::GET_ENTITY_MODEL(m_ownVehicle);
+    Vector3 dim = getVehicleDims(m_ownVehicle, model, min, max);
+    m_ownVehicleObj = ObjEntity(m_ownVehicle);
+
+    //Fill out info for own car
+    m_ownVehicleObj.objType = "Car";
+
+    float kittiHeight = 2 * dim.z;
+    float kittiWidth = 2 * dim.x;
+    float kittiLength = 2 * dim.y;
+    m_ownVehicleObj.width = kittiWidth;
+    m_ownVehicleObj.height = kittiHeight;
+    m_ownVehicleObj.length = kittiLength;
+
+    Vector3 position;
+    position.x = 0;
+    position.y = 0;
+    position.z = 0;
+    m_ownVehicleObj.location = position;
+    m_ownVehicleObj.rotation_y = -1;
+    m_ownVehicleObj.alpha = -1;
+
+    BBox2D bbox2d;
+    bbox2d.bottom = -1;
+    bbox2d.top = -1;
+    bbox2d.left = -1;
+    bbox2d.right = -1;
+    m_ownVehicleObj.bbox2d = bbox2d;
+
+    m_ownVehicleObj.truncation = -1;
+    m_ownVehicleObj.occlusion = -1;
+    m_ownVehicleObj.modelString = VEHICLE::GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(model);
+
+    m_ownVehicleObj.speed = -1;
+    m_ownVehicleObj.roll = -1;
+    m_ownVehicleObj.pitch = -1;
+
+    m_ownVehicleObj.pointsHit2D = -1;
+    m_ownVehicleObj.pointsHit3D = -1;
 }
 
 //For updating all depth/stencil related variables when depth/stencil buffer are one frame after game functions
@@ -1146,6 +1191,7 @@ void ObjectDetection::setFilenames() {
     m_instSegFilename = getStandardFilename("instSeg", ".png");
     m_instSegImgFilename = getStandardFilename("instSegImage", ".png");
     m_posFilename = getStandardFilename("position_world", ".txt");
+    m_egoObjectFilename = getStandardFilename("ego_object", ".txt");
 
     m_veloFilenameU = getStandardFilename("velodyneU", ".bin");
     m_depthPCFilenameU = getStandardFilename("depthPCU", ".bin");
@@ -1917,6 +1963,17 @@ void ObjectDetection::exportPosition() {
     fclose(f);
 }
 
+void ObjectDetection::exportEgoObject(ObjEntity vPerspective) {
+    FILE* f = fopen(m_egoObjectFilename.c_str(), "w");
+    std::ostringstream oss;
+
+    exportEntity(vPerspective, oss, true, true);
+
+    std::string str = oss.str();
+    fprintf(f, str.c_str());
+    fclose(f);
+}
+
 void ObjectDetection::exportCalib() {
     FILE* f = fopen(m_calibFilename.c_str(), "w");
     std::ostringstream oss;
@@ -1936,7 +1993,7 @@ void ObjectDetection::exportCalib() {
     fclose(f);
 }
 
-void ObjectDetection::exportDetections(FrameObjectInfo fObjInfo) {
+void ObjectDetection::exportDetections(FrameObjectInfo fObjInfo, ObjEntity vPerspective) {
     if (collectTracking) {
         //TODO
     }
@@ -1972,6 +2029,9 @@ void ObjectDetection::exportDetections(FrameObjectInfo fObjInfo) {
 
     exportCalib();
     exportPosition();
+
+    if (vPerspective.entityID == -1) vPerspective = m_ownVehicleObj;
+    exportEgoObject(vPerspective);
 }
 
 void ObjectDetection::exportImage(BYTE* data, std::string filename) {
