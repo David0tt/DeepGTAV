@@ -105,7 +105,7 @@ public:
 	StringBuffer generateMessage();
 
     void setRenderingCam(Vehicle v, int height, int length);
-    void generateSecondaryPerspective(Vehicle v, int height = CAM_OFFSET_UP, int length = CAM_OFFSET_FORWARD);
+    void generateSecondaryPerspective(ObjEntity vInfo);
     void capture();
 
     int instance_index = 0;

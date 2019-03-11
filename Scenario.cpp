@@ -570,7 +570,7 @@ StringBuffer Scenario::generateMessage() {
     GAMEPLAY::SET_GAME_PAUSED(false);
 
     for (EntityMapEntry entry : fObjInfo.vehicles) {
-        generateSecondaryPerspective(entry.second.entityID, entry.second.height, entry.second.length);
+        generateSecondaryPerspective(entry.second);
     }
 
     //For testing to ensure secondary ownvehicle aligns with main perspective
@@ -625,8 +625,8 @@ void Scenario::capture() {
     screenCapturer->capture();
 }
 
-void Scenario::generateSecondaryPerspective(Vehicle v, int height, int length) {
-    setRenderingCam(v, height, length);
+void Scenario::generateSecondaryPerspective(ObjEntity vInfo) {
+    setRenderingCam(vInfo.entityID, vInfo.height, vInfo.length);
 
     GAMEPLAY::SET_GAME_PAUSED(true);
     capture();
@@ -635,8 +635,8 @@ void Scenario::generateSecondaryPerspective(Vehicle v, int height, int length) {
     setDepthBuffer();
     setStencilBuffer();
 
-    FrameObjectInfo fObjInfo = m_pObjDet->generateMessage(depth_map, m_stencilBuffer, v);
-    m_pObjDet->exportDetections(fObjInfo);
+    FrameObjectInfo fObjInfo = m_pObjDet->generateMessage(depth_map, m_stencilBuffer, vInfo.entityID);
+    m_pObjDet->exportDetections(fObjInfo, vInfo);
     std::string filename = m_pObjDet->getStandardFilename("image_2", ".png");
     m_pObjDet->exportImage(screenCapturer->pixels, filename);
 
