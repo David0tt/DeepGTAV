@@ -636,7 +636,7 @@ void Scenario::generateSecondaryPerspective(ObjEntity vInfo) {
     setStencilBuffer();
 
     FrameObjectInfo fObjInfo = m_pObjDet->generateMessage(depth_map, m_stencilBuffer, vInfo.entityID);
-    m_pObjDet->exportDetections(fObjInfo, vInfo);
+    m_pObjDet->exportDetections(fObjInfo, &vInfo);
     std::string filename = m_pObjDet->getStandardFilename("image_2", ".png");
     m_pObjDet->exportImage(screenCapturer->pixels, filename);
 
