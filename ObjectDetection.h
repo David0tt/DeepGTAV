@@ -171,7 +171,7 @@ public:
     bool m_prevDepth = false;
 
     FrameObjectInfo generateMessage(float* pDepth, uint8_t* pStencil, int entityID = -1);
-    void exportDetections(FrameObjectInfo fObjInfo, ObjEntity vPerspective = ObjEntity(-1));
+    void exportDetections(FrameObjectInfo fObjInfo, ObjEntity* vPerspective = NULL);
     void exportImage(BYTE* data, std::string filename = "");
     void increaseIndex();
     std::string getStandardFilename(std::string subDir, std::string extension);
@@ -244,7 +244,7 @@ private:
     void outputUnusedStencilPixels();
 
     //Export functions
-    void exportEntity(ObjEntity e, std::ostringstream& oss, bool unprocessed, bool augmented);
+    void exportEntity(ObjEntity e, std::ostringstream& oss, bool unprocessed, bool augmented, bool checkbbox2d = true);
     void exportEntities(EntityMap entMap, std::ostringstream& oss, bool unprocessed = false, bool augmented = false);
     void exportCalib();
     void exportPosition();

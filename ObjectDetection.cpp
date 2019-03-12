@@ -1917,12 +1917,15 @@ void ObjectDetection::outputUnusedStencilPixels() {
     }
 }
 
-void ObjectDetection::exportEntity(ObjEntity e, std::ostringstream& oss, bool unprocessed, bool augmented) {
+void ObjectDetection::exportEntity(ObjEntity e, std::ostringstream& oss, bool unprocessed, bool augmented,
+                                    bool checkbbox2d) {
     BBox2D b = e.bbox2d;
     if (unprocessed) b = e.bbox2dUnprocessed;
 
-    if ((int)b.left >= s_camParams.width || (int)b.right == 0 || (int)b.bottom == 0 || (int)b.top >= s_camParams.height) return;
-    if ((int)b.left == (int)b.right || (int)b.top == (int)b.bottom) return;
+    if (checkbbox2d) {
+        if ((int)b.left >= s_camParams.width || (int)b.right == 0 || (int)b.bottom == 0 || (int)b.top >= s_camParams.height) return;
+        if ((int)b.left == (int)b.right || (int)b.top == (int)b.bottom) return;
+    }
 
     oss << e.objType << " " << e.truncation << " " << e.occlusion << " " << e.alpha << " " <<
         (int)b.left << " " << (int)b.top << " " <<
@@ -1967,7 +1970,7 @@ void ObjectDetection::exportEgoObject(ObjEntity vPerspective) {
     FILE* f = fopen(m_egoObjectFilename.c_str(), "w");
     std::ostringstream oss;
 
-    exportEntity(vPerspective, oss, true, true);
+    exportEntity(vPerspective, oss, false, true, false);
 
     std::string str = oss.str();
     fprintf(f, str.c_str());
@@ -1993,7 +1996,7 @@ void ObjectDetection::exportCalib() {
     fclose(f);
 }
 
-void ObjectDetection::exportDetections(FrameObjectInfo fObjInfo, ObjEntity vPerspective) {
+void ObjectDetection::exportDetections(FrameObjectInfo fObjInfo, ObjEntity* vPerspective) {
     if (collectTracking) {
         //TODO
     }
@@ -2030,8 +2033,12 @@ void ObjectDetection::exportDetections(FrameObjectInfo fObjInfo, ObjEntity vPers
     exportCalib();
     exportPosition();
 
-    if (vPerspective.entityID == -1) vPerspective = m_ownVehicleObj;
-    exportEgoObject(vPerspective);
+    if (!vPerspective) {
+        exportEgoObject(m_ownVehicleObj);
+    }
+    else {
+        exportEgoObject(*vPerspective);
+    }
 }
 
 void ObjectDetection::exportImage(BYTE* data, std::string filename) {
