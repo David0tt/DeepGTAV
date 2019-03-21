@@ -38,8 +38,8 @@ bodhi2,Truck
 buccaneer,Car
 buffalo,Car
 buffalo2,Car
-bulldoze,Void
-bulldozer,Void
+bulldoze,Industrial
+bulldozer,Industrial
 bullet,Car
 blimp,Airplane
 burrito,Car
@@ -52,7 +52,7 @@ cavalcade,Truck
 cavalcade2,Truck
 policet,Car
 gburrito,Car
-cablecar,Void
+cablecar,Railed
 caddy,Car
 caddy2,Car
 camper,Truck
@@ -62,7 +62,7 @@ cheetah,Car
 comet2,Car
 cogcabrio,Car
 coquette,Car
-cutter,Void
+cutter,Industrial
 gresley,Car
 dilettan,Car
 dilettante,Car
@@ -91,8 +91,8 @@ felon2,Car
 feltzer2,Car
 firetruk,Truck
 flatbed,Truck
-fork,Void
-forklift,Void
+fork,Utility
+forklift,Utility
 fq2,Car
 fusilade,Car
 fugitive,Car
@@ -101,7 +101,7 @@ granger,Truck
 gauntlet,Car
 habanero,Car
 hauler,Truck
-handler,Void
+handler,Industrial
 infernus,Car
 ingot,Car
 intruder,Car
@@ -122,7 +122,7 @@ minivan,Car
 mixer,Truck
 mixer2,Truck
 monroe,Car
-mower,Void
+mower,Utility
 mule,Truck
 mule2,Truck
 oracle,Car
@@ -163,7 +163,7 @@ rentalbus,Bus
 ruiner,Car
 rumpo,Car
 rumpo2,Car
-rhino,Void
+rhino,Industrial
 riot,Truck
 ripley,Truck
 rocoto,Car
@@ -203,9 +203,9 @@ taco,Truck
 tailgater,Car
 taxi,Car
 trash,Truck
-tractor,Void
-tractor2,Void
-tractor3,Void
+tractor,Utility
+tractor2,Utility
+tractor3,Utility
 graintrailer,Trailer
 baletrailer,Trailer
 tiptruck,Truck
@@ -294,7 +294,7 @@ trailers,Trailer
 trailers2,Trailer
 trailers3,Trailer
 tvtrailer,Trailer
-raketrailer,Void
+raketrailer,Trailer
 tanker,Trailer
 trailerlogs,Trailer
 tr2,Trailer
@@ -490,7 +490,7 @@ volatus,Airplane
 windsor2,Car
 xls,Car
 xls2,Car
-apc,Void
+apc,Industrial
 ardent,Car
 caddy3,Car
 cheetah2,Car
