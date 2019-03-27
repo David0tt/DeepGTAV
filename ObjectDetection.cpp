@@ -1436,7 +1436,7 @@ void ObjectDetection::setDepthBuffer(bool prevDepth) {
 
                 if (OUTPUT_DM_POINTCLOUD) {
                     float distance = sqrt(SYSTEM::VDIST2(0, 0, 0, relPos.x, relPos.y, relPos.z));
-                    if (distance <= MAX_LIDAR_DIST && distance >= 1) {
+                    if ((OUTPUT_FULL_DM_POINTCLOUD || distance <= MAX_LIDAR_DIST) && distance >= s_camParams.nearClip) {
                         float* p = m_pDMPointClouds + (pointCount * 4);
                         *p = relPos.y;
                         *(p + 1) = -relPos.x;

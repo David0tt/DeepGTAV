@@ -33,7 +33,11 @@ const bool START_SPEC_AREA = false;
 const bool GENERATE_2D_POINTMAP = false;
 //Outputs secondary pointcloud with raycast points
 const bool OUTPUT_RAYCAST_POINTS = false;
-const bool OUTPUT_DM_POINTCLOUD = false;
+
+//Outputs pointcloud with 1:1 ratio of pixels in image < MAX_LIDAR_DIST
+const bool OUTPUT_DM_POINTCLOUD = true;
+//If OUTPUT_DM_POINTCLOUD, outputs all points, even those past MAX_LIDAR_DIST (good for testing)
+const bool OUTPUT_FULL_DM_POINTCLOUD = true;
 
 //Sends animals to client. Check client also outputs them
 const bool RETAIN_ANIMALS = true;
