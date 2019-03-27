@@ -1,5 +1,6 @@
 #include "..\ObjectDetIncludes.h"
 #include <Eigen/Core>
+#include "Constants.h"
 
 #pragma once
 
@@ -101,10 +102,7 @@ static Eigen::Vector3f rotate(Eigen::Vector3f a, Eigen::Vector3f theta)
 static Eigen::Vector2f get_2d_from_3d(const Eigen::Vector3f& vertex, const Eigen::Vector3f& cam_coords, const Eigen::Vector3f& cam_rotation, float cam_near_clip, float cam_field_of_view, bool draw_debug = false) {
     // Inspired by Artur Filopowicz: Video Games for Autonomous Driving: https://github.com/arturf1/GTA5-Scripts/blob/master/Annotator.cs#L379
 
-    static const Eigen::Vector3f WORLD_NORTH(0.0, 1.0, 0.0);
-    static const Eigen::Vector3f WORLD_UP(0.0, 0.0, 1.0);
-    static const Eigen::Vector3f WORLD_EAST(1.0, 0.0, 0.0);
-    Eigen::Vector3f theta = (3.14159 / 180.0) * cam_rotation;
+    Eigen::Vector3f theta = (PI / 180.0) * cam_rotation;
     auto cam_dir = rotate(WORLD_NORTH, theta);
     if (draw_debug)
     {

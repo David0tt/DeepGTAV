@@ -3,6 +3,10 @@
 #define PI 3.1415926535898
 #define D2R PI/180.0
 
+static const Eigen::Vector3f WORLD_NORTH(0.0, 1.0, 0.0);
+static const Eigen::Vector3f WORLD_UP(0.0, 0.0, 1.0);
+static const Eigen::Vector3f WORLD_EAST(1.0, 0.0, 0.0);
+
 //Floats per point in the pointcloud (x, y, z, reflectance)
 const int FLOATS_PER_POINT = 4;
 const float MAX_LIDAR_DIST = 120.0f;//in metres
