@@ -16,7 +16,7 @@ struct CamParams {
 
     //These values change between frames
     Vector3 pos; //In world coordinates
-    //Theta is in degrees (functions which use it need to convert to radians)
+    //Theta is in degrees (functions which use it need to convert to radians
     Vector3 theta; //Camera rotation from world coordinates
 };
 
