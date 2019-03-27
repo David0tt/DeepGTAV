@@ -70,7 +70,14 @@ if __name__ == '__main__':
         # model, forward, right, heading, color (-1 default, 27 red, 64blue, 0 black)
         # vehicles.append(["voltic", 20, 10, 90, 27, 0])
         #vehicles.append(["voltic", 15, 10, 90, 64, 0])
-        vehicles.append(["bus", 18, 0, 0, 0, 0])
+        vehicles.append(["bus", 18, 15, 0, 0, 0])
+        vehicles.append(["bus", 150, 10, 90, 0, 0])
+        vehicles.append(["bus", 100, -20, 90, 0, 0])
+        vehicles.append(["bus", 200, 10, 90, 0, 0])
+        vehicles.append(["bus", 125, -50, 90, 0, 0])
+        vehicles.append(["bus", 75, -70, 90, 0, 0])
+        vehicles.append(["bus", 150, 80, 90, 0, 0])
+        vehicles.append(["bus", 50, 20, 90, 0, 0])
         # vehicles.append(["benson", 50, 0, 0, 0, 0])
         # #vehicles.append(["trash", 60, -20, 0, 0, 0])
         # vehicles.append(["benson", 80, -15, 0, 0, 0])
@@ -108,14 +115,14 @@ if __name__ == '__main__':
         # startLocation = [1041, 53, 340]
 
         # Airport
-        startLocation = [-942, -3500, 45]
+        startLocation = [-942, -3500, 15]
 
         # Pitch view
-        startLocation = [-697.306, 995.426, 241, 25.1029]
-        startLocation = [-539.831, 665.427, 142.673, 0]
-        startLocation = [-554.445, 134.722, 62.6856, 313.719]
+        # startLocation = [-697.306, 995.426, 241, 25.1029]
+        # startLocation = [-539.831, 665.427, 142.673, 0]
+        # startLocation = [-554.445, 134.722, 62.6856, 313.719]
 
-        startLocation = [-564.368, 26.8335, 47, 295.413]
+        # startLocation = [-564.368, 26.8335, 47, 295.413]
 
 
 
@@ -126,11 +133,11 @@ if __name__ == '__main__':
                         stationaryScene=False, collectTracking=tracking, startIndex=startIndex, recordScenario=recordScenario, positionScenario=positionScenario)
 
         # Pitch view
-        startLocation = [-697.306, 995.426, 239, 55.1029]
-        startLocation = [-539.831, 665.427, 142.673, 278.001]
-        startLocation = [-554.445, 134.722, 62.6856, 313.719]
-        startLocation = [-564.368, 26.8335, 44, 295.413]
-        scenario = Scenario(drivingMode=[driveMode,15.0], location=startLocation) # Driving style is set to normal, with a speed of 15.0 mph. All other scenario options are random.
+        # startLocation = [-697.306, 995.426, 239, 55.1029]
+        # startLocation = [-539.831, 665.427, 142.673, 278.001]
+        # startLocation = [-554.445, 134.722, 62.6856, 313.719]
+        # startLocation = [-564.368, 26.8335, 44, 295.413]
+        scenario = Scenario(drivingMode=[driveMode,15.0])#, location=startLocation) # Driving style is set to normal, with a speed of 15.0 mph. All other scenario options are random.
     # Send the Start request to DeepGTAV.
     client.sendMessage(Start(dataset=dataset,scenario=scenario))
 
