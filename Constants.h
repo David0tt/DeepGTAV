@@ -20,6 +20,8 @@ const float PED_BOX_WIDTH = 1.2f;
 const float PED_BOX_LENGTH = 0.5f;
 const float PED_BOX_WALKING_LEN = 1.44f;
 
+//TODO: These should be moved to a settings file so don't need to rebuild when only changing settings
+
 //Use the same time of day throughout the collection process
 const bool SAME_TIME_OF_DAY = true;
 //Drive in specified area or wander entire map
@@ -72,5 +74,12 @@ const bool OUTPUT_GROUND_PIXELS = true;
 
 //Outputs separate stencil segmentation images for each stencil value
 const bool OUTPUT_SEPARATE_STENCILS = true;
-//Needs OUTPUT_SEPARATE_STENCILS to be true, only outputs for values which are unknown 
+
+//Needs OUTPUT_SEPARATE_STENCILS to be true, only outputs log messages for values which are unknown 
 const bool ONLY_OUTPUT_UNKNOWN_STENCILS = true;
+
+//If set to true DeepGTAV outputs all information from nearby vehicles as well
+const bool GENERATE_SECONDARY_PERSPECTIVES = false;
+
+//Outputs self location (For finding spots for stationary scenes)
+const bool OUTPUT_SELF_LOCATION = false;
