@@ -16,7 +16,8 @@ struct CamParams {
 
     //These values change between frames
     Vector3 pos; //In world coordinates
-    Vector3 theta; //Camera rotation in world coordinates
+    //Theta is in degrees (functions which use it need to convert to radians)
+    Vector3 theta; //Camera rotation from world coordinates
 };
 
 //Global variable to be used by scenario and LiDAR
