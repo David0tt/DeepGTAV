@@ -416,11 +416,10 @@ float LiDAR::depthFromNDC(int x, int y, float screenX, float screenY) {
     //depth value in normalized device coordinates (NDC)
     float ndc = m_depthMap[y * s_camParams.width + x];
 
-    //Actual depth in camera coordinates
+    //Conversion from ndc to depth in camera coordinates
     float depth = d2nc / ndc;
-    if (USE_DEPTH_DIVISOR) {
-        depth = depth / DEPTH_DIVISOR;//TODO: Figure out depth values - Possibly divide by 1.0065?
-    }
+    float depthDivisor = (s_camParams.nearClip * depth) / (2 * s_camParams.farClip);
+    depth = depth / (1 + depthDivisor);
 
     return depth;
 }

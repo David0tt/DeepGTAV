@@ -1495,37 +1495,13 @@ Vector3 ObjectDetection::depthToCamCoords(float ndc, float screenX, float screen
 
     //Distance to near clip (hypotenus)
     float d2nc = sqrt(s_camParams.nearClip * s_camParams.nearClip + ncX * ncX + ncY * ncY);
-    float worldDepth = d2nc / ndc;
-    if (ndc <= 0 || worldDepth > s_camParams.farClip) {
-        worldDepth = s_camParams.farClip;
+    float depth = d2nc / ndc;
+    if (ndc <= 0 || depth > s_camParams.farClip) {
+        depth = s_camParams.farClip;
     }
-    float fcRatio = (s_camParams.farClip - s_camParams.nearClip) / s_camParams.farClip;
 
-    if (USE_DEPTH_DIVISOR) {
-        worldDepth = worldDepth / DEPTH_DIVISOR;//TODO: Figure out depth values - Possibly divide by 1.0065?
-    }
-    
-    if (ndc > 0 && OUTPUT_DEPTH_STATS) {
-        float depth2 = s_camParams.farClip - pow(s_camParams.farClip, 1 - ndc);
-        std::ostringstream oss;
-        oss << "World depth: " << worldDepth << " depth2: " << depth2 << " ndc: " << ndc <<
-            " screenX/Y: " << screenX << "/" << screenY;
-        std::string str = oss.str();
-        //log(str, true);
-    }
-    /*float angle = tan(s_camParams.fov / 2. * (PI / 180.));
-    float projData[16] = { 1/(GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false) * angle), 0, 0, 0,
-        0, 1/angle, 0, 0,
-        0, 0, -1 / fcRatio, -1 * s_camParams.nearClip / fcRatio,
-        0, 0, -1, 0 };
-    cv::Size size = { 3, 4 };
-    cv::Mat projMat = cv::Mat(4, 4, CV_32F, projData);
-
-    float pointData[4] = { normScreenX, -normScreenY, ndc, 1 };
-    cv::Mat ndcPoint = cv::Mat(4, 1, CV_32F, pointData);
-
-    cv::Mat inverse = projMat.inv();
-    cv::Mat camRelPoint = inverse * ndcPoint;*/
+    float depthDivisor = (s_camParams.nearClip * depth) / (2 * s_camParams.farClip);
+    depth = depth / (1 + depthDivisor);
 
     //X is right, Y is forward, Z is up (GTA coordinate frame)
     Vector3 unitVec;
@@ -1534,31 +1510,9 @@ Vector3 ObjectDetection::depthToCamCoords(float ndc, float screenX, float screen
     unitVec.z = -ncY / d2nc;
 
     Vector3 relPos;
-    relPos.x = unitVec.x * worldDepth;
-    relPos.y = unitVec.y * worldDepth;
-    relPos.z = unitVec.z * worldDepth;
-
-    /*std::ostringstream oss1;
-    oss1 << "camera projection: " << camRelPoint.at<float>(0, 0) << ", " << camRelPoint.at<float>(0, 1) << ", "
-        << camRelPoint.at<float>(0, 2) << ", " << camRelPoint.at<float>(0, 3) << ", " << worldDepth << ", " << angle << 
-        "\n" << projMat <<
-        "\n Inv: " << inverse;
-    std::string str1 = oss1.str();
-    log(str1, true);
-
-    relPos.x = camRelPoint.at<float>(0, 0);
-    relPos.y = camRelPoint.at<float>(0, 2);
-    relPos.z = camRelPoint.at<float>(0, 1);*/
-
-    /*std::ostringstream oss1;
-    oss1 << "\nAdjust depth ScreenX: " << screenX << " screenY: " << screenY <<
-        "\nAdjust depth NormScreenX: " << normScreenX << " NormScreenY: " << normScreenY <<
-        "\nAdjust depth ncX: " << ncX << " ncY: " << ncY <<
-        "\nAdjust depth near_clip: " << s_camParams.nearClip << " d2nc: " << d2nc <<
-        "\nUnit vec X: " << unitVec.x << " Y: " << unitVec.y << " Z: " << unitVec.z <<
-        "\ndepth: " << ndc << " worldDepth: " << worldDepth;
-    std::string str1 = oss1.str();
-    log(str1);*/
+    relPos.x = unitVec.x * depth;
+    relPos.y = unitVec.y * depth;
+    relPos.z = unitVec.z * depth;
 
     return relPos;
 }
