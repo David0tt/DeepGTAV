@@ -495,7 +495,7 @@ StringBuffer Scenario::generateMessage() {
         return buffer;
     }
 
-    if (m_positionScenario) {
+    if (m_positionScenario || OUTPUT_SELF_LOCATION) {
         Vector3 currentPos;
         Vector3 vehicleForwardVector, vehicleRightVector, vehicleUpVector;
 
@@ -514,7 +514,7 @@ StringBuffer Scenario::generateMessage() {
 
         Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(m_ownVehicle, 0);
         CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 0);
-        return buffer;
+        if (m_positionScenario) return buffer;
     }
 	
     log("About to pause game");
@@ -569,8 +569,10 @@ StringBuffer Scenario::generateMessage() {
 
     GAMEPLAY::SET_GAME_PAUSED(false);
 
-    for (EntityMapEntry entry : fObjInfo.vehicles) {
-        generateSecondaryPerspective(entry.second);
+    if (GENERATE_SECONDARY_PERSPECTIVES) {
+        for (EntityMapEntry entry : fObjInfo.vehicles) {
+            generateSecondaryPerspective(entry.second);
+        }
     }
 
     //For testing to ensure secondary ownvehicle aligns with main perspective
@@ -837,7 +839,7 @@ void Scenario::setCamParams() {
     //These values stay the same throughout a collection period
     if (!s_camParams.init) {
         s_camParams.nearClip = CAM::GET_CAM_NEAR_CLIP(camera);
-        s_camParams.farClip = 10001.5;// CAM::GET_CAM_FAR_CLIP(camera);
+        s_camParams.farClip = CAM::GET_CAM_FAR_CLIP(camera);
         s_camParams.fov = CAM::GET_CAM_FOV(camera);
         s_camParams.ncHeight = 2 * s_camParams.nearClip * tan(s_camParams.fov / 2. * (PI / 180.)); // field of view is returned vertically
         s_camParams.ncWidth = s_camParams.ncHeight * GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false);
