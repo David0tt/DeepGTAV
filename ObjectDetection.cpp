@@ -1487,8 +1487,8 @@ void ObjectDetection::setDepthBuffer(bool prevDepth) {
 
 //ndc is Normalized Device Coordinates which is value received from depth buffer
 Vector3 ObjectDetection::depthToCamCoords(float ndc, float screenX, float screenY) {
-    float normScreenX = (2 * screenX - s_camParams.width) / s_camParams.width;
-    float normScreenY = (2 * screenY - s_camParams.height) / s_camParams.height;
+    float normScreenX = 2 * screenX / float(s_camParams.width - 1) - 1.0f;
+    float normScreenY = 2 * screenY / float(s_camParams.height - 1) - 1.0f;
 
     float ncX = normScreenX * s_camParams.ncWidth / 2;
     float ncY = normScreenY * s_camParams.ncHeight / 2;
