@@ -10,6 +10,7 @@ static const Eigen::Vector3f WORLD_EAST(1.0, 0.0, 0.0);
 //Floats per point in the pointcloud (x, y, z, reflectance)
 const int FLOATS_PER_POINT = 4;
 const float MAX_LIDAR_DIST = 120.0f;//in metres
+const int OBJECT_MAX_DIST = 200;//in metres (label_aug will have objects past this value)
 
 const float CAM_OFFSET_FORWARD = 0;// .5;
 const float CAM_OFFSET_UP = 1.065;

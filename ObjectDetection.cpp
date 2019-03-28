@@ -770,271 +770,264 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
     if (isOnScreen) {
         //Check if it is in screen
         ENTITY::GET_ENTITY_MATRIX(entityID, &forwardVector, &rightVector, &upVector, &position); //Blue or red pill
+
         float distance = sqrt(SYSTEM::VDIST2(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, position.x, position.y, position.z));
-        if (distance < 200) {
-            int pointsHit = 0;
-            float maxBack = 0;
-            float maxFront = 0;
-            if (entitiesHit.find(entityID) != entitiesHit.end()) {
-                HitLidarEntity* hitLidarEnt = entitiesHit[entityID];
-                pointsHit = hitLidarEnt->pointsHit;
-                maxBack = hitLidarEnt->maxBack;
-                maxFront = hitLidarEnt->maxFront;
+
+        int pointsHit = 0;
+        float maxBack = 0;
+        float maxFront = 0;
+        if (entitiesHit.find(entityID) != entitiesHit.end()) {
+            HitLidarEntity* hitLidarEnt = entitiesHit[entityID];
+            pointsHit = hitLidarEnt->pointsHit;
+            maxBack = hitLidarEnt->maxBack;
+            maxFront = hitLidarEnt->maxFront;
+        }
+
+        speed = ENTITY::GET_ENTITY_SPEED(entityID);
+
+        GAMEPLAY::GET_MODEL_DIMENSIONS(model, &min, &max);
+
+        //Need to adjust dimensions for pedestrians
+        if (classid == PEDESTRIAN_CLASS_ID) {
+            float groundZ;
+            GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(position.x, position.y, position.z, &(groundZ), 0);
+            float negZ = groundZ - position.z;
+
+            //Pedestrians on balconies can cause problems
+            if (negZ > -2.0 && negZ < 0) {
+                min.z = groundZ - position.z;
             }
 
-            speed = ENTITY::GET_ENTITY_SPEED(entityID);
-
-            if (!ENTITY::IS_ENTITY_OCCLUDED(entityID) || pointsHit > 0) {
-                //Check if we see it (not occluded)
-                GAMEPLAY::GET_MODEL_DIMENSIONS(model, &min, &max);
-
-                //Need to adjust dimensions for pedestrians
-                if (classid == PEDESTRIAN_CLASS_ID) {
-                    float groundZ;
-                    GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(position.x, position.y, position.z, &(groundZ), 0);
-                    float negZ = groundZ - position.z;
-
-                    //Pedestrians on balconies can cause problems
-                    if (negZ > -2.0 && negZ < 0) {
-                        min.z = groundZ - position.z;
-                    }
-
-                    if (SET_PED_BOXES) {
-                        min.x = -PED_BOX_WIDTH / 2.0f;
-                        max.x = PED_BOX_WIDTH / 2.0f;
-                        if (speed > 1) {
-                            min.y = -PED_BOX_WALKING_LEN / 2.0f;
-                            max.y = PED_BOX_WALKING_LEN / 2.0f;
-                        }
-                        else {
-                            min.y = -PED_BOX_LENGTH / 2.0f;
-                            max.y = PED_BOX_LENGTH / 2.0f;
-                        }
-                    }
-
-                    std::ostringstream oss2;
-                    oss2 << "***min: " << min.x << ", " << min.y << ", " << min.z <<
-                        "\nmax: " << max.x << ", " << max.y << ", " << max.z;
-                    std::string str = oss2.str();
-                    log(str);
+            if (SET_PED_BOXES) {
+                min.x = -PED_BOX_WIDTH / 2.0f;
+                max.x = PED_BOX_WIDTH / 2.0f;
+                if (speed > 1) {
+                    min.y = -PED_BOX_WALKING_LEN / 2.0f;
+                    max.y = PED_BOX_WALKING_LEN / 2.0f;
                 }
+                else {
+                    min.y = -PED_BOX_LENGTH / 2.0f;
+                    max.y = PED_BOX_LENGTH / 2.0f;
+                }
+            }
 
-                //Calculate size
-                dim.x = 0.5*(max.x - min.x);
-                dim.y = 0.5*(max.y - min.y);
-                dim.z = 0.5*(max.z - min.z);
+            std::ostringstream oss2;
+            oss2 << "***min: " << min.x << ", " << min.y << ", " << min.z <<
+                "\nmax: " << max.x << ", " << max.y << ", " << max.z;
+            std::string str = oss2.str();
+            log(str);
+        }
 
-                //TODO Remove these calculations and put x/y/zVector and m_camRight/Forward/UpVector in s_camParams
-                //Converting vehicle dimensions from vehicle to world coordinates for offset position
-                Vector3 worldX; worldX.x = 1; worldX.y = 0; worldX.z = 0;
-                Vector3 worldY; worldY.x = 0; worldY.y = 1; worldY.z = 0;
-                Vector3 worldZ; worldZ.x = 0; worldZ.y = 0; worldZ.z = 1;
-                Vector3 xVector = convertCoordinateSystem(worldX, forwardVector, rightVector, upVector);
-                Vector3 yVector = convertCoordinateSystem(worldY, forwardVector, rightVector, upVector);
-                Vector3 zVector = convertCoordinateSystem(worldZ, forwardVector, rightVector, upVector);
+        //Calculate size
+        dim.x = 0.5*(max.x - min.x);
+        dim.y = 0.5*(max.y - min.y);
+        dim.z = 0.5*(max.z - min.z);
 
-                Vector3 offcenter;
-                position = correctOffcenter(position, min, max, forwardVector, rightVector, upVector, offcenter);
+        //TODO Remove these calculations and put x/y/zVector and m_camRight/Forward/UpVector in s_camParams
+        //Converting vehicle dimensions from vehicle to world coordinates for offset position
+        Vector3 worldX; worldX.x = 1; worldX.y = 0; worldX.z = 0;
+        Vector3 worldY; worldY.x = 0; worldY.y = 1; worldY.z = 0;
+        Vector3 worldZ; worldZ.x = 0; worldZ.y = 0; worldZ.z = 1;
+        Vector3 xVector = convertCoordinateSystem(worldX, forwardVector, rightVector, upVector);
+        Vector3 yVector = convertCoordinateSystem(worldY, forwardVector, rightVector, upVector);
+        Vector3 zVector = convertCoordinateSystem(worldZ, forwardVector, rightVector, upVector);
 
-                //HAS_ENTITY_CLEAR_LOS_TO_ENTITY is from vehicle, NOT camera perspective
-                //pointsHit misses some objects
-                //hasLOSToEntity retrieves from camera perspective however 3D bboxes are larger than object
-                if (ENTITY::HAS_ENTITY_CLEAR_LOS_TO_ENTITY(m_vehicle, entityID, 19) || pointsHit > 0 ||
-                    hasLOSToEntity(entityID, position, dim, forwardVector, rightVector, upVector)) {
-                    success = true;
+        Vector3 offcenter;
+        position = correctOffcenter(position, min, max, forwardVector, rightVector, upVector, offcenter);
 
-                    speedVector = ENTITY::GET_ENTITY_SPEED_VECTOR(entityID, false);
-                    if (speed > 0) {
-                        heading = GAMEPLAY::GET_HEADING_FROM_VECTOR_2D(speedVector.x - vehicleForwardVector.x, speedVector.y - vehicleForwardVector.y);
-                    }
-                    else {
-                        heading = GAMEPLAY::GET_HEADING_FROM_VECTOR_2D(forwardVector.x - vehicleForwardVector.x, forwardVector.y - vehicleForwardVector.y);
-                    }
+        success = true;
 
-                    //Kitti dimensions
-                    float kittiHeight = 2 * dim.z;
-                    float kittiWidth = 2 * dim.x;
-                    float kittiLength = 2 * dim.y;
+        speedVector = ENTITY::GET_ENTITY_SPEED_VECTOR(entityID, false);
+        if (speed > 0) {
+            heading = GAMEPLAY::GET_HEADING_FROM_VECTOR_2D(speedVector.x - vehicleForwardVector.x, speedVector.y - vehicleForwardVector.y);
+        }
+        else {
+            heading = GAMEPLAY::GET_HEADING_FROM_VECTOR_2D(forwardVector.x - vehicleForwardVector.x, forwardVector.y - vehicleForwardVector.y);
+        }
+
+        //Kitti dimensions
+        float kittiHeight = 2 * dim.z;
+        float kittiWidth = 2 * dim.x;
+        float kittiLength = 2 * dim.y;
                     
-                    //Have only seen sitting people with height <= 1.0
-                    if (classid == PEDESTRIAN_CLASS_ID && kittiHeight <= 1.0) {
-                        type = "Person_sitting";
-                    }
+        //Have only seen sitting people with height <= 1.0
+        if (classid == PEDESTRIAN_CLASS_ID && kittiHeight <= 1.0) {
+            type = "Person_sitting";
+        }
 
-                    if (abs(offcenter.y) > 0.5 && classid == 0) {
-                        std::ostringstream oss2;
-                        oss2 << "Instance Index: " << instance_index << " Dimensions are: " << dim.x << ", " << dim.y << ", " << dim.z;
-                        oss2 << "\nMax: " << max.x << ", " << max.y << ", " << max.z;
-                        oss2 << "\nMin: " << min.x << ", " << min.y << ", " << min.z;
-                        oss2 << "\noffset: " << offcenter.x << ", " << offcenter.y << ", " << offcenter.z;
-                        std::string str2 = oss2.str();
-                        log(str2);
-                    }
+        if (abs(offcenter.y) > 0.5 && classid == 0) {
+            std::ostringstream oss2;
+            oss2 << "Instance Index: " << instance_index << " Dimensions are: " << dim.x << ", " << dim.y << ", " << dim.z;
+            oss2 << "\nMax: " << max.x << ", " << max.y << ", " << max.z;
+            oss2 << "\nMin: " << min.x << ", " << min.y << ", " << min.z;
+            oss2 << "\noffset: " << offcenter.x << ", " << offcenter.y << ", " << offcenter.z;
+            std::string str2 = oss2.str();
+            log(str2);
+        }
 
-                    Vector3 relativePos;
-                    relativePos.x = position.x - s_camParams.pos.x;
-                    relativePos.y = position.y - s_camParams.pos.y;
-                    relativePos.z = position.z - s_camParams.pos.z;
+        Vector3 relativePos;
+        relativePos.x = position.x - s_camParams.pos.x;
+        relativePos.y = position.y - s_camParams.pos.y;
+        relativePos.z = position.z - s_camParams.pos.z;
 
-                    Vector3 kittiForwardVector = convertCoordinateSystem(forwardVector, m_camForwardVector, m_camRightVector, m_camUpVector);
-                    float rot_y = -atan2(kittiForwardVector.y, kittiForwardVector.x);
+        Vector3 kittiForwardVector = convertCoordinateSystem(forwardVector, m_camForwardVector, m_camRightVector, m_camUpVector);
+        float rot_y = -atan2(kittiForwardVector.y, kittiForwardVector.x);
 
-                    relativePos = convertCoordinateSystem(relativePos, m_camForwardVector, m_camRightVector, m_camUpVector);
+        relativePos = convertCoordinateSystem(relativePos, m_camForwardVector, m_camRightVector, m_camUpVector);
 
-                    //Update object position to be consistent with KITTI (symmetrical dimensions except for z which is ground)
-                    //relativePos.y = relativePos.y - CAM_OFFSET_FORWARD;
-                    //relativePos.z = relativePos.z - CAM_OFFSET_UP;
+        //Update object position to be consistent with KITTI (symmetrical dimensions except for z which is ground)
+        //relativePos.y = relativePos.y - CAM_OFFSET_FORWARD;
+        //relativePos.z = relativePos.z - CAM_OFFSET_UP;
 
-                    //Convert to KITTI camera coordinates
-                    Vector3 kittiPos;
-                    kittiPos.x = relativePos.x;
-                    kittiPos.y = -relativePos.z;
-                    kittiPos.z = relativePos.y;
+        //Convert to KITTI camera coordinates
+        Vector3 kittiPos;
+        kittiPos.x = relativePos.x;
+        kittiPos.y = -relativePos.z;
+        kittiPos.z = relativePos.y;
 
-                    //alpha is rot_y + tan^-1(z/x) + PI/2
-                    float beta_kitti = atan2(kittiPos.z, kittiPos.x);
-                    float alpha_kitti = rot_y + beta_kitti - PI / 2;
+        //alpha is rot_y + tan^-1(z/x) + PI/2
+        float beta_kitti = atan2(kittiPos.z, kittiPos.x);
+        float alpha_kitti = rot_y + beta_kitti - PI / 2;
 
-                    log("After processBBox2D");
-                    bool foundPedOnBike = false;
-                    if (PROCESS_PEDS_ON_BIKES) {
-                        if (m_pedsInVehicles.find(entityID) != m_pedsInVehicles.end()) {
-                            std::vector<Ped> pedsOnV = m_pedsInVehicles[entityID];
+        log("After processBBox2D");
+        bool foundPedOnBike = false;
+        if (PROCESS_PEDS_ON_BIKES) {
+            if (m_pedsInVehicles.find(entityID) != m_pedsInVehicles.end()) {
+                std::vector<Ped> pedsOnV = m_pedsInVehicles[entityID];
 
-                            for (auto ped : pedsOnV) {
-                                std::ostringstream oss;
-                                oss << "Found ped on bike at index: " << instance_index;
-                                std::string str = oss.str();
-                                log(str, true);
-                                log("Found ped on bike", true);
-                                foundPedOnBike = true;
-                                //Extend 3D/2D boxes with peds, change id in segmentation image
+                for (auto ped : pedsOnV) {
+                    std::ostringstream oss;
+                    oss << "Found ped on bike at index: " << instance_index;
+                    std::string str = oss.str();
+                    log(str, true);
+                    log("Found ped on bike", true);
+                    foundPedOnBike = true;
+                    //Extend 3D/2D boxes with peds, change id in segmentation image
 
-                                if (m_curFrame.peds.find(ped) != m_curFrame.peds.end()) {
-                                    ObjEntity pedO = m_curFrame.peds[ped];
+                    if (m_curFrame.peds.find(ped) != m_curFrame.peds.end()) {
+                        ObjEntity pedO = m_curFrame.peds[ped];
 
-                                    float horizDist = sqrt(pow(pedO.location.x - kittiPos.x, 2) + pow(pedO.location.z - kittiPos.z, 2));
-                                    float vertDist = pedO.location.y - kittiPos.y;
-                                    if (horizDist < 0.5 && vertDist <= 2.0) {
-                                        foundPedOnBike = true;
-                                        m_curFrame.peds[ped].isPedInV = true;
-                                        m_curFrame.peds[ped].vPedIsIn = entityID;
+                        float horizDist = sqrt(pow(pedO.location.x - kittiPos.x, 2) + pow(pedO.location.z - kittiPos.z, 2));
+                        float vertDist = pedO.location.y - kittiPos.y;
+                        if (horizDist < 0.5 && vertDist <= 2.0) {
+                            foundPedOnBike = true;
+                            m_curFrame.peds[ped].isPedInV = true;
+                            m_curFrame.peds[ped].vPedIsIn = entityID;
 
-                                        //This method assume the pedestrian x/z coordinates are the same as the vehicles (only update relative height position)
-                                        kittiWidth = kittiWidth > pedO.width ? kittiWidth : pedO.width;
-                                        kittiLength = kittiLength > pedO.length ? kittiLength : pedO.length;
-                                        updatePosition(kittiPos.y, pedO.location.y, kittiHeight, pedO.height);
+                            //This method assume the pedestrian x/z coordinates are the same as the vehicles (only update relative height position)
+                            kittiWidth = kittiWidth > pedO.width ? kittiWidth : pedO.width;
+                            kittiLength = kittiLength > pedO.length ? kittiLength : pedO.length;
+                            updatePosition(kittiPos.y, pedO.location.y, kittiHeight, pedO.height);
 
-                                        //This method would need to be changed to accommodate object coordinate system vs kitti coordinate system
-                                        /*updatePosition(kittiPos.x, pedO.location.x, kittiWidth, pedO.width);
-                                        updatePosition(kittiPos.y, pedO.location.y, kittiWidth, pedO.width);
-                                        updatePosition(kittiPos.z, pedO.location.z, kittiWidth, pedO.width);*/
-                                    }
-                                }
-                            }
+                            //This method would need to be changed to accommodate object coordinate system vs kitti coordinate system
+                            /*updatePosition(kittiPos.x, pedO.location.x, kittiWidth, pedO.width);
+                            updatePosition(kittiPos.y, pedO.location.y, kittiWidth, pedO.width);
+                            updatePosition(kittiPos.z, pedO.location.z, kittiWidth, pedO.width);*/
                         }
-                        else if (TESTING_PEDS_ON_BIKES && classid == 1 || classid == 2 || classid == 3) { //bicycle, bike, or quadbike
-                            for (auto ped : m_curFrame.peds) {
-                                ObjEntity pedO = ped.second;
-                                float horizDist = sqrt(pow(pedO.location.x - kittiPos.x, 2) + pow(pedO.location.z - kittiPos.z, 2));
-                                float vertDist = pedO.location.y - kittiPos.y;
-                                if (horizDist < 0.5 && vertDist <= 2.0) {
-                                    m_curFrame.peds[ped.first].isPedInV = true;
-                                    m_curFrame.peds[ped.first].vPedIsIn = entityID;
-                                    foundPedOnBike = true;
-                                    std::ostringstream oss;
-                                    oss << "****************************Alternate Found ped on bike at index: " << instance_index;
-                                    std::string str = oss.str();
-                                    log(str, true);
+                    }
+                }
+            }
+            else if (TESTING_PEDS_ON_BIKES && classid == 1 || classid == 2 || classid == 3) { //bicycle, bike, or quadbike
+                for (auto ped : m_curFrame.peds) {
+                    ObjEntity pedO = ped.second;
+                    float horizDist = sqrt(pow(pedO.location.x - kittiPos.x, 2) + pow(pedO.location.z - kittiPos.z, 2));
+                    float vertDist = pedO.location.y - kittiPos.y;
+                    if (horizDist < 0.5 && vertDist <= 2.0) {
+                        m_curFrame.peds[ped.first].isPedInV = true;
+                        m_curFrame.peds[ped.first].vPedIsIn = entityID;
+                        foundPedOnBike = true;
+                        std::ostringstream oss;
+                        oss << "****************************Alternate Found ped on bike at index: " << instance_index;
+                        std::string str = oss.str();
+                        log(str, true);
                                     
-                                    //This method assume the pedestrian x/z coordinates are the same as the vehicles (only update relative height position)
-                                    kittiWidth = kittiWidth > pedO.width ? kittiWidth : pedO.width;
-                                    kittiLength = kittiLength > pedO.length ? kittiLength : pedO.length;
-                                    updatePosition(kittiPos.y, pedO.location.y, kittiHeight, pedO.height);
+                        //This method assume the pedestrian x/z coordinates are the same as the vehicles (only update relative height position)
+                        kittiWidth = kittiWidth > pedO.width ? kittiWidth : pedO.width;
+                        kittiLength = kittiLength > pedO.length ? kittiLength : pedO.length;
+                        updatePosition(kittiPos.y, pedO.location.y, kittiHeight, pedO.height);
 
-                                    //This method would need to be changed to accommodate object coordinate system vs kitti coordinate system
-                                    /*updatePosition(kittiPos.x, pedO.location.x, kittiWidth, pedO.width);
-                                    updatePosition(kittiPos.y, pedO.location.y, kittiWidth, pedO.width);
-                                    updatePosition(kittiPos.z, pedO.location.z, kittiWidth, pedO.width);*/
-                                }
-                            }
-                        }
+                        //This method would need to be changed to accommodate object coordinate system vs kitti coordinate system
+                        /*updatePosition(kittiPos.x, pedO.location.x, kittiWidth, pedO.width);
+                        updatePosition(kittiPos.y, pedO.location.y, kittiWidth, pedO.width);
+                        updatePosition(kittiPos.z, pedO.location.z, kittiWidth, pedO.width);*/
                     }
-                    log("After pedsonbikes");
-
-                    //Attempts to find bbox on screen, if entire 2D box is offscreen returns false
-                    float truncation = 0;
-                    BBox2D bbox2d = BBox2DFrom3DObject(position, dim, forwardVector, rightVector, upVector, success, truncation);
-                    if (!success) {
-                        return success;
-                    }
-
-                    //stencil type for vehicles like cars, bikes...
-                    int stencilType = STENCIL_TYPE_VEHICLE;
-                    //Pedestrian classid
-                    if (classid == PEDESTRIAN_CLASS_ID) stencilType = STENCIL_TYPE_NPC; //For NPCs
-                    int pointsHit2D = 0;
-                    float occlusion = 0;
-                    BBox2D bbox2dProcessed = processBBox2D(bbox2d, stencilType, position, dim, forwardVector, rightVector, upVector, xVector, yVector, zVector, entityID, pointsHit2D, occlusion, foundPedOnBike);
-                    //Do not allow entity through if it has no points hit on the 2D screen
-                    /*if (pointsHit2D == 0) {
-                        return false;
-                    }*/
-
-                    float roll = atan2(-rightVector.z, sqrt(pow(rightVector.y, 2) + pow(rightVector.x, 2)));
-                    float pitch = atan2(-forwardVector.z, sqrt(pow(forwardVector.y, 2) + pow(forwardVector.x, 2)));
-                    getRollAndPitch(rightVector, forwardVector, upVector, pitch, roll);
-                    //To prevent negative zeros
-                    if (abs(roll) <= 0.0001) roll = 0.0f;
-                    if (abs(pitch) <= 0.0001) pitch = 0.0f;
-
-                    entity.entityID = entityID;
-                    entity.classID = classid;
-                    entity.speed = speed;
-                    entity.heading = heading;
-
-                    entity.height = kittiHeight;
-                    entity.width = kittiWidth;
-                    entity.length = kittiLength;
-
-                    entity.offcenter = offcenter;
-                    entity.location = kittiPos;
-
-                    entity.rotation_y = rot_y;
-                    entity.alpha = alpha_kitti;
-                    entity.distance = distance;
-
-                    //TODO This is way it should be when stencil buffer is working
-                    entity.bbox2d.left = bbox2dProcessed.left * s_camParams.width;
-                    entity.bbox2d.top = bbox2dProcessed.top * s_camParams.height;
-                    entity.bbox2d.right = bbox2dProcessed.right * s_camParams.width;
-                    entity.bbox2d.bottom = bbox2dProcessed.bottom * s_camParams.height;
-                    
-                    entity.bbox2dUnprocessed.left = bbox2d.left * s_camParams.width;
-                    entity.bbox2dUnprocessed.top = bbox2d.top * s_camParams.height;
-                    entity.bbox2dUnprocessed.right = bbox2d.right * s_camParams.width;
-                    entity.bbox2dUnprocessed.bottom = bbox2d.bottom * s_camParams.height;
-
-                    entity.pointsHit2D = pointsHit2D;
-                    entity.truncation = truncation;
-                    entity.pointsHit3D = pointsHit;
-                    entity.occlusion = occlusion;
-                    entity.pitch = pitch;
-                    entity.roll = roll;
-                    entity.modelString = modelString;
-                    entity.objType = type;
-
-                    if (trackFirstFrame.find(entityID) == trackFirstFrame.end()) {
-                        trackFirstFrame.insert(std::pair<int, int>(entityID, instance_index));
-                    }
-                    entity.trackFirstFrame = trackFirstFrame[entityID];
-
-                    entity.isPedInV = isPedInV;
-                    entity.vPedIsIn = vPedIsIn;
-                    log("End of getEntityVector");
                 }
             }
         }
+        log("After pedsonbikes");
+
+        //Attempts to find bbox on screen, if entire 2D box is offscreen returns false
+        float truncation = 0;
+        BBox2D bbox2d = BBox2DFrom3DObject(position, dim, forwardVector, rightVector, upVector, success, truncation);
+        if (!success) {
+            return success;
+        }
+
+        //stencil type for vehicles like cars, bikes...
+        int stencilType = STENCIL_TYPE_VEHICLE;
+        //Pedestrian classid
+        if (classid == PEDESTRIAN_CLASS_ID) stencilType = STENCIL_TYPE_NPC; //For NPCs
+        int pointsHit2D = 0;
+        float occlusion = 0;
+        BBox2D bbox2dProcessed = processBBox2D(bbox2d, stencilType, position, dim, forwardVector, rightVector, upVector, xVector, yVector, zVector, entityID, pointsHit2D, occlusion, foundPedOnBike);
+        //Do not allow entity through if it has no points hit on the 2D screen
+        /*if (pointsHit2D == 0) {
+            return false;
+        }*/
+
+        float roll = atan2(-rightVector.z, sqrt(pow(rightVector.y, 2) + pow(rightVector.x, 2)));
+        float pitch = atan2(-forwardVector.z, sqrt(pow(forwardVector.y, 2) + pow(forwardVector.x, 2)));
+        getRollAndPitch(rightVector, forwardVector, upVector, pitch, roll);
+        //To prevent negative zeros
+        if (abs(roll) <= 0.0001) roll = 0.0f;
+        if (abs(pitch) <= 0.0001) pitch = 0.0f;
+
+        entity.entityID = entityID;
+        entity.classID = classid;
+        entity.speed = speed;
+        entity.heading = heading;
+
+        entity.height = kittiHeight;
+        entity.width = kittiWidth;
+        entity.length = kittiLength;
+        entity.dim = dim;
+
+        entity.offcenter = offcenter;
+        entity.location = kittiPos;
+
+        entity.rotation_y = rot_y;
+        entity.alpha = alpha_kitti;
+        entity.distance = distance;
+
+        //TODO This is way it should be when stencil buffer is working
+        entity.bbox2d.left = bbox2dProcessed.left * s_camParams.width;
+        entity.bbox2d.top = bbox2dProcessed.top * s_camParams.height;
+        entity.bbox2d.right = bbox2dProcessed.right * s_camParams.width;
+        entity.bbox2d.bottom = bbox2dProcessed.bottom * s_camParams.height;
+                    
+        entity.bbox2dUnprocessed.left = bbox2d.left * s_camParams.width;
+        entity.bbox2dUnprocessed.top = bbox2d.top * s_camParams.height;
+        entity.bbox2dUnprocessed.right = bbox2d.right * s_camParams.width;
+        entity.bbox2dUnprocessed.bottom = bbox2d.bottom * s_camParams.height;
+
+        entity.pointsHit2D = pointsHit2D;
+        entity.truncation = truncation;
+        entity.pointsHit3D = pointsHit;
+        entity.occlusion = occlusion;
+        entity.pitch = pitch;
+        entity.roll = roll;
+        entity.model = model;
+        entity.modelString = modelString;
+        entity.objType = type;
+
+        if (trackFirstFrame.find(entityID) == trackFirstFrame.end()) {
+            trackFirstFrame.insert(std::pair<int, int>(entityID, instance_index));
+        }
+        entity.trackFirstFrame = trackFirstFrame[entityID];
+
+        entity.isPedInV = isPedInV;
+        entity.vPedIsIn = vPedIsIn;
+        log("End of getEntityVector");
     }
 
     return success;
@@ -1872,7 +1865,7 @@ void ObjectDetection::outputUnusedStencilPixels() {
 }
 
 void ObjectDetection::exportEntity(ObjEntity e, std::ostringstream& oss, bool unprocessed, bool augmented,
-                                    bool checkbbox2d) {
+                                    bool checkbbox2d, const int &maxDist, const int &min2DPoints, const int &min3DPoints) {
     BBox2D b = e.bbox2d;
     if (unprocessed) b = e.bbox2dUnprocessed;
 
@@ -1880,6 +1873,40 @@ void ObjectDetection::exportEntity(ObjEntity e, std::ostringstream& oss, bool un
         if ((int)b.left >= s_camParams.width || (int)b.right == 0 || (int)b.bottom == 0 || (int)b.top >= s_camParams.height) return;
         if ((int)b.left == (int)b.right || (int)b.top == (int)b.bottom) return;
     }
+
+    if (maxDist != -1) {
+        if (e.distance > float(maxDist)) return;
+
+        //HAS_ENTITY_CLEAR_LOS_TO_ENTITY is from vehicle, NOT camera perspective
+        //pointsHit misses some objects
+        //hasLOSToEntity retrieves from camera perspective however 3D bboxes are larger than object
+        if (ENTITY::IS_ENTITY_OCCLUDED(e.entityID) &&
+            !ENTITY::HAS_ENTITY_CLEAR_LOS_TO_ENTITY(m_vehicle, e.entityID, 19) &&
+            e.pointsHit3D <= 0) {
+            log("Occluded and no points.", true);
+
+            Vector3 upVector, rightVector, forwardVector, position; //Vehicle position
+            ENTITY::GET_ENTITY_MATRIX(e.entityID, &forwardVector, &rightVector, &upVector, &position);
+            if (!hasLOSToEntity(e.entityID, e.location, e.dim, forwardVector, rightVector, upVector)) {
+                log("Occluded and no points2.", true);
+                return;
+            }
+        }
+    }
+    if (min2DPoints != -1) {
+        if (e.pointsHit2D < min2DPoints) {
+            log("pointsHit2D failed.", true);
+            return;
+        }
+    }
+    //TODO OBTAIN_RAY_POINTS_HIT is off now.
+    //3D points hit should be based off stencil seg with depth
+    /*if (min3DPoints != -1) {
+        if (e.pointsHit3D < min3DPoints) {
+            log("pointsHit3D failed.", true);
+            return;
+        }
+    }*/
 
     oss << e.objType << " " << e.truncation << " " << e.occlusion << " " << e.alpha << " " <<
         (int)b.left << " " << (int)b.top << " " <<
@@ -1895,12 +1922,12 @@ void ObjectDetection::exportEntity(ObjEntity e, std::ostringstream& oss, bool un
     oss << "\n";
 }
 
-void ObjectDetection::exportEntities(EntityMap entMap, std::ostringstream& oss, bool unprocessed, bool augmented) {
+void ObjectDetection::exportEntities(EntityMap entMap, std::ostringstream& oss, bool unprocessed, bool augmented, bool checkbbox2d, const int &maxDist, const int &min2DPoints, const int &min3DPoints) {
     for (EntityMap::const_iterator it = entMap.begin(); it != entMap.end(); ++it)
     {
         ObjEntity entity = it->second;
         if (!entity.isPedInV) {
-            exportEntity(entity, oss, unprocessed, augmented);
+            exportEntity(entity, oss, unprocessed, augmented, checkbbox2d, maxDist, min2DPoints, min3DPoints);
         }
     }
 }
@@ -1957,8 +1984,8 @@ void ObjectDetection::exportDetections(FrameObjectInfo fObjInfo, ObjEntity* vPer
     FILE* f = fopen(m_labelsFilename.c_str(), "w");
     std::ostringstream oss;
 
-    exportEntities(fObjInfo.vehicles, oss);
-    exportEntities(fObjInfo.peds, oss);
+    exportEntities(fObjInfo.vehicles, oss, false, false, true, OBJECT_MAX_DIST, 1, 1);
+    exportEntities(fObjInfo.peds, oss, false, false, true, OBJECT_MAX_DIST, 1, 1);
 
     std::string str = oss.str();
     fprintf(f, str.c_str());
@@ -1967,8 +1994,8 @@ void ObjectDetection::exportDetections(FrameObjectInfo fObjInfo, ObjEntity* vPer
     f = fopen(m_labelsUnprocessedFilename.c_str(), "w");
     std::ostringstream oss1;
 
-    exportEntities(fObjInfo.vehicles, oss1, true);
-    exportEntities(fObjInfo.peds, oss1, true);
+    exportEntities(fObjInfo.vehicles, oss1, true, false, OBJECT_MAX_DIST, 1, 1);
+    exportEntities(fObjInfo.peds, oss1, true, false, OBJECT_MAX_DIST, 1, 1);
 
     std::string str1 = oss1.str();
     fprintf(f, str1.c_str());
@@ -1977,8 +2004,9 @@ void ObjectDetection::exportDetections(FrameObjectInfo fObjInfo, ObjEntity* vPer
     f = fopen(m_labelsAugFilename.c_str(), "w");
     std::ostringstream oss2;
 
-    exportEntities(fObjInfo.vehicles, oss2, false, true);
-    exportEntities(fObjInfo.peds, oss2, false, true);
+    //Augmented files also exports objects at any distance, with no 3D or 2D points
+    exportEntities(fObjInfo.vehicles, oss2, false, true, false);
+    exportEntities(fObjInfo.peds, oss2, false, true, false);
 
     std::string str2 = oss2.str();
     fprintf(f, str2.c_str());

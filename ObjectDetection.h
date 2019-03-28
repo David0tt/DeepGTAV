@@ -244,8 +244,8 @@ private:
     void outputUnusedStencilPixels();
 
     //Export functions
-    void exportEntity(ObjEntity e, std::ostringstream& oss, bool unprocessed, bool augmented, bool checkbbox2d = true);
-    void exportEntities(EntityMap entMap, std::ostringstream& oss, bool unprocessed = false, bool augmented = false);
+    void exportEntity(ObjEntity e, std::ostringstream& oss, bool unprocessed, bool augmented, bool checkbbox2d = true, const int &maxDist = -1, const int &min2DPoints = -1, const int &min3DPoints = -1);
+    void exportEntities(EntityMap entMap, std::ostringstream& oss, bool unprocessed = false, bool augmented = false, bool checkbbox2d = true, const int &maxDist = -1, const int &min2DPoints = -1, const int &min3DPoints = -1);
     void exportCalib();
     void exportPosition();
     void exportEgoObject(ObjEntity vPerspective);

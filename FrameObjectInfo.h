@@ -13,6 +13,7 @@ struct ObjEntity {
     float height;
     float width;
     float length;
+    Vector3 dim;
     Vector3 offcenter;
 
     float rotation_y;
@@ -27,6 +28,7 @@ struct ObjEntity {
     float truncation;
     float occlusion;
 
+    Hash model;
     std::string modelString;
     std::string objType;
 
