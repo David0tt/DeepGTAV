@@ -83,7 +83,7 @@ private:
     LiDAR lidar;
     bool lidar_initialized = false;
     int pointCloudSize = 0;
-    std::unordered_map<int, HitLidarEntity*> entitiesHit;
+    std::unordered_map<int, HitLidarEntity*> m_entitiesHit;
     int lidar_param = 7;
 
     //Perspective variables
@@ -239,6 +239,9 @@ private:
     void getContours();
     //void outputGroundSeg();
     //void updateSegImage();
+
+    void update3DPointsHit();
+    void update3DPointsHit(ObjEntity* e);
 
     void processOcclusion();
 

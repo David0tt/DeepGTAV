@@ -79,7 +79,7 @@ public:
 
     void DestroyLiDAR();
 
-    float* GetPointClouds(int &size, std::unordered_map<int, HitLidarEntity*> *entitiesHit, int param, float* depthMap, Entity perspectiveVehicle = -1);
+    float* GetPointClouds(int &size, std::unordered_map<int, HitLidarEntity*> *entitiesHit, int param, float* depthMap, uint32_t* pInstanceSeg, Entity perspectiveVehicle = -1);
     float* Get2DPoints(int &size);
     float* GetRaycastPointcloud(int & size);
     float* UpdatePointCloud(int &size, float* depthMap);
@@ -98,6 +98,7 @@ private:
     void GenerateSinglePoint(float phi, float theta, float *p);
     void GenerateHorizPointClouds(float phi, float *p);
     void calcDCM();
+    void addToHitEntities(const Eigen::Vector2f &target2D);
 
 
 private:
@@ -135,6 +136,7 @@ private:
     int m_beamCount;
 
     std::unordered_map<int, HitLidarEntity*>* m_entitiesHit;
+    uint32_t* m_pInstanceSeg;
     int native_param = 7;
 
     //Depth map variables

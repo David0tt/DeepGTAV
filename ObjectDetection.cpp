@@ -201,7 +201,6 @@ FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStenci
     setPosition();
     outputRealSpeed();
     setDepthAndStencil();
-    if (pointclouds && lidar_initialized) collectLiDAR();
     //Need to set peds list first for integrating peds on bikes
     setPedsList();
     setVehiclesList();
@@ -219,6 +218,9 @@ FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStenci
     //TODO: Need to update 2D bboxes after receiving new depth image
     processSegmentation();
     processOcclusion();
+
+    if (pointclouds && lidar_initialized) collectLiDAR();
+    update3DPointsHit();
 
     if (depthMap && lidar_initialized) printSegImage();
     log("After printSeg");
@@ -924,6 +926,33 @@ Vector3 ObjectDetection::correctOffcenter(Vector3 position, Vector3 min, Vector3
     return position;
 }
 
+void ObjectDetection::update3DPointsHit(ObjEntity* e) {
+    if (m_entitiesHit.find(e->entityID) != m_entitiesHit.end()) {
+        HitLidarEntity* hitLidarEnt = m_entitiesHit[e->entityID];
+        e->pointsHit3D = hitLidarEnt->pointsHit;
+        std::ostringstream oss2;
+        oss2 << "***entity Id: " << e->entityID << ", point hit: " << hitLidarEnt->pointsHit << ", " << e->pointsHit3D;
+        std::string str = oss2.str();
+        log(str, true);
+    }
+    else {
+        std::ostringstream oss2;
+        oss2 << "***entity Id: " << e->entityID << " not found";
+        std::string str = oss2.str();
+        log(str, true);
+    }
+}
+
+void ObjectDetection::update3DPointsHit() {
+    //Set the bounding box parameters (for reducing # of calculations per pixel)
+    for (auto &entry : m_curFrame.vehicles) {
+        update3DPointsHit(&entry.second);
+    }
+    for (auto &entry : m_curFrame.peds) {
+        update3DPointsHit(&entry.second);
+    }
+}
+
 bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash model, int classid, std::string type, std::string modelString, bool isPedInV, int vPedIsIn) {
     bool success = false;
 
@@ -945,16 +974,6 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
         
         //Need to limit distance as pixels won't register entities past the far clip
         if (distance > s_camParams.farClip) return false;
-
-        int pointsHit = 0;
-        float maxBack = 0;
-        float maxFront = 0;
-        if (entitiesHit.find(entityID) != entitiesHit.end()) {
-            HitLidarEntity* hitLidarEnt = entitiesHit[entityID];
-            pointsHit = hitLidarEnt->pointsHit;
-            maxBack = hitLidarEnt->maxBack;
-            maxFront = hitLidarEnt->maxFront;
-        }
 
         speed = ENTITY::GET_ENTITY_SPEED(entityID);
 
@@ -1186,8 +1205,8 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
         entity.bbox2dUnprocessed.bottom = bbox2d.bottom * s_camParams.height;
 
         entity.pointsHit2D = pointsHit2D;
+        entity.pointsHit3D = 0;//Updated later
         entity.truncation = truncation;
-        entity.pointsHit3D = pointsHit;
         entity.occlusion = occlusion;
         entity.pitch = pitch;
         entity.roll = roll;
@@ -1398,9 +1417,9 @@ void ObjectDetection::setupLiDAR() {
 }
 
 void ObjectDetection::collectLiDAR() {
-    entitiesHit.clear();
+    m_entitiesHit.clear();
     lidar.updateCurrentPosition(m_camForwardVector, m_camRightVector, m_camUpVector);
-    float * pointCloud = lidar.GetPointClouds(pointCloudSize, &entitiesHit, lidar_param, m_pDepth, m_vehicle);
+    float * pointCloud = lidar.GetPointClouds(pointCloudSize, &m_entitiesHit, lidar_param, m_pDepth, m_pInstanceSeg, m_vehicle);
 
     std::ofstream ofile(m_veloFilename, std::ios::binary);
     ofile.write((char*)pointCloud, FLOATS_PER_POINT * sizeof(float)*pointCloudSize);

@@ -294,7 +294,7 @@ void LiDAR::printDepthStats() {
     log(oss.str(), true);
 }
 
-float * LiDAR::GetPointClouds(int &size, std::unordered_map<int, HitLidarEntity*> *entitiesHit, int param, float* depthMap, Entity perspectiveVehicle)
+float * LiDAR::GetPointClouds(int &size, std::unordered_map<int, HitLidarEntity*> *entitiesHit, int param, float* depthMap, uint32_t* pInstanceSeg, Entity perspectiveVehicle)
 {
     if (perspectiveVehicle != -1) {
         m_lidarVehicle = perspectiveVehicle;
@@ -303,6 +303,7 @@ float * LiDAR::GetPointClouds(int &size, std::unordered_map<int, HitLidarEntity*
     m_depthMap = depthMap;
     native_param = param;
 
+    m_pInstanceSeg = pInstanceSeg;
     m_entitiesHit = entitiesHit;
     m_pointsHit = 0;
     m_raycastPoints = 0;
@@ -558,6 +559,32 @@ Vector3 LiDAR::get3DFromDepthTarget(Vector3 target, Eigen::Vector2f target2D){
     return vec_cam_coord;
 }
 
+//Add a point hit to the entityID
+void LiDAR::addToHitEntities(const Eigen::Vector2f &target2D) {
+    //Will convert to the nearest pixel
+    int x = int(target2D(0) * s_camParams.width - 0.5);
+    int y = int(target2D(1) * s_camParams.height - 0.5);
+
+    int entityID = int(m_pInstanceSeg[y * s_camParams.width + x]);
+
+    if (entityID == 0) return;
+
+    if (m_entitiesHit->find(entityID) != m_entitiesHit->end()) {
+        HitLidarEntity* hitEnt = m_entitiesHit->at(entityID);
+        hitEnt->pointsHit++;
+    }
+    else {
+        Vector3 forwardVector;
+        Vector3 rightVector;
+        Vector3 upVector;
+        Vector3 position;
+        ENTITY::GET_ENTITY_MATRIX(entityID, &forwardVector, &rightVector, &upVector, &position); //Blue or red pill
+        position = subtractVector(position, s_camParams.pos);
+        HitLidarEntity* hitEnt = new HitLidarEntity(forwardVector, position);
+        m_entitiesHit->insert(std::pair<int, HitLidarEntity*>(entityID, hitEnt));
+    }
+}
+
 void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
 {
     if (m_pointsHit >= MAX_POINTS) {
@@ -629,6 +656,8 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
             *(p + 3) = groundDist;//We don't have the entityID if we're using the depth map
             ++m_pointsHit;
             ++m_depthMapPoints;
+
+            addToHitEntities(target2D);
         }
     }
 
