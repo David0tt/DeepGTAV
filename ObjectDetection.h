@@ -228,11 +228,18 @@ private:
     BBox2D processBBox2D(BBox2D bbox, uint8_t stencilType, Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector,
         Vector3 xVector, Vector3 yVector, Vector3 zVector, int entityID, int &pointsHit2D, float &occlusion, bool pedOnBike);
     bool in3DBox(Vector3 point, Vector3 objPos, Vector3 dim, Vector3 yVector, Vector3 xVector, Vector3 zVector);
+    bool in3DBox(ObjEntity *e, Vector3 point);
     bool checkDirection(Vector3 unit, Vector3 point, Vector3 min, Vector3 max);
+    void processSegmentation();
+    void setEntityBBoxParameters(ObjEntity *e);
+    void processStencilPixel(const uint8_t &stencilVal, const int &j, const int &i, const Vector3 &xVectorCam, const Vector3 &yVectorCam, const Vector3 &zVectorCam);
+    void addPoint(int i, int j, ObjEntity &e);
     void printSegImage();
     void getContours();
     //void outputGroundSeg();
     //void updateSegImage();
+
+    void processOcclusion();
 
     void getRollAndPitch(Vector3 rightVector, Vector3 forwardVector, Vector3 upVector, float &pitch, float &roll);
 

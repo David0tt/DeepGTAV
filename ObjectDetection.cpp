@@ -216,6 +216,10 @@ FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStenci
     log("After focalLength");
     //if (depthMap && lidar_initialized) outputGroundSeg();
     //if (depthMap && lidar_initialized) updateSegImage();
+
+    processSegmentation();
+    processOcclusion();
+
     if (depthMap && lidar_initialized) printSegImage();
     log("After printSeg");
     if (depthMap && lidar_initialized) outputOcclusion();
@@ -485,20 +489,51 @@ bool ObjectDetection::checkDirection(Vector3 unit, Vector3 point, Vector3 min, V
     float dotMax = dotProd(max, unit);
     float dotMin = dotProd(min, unit);
 
-    std::ostringstream oss2;
-    oss2 << " unit: " << unit.x << ", " << unit.y << ", " << unit.z;
-    oss2 << "\nMax: " << max.x << ", " << max.y << ", " << max.z;
-    oss2 << "\nMin: " << min.x << ", " << min.y << ", " << min.z;
-    oss2 << "\npoint: " << point.x << ", " << point.y << ", " << point.z;
-    oss2 << "\ncheckForward" << dotPoint << " minForward: " << dotMin << " maxForward: " << dotMax;
-    std::string str2 = oss2.str();
-    log(str2);
-
     if ((dotMax <= dotPoint && dotPoint <= dotMin) ||
         (dotMax >= dotPoint && dotPoint >= dotMin)) {
         return true;
     }
     return false;
+}
+
+//Point and objPos should be in world coordinates
+void ObjectDetection::setEntityBBoxParameters(ObjEntity *e) {
+    Vector3 forward; forward.y = e->dim.y; forward.x = 0; forward.z = 0;
+    forward = convertCoordinateSystem(forward, e->yVector, e->xVector, e->zVector);
+
+    Vector3 right; right.x = e->dim.x; right.y = 0; right.z = 0;
+    right = convertCoordinateSystem(right, e->yVector, e->xVector, e->zVector);
+
+    Vector3 up; up.z = e->dim.z; up.x = 0; up.y = 0;
+    up = convertCoordinateSystem(up, e->yVector, e->xVector, e->zVector);
+
+    //position is given at bottom of bounding box (as per kitti)
+    Vector3 objPos = e->worldPos;
+
+    e->rearBotLeft.x = objPos.x - forward.x - right.x;
+    e->rearBotLeft.y = objPos.y - forward.y - right.y;
+    e->rearBotLeft.z = objPos.z - forward.z - right.z;
+
+    e->frontBotLeft.x = objPos.x + forward.x - right.x;
+    e->frontBotLeft.y = objPos.y + forward.y - right.y;
+    e->frontBotLeft.z = objPos.z + forward.z - right.z;
+
+    e->rearTopLeft.x = objPos.x - forward.x - right.x + 2 * up.x;
+    e->rearTopLeft.y = objPos.y - forward.y - right.y + 2 * up.y;
+    e->rearTopLeft.z = objPos.z - forward.z - right.z + 2 * up.z;
+
+    e->rearBotRight.x = objPos.x - forward.x + right.x;
+    e->rearBotRight.y = objPos.y - forward.y + right.y;
+    e->rearBotRight.z = objPos.z - forward.z + right.z;
+
+    e->u = getUnitVector(subtractVecs(e->frontBotLeft, e->rearBotLeft));
+    e->v = getUnitVector(subtractVecs(e->rearTopLeft, e->rearBotLeft));
+    e->w = getUnitVector(subtractVecs(e->rearBotRight, e->rearBotLeft));
+
+    e->bbox2d.left = 1.0;// width;
+    e->bbox2d.right = 0.0;
+    e->bbox2d.top = 1.0;// height;
+    e->bbox2d.bottom = 0.0;
 }
 
 //Point and objPos should be in world coordinates
@@ -552,6 +587,18 @@ bool ObjectDetection::in3DBox(Vector3 point, Vector3 objPos, Vector3 dim, Vector
     return true;
 }
 
+//Takes in an entity and a point (in world coordinates) and returns true if the point resides within the
+//entity's 3D bounding box.
+//Note: Need to set the entity's parameters u,v,w, and rearBotLeft, etc...
+bool ObjectDetection::in3DBox(ObjEntity* e, Vector3 point) {
+
+    if (!checkDirection(e->u, point, e->rearBotLeft, e->frontBotLeft)) return false;
+    if (!checkDirection(e->v, point, e->rearBotLeft, e->rearTopLeft)) return false;
+    if (!checkDirection(e->w, point, e->rearBotLeft, e->rearBotRight)) return false;
+
+    return true;
+}
+
 bool ObjectDetection::isPointOccluding(Vector3 worldPos, Vector3 position) {
     float pointDist = sqrt(SYSTEM::VDIST2(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, worldPos.x, worldPos.y, worldPos.z));
     float distObjCenter = sqrt(SYSTEM::VDIST2(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, position.x, position.y, position.z));
@@ -564,6 +611,125 @@ bool ObjectDetection::isPointOccluding(Vector3 worldPos, Vector3 position) {
         }
     }
     return false;
+}
+
+void ObjectDetection::processSegmentation() {
+    //Converting vehicle dimensions from vehicle to world coordinates for offset position
+    Vector3 worldX; worldX.x = 1; worldX.y = 0; worldX.z = 0;
+    Vector3 worldY; worldY.x = 0; worldY.y = 1; worldY.z = 0;
+    Vector3 worldZ; worldZ.x = 0; worldZ.y = 0; worldZ.z = 1;
+    Vector3 xVectorCam = convertCoordinateSystem(worldX, m_camForwardVector, m_camRightVector, m_camUpVector);
+    Vector3 yVectorCam = convertCoordinateSystem(worldY, m_camForwardVector, m_camRightVector, m_camUpVector);
+    Vector3 zVectorCam = convertCoordinateSystem(worldZ, m_camForwardVector, m_camRightVector, m_camUpVector);
+
+    int stencilPointCount = 0;
+    int occlusionPointCount = 0;
+
+    //Set the bounding box parameters (for reducing # of calculations per pixel)
+    for (auto &entry : m_curFrame.vehicles) {
+        setEntityBBoxParameters(&entry.second);
+    }
+    for (auto &entry : m_curFrame.peds) {
+        setEntityBBoxParameters(&entry.second);
+    }
+
+    for (int j = 0; j < s_camParams.height; ++j) {
+        for (int i = 0; i < s_camParams.width; ++i) {
+            uint8_t stencilVal = m_pStencil[j * s_camParams.width + i];
+
+            if (stencilVal == STENCIL_TYPE_VEHICLE || stencilVal == STENCIL_TYPE_NPC) {
+                processStencilPixel(stencilVal, j, i, xVectorCam, yVectorCam, zVectorCam);
+            }
+        }
+    }
+}
+
+//j is y coordinate (top=0), i is x coordinate (left = 0)
+void ObjectDetection::processStencilPixel(const uint8_t &stencilVal, const int &j, const int &i,
+                                          const Vector3 &xVectorCam, const Vector3 &yVectorCam, const Vector3 &zVectorCam) {
+    float ndc = m_pDepth[j * s_camParams.width + i];
+    Vector3 relPos = depthToCamCoords(ndc, i, j);
+    Vector3 worldPos = convertCoordinateSystem(relPos, yVectorCam, xVectorCam, zVectorCam);
+    worldPos.x += s_camParams.pos.x;
+    worldPos.y += s_camParams.pos.y;
+    worldPos.z += s_camParams.pos.z;
+
+    //Obtain proper map for stencil type
+    EntityMap* eMap;
+    if (stencilVal == STENCIL_TYPE_VEHICLE) {
+        eMap = &m_curFrame.vehicles;
+    }
+    else {
+        eMap = &m_curFrame.peds;
+    }
+
+    //Get vector of entities which point resides in their 3D box
+    std::vector<ObjEntity*> pointEntities;
+    for (auto &entry : *eMap) {
+        ObjEntity* e = &(entry.second);
+        if (in3DBox(e, worldPos)) {
+            pointEntities.push_back(e);
+        }
+    }
+
+    //3 choices, no, single, or multiple 3D box matches
+    if (pointEntities.empty()) {
+        //TODO
+    }
+    else if (pointEntities.size() == 1) {
+        addPoint(i, j, *pointEntities[0]);
+    }
+    else {
+        log("pointEntities duplicate.", true);
+        //TODO
+    }
+}
+
+//Add 2D point to an entity
+void ObjectDetection::addPoint(int i, int j, ObjEntity &e) {
+    float x = (float)i / (float)s_camParams.width;
+    float y = (float)j / (float)s_camParams.height;
+
+    std::ostringstream oss;
+    oss << "x,y: " << x << ", " << y;
+    std::string str = oss.str();
+    log(str);
+    if (x < e.bbox2d.left) e.bbox2d.left = x;
+    if (x > e.bbox2d.right) e.bbox2d.right = x;
+    if (y < e.bbox2d.top) e.bbox2d.top = y;
+    if (y > e.bbox2d.bottom) e.bbox2d.bottom = y;
+    ++e.pointsHit2D;
+
+    //Index of point in all image buffers
+    int idx = j * s_camParams.width + i;
+
+    //instance seg is image with exact entityIDs
+    m_pInstanceSeg[idx] = (uint32_t)e.entityID;
+
+    //RGB image is 3 bytes per pixel
+    int segIdx = 3 * idx;
+    uint8_t red = m_pStencilSeg[segIdx];
+    uint8_t green = m_pStencilSeg[segIdx + 1];
+    uint8_t blue = m_pStencilSeg[segIdx + 2];
+    if (red == 0 && green == 0 && blue == 0) {
+        int newVal = 47 * e.entityID; //Just to produce unique but different colours
+        red = (newVal + 13 * e.entityID) % 255;
+        green = (newVal / 255) % 255;
+        blue = newVal % 255;
+    }
+    else {
+        red = 255;
+        green = 255;
+        blue = 255;
+    }
+    uint8_t* p = m_pStencilSeg + segIdx;
+    *p = red;
+    *(p + 1) = green;
+    *(p + 2) = blue;
+}
+
+void ObjectDetection::processOcclusion() {
+    //TODO -> Take occlusion from processBBox2D, process after all 2D points are segmented
 }
 
 //Position is world position of object center
@@ -772,6 +938,7 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
         ENTITY::GET_ENTITY_MATRIX(entityID, &forwardVector, &rightVector, &upVector, &position); //Blue or red pill
 
         float distance = sqrt(SYSTEM::VDIST2(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, position.x, position.y, position.z));
+        if (distance > TOTAL_MAX_DIST) return false;
 
         int pointsHit = 0;
         float maxBack = 0;
@@ -969,7 +1136,8 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
         if (classid == PEDESTRIAN_CLASS_ID) stencilType = STENCIL_TYPE_NPC; //For NPCs
         int pointsHit2D = 0;
         float occlusion = 0;
-        BBox2D bbox2dProcessed = processBBox2D(bbox2d, stencilType, position, dim, forwardVector, rightVector, upVector, xVector, yVector, zVector, entityID, pointsHit2D, occlusion, foundPedOnBike);
+        BBox2D bbox2dProcessed;
+        //BBox2D bbox2dProcessed = processBBox2D(bbox2d, stencilType, position, dim, forwardVector, rightVector, upVector, xVector, yVector, zVector, entityID, pointsHit2D, occlusion, foundPedOnBike);
         //Do not allow entity through if it has no points hit on the 2D screen
         /*if (pointsHit2D == 0) {
             return false;
@@ -994,6 +1162,7 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
 
         entity.offcenter = offcenter;
         entity.location = kittiPos;
+        entity.worldPos = position;
 
         entity.rotation_y = rot_y;
         entity.alpha = alpha_kitti;
@@ -1027,6 +1196,10 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
 
         entity.isPedInV = isPedInV;
         entity.vPedIsIn = vPedIsIn;
+
+        entity.xVector = xVector;
+        entity.yVector = yVector;
+        entity.zVector = zVector;
         log("End of getEntityVector");
     }
 

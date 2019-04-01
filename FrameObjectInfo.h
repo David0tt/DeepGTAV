@@ -8,6 +8,7 @@ struct ObjEntity {
 
     //Consistent with kitti coordinate system (relative to camera)
     Vector3 location;
+    Vector3 worldPos;//To reduce calculations. Center of object at it's bottom
     float speed;
     float heading;
     float height;
@@ -40,6 +41,22 @@ struct ObjEntity {
 
     bool isPedInV = false;
     int vPedIsIn;
+
+
+    //The following are saved to reduce calculations for checking if each pixels
+    //resides in the 3D bounding box of an entity
+    //Vectors which transform from vehicle into world coordinates
+    Vector3 xVector;
+    Vector3 yVector;
+    Vector3 zVector;
+    Vector3 u;
+    Vector3 v;
+    Vector3 w;
+
+    Vector3 rearBotLeft;
+    Vector3 frontBotLeft;
+    Vector3 rearTopLeft;
+    Vector3 rearBotRight;
 
     ObjEntity(int _entityID) : entityID(_entityID) {};
     ObjEntity() {};
