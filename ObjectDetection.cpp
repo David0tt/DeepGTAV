@@ -498,13 +498,14 @@ bool ObjectDetection::checkDirection(Vector3 unit, Vector3 point, Vector3 min, V
 
 //Point and objPos should be in world coordinates
 void ObjectDetection::setEntityBBoxParameters(ObjEntity *e) {
-    Vector3 forward; forward.y = e->dim.y; forward.x = 0; forward.z = 0;
+    //Added BBOX_ADJUSTMENT_FACTOR as detailed models sometimes go outside 3D bboxes
+    Vector3 forward; forward.y = e->dim.y * BBOX_ADJUSTMENT_FACTOR; forward.x = 0; forward.z = 0;
     forward = convertCoordinateSystem(forward, e->yVector, e->xVector, e->zVector);
 
-    Vector3 right; right.x = e->dim.x; right.y = 0; right.z = 0;
+    Vector3 right; right.x = e->dim.x * BBOX_ADJUSTMENT_FACTOR; right.y = 0; right.z = 0;
     right = convertCoordinateSystem(right, e->yVector, e->xVector, e->zVector);
 
-    Vector3 up; up.z = e->dim.z; up.x = 0; up.y = 0;
+    Vector3 up; up.z = e->dim.z * BBOX_ADJUSTMENT_FACTOR; up.x = 0; up.y = 0;
     up = convertCoordinateSystem(up, e->yVector, e->xVector, e->zVector);
 
     //position is given at bottom of bounding box (as per kitti)
@@ -938,7 +939,9 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
         ENTITY::GET_ENTITY_MATRIX(entityID, &forwardVector, &rightVector, &upVector, &position); //Blue or red pill
 
         float distance = sqrt(SYSTEM::VDIST2(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, position.x, position.y, position.z));
-        if (distance > TOTAL_MAX_DIST) return false;
+        
+        //Need to limit distance as pixels won't register entities past the far clip
+        if (distance > s_camParams.farClip) return false;
 
         int pointsHit = 0;
         float maxBack = 0;

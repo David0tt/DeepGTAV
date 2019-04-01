@@ -11,7 +11,6 @@ static const Eigen::Vector3f WORLD_EAST(1.0, 0.0, 0.0);
 const int FLOATS_PER_POINT = 4;
 const float MAX_LIDAR_DIST = 120.0f;//in metres
 const int OBJECT_MAX_DIST = 200;//in metres (label_aug will have objects past this value)
-const int TOTAL_MAX_DIST = 400;//in metres (any object past this will not be added at all)
 
 const float CAM_OFFSET_FORWARD = 0;// .5;
 const float CAM_OFFSET_UP = 1.065;
@@ -21,6 +20,8 @@ const bool SET_PED_BOXES = true;
 const float PED_BOX_WIDTH = 1.2f;
 const float PED_BOX_LENGTH = 0.5f;
 const float PED_BOX_WALKING_LEN = 1.44f;
+
+const float BBOX_ADJUSTMENT_FACTOR = 1.1f;
 
 //TODO: These should be moved to a settings file so don't need to rebuild when only changing settings
 
