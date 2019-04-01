@@ -172,8 +172,6 @@ FrameObjectInfo ObjectDetection::setDepthAndStencil(bool prevDepth, float* pDept
 
     if (lidar_initialized) setDepthBuffer(prevDepth);
     if (lidar_initialized) setStencilBuffer();
-    if (lidar_initialized) getContours();
-    //TODO: Need to update 2D bboxes after receiving new depth image
 
     if (prevDepth) {
         if (lidar_initialized) printSegImage();
@@ -217,6 +215,8 @@ FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStenci
     //if (depthMap && lidar_initialized) outputGroundSeg();
     //if (depthMap && lidar_initialized) updateSegImage();
 
+    if (lidar_initialized) getContours();
+    //TODO: Need to update 2D bboxes after receiving new depth image
     processSegmentation();
     processOcclusion();
 
@@ -641,6 +641,9 @@ void ObjectDetection::processSegmentation() {
             if (stencilVal == STENCIL_TYPE_VEHICLE || stencilVal == STENCIL_TYPE_NPC) {
                 processStencilPixel(stencilVal, j, i, xVectorCam, yVectorCam, zVectorCam);
             }
+            else if (stencilVal == STENCIL_TYPE_OWNCAR) {
+                addPointToSegImages(i, j, m_ownVehicle);
+            }
         }
     }
 }
@@ -691,21 +694,21 @@ void ObjectDetection::addPoint(int i, int j, ObjEntity &e) {
     float x = (float)i / (float)s_camParams.width;
     float y = (float)j / (float)s_camParams.height;
 
-    std::ostringstream oss;
-    oss << "x,y: " << x << ", " << y;
-    std::string str = oss.str();
-    log(str);
     if (x < e.bbox2d.left) e.bbox2d.left = x;
     if (x > e.bbox2d.right) e.bbox2d.right = x;
     if (y < e.bbox2d.top) e.bbox2d.top = y;
     if (y > e.bbox2d.bottom) e.bbox2d.bottom = y;
     ++e.pointsHit2D;
 
+    addPointToSegImages(i, j, e.entityID);
+}
+
+void ObjectDetection::addPointToSegImages(int i, int j, int entityID) {
     //Index of point in all image buffers
     int idx = j * s_camParams.width + i;
 
     //instance seg is image with exact entityIDs
-    m_pInstanceSeg[idx] = (uint32_t)e.entityID;
+    m_pInstanceSeg[idx] = (uint32_t)entityID;
 
     //RGB image is 3 bytes per pixel
     int segIdx = 3 * idx;
@@ -713,8 +716,8 @@ void ObjectDetection::addPoint(int i, int j, ObjEntity &e) {
     uint8_t green = m_pStencilSeg[segIdx + 1];
     uint8_t blue = m_pStencilSeg[segIdx + 2];
     if (red == 0 && green == 0 && blue == 0) {
-        int newVal = 47 * e.entityID; //Just to produce unique but different colours
-        red = (newVal + 13 * e.entityID) % 255;
+        int newVal = 47 * entityID; //Just to produce unique but different colours
+        red = (newVal + 13 * entityID) % 255;
         green = (newVal / 255) % 255;
         blue = newVal % 255;
     }

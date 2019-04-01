@@ -234,6 +234,7 @@ private:
     void setEntityBBoxParameters(ObjEntity *e);
     void processStencilPixel(const uint8_t &stencilVal, const int &j, const int &i, const Vector3 &xVectorCam, const Vector3 &yVectorCam, const Vector3 &zVectorCam);
     void addPoint(int i, int j, ObjEntity &e);
+    void addPointToSegImages(int i, int j, int entityID);
     void printSegImage();
     void getContours();
     //void outputGroundSeg();
