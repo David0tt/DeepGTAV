@@ -105,9 +105,6 @@ private:
     uint8_t* m_pOcclusionImage = NULL;
     uint8_t* m_pUnusedStencilImage = NULL;
     uint8_t* m_pGroundPointsImage = NULL;
-    //Map of point index and entities that are potentially associated with it
-    std::unordered_map<int, std::vector<int>> m_coarseInstancePoints;
-    std::unordered_map<int, std::vector<int>> m_duplicateBoxPoints;
 
     std::string m_imgFilename;
     std::string m_veloFilename;
@@ -225,8 +222,6 @@ private:
     void setFilenames();
 
     BBox2D BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector, bool &success, float &truncation);
-    BBox2D processBBox2D(BBox2D bbox, uint8_t stencilType, Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector,
-        Vector3 xVector, Vector3 yVector, Vector3 zVector, int entityID, int &pointsHit2D, float &occlusion, bool pedOnBike);
     bool in3DBox(Vector3 point, Vector3 objPos, Vector3 dim, Vector3 yVector, Vector3 xVector, Vector3 zVector);
     bool in3DBox(ObjEntity *e, Vector3 point);
     bool checkDirection(Vector3 unit, Vector3 point, Vector3 min, Vector3 max);
@@ -244,13 +239,14 @@ private:
     void update3DPointsHit(ObjEntity* e);
 
     void processOcclusion();
+    void processOcclusionForEntity(ObjEntity *e, const Vector3 &xVectorCam, const Vector3 &yVectorCam, const Vector3 &zVectorCam);
 
     void getRollAndPitch(Vector3 rightVector, Vector3 forwardVector, Vector3 upVector, float &pitch, float &roll);
 
     bool hasLOSToEntity(Entity entityID, Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector, bool useOrigin = false, Vector3 origin = createVec3(0,0,0));
 
     void initVehicleLookup();
-    bool isPointOccluding(Vector3 worldPos, Vector3 position);
+    bool isPointOccluding(Vector3 worldPos, ObjEntity* e);
     void outputOcclusion();
     void outputUnusedStencilPixels();
 

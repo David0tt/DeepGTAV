@@ -589,7 +589,6 @@ bool ObjectDetection::in3DBox(Vector3 point, Vector3 objPos, Vector3 dim, Vector
 //entity's 3D bounding box.
 //Note: Need to set the entity's parameters u,v,w, and rearBotLeft, etc...
 bool ObjectDetection::in3DBox(ObjEntity* e, Vector3 point) {
-
     if (!checkDirection(e->u, point, e->rearBotLeft, e->frontBotLeft)) return false;
     if (!checkDirection(e->v, point, e->rearBotLeft, e->rearTopLeft)) return false;
     if (!checkDirection(e->w, point, e->rearBotLeft, e->rearBotRight)) return false;
@@ -597,17 +596,25 @@ bool ObjectDetection::in3DBox(ObjEntity* e, Vector3 point) {
     return true;
 }
 
-bool ObjectDetection::isPointOccluding(Vector3 worldPos, Vector3 position) {
+bool ObjectDetection::isPointOccluding(Vector3 worldPos, ObjEntity *e) {
+    //Need to test in3DBox as stencil buffer goes through windows but depth buffer does not
+    if (in3DBox(e, worldPos)) {
+        return false;
+    }
+
     float pointDist = sqrt(SYSTEM::VDIST2(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, worldPos.x, worldPos.y, worldPos.z));
-    float distObjCenter = sqrt(SYSTEM::VDIST2(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, position.x, position.y, position.z));
+    float distObjCenter = sqrt(SYSTEM::VDIST2(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, e->worldPos.x, e->worldPos.y, e->worldPos.z));
+
+    //Point needs to be closer
     if (pointDist < distObjCenter) {
         float groundZ;
-        GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(worldPos.x, worldPos.y, worldPos.z, &(groundZ), 0);
+        GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(worldPos.x, worldPos.y, worldPos.z + 0.5, &(groundZ), 0);
         //Check it is not the ground in the image (or the ground is much higher/lower than the object)
-        if ((groundZ + 0.1) < worldPos.z || s_camParams.pos.z > (position.z + 4) || s_camParams.pos.z < (position.z - 2)) {
+        if ((groundZ + GROUND_POINT_MAX_DIST) < worldPos.z || s_camParams.pos.z > (e->worldPos.z + 4) || s_camParams.pos.z < (e->worldPos.z - 2)) {
             return true;
         }
     }
+
     return false;
 }
 
@@ -726,29 +733,8 @@ void ObjectDetection::addPointToSegImages(int i, int j, int entityID) {
     *(p + 2) = blue;
 }
 
+//process occlusion after all 2D points are segmented
 void ObjectDetection::processOcclusion() {
-    //TODO -> Take occlusion from processBBox2D, process after all 2D points are segmented
-}
-
-//Position is world position of object center
-BBox2D ObjectDetection::processBBox2D(BBox2D bbox, uint8_t stencilType, Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector,
-    Vector3 xVector, Vector3 yVector, Vector3 zVector, int entityID, int &pointsHit2D, float &occlusion, bool pedOnBike) {
-    //position is given at bottom of bounding box (as per kitti)
-    position.z += dim.z;
-
-    BBox2D processed;
-    processed.left = 1;
-    processed.right = 0;
-    processed.top = 1;
-    processed.bottom = 0;
-
-    if (m_pStencil == NULL || m_pDepth == NULL) return processed;
-
-    int top = (int)floor(bbox.top * s_camParams.height);
-    int bot = std::min(s_camParams.height, (int)ceil(bbox.bottom * s_camParams.height));
-    int right = std::min(s_camParams.width, (int)ceil(bbox.right * s_camParams.width));
-    int left = (int)floor(bbox.left * s_camParams.width);
-
     //Converting vehicle dimensions from vehicle to world coordinates for offset position
     Vector3 worldX; worldX.x = 1; worldX.y = 0; worldX.z = 0;
     Vector3 worldY; worldY.x = 0; worldY.y = 1; worldY.z = 0;
@@ -757,118 +743,44 @@ BBox2D ObjectDetection::processBBox2D(BBox2D bbox, uint8_t stencilType, Vector3 
     Vector3 yVectorCam = convertCoordinateSystem(worldY, m_camForwardVector, m_camRightVector, m_camUpVector);
     Vector3 zVectorCam = convertCoordinateSystem(worldZ, m_camForwardVector, m_camRightVector, m_camUpVector);
 
-    int stencilPointCount = 0;
+    for (auto &entry : m_curFrame.vehicles) {
+        processOcclusionForEntity(&entry.second, xVectorCam, yVectorCam, zVectorCam);
+    }
+    for (auto &entry : m_curFrame.peds) {
+        processOcclusionForEntity(&entry.second, xVectorCam, yVectorCam, zVectorCam);
+    }
+}
+
+void ObjectDetection::processOcclusionForEntity(ObjEntity *e, const Vector3 &xVectorCam, const Vector3 &yVectorCam, const Vector3 &zVectorCam) {
     int occlusionPointCount = 0;
 
-    for (int j = top; j < bot; ++j) {
-        for (int i = left; i < right; ++i) {
-            uint8_t stencilVal = m_pStencil[j * s_camParams.width + i];
-            float ndc = m_pDepth[j * s_camParams.width + i];
-            Vector3 relPos = depthToCamCoords(ndc, i, j);
-            Vector3 worldPos = convertCoordinateSystem(relPos, yVectorCam, xVectorCam, zVectorCam);
-            worldPos.x += s_camParams.pos.x;
-            worldPos.y += s_camParams.pos.y;
-            worldPos.z += s_camParams.pos.z;
+    for (int j = e->bbox2dUnprocessed.top; j < e->bbox2dUnprocessed.bottom; ++j) {
+        for (int i = e->bbox2dUnprocessed.left; i < e->bbox2dUnprocessed.right; ++i) {
 
-            if (stencilType == stencilVal || (pedOnBike && stencilVal == STENCIL_TYPE_NPC)) {
-                ++stencilPointCount;
+            int entityID = int(m_pInstanceSeg[j * s_camParams.width + i]);
 
-                //Index of point
-                int idx = j * s_camParams.width + i;
+            if (entityID != e->entityID) {
+                uint8_t stencilVal = m_pStencil[j * s_camParams.width + i];
+                float ndc = m_pDepth[j * s_camParams.width + i];
+                Vector3 relPos = depthToCamCoords(ndc, i, j);
+                Vector3 worldPos = convertCoordinateSystem(relPos, yVectorCam, xVectorCam, zVectorCam);
+                worldPos.x += s_camParams.pos.x;
+                worldPos.y += s_camParams.pos.y;
+                worldPos.z += s_camParams.pos.z;
 
-                if (in3DBox(worldPos, position, dim, yVector, xVector, zVector)) {
-                    float x = (float)i / (float)s_camParams.width;
-                    float y = (float)j / (float)s_camParams.height;
-
-                    std::ostringstream oss;
-                    oss << "x,y: " << x << ", " << y;
-                    std::string str = oss.str();
-                    log(str);
-                    if (x < processed.left) processed.left = x;
-                    if (x > processed.right) processed.right = x;
-                    if (y < processed.top) processed.top = y;
-                    if (y > processed.bottom) processed.bottom = y;
-                    ++pointsHit2D;
-
-                    uint32_t val = m_pInstanceSeg[idx];
-                    if (val != 0) {
-                        if (m_duplicateBoxPoints.find(idx) == m_duplicateBoxPoints.end()) {
-                            std::vector<int> vec;
-                            vec.push_back(val);
-                            //TODO test if entityID is larger than max value
-                            vec.push_back(entityID);
-                            m_duplicateBoxPoints.insert(std::pair<int, std::vector<int>>(idx, vec));
-                        }
-                        else {
-                            m_duplicateBoxPoints[idx].push_back(entityID);
-                        }
-                    }
-                    m_pInstanceSeg[j * s_camParams.width + i] = (uint32_t)entityID;
-
-                    //RGB image is 3 bytes per pixel
-                    int segIdx = 3 * idx;
-                    uint8_t red = m_pStencilSeg[segIdx];
-                    uint8_t green = m_pStencilSeg[segIdx + 1];
-                    uint8_t blue = m_pStencilSeg[segIdx + 2];
-                    if (red == 0 && green == 0 && blue == 0) {
-                        int newVal = 47 * entityID; //Just to produce unique but different colours
-                        red = (newVal + 13 * entityID) % 255;
-                        green = (newVal / 255) % 255;
-                        blue = newVal % 255;
-                    }
-                    else {
-                        red = 255;
-                        green = 255;
-                        blue = 255;
-                    }
-                    uint8_t* p = m_pStencilSeg + segIdx;
-                    *p = red;
-                    *(p + 1) = green;
-                    *(p + 2) = blue;
-                }
-                else {
-                    if (m_coarseInstancePoints.find(idx) == m_coarseInstancePoints.end()) {
-                        std::vector<int> vec;
-                        //TODO test if entityID is larger than max value
-                        vec.push_back(entityID);
-                        m_coarseInstancePoints.insert(std::pair<int, std::vector<int>>(idx, vec));
-                    }
-                    else {
-                        m_coarseInstancePoints[idx].push_back(entityID);
-                    }
-
-                    //TODO this should probably be moved until after all points are decided
-                    if (isPointOccluding(worldPos, position)) {
-                        ++occlusionPointCount;
-                        if (STENCIL_TYPE_NPC == stencilType) {
-                            m_pOcclusionImage[j * s_camParams.width + i] = 255;
-                        }
-                    }
-                }
-            }
-            else if (stencilVal != STENCIL_TYPE_SKY && isPointOccluding(worldPos, position)) {
-                ++occlusionPointCount;
-                if (STENCIL_TYPE_NPC == stencilType) {
+                if (stencilVal != STENCIL_TYPE_SKY && isPointOccluding(worldPos, e)) {
+                    ++occlusionPointCount;
                     m_pOcclusionImage[j * s_camParams.width + i] = 255;
                 }
             }
         }
     }
 
-    occlusion = 1.0;
-    int divisor = occlusionPointCount + pointsHit2D;
+    e->occlusion = 1.0;
+    int divisor = occlusionPointCount + e->pointsHit2D;
     if (divisor != 0) {
-        occlusion = (float)occlusionPointCount / (float)(occlusionPointCount + pointsHit2D);
+        e->occlusion = (float)occlusionPointCount / (float)(divisor);
     }
-
-    std::ostringstream oss;
-    oss << "top, bot, right, left: " << top << ", " << bot << ", " << left << ", " << right <<
-        "\nProcessed: " << processed.top << ", " << processed.bottom << ", " << processed.left << ", " << processed.right <<
-        "\nStencil points: " << stencilPointCount << " points: " << pointsHit2D;
-    std::string str = oss.str();
-    log(str);
-
-    return processed;
 }
 
 //dim is in full width/height/length
@@ -1151,13 +1063,6 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
         int stencilType = STENCIL_TYPE_VEHICLE;
         //Pedestrian classid
         if (classid == PEDESTRIAN_CLASS_ID) stencilType = STENCIL_TYPE_NPC; //For NPCs
-        int pointsHit2D = 0;
-        float occlusion = 0;
-        //BBox2D bbox2dProcessed = processBBox2D(bbox2d, stencilType, position, dim, forwardVector, rightVector, upVector, xVector, yVector, zVector, entityID, pointsHit2D, occlusion, foundPedOnBike);
-        //Do not allow entity through if it has no points hit on the 2D screen
-        /*if (pointsHit2D == 0) {
-            return false;
-        }*/
 
         float roll = atan2(-rightVector.z, sqrt(pow(rightVector.y, 2) + pow(rightVector.x, 2)));
         float pitch = atan2(-forwardVector.z, sqrt(pow(forwardVector.y, 2) + pow(forwardVector.x, 2)));
@@ -1193,10 +1098,12 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
         entity.bbox2dUnprocessed.right = bbox2d.right * s_camParams.width;
         entity.bbox2dUnprocessed.bottom = bbox2d.bottom * s_camParams.height;
 
-        entity.pointsHit2D = pointsHit2D;
-        entity.pointsHit3D = 0;//Updated later
+        //Calculated during processSegmentation and processOcclusion
+        entity.pointsHit2D = 0;
+        entity.pointsHit3D = 0;
+        entity.occlusion = 0;
+
         entity.truncation = truncation;
-        entity.occlusion = occlusion;
         entity.pitch = pitch;
         entity.roll = roll;
         entity.model = model;
@@ -1951,16 +1858,6 @@ void ObjectDetection::printSegImage() {
     lodepng::encode(ImageBuffer, (unsigned char*)m_pStencilSeg, s_camParams.width, s_camParams.height, LCT_RGB, 8);
     lodepng::save_file(ImageBuffer, m_segImgFilename);
 
-    //Loop through coarse instance points, if there's points that only belong to one instance then put that value in
-    for (auto point : m_coarseInstancePoints) {
-        int idx = point.first;
-        std::vector<int> entities = point.second;
-
-        if (m_pInstanceSeg[idx] == 0 && entities.size() == 1) {
-            m_pInstanceSeg[idx] = entities[0];
-        }
-    }
-
     //Print instance segmented image
     cv::Mat tempMat(cv::Size(s_camParams.width, s_camParams.height), CV_32SC1, m_pInstanceSeg);
     imwrite(m_instSegFilename, tempMat);
@@ -1993,8 +1890,6 @@ void ObjectDetection::printSegImage() {
     memset(m_pStencilSeg, 0, m_stencilSegLength);
     memset(m_pInstanceSeg, 0, m_instanceSegLength);
     memset(m_pInstanceSegImg, 0, m_instanceSegImgLength);
-    m_coarseInstancePoints.clear();
-    m_duplicateBoxPoints.clear();
 }
 
 void ObjectDetection::initVehicleLookup() {
