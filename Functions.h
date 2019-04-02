@@ -48,6 +48,13 @@ struct BBox2D {
     float posY() {
         return top + height() / 2;
     }
+
+    BBox2D() :
+        left(s_camParams.width),
+        right(0),
+        top(s_camParams.height),
+        bottom(0)
+    {};
 };
 
 struct VehicleToCreate {

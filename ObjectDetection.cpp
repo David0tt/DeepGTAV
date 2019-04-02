@@ -532,11 +532,6 @@ void ObjectDetection::setEntityBBoxParameters(ObjEntity *e) {
     e->u = getUnitVector(subtractVecs(e->frontBotLeft, e->rearBotLeft));
     e->v = getUnitVector(subtractVecs(e->rearTopLeft, e->rearBotLeft));
     e->w = getUnitVector(subtractVecs(e->rearBotRight, e->rearBotLeft));
-
-    e->bbox2d.left = 1.0;// width;
-    e->bbox2d.right = 0.0;
-    e->bbox2d.top = 1.0;// height;
-    e->bbox2d.bottom = 0.0;
 }
 
 //Point and objPos should be in world coordinates
@@ -693,13 +688,10 @@ void ObjectDetection::processStencilPixel(const uint8_t &stencilVal, const int &
 
 //Add 2D point to an entity
 void ObjectDetection::addPoint(int i, int j, ObjEntity &e) {
-    float x = (float)i / (float)s_camParams.width;
-    float y = (float)j / (float)s_camParams.height;
-
-    if (x < e.bbox2d.left) e.bbox2d.left = x;
-    if (x > e.bbox2d.right) e.bbox2d.right = x;
-    if (y < e.bbox2d.top) e.bbox2d.top = y;
-    if (y > e.bbox2d.bottom) e.bbox2d.bottom = y;
+    if (i < e.bbox2d.left) e.bbox2d.left = i;
+    if (i > e.bbox2d.right) e.bbox2d.right = i;
+    if (j < e.bbox2d.top) e.bbox2d.top = j;
+    if (j > e.bbox2d.bottom) e.bbox2d.bottom = j;
     ++e.pointsHit2D;
 
     addPointToSegImages(i, j, e.entityID);
@@ -1161,7 +1153,6 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
         if (classid == PEDESTRIAN_CLASS_ID) stencilType = STENCIL_TYPE_NPC; //For NPCs
         int pointsHit2D = 0;
         float occlusion = 0;
-        BBox2D bbox2dProcessed;
         //BBox2D bbox2dProcessed = processBBox2D(bbox2d, stencilType, position, dim, forwardVector, rightVector, upVector, xVector, yVector, zVector, entityID, pointsHit2D, occlusion, foundPedOnBike);
         //Do not allow entity through if it has no points hit on the 2D screen
         /*if (pointsHit2D == 0) {
@@ -1193,11 +1184,9 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
         entity.alpha = alpha_kitti;
         entity.distance = distance;
 
-        //TODO This is way it should be when stencil buffer is working
-        entity.bbox2d.left = bbox2dProcessed.left * s_camParams.width;
-        entity.bbox2d.top = bbox2dProcessed.top * s_camParams.height;
-        entity.bbox2d.right = bbox2dProcessed.right * s_camParams.width;
-        entity.bbox2d.bottom = bbox2dProcessed.bottom * s_camParams.height;
+        //Blank bbox to be filled in later
+        BBox2D bbox2dProcessed = BBox2D();
+        entity.bbox2d = bbox2dProcessed;
                     
         entity.bbox2dUnprocessed.left = bbox2d.left * s_camParams.width;
         entity.bbox2dUnprocessed.top = bbox2d.top * s_camParams.height;
