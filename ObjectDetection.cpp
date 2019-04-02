@@ -507,27 +507,27 @@ void ObjectDetection::setEntityBBoxParameters(ObjEntity *e) {
     Vector3 right; right.x = e->dim.x * BBOX_ADJUSTMENT_FACTOR; right.y = 0; right.z = 0;
     right = convertCoordinateSystem(right, e->yVector, e->xVector, e->zVector);
 
-    Vector3 up; up.z = e->dim.z * BBOX_ADJUSTMENT_FACTOR; up.x = 0; up.y = 0;
+    Vector3 up; up.z = e->dim.z; up.x = 0; up.y = 0;
     up = convertCoordinateSystem(up, e->yVector, e->xVector, e->zVector);
 
     //position is given at bottom of bounding box (as per kitti)
     Vector3 objPos = e->worldPos;
 
-    e->rearBotLeft.x = objPos.x - forward.x - right.x;
-    e->rearBotLeft.y = objPos.y - forward.y - right.y;
-    e->rearBotLeft.z = objPos.z - forward.z - right.z;
+    e->rearBotLeft.x = objPos.x - forward.x - right.x - up.x * (BBOX_ADJUSTMENT_FACTOR - 1);
+    e->rearBotLeft.y = objPos.y - forward.y - right.y - up.y * (BBOX_ADJUSTMENT_FACTOR - 1);
+    e->rearBotLeft.z = objPos.z - forward.z - right.z - up.z * (BBOX_ADJUSTMENT_FACTOR - 1);
 
-    e->frontBotLeft.x = objPos.x + forward.x - right.x;
-    e->frontBotLeft.y = objPos.y + forward.y - right.y;
-    e->frontBotLeft.z = objPos.z + forward.z - right.z;
+    e->frontBotLeft.x = objPos.x + forward.x - right.x - up.x * (BBOX_ADJUSTMENT_FACTOR - 1);
+    e->frontBotLeft.y = objPos.y + forward.y - right.y - up.y * (BBOX_ADJUSTMENT_FACTOR - 1);
+    e->frontBotLeft.z = objPos.z + forward.z - right.z - up.z * (BBOX_ADJUSTMENT_FACTOR - 1);
 
-    e->rearTopLeft.x = objPos.x - forward.x - right.x + 2 * up.x;
-    e->rearTopLeft.y = objPos.y - forward.y - right.y + 2 * up.y;
-    e->rearTopLeft.z = objPos.z - forward.z - right.z + 2 * up.z;
+    e->rearTopLeft.x = objPos.x - forward.x - right.x + 2 * up.x + up.x * BBOX_ADJUSTMENT_FACTOR;
+    e->rearTopLeft.y = objPos.y - forward.y - right.y + 2 * up.y + up.y * BBOX_ADJUSTMENT_FACTOR;
+    e->rearTopLeft.z = objPos.z - forward.z - right.z + 2 * up.z + up.z * BBOX_ADJUSTMENT_FACTOR;
 
-    e->rearBotRight.x = objPos.x - forward.x + right.x;
-    e->rearBotRight.y = objPos.y - forward.y + right.y;
-    e->rearBotRight.z = objPos.z - forward.z + right.z;
+    e->rearBotRight.x = objPos.x - forward.x + right.x - up.x * (BBOX_ADJUSTMENT_FACTOR - 1);
+    e->rearBotRight.y = objPos.y - forward.y + right.y - up.y * (BBOX_ADJUSTMENT_FACTOR - 1);
+    e->rearBotRight.z = objPos.z - forward.z + right.z - up.z * (BBOX_ADJUSTMENT_FACTOR - 1);
 
     e->u = getUnitVector(subtractVecs(e->frontBotLeft, e->rearBotLeft));
     e->v = getUnitVector(subtractVecs(e->rearTopLeft, e->rearBotLeft));
