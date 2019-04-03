@@ -650,6 +650,151 @@ void ObjectDetection::processSegmentation() {
             }
         }
     }
+
+    processOverlappingPoints();
+}
+
+//Goes through points which were in multiple 3D boxes (overlapping points)
+//Uses opencv to flood fill all points for sets of entities which have overlapping points
+//If filled areas have a unique entityID (other than the overlapping points), entire area gets set to the unique entityID
+//TODO: Step 2: find contour with depth for areas which have more than a single unique entityID
+void ObjectDetection::processOverlappingPoints() {
+    //Create mask with only points from overlapping entities
+    //Process one set of entity IDs at a time
+    while (!m_overlappingPoints.empty()) {
+        std::vector<ObjEntity*> objEntities = m_overlappingPoints.begin()->second;
+
+        int stencilType = STENCIL_TYPE_VEHICLE;
+        if (objEntities[0]->objType == "Pedestrian") {
+            stencilType = STENCIL_TYPE_NPC;
+        }
+
+        //Initialize mask
+        cv::Mat allPointsMask = cv::Mat::zeros(cv::Size(s_camParams.width, s_camParams.height), CV_8U);
+
+        //Create mask of all points from overlapping entities
+        for (int j = 0; j < s_camParams.height; ++j) {
+            for (int i = 0; i < s_camParams.width; ++i) {
+                int idx = j * s_camParams.width + i;
+                uint8_t stencilVal = m_pStencil[idx];
+
+                if (stencilVal == stencilType) {
+                    if (m_overlappingPoints.find(idx) != m_overlappingPoints.end()) {
+                        //Add to mask
+                        allPointsMask.at<uchar>(j, i) = 255;
+
+                        //Remove from overlappingPoints as it will get processed in mask
+                        m_overlappingPoints.erase(idx);
+                    }
+                    else {
+                        for (auto pObjEntity : objEntities) {
+                            if (m_pInstanceSeg[idx] == pObjEntity->entityID) {
+                                allPointsMask.at<uchar>(j, i) = 255;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        //Test by printing out image
+        {
+            std::string entitiesStr;
+            for (auto pObjEntity : objEntities) {
+                entitiesStr.append(std::to_string(pObjEntity->entityID));
+                entitiesStr.append("-");
+            }
+            entitiesStr.append("allPointsMask");
+            std::string filename = getStandardFilename(entitiesStr, ".png");
+            cv::imwrite(filename, allPointsMask);
+        }
+
+        //Create individual segmented masks
+        int floodVal = 1;
+        for (int j = 0; j < s_camParams.height; ++j) {
+            for (int i = 0; i < s_camParams.width; ++i) {
+                if (allPointsMask.at<uchar>(j, i) == 255) {
+                    cv::floodFill(allPointsMask, cv::Point(i,j), cv::Scalar(floodVal));
+                    ++floodVal;
+                }
+            }
+        }
+
+        std::string entitiesStr2;
+        for (auto pObjEntity : objEntities) {
+            entitiesStr2.append(std::to_string(pObjEntity->entityID));
+            entitiesStr2.append("-");
+        }
+        entitiesStr2.append("floodFilledMask");
+        std::string filename2 = getStandardFilename(entitiesStr2, ".png");
+        cv::imwrite(filename2, allPointsMask);
+        
+        //Check if each floodFill value only has singular points from one entity
+        std::vector<int> floodFillEntities(floodVal - 1, 0);
+        std::vector<bool> goodFloods(floodVal - 1, true);
+
+        for (int j = 0; j < s_camParams.height; ++j) {
+            for (int i = 0; i < s_camParams.width; ++i) {
+                int curFloodVal = allPointsMask.at<uchar>(j, i);
+
+                if (curFloodVal != 0) {
+                    int idx = j * s_camParams.width + i;
+                    int entityID = m_pInstanceSeg[idx];
+                    
+                    if (entityID != 0) {
+                        int floodEntityID = floodFillEntities[curFloodVal - 1];
+
+                        if (floodEntityID == 0) floodFillEntities[curFloodVal - 1] = entityID;
+                        else if (entityID == floodEntityID) continue;
+                        else goodFloods[curFloodVal - 1] = false;
+                    }
+                }
+            }
+        }
+
+        //If yes, set all points in that segment mask to the corresponding entity
+        for (int j = 0; j < s_camParams.height; ++j) {
+            for (int i = 0; i < s_camParams.width; ++i) {
+                int curFloodVal = allPointsMask.at<uchar>(j, i);
+
+                if (curFloodVal != 0 && goodFloods[curFloodVal - 1] && m_pInstanceSeg[j * s_camParams.width + i] == 0) {
+                    for (ObjEntity* objEnt : objEntities) {
+                        if (objEnt->entityID == floodFillEntities[curFloodVal - 1]) {
+                            addPoint(i, j, *objEnt);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        //Test by printing out image
+        {
+            std::string entitiesStr;
+            for (auto pObjEntity : objEntities) {
+                entitiesStr.append(std::to_string(pObjEntity->entityID));
+                entitiesStr.append("-");
+            }
+            entitiesStr.append("FillInstSeg");
+            std::string filename = getStandardFilename(entitiesStr, ".png");
+            cv::imwrite(filename, allPointsMask);
+        }
+
+        //Test this
+        std::ostringstream oss;
+        for (int i = 0; i < floodFillEntities.size(); i++) {
+            oss << "\n i: " << i << "    entityID: " << floodFillEntities[i] << "     good: " << goodFloods[i];
+        }
+        log(oss.str(), true);
+    }
+    //Round 2: If a segment from above has more than two sure entities in it
+    //Then try creating contours within this mask from the depth threshold
+    //Separate then check if new segments only have one sure entity in them
+
+    //Last resort just set the point to be the entity of the nearest 2D point
+
+    //Reset the map once done processing
+    m_overlappingPoints.clear();
 }
 
 //j is y coordinate (top=0), i is x coordinate (left = 0)
@@ -682,14 +827,22 @@ void ObjectDetection::processStencilPixel(const uint8_t &stencilVal, const int &
 
     //3 choices, no, single, or multiple 3D box matches
     if (pointEntities.empty()) {
-        //TODO
+        //This shouldn't happen anymore as all entities on screen are passed through
     }
     else if (pointEntities.size() == 1) {
         addPoint(i, j, *pointEntities[0]);
     }
-    else {
-        log("pointEntities duplicate.", true);
-        //TODO
+    else if (pointEntities.size() == 2) {
+        //Index of point
+        int idx = j * s_camParams.width + i;
+
+        //Map should only hit each idx once, so no need for alternative if idx is found
+        if (m_overlappingPoints.find(idx) == m_overlappingPoints.end()) {
+            m_overlappingPoints.insert(std::pair<int, std::vector<ObjEntity*>>(idx, pointEntities));
+        }
+        else {
+            log("************************This should never be here!!!!!!!!!!!!!!!!!!!", true);
+        }
     }
 }
 

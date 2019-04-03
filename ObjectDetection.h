@@ -157,6 +157,9 @@ private:
 
     std::unordered_map<Vehicle, std::vector<Ped>> m_pedsInVehicles;
 
+    //Map for tracking which entities are possible for each point which is in multiple 3D boxes
+    std::unordered_map<int, std::vector<ObjEntity*>> m_overlappingPoints;
+
 public:
     void initCollection(UINT camWidth, UINT camHeight, bool exportEVE = true, int startIndex = 0);
     void setCamParams(float* forwardVec = NULL, float* rightVec = NULL, float* upVec = NULL);
@@ -226,6 +229,7 @@ private:
     bool in3DBox(ObjEntity *e, Vector3 point);
     bool checkDirection(Vector3 unit, Vector3 point, Vector3 min, Vector3 max);
     void processSegmentation();
+    void processOverlappingPoints();
     void setEntityBBoxParameters(ObjEntity *e);
     void processStencilPixel(const uint8_t &stencilVal, const int &j, const int &i, const Vector3 &xVectorCam, const Vector3 &yVectorCam, const Vector3 &zVectorCam);
     void addPoint(int i, int j, ObjEntity &e);
