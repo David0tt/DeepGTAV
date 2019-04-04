@@ -2113,6 +2113,11 @@ void ObjectDetection::outputUnusedStencilPixels() {
 
 void ObjectDetection::exportEntity(ObjEntity e, std::ostringstream& oss, bool unprocessed, bool augmented,
                                     bool checkbbox2d, const int &maxDist, const int &min2DPoints, const int &min3DPoints) {
+    //Skip peds in vehicles except for augmented labels (since they can be specified as peds in vehicles)
+    if (e.isPedInV && !augmented) {
+        return;
+    }
+
     BBox2D b = e.bbox2d;
     if (unprocessed) b = e.bbox2dUnprocessed;
 
@@ -2164,7 +2169,7 @@ void ObjectDetection::exportEntity(ObjEntity e, std::ostringstream& oss, bool un
 
     if (augmented) {
         oss << " " << e.entityID << " " << e.pointsHit2D << " " << e.pointsHit3D << " " << e.speed << " "
-            << e.roll << " " << e.pitch << " " << e.modelString;
+            << e.roll << " " << e.pitch << " " << e.modelString << " " << e.isPedInV;
     }
     oss << "\n";
 }
@@ -2173,9 +2178,7 @@ void ObjectDetection::exportEntities(EntityMap entMap, std::ostringstream& oss, 
     for (EntityMap::const_iterator it = entMap.begin(); it != entMap.end(); ++it)
     {
         ObjEntity entity = it->second;
-        if (!entity.isPedInV) {
-            exportEntity(entity, oss, unprocessed, augmented, checkbbox2d, maxDist, min2DPoints, min3DPoints);
-        }
+        exportEntity(entity, oss, unprocessed, augmented, checkbbox2d, maxDist, min2DPoints, min3DPoints);
     }
 }
 
