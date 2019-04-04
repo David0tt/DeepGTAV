@@ -699,7 +699,7 @@ void ObjectDetection::processOverlappingPoints() {
         }
         
         //Test by printing out image
-        {
+        /*{
             std::string entitiesStr;
             for (auto pObjEntity : objEntities) {
                 entitiesStr.append(std::to_string(pObjEntity->entityID));
@@ -708,7 +708,7 @@ void ObjectDetection::processOverlappingPoints() {
             entitiesStr.append("allPointsMask");
             std::string filename = getStandardFilename(entitiesStr, ".png");
             cv::imwrite(filename, allPointsMask);
-        }
+        }*/
 
         //Create individual segmented masks
         int floodVal = 1;
@@ -721,15 +721,18 @@ void ObjectDetection::processOverlappingPoints() {
             }
         }
 
-        std::string entitiesStr2;
-        for (auto pObjEntity : objEntities) {
-            entitiesStr2.append(std::to_string(pObjEntity->entityID));
-            entitiesStr2.append("-");
-        }
-        entitiesStr2.append("floodFilledMask");
-        std::string filename2 = getStandardFilename(entitiesStr2, ".png");
-        cv::imwrite(filename2, allPointsMask);
-        
+        //Test by printing out image
+        /*{
+            std::string entitiesStr;
+            for (auto pObjEntity : objEntities) {
+                entitiesStr.append(std::to_string(pObjEntity->entityID));
+                entitiesStr.append("-");
+            }
+            entitiesStr.append("floodFilledMask");
+            std::string filename = getStandardFilename(entitiesStr, ".png");
+            cv::imwrite(filename, allPointsMask);
+        }*/
+
         //Check if each floodFill value only has singular points from one entity
         std::vector<int> floodFillEntities(floodVal - 1, 0);
         std::vector<bool> goodFloods(floodVal - 1, true);
@@ -768,30 +771,22 @@ void ObjectDetection::processOverlappingPoints() {
                 }
             }
         }
-        //Test by printing out image
-        {
-            std::string entitiesStr;
-            for (auto pObjEntity : objEntities) {
-                entitiesStr.append(std::to_string(pObjEntity->entityID));
-                entitiesStr.append("-");
+
+        //Round 2: If a segment from above has more than two sure entities in it
+        //Then try creating contours within this mask from the depth threshold
+        //Separate then check if new segments only have one sure entity in them
+        for (int i = 0; i < floodVal; ++i) {
+            if (goodFloods[i] == false) {
+                std::ostringstream oss2;
+                oss2 << "**************Found bad flood at index: " << instance_index;
+                std::string str = oss2.str();
+                log(str, true);
             }
-            entitiesStr.append("FillInstSeg");
-            std::string filename = getStandardFilename(entitiesStr, ".png");
-            cv::imwrite(filename, allPointsMask);
         }
 
-        //Test this
-        std::ostringstream oss;
-        for (int i = 0; i < floodFillEntities.size(); i++) {
-            oss << "\n i: " << i << "    entityID: " << floodFillEntities[i] << "     good: " << goodFloods[i];
-        }
-        log(oss.str(), true);
+        //Last resort just set the point to be the entity of the nearest 3D point
+        //TODO
     }
-    //Round 2: If a segment from above has more than two sure entities in it
-    //Then try creating contours within this mask from the depth threshold
-    //Separate then check if new segments only have one sure entity in them
-
-    //Last resort just set the point to be the entity of the nearest 2D point
 
     //Reset the map once done processing
     m_overlappingPoints.clear();
@@ -984,24 +979,16 @@ Vector3 ObjectDetection::correctOffcenter(Vector3 position, Vector3 min, Vector3
 }
 
 void ObjectDetection::update3DPointsHit(ObjEntity* e) {
+    //Checks to see if LiDAR hit entity e
     if (m_entitiesHit.find(e->entityID) != m_entitiesHit.end()) {
         HitLidarEntity* hitLidarEnt = m_entitiesHit[e->entityID];
         e->pointsHit3D = hitLidarEnt->pointsHit;
-        std::ostringstream oss2;
-        oss2 << "***entity Id: " << e->entityID << ", point hit: " << hitLidarEnt->pointsHit << ", " << e->pointsHit3D;
-        std::string str = oss2.str();
-        log(str, true);
     }
-    else {
-        std::ostringstream oss2;
-        oss2 << "***entity Id: " << e->entityID << " not found";
-        std::string str = oss2.str();
-        log(str, true);
-    }
+    //Entities not found will have their 3D point count remain at zero
 }
 
 void ObjectDetection::update3DPointsHit() {
-    //Set the bounding box parameters (for reducing # of calculations per pixel)
+    //Update # of 2D and 3D pixels for each entity
     for (auto &entry : m_curFrame.vehicles) {
         update3DPointsHit(&entry.second);
     }
