@@ -46,6 +46,7 @@ The next 6 columns are the augmented data and represent:
    1    roll         roll angle (rad),    0 = level, positive = left side up,      range: -pi   .. +pi     (in terms of cam coordinates)
    1    pitch        pitch angle (rad),   0 = level, positive = front down,        range: -pi/2 .. +pi/2   (in terms of cam coordinates)
    1    model        String defining the object model
+   1    isPedinV     Identifies if the entity is a person in/on a vehicle (1 if yes, 0 if no)
 
 
 
