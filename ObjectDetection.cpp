@@ -534,6 +534,16 @@ void ObjectDetection::setEntityBBoxParameters(ObjEntity *e) {
     e->w = getUnitVector(subtractVecs(e->rearBotRight, e->rearBotLeft));
 }
 
+//Return true if pixel (i,j) is inside the entity's unprocessed 2D bounding box
+bool ObjectDetection::in2DBoxUnprocessed(const int &i, const int &j, ObjEntity* e) {
+    if (i < e->bbox2dUnprocessed.left) return false;
+    if (i > e->bbox2dUnprocessed.right) return false;
+    if (j < e->bbox2dUnprocessed.top) return false;
+    if (j > e->bbox2dUnprocessed.bottom) return false;
+
+    return true;
+}
+
 //Point and objPos should be in world coordinates
 bool ObjectDetection::in3DBox(Vector3 point, Vector3 objPos, Vector3 dim, Vector3 yVector, Vector3 xVector, Vector3 zVector) {
     Vector3 forward; forward.y = dim.y; forward.x = 0; forward.z = 0;
@@ -809,6 +819,21 @@ void ObjectDetection::processStencilPixel(const uint8_t &stencilVal, const int &
     }
     else {
         eMap = &m_curFrame.peds;
+    }
+
+    //Check 2D boxes first
+    //Stencil goes through vehicle windows but depth buffer does not
+    std::vector<ObjEntity*> pointEntities2D;
+    for (auto &entry : *eMap) {
+        ObjEntity* e = &(entry.second);
+        if (in2DBoxUnprocessed(i, j, e)) {
+            pointEntities2D.push_back(e);
+        }
+    }
+    //If point only lies in one 2D bounding box then accept this entity as the true entity
+    if (pointEntities2D.size() == 1) {
+        addPoint(i, j, *pointEntities2D[0]);
+        return;
     }
 
     //Get vector of entities which point resides in their 3D box

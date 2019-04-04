@@ -227,6 +227,7 @@ private:
     BBox2D BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector, bool &success, float &truncation);
     bool in3DBox(Vector3 point, Vector3 objPos, Vector3 dim, Vector3 yVector, Vector3 xVector, Vector3 zVector);
     bool in3DBox(ObjEntity *e, Vector3 point);
+    bool in2DBoxUnprocessed(const int &i, const int &j, ObjEntity* e);
     bool checkDirection(Vector3 unit, Vector3 point, Vector3 min, Vector3 max);
     void processSegmentation();
     void processOverlappingPoints();
