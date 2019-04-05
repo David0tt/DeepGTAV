@@ -12,7 +12,6 @@
 #include <Eigen/Core>
 #include <sstream>
 #include "lodepng.h"
-#include <opencv2\opencv.hpp>
 
 ObjectDetection::ObjectDetection()
 {
@@ -637,6 +636,16 @@ void ObjectDetection::processSegmentation() {
     Vector3 yVectorCam = convertCoordinateSystem(worldY, m_camForwardVector, m_camRightVector, m_camUpVector);
     Vector3 zVectorCam = convertCoordinateSystem(worldZ, m_camForwardVector, m_camRightVector, m_camUpVector);
 
+    //Create depth array to use later
+    for (int j = 0; j < s_camParams.height; ++j) {
+        for (int i = 0; i < s_camParams.width; ++i) {
+            float ndc = m_pDepth[j * s_camParams.width + i];
+            Vector3 relPos = depthToCamCoords(ndc, i, j);
+            float distance = sqrt(SYSTEM::VDIST2(0, 0, 0, relPos.x, relPos.y, relPos.z));
+            m_depthMat.at<float>(j, i) = distance;
+        }
+    }
+
     int stencilPointCount = 0;
     int occlusionPointCount = 0;
 
@@ -692,9 +701,6 @@ void ObjectDetection::processOverlappingPoints() {
                     if (m_overlappingPoints.find(idx) != m_overlappingPoints.end()) {
                         //Add to mask
                         allPointsMask.at<uchar>(j, i) = 255;
-
-                        //Remove from overlappingPoints as it will get processed in mask
-                        m_overlappingPoints.erase(idx);
                     }
                     else {
                         for (auto pObjEntity : objEntities) {
@@ -775,6 +781,8 @@ void ObjectDetection::processOverlappingPoints() {
                     for (ObjEntity* objEnt : objEntities) {
                         if (objEnt->entityID == floodFillEntities[curFloodVal - 1]) {
                             addPoint(i, j, *objEnt);
+                            //Also zero the mask pixel so we don't use it in the future
+                            allPointsMask.at<uchar>(j, i) = 0;
                             break;
                         }
                     }
@@ -782,9 +790,7 @@ void ObjectDetection::processOverlappingPoints() {
             }
         }
 
-        //Round 2: If a segment from above has more than two sure entities in it
-        //Then try creating contours within this mask from the depth threshold
-        //Separate then check if new segments only have one sure entity in them
+        //For testing print out indices which can't separate with flood fill so they can be visually inspected
         for (int i = 0; i < floodVal; ++i) {
             if (goodFloods[i] == false) {
                 std::ostringstream oss2;
@@ -792,6 +798,28 @@ void ObjectDetection::processOverlappingPoints() {
                 std::string str = oss2.str();
                 log(str, true);
             }
+        }
+
+        //Round 2: If a segment from above has more than two sure entities in it
+        //Then try creating contours within this mask from the depth threshold
+        //Separate then check if new segments only have one sure entity in them
+
+        //Create an image with the depth values only where the mask is
+        //Initialize depth mask
+        cv::Mat depthMasked;
+        m_depthMat.copyTo(depthMasked, allPointsMask);
+        depthMasked *= FLT_MAX / s_camParams.farClip;
+
+        //Test by printing out image
+        {
+            std::string entitiesStr;
+            for (auto pObjEntity : objEntities) {
+            entitiesStr.append(std::to_string(pObjEntity->entityID));
+            entitiesStr.append("-");
+            }
+            entitiesStr.append("depthMasked");
+            std::string filename = getStandardFilename(entitiesStr, ".png");
+            cv::imwrite(filename, depthMasked);
         }
 
         //Last resort just set the point to be the entity of the nearest 3D point
@@ -873,6 +901,12 @@ void ObjectDetection::addPoint(int i, int j, ObjEntity &e) {
     if (j < e.bbox2d.top) e.bbox2d.top = j;
     if (j > e.bbox2d.bottom) e.bbox2d.bottom = j;
     ++e.pointsHit2D;
+
+    //Remove from overlappingPoints if it gets added
+    int idx = j * s_camParams.width + i;
+    if (m_overlappingPoints.find(idx) != m_overlappingPoints.end()) {
+        m_overlappingPoints.erase(idx);
+    }
 
     addPointToSegImages(i, j, e.entityID);
 }

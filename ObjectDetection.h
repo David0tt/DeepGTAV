@@ -7,6 +7,7 @@
 #include "Functions.h"
 #include "CamParams.h"
 #include "FrameObjectInfo.h"
+#include <opencv2\opencv.hpp>
 
 //#define DEBUG 1
 
@@ -105,6 +106,8 @@ private:
     uint8_t* m_pOcclusionImage = NULL;
     uint8_t* m_pUnusedStencilImage = NULL;
     uint8_t* m_pGroundPointsImage = NULL;
+
+    cv::Mat m_depthMat = cv::Mat::zeros(cv::Size(s_camParams.width, s_camParams.height), CV_32FC1);
 
     std::string m_imgFilename;
     std::string m_veloFilename;
