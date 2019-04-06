@@ -57,6 +57,7 @@ struct ObjEntity {
     Vector3 frontBotLeft;
     Vector3 rearTopLeft;
     Vector3 rearBotRight;
+    Vector3 rearMiddleLeft;
     Vector3 rearThirdLeft;
     Vector3 rearTopExactLeft;
 
