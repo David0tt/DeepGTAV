@@ -530,9 +530,13 @@ void ObjectDetection::setEntityBBoxParameters(ObjEntity *e) {
     e->rearBotRight.y = objPos.y - forward.y + right.y - up.y * (BBOX_ADJUSTMENT_FACTOR - 1);
     e->rearBotRight.z = objPos.z - forward.z + right.z - up.z * (BBOX_ADJUSTMENT_FACTOR - 1);
 
-    e->rearMiddleLeft.x = objPos.x - forward.x - right.x + up.x;
-    e->rearMiddleLeft.y = objPos.y - forward.y - right.y + up.y;
-    e->rearMiddleLeft.z = objPos.z - forward.z - right.z + up.z;
+    e->rearThirdLeft.x = objPos.x - forward.x - right.x + 2 / 3 * up.x;
+    e->rearThirdLeft.y = objPos.y - forward.y - right.y + 2 / 3 * up.y;
+    e->rearThirdLeft.z = objPos.z - forward.z - right.z + 2 / 3 * up.z;
+
+    e->rearTopExactLeft.x = objPos.x - forward.x - right.x + 2 * up.x;
+    e->rearTopExactLeft.y = objPos.y - forward.y - right.y + 2 * up.y;
+    e->rearTopExactLeft.z = objPos.z - forward.z - right.z + 2 * up.z;
 
     e->u = getUnitVector(subtractVecs(e->frontBotLeft, e->rearBotLeft));
     e->v = getUnitVector(subtractVecs(e->rearTopLeft, e->rearBotLeft));
@@ -605,7 +609,8 @@ bool ObjectDetection::in3DBox(Vector3 point, Vector3 objPos, Vector3 dim, Vector
 //Note: Need to set the entity's parameters u,v,w, and rearBotLeft, etc...
 bool ObjectDetection::in3DBox(ObjEntity* e, Vector3 point, bool &upperHalf) {
     upperHalf = false;
-    if (checkDirection(e->v, point, e->rearMiddleLeft, e->rearTopLeft)) upperHalf = true;
+    if (checkDirection(e->v, point, e->rearThirdLeft, e->rearTopExactLeft)) upperHalf = true;
+
     if (!checkDirection(e->u, point, e->rearBotLeft, e->frontBotLeft)) return false;
     if (!checkDirection(e->v, point, e->rearBotLeft, e->rearTopLeft)) return false;
     if (!checkDirection(e->w, point, e->rearBotLeft, e->rearBotRight)) return false;
@@ -854,6 +859,27 @@ void ObjectDetection::processOverlappingPoints() {
     m_overlappingPoints.clear();
 }
 
+std::vector<ObjEntity*> ObjectDetection::pointInside3DEntities(const Vector3 &worldPos, EntityMap* eMap, const bool &checkUpperVehicle, const uint8_t &stencilVal) {
+    //Get vector of entities which point resides in their 3D box
+    std::vector<ObjEntity*> pointEntities;
+    for (auto &entry : *eMap) {
+        ObjEntity* e = &(entry.second);
+        bool upperHalf;
+        bool isIn3DBox = in3DBox(e, worldPos, upperHalf);
+        if (isIn3DBox) {
+            //Add only pedestrian stencil types to pedestrian 3D bboxes
+            //Add any points which are vehicle stencil type or
+            //are in the upper half of the vehicle's 3D bounding box
+            //This allows window points to be added for vehicles
+            if (!checkUpperVehicle || stencilVal == STENCIL_TYPE_VEHICLE || upperHalf) {
+                pointEntities.push_back(e);
+            }
+        }
+    }
+
+    return pointEntities;
+}
+
 //j is y coordinate (top=0), i is x coordinate (left = 0)
 void ObjectDetection::processStencilPixel3D(const uint8_t &stencilVal, const int &j, const int &i,
                                           const Vector3 &xVectorCam, const Vector3 &yVectorCam, const Vector3 &zVectorCam) {
@@ -894,28 +920,20 @@ void ObjectDetection::processStencilPixel3D(const uint8_t &stencilVal, const int
         }
     }
 
-    //Get vector of entities which point resides in their 3D box
-    std::vector<ObjEntity*> pointEntities;
-    for (auto &entry : *eMap) {
-        ObjEntity* e = &(entry.second);
-        bool upperHalf;
-        bool isIn3DBox = in3DBox(e, worldPos, upperHalf);
-        if (isIn3DBox) {
-            //Add only pedestrian stencil types to pedestrian 3D bboxes
-            //Add any points which are vehicle stencil type or
-            //are in the upper half of the vehicle's 3D bounding box
-            //This allows window points to be added for vehicles
-            if (!checkUpperVehicle || stencilVal == STENCIL_TYPE_VEHICLE || upperHalf) {
-                pointEntities.push_back(e);
-            }
-        }
+    std::vector<ObjEntity*> pointEntities = pointInside3DEntities(worldPos, eMap, checkUpperVehicle, stencilVal);
+
+    //All vehicle points should fall within a vehicle 3D bounding box
+    //Pedestrians in vehicles may not since the windows are what the depth model hits
+    //Try setting the pedestrian stencil type to a vehicle and checking again if this is the case
+    if (pointEntities.empty() && stencilVal == STENCIL_TYPE_NPC) {
+        eMap = &m_curFrame.vehicles;
+        checkUpperVehicle = true;
+        pointEntities = pointInside3DEntities(worldPos, eMap, checkUpperVehicle, STENCIL_TYPE_VEHICLE);
     }
 
     //3 choices, no, single, or multiple 3D box matches
     if (pointEntities.empty()) {
-        //All vehicle points should fall within a vehicle 3D bounding box
-        //Pedestrians in vehicles may not since the windows are what the depth model hits
-        //TODO Check vehicle boxes if it is a pedestrian
+        //Should never hit here, point will not get added for outlier cases
     }
     else if (pointEntities.size() == 1) {
         addSegmentedPoint3D(i, j, pointEntities[0]);

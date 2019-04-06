@@ -237,6 +237,7 @@ private:
     //Depth buffer hits vehicle windows whereas stencil buffer does not
     void processSegmentation2D();
     void processSegmentation3D();
+    std::vector<ObjEntity*> pointInside3DEntities(const Vector3 &worldPos, EntityMap* eMap, const bool &checkUpperVehicle, const uint8_t &stencilVal);
     void processOverlappingPoints();
     void setEntityBBoxParameters(ObjEntity *e);
     void processStencilPixel3D(const uint8_t &stencilVal, const int &j, const int &i, const Vector3 &xVectorCam, const Vector3 &yVectorCam, const Vector3 &zVectorCam);
