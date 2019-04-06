@@ -530,6 +530,10 @@ void ObjectDetection::setEntityBBoxParameters(ObjEntity *e) {
     e->rearBotRight.y = objPos.y - forward.y + right.y - up.y * (BBOX_ADJUSTMENT_FACTOR - 1);
     e->rearBotRight.z = objPos.z - forward.z + right.z - up.z * (BBOX_ADJUSTMENT_FACTOR - 1);
 
+    e->rearMiddleLeft.x = objPos.x - forward.x - right.x + up.x;
+    e->rearMiddleLeft.y = objPos.y - forward.y - right.y + up.y;
+    e->rearMiddleLeft.z = objPos.z - forward.z - right.z + up.z;
+
     e->rearThirdLeft.x = objPos.x - forward.x - right.x + 2 / 3 * up.x;
     e->rearThirdLeft.y = objPos.y - forward.y - right.y + 2 / 3 * up.y;
     e->rearThirdLeft.z = objPos.z - forward.z - right.z + 2 / 3 * up.z;
@@ -609,7 +613,7 @@ bool ObjectDetection::in3DBox(Vector3 point, Vector3 objPos, Vector3 dim, Vector
 //Note: Need to set the entity's parameters u,v,w, and rearBotLeft, etc...
 bool ObjectDetection::in3DBox(ObjEntity* e, Vector3 point, bool &upperHalf) {
     upperHalf = false;
-    if (checkDirection(e->v, point, e->rearThirdLeft, e->rearTopExactLeft)) upperHalf = true;
+    if (checkDirection(e->v, point, e->rearMiddleLeft, e->rearTopExactLeft)) upperHalf = true;
 
     if (!checkDirection(e->u, point, e->rearBotLeft, e->frontBotLeft)) return false;
     if (!checkDirection(e->v, point, e->rearBotLeft, e->rearTopLeft)) return false;
