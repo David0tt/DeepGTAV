@@ -229,14 +229,18 @@ private:
 
     BBox2D BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector, bool &success, float &truncation);
     bool in3DBox(Vector3 point, Vector3 objPos, Vector3 dim, Vector3 yVector, Vector3 xVector, Vector3 zVector);
-    bool in3DBox(ObjEntity *e, Vector3 point);
+    bool in3DBox(ObjEntity *e, Vector3 point, bool &upperHalf);
     bool in2DBoxUnprocessed(const int &i, const int &j, ObjEntity* e);
     bool checkDirection(Vector3 unit, Vector3 point, Vector3 min, Vector3 max);
-    void processSegmentation();
+    //Process pixel instance segmentations with two different methods
+    //2D uses only 2D segmentation techniques whereas 3D uses depth buffer
+    //Depth buffer hits vehicle windows whereas stencil buffer does not
+    void processSegmentation2D();
+    void processSegmentation3D();
     void processOverlappingPoints();
     void setEntityBBoxParameters(ObjEntity *e);
-    void processStencilPixel(const uint8_t &stencilVal, const int &j, const int &i, const Vector3 &xVectorCam, const Vector3 &yVectorCam, const Vector3 &zVectorCam);
-    void addPoint(int i, int j, ObjEntity &e);
+    void processStencilPixel3D(const uint8_t &stencilVal, const int &j, const int &i, const Vector3 &xVectorCam, const Vector3 &yVectorCam, const Vector3 &zVectorCam);
+    void addSegmentedPoint3D(int i, int j, ObjEntity *e);
     void addPointToSegImages(int i, int j, int entityID);
     void printSegImage();
     void getContours();

@@ -214,8 +214,10 @@ FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStenci
     //if (depthMap && lidar_initialized) updateSegImage();
 
     if (lidar_initialized) getContours();
-    //TODO: Need to update 2D bboxes after receiving new depth image
-    processSegmentation();
+
+    //Update 2D bboxes, and create segmentation of stencil values
+    processSegmentation2D();
+    processSegmentation3D();
     processOcclusion();
 
     if (pointclouds && lidar_initialized) collectLiDAR();
@@ -528,6 +530,10 @@ void ObjectDetection::setEntityBBoxParameters(ObjEntity *e) {
     e->rearBotRight.y = objPos.y - forward.y + right.y - up.y * (BBOX_ADJUSTMENT_FACTOR - 1);
     e->rearBotRight.z = objPos.z - forward.z + right.z - up.z * (BBOX_ADJUSTMENT_FACTOR - 1);
 
+    e->rearMiddleLeft.x = objPos.x - forward.x - right.x + up.x;
+    e->rearMiddleLeft.y = objPos.y - forward.y - right.y + up.y;
+    e->rearMiddleLeft.z = objPos.z - forward.z - right.z + up.z;
+
     e->u = getUnitVector(subtractVecs(e->frontBotLeft, e->rearBotLeft));
     e->v = getUnitVector(subtractVecs(e->rearTopLeft, e->rearBotLeft));
     e->w = getUnitVector(subtractVecs(e->rearBotRight, e->rearBotLeft));
@@ -597,7 +603,9 @@ bool ObjectDetection::in3DBox(Vector3 point, Vector3 objPos, Vector3 dim, Vector
 //Takes in an entity and a point (in world coordinates) and returns true if the point resides within the
 //entity's 3D bounding box.
 //Note: Need to set the entity's parameters u,v,w, and rearBotLeft, etc...
-bool ObjectDetection::in3DBox(ObjEntity* e, Vector3 point) {
+bool ObjectDetection::in3DBox(ObjEntity* e, Vector3 point, bool &upperHalf) {
+    upperHalf = false;
+    if (checkDirection(e->v, point, e->rearMiddleLeft, e->rearTopLeft)) upperHalf = true;
     if (!checkDirection(e->u, point, e->rearBotLeft, e->frontBotLeft)) return false;
     if (!checkDirection(e->v, point, e->rearBotLeft, e->rearTopLeft)) return false;
     if (!checkDirection(e->w, point, e->rearBotLeft, e->rearBotRight)) return false;
@@ -607,7 +615,8 @@ bool ObjectDetection::in3DBox(ObjEntity* e, Vector3 point) {
 
 bool ObjectDetection::isPointOccluding(Vector3 worldPos, ObjEntity *e) {
     //Need to test in3DBox as stencil buffer goes through windows but depth buffer does not
-    if (in3DBox(e, worldPos)) {
+    bool upperHalf;
+    if (in3DBox(e, worldPos, upperHalf)) {
         return false;
     }
 
@@ -627,7 +636,25 @@ bool ObjectDetection::isPointOccluding(Vector3 worldPos, ObjEntity *e) {
     return false;
 }
 
-void ObjectDetection::processSegmentation() {
+//TODO Need to fix this now that we know stencil/depth buffers do not align
+void ObjectDetection::processSegmentation2D() {
+    /*for (int j = 0; j < s_camParams.height; ++j) {
+        for (int i = 0; i < s_camParams.width; ++i) {
+            uint8_t stencilVal = m_pStencil[j * s_camParams.width + i];
+
+            if (stencilVal == STENCIL_TYPE_VEHICLE || stencilVal == STENCIL_TYPE_NPC) {
+                processStencilPixel2D(stencilVal, j, i, xVectorCam, yVectorCam, zVectorCam);
+            }
+            else if (stencilVal == STENCIL_TYPE_OWNCAR) {
+                addPointTo2DSegImages(i, j, m_ownVehicle);
+            }
+        }
+    }
+
+    processOverlappingPoints2D();*/
+}
+
+void ObjectDetection::processSegmentation3D() {
     //Converting vehicle dimensions from vehicle to world coordinates for offset position
     Vector3 worldX; worldX.x = 1; worldX.y = 0; worldX.z = 0;
     Vector3 worldY; worldY.x = 0; worldY.y = 1; worldY.z = 0;
@@ -646,9 +673,6 @@ void ObjectDetection::processSegmentation() {
         }
     }
 
-    int stencilPointCount = 0;
-    int occlusionPointCount = 0;
-
     //Set the bounding box parameters (for reducing # of calculations per pixel)
     for (auto &entry : m_curFrame.vehicles) {
         setEntityBBoxParameters(&entry.second);
@@ -661,11 +685,11 @@ void ObjectDetection::processSegmentation() {
         for (int i = 0; i < s_camParams.width; ++i) {
             uint8_t stencilVal = m_pStencil[j * s_camParams.width + i];
 
-            if (stencilVal == STENCIL_TYPE_VEHICLE || stencilVal == STENCIL_TYPE_NPC) {
-                processStencilPixel(stencilVal, j, i, xVectorCam, yVectorCam, zVectorCam);
-            }
-            else if (stencilVal == STENCIL_TYPE_OWNCAR) {
+            if (stencilVal == STENCIL_TYPE_OWNCAR) {
                 addPointToSegImages(i, j, m_ownVehicle);
+            }
+            else {
+                processStencilPixel3D(stencilVal, j, i, xVectorCam, yVectorCam, zVectorCam);
             }
         }
     }
@@ -780,7 +804,7 @@ void ObjectDetection::processOverlappingPoints() {
                 if (curFloodVal != 0 && goodFloods[curFloodVal - 1] && m_pInstanceSeg[j * s_camParams.width + i] == 0) {
                     for (ObjEntity* objEnt : objEntities) {
                         if (objEnt->entityID == floodFillEntities[curFloodVal - 1]) {
-                            addPoint(i, j, *objEnt);
+                            addSegmentedPoint3D(i, j, objEnt);
                             //Also zero the mask pixel so we don't use it in the future
                             allPointsMask.at<uchar>(j, i) = 0;
                             break;
@@ -831,7 +855,7 @@ void ObjectDetection::processOverlappingPoints() {
 }
 
 //j is y coordinate (top=0), i is x coordinate (left = 0)
-void ObjectDetection::processStencilPixel(const uint8_t &stencilVal, const int &j, const int &i,
+void ObjectDetection::processStencilPixel3D(const uint8_t &stencilVal, const int &j, const int &i,
                                           const Vector3 &xVectorCam, const Vector3 &yVectorCam, const Vector3 &zVectorCam) {
     float ndc = m_pDepth[j * s_camParams.width + i];
     Vector3 relPos = depthToCamCoords(ndc, i, j);
@@ -841,46 +865,79 @@ void ObjectDetection::processStencilPixel(const uint8_t &stencilVal, const int &
     worldPos.z += s_camParams.pos.z;
 
     //Obtain proper map for stencil type
+    //Need to check all points for vehicles since depth map hits windows but
+    //stencil buffer hits entities through windows
     EntityMap* eMap;
-    if (stencilVal == STENCIL_TYPE_VEHICLE) {
-        eMap = &m_curFrame.vehicles;
-    }
-    else {
+    bool checkUpperVehicle = false;
+    if (stencilVal == STENCIL_TYPE_NPC) {
         eMap = &m_curFrame.peds;
     }
+    else {
+        eMap = &m_curFrame.vehicles;
+        checkUpperVehicle = true;
+    }
 
-    //Check 2D boxes first
+    //Check 2D boxes first for vehicle and pedestrian stencil pixels
     //Stencil goes through vehicle windows but depth buffer does not
     std::vector<ObjEntity*> pointEntities2D;
-    for (auto &entry : *eMap) {
-        ObjEntity* e = &(entry.second);
-        if (in2DBoxUnprocessed(i, j, e)) {
-            pointEntities2D.push_back(e);
+    if (stencilVal == STENCIL_TYPE_NPC || stencilVal == STENCIL_TYPE_VEHICLE) {
+        for (auto &entry : *eMap) {
+            ObjEntity* e = &(entry.second);
+            if (in2DBoxUnprocessed(i, j, e)) {
+                pointEntities2D.push_back(e);
+            }
         }
-    }
-    //If point only lies in one 2D bounding box then accept this entity as the true entity
-    if (pointEntities2D.size() == 1) {
-        addPoint(i, j, *pointEntities2D[0]);
-        return;
+        //If point only lies in one 2D bounding box then accept this entity as the true entity
+        if (pointEntities2D.size() == 1) {
+            addSegmentedPoint3D(i, j, pointEntities2D[0]);
+            return;
+        }
     }
 
     //Get vector of entities which point resides in their 3D box
     std::vector<ObjEntity*> pointEntities;
     for (auto &entry : *eMap) {
         ObjEntity* e = &(entry.second);
-        if (in3DBox(e, worldPos)) {
-            pointEntities.push_back(e);
+        bool upperHalf;
+        bool isIn3DBox = in3DBox(e, worldPos, upperHalf);
+        if (isIn3DBox) {
+            //Add only pedestrian stencil types to pedestrian 3D bboxes
+            //Add any points which are vehicle stencil type or
+            //are in the upper half of the vehicle's 3D bounding box
+            //This allows window points to be added for vehicles
+            if (!checkUpperVehicle || stencilVal == STENCIL_TYPE_VEHICLE || upperHalf) {
+                pointEntities.push_back(e);
+            }
         }
     }
 
     //3 choices, no, single, or multiple 3D box matches
     if (pointEntities.empty()) {
-        //This shouldn't happen anymore as all entities on screen are passed through
+        //All vehicle points should fall within a vehicle 3D bounding box
+        //Pedestrians in vehicles may not since the windows are what the depth model hits
+        //TODO Check vehicle boxes if it is a pedestrian
     }
     else if (pointEntities.size() == 1) {
-        addPoint(i, j, *pointEntities[0]);
+        addSegmentedPoint3D(i, j, pointEntities[0]);
     }
-    else if (pointEntities.size() == 2) {
+    else {
+        //If the overlapping entities are all peds in the same vehicle
+        //simply add it as it will just be set to the vehicle
+        if (stencilVal == STENCIL_TYPE_NPC && pointEntities[0]->isPedInV) {
+            int vEntityID = pointEntities[0]->vPedIsIn;
+            bool allSameV = true;
+            for (int i = 1; i < pointEntities.size(); ++i) {
+                if (!pointEntities[i]->isPedInV || pointEntities[i]->vPedIsIn != pointEntities[0]->vPedIsIn) {
+                    allSameV = false;
+                    break;
+                }
+            }
+            if (allSameV) {
+                addSegmentedPoint3D(i, j, pointEntities[0]);
+                return;
+            }
+        }
+
         //Index of point
         int idx = j * s_camParams.width + i;
 
@@ -895,12 +952,22 @@ void ObjectDetection::processStencilPixel(const uint8_t &stencilVal, const int &
 }
 
 //Add 2D point to an entity
-void ObjectDetection::addPoint(int i, int j, ObjEntity &e) {
-    if (i < e.bbox2d.left) e.bbox2d.left = i;
-    if (i > e.bbox2d.right) e.bbox2d.right = i;
-    if (j < e.bbox2d.top) e.bbox2d.top = j;
-    if (j > e.bbox2d.bottom) e.bbox2d.bottom = j;
-    ++e.pointsHit2D;
+void ObjectDetection::addSegmentedPoint3D(int i, int j, ObjEntity *e) {
+
+    if (e->isPedInV) {
+        for (auto &entry : m_curFrame.vehicles) {
+            ObjEntity* entity = &(entry.second);
+            if (entity->entityID == e->vPedIsIn) {
+                e = entity;
+            }
+        }
+    }
+
+    if (i < e->bbox2d.left) e->bbox2d.left = i;
+    if (i > e->bbox2d.right) e->bbox2d.right = i;
+    if (j < e->bbox2d.top) e->bbox2d.top = j;
+    if (j > e->bbox2d.bottom) e->bbox2d.bottom = j;
+    ++e->pointsHit2D;
 
     //Remove from overlappingPoints if it gets added
     int idx = j * s_camParams.width + i;
@@ -908,7 +975,7 @@ void ObjectDetection::addPoint(int i, int j, ObjEntity &e) {
         m_overlappingPoints.erase(idx);
     }
 
-    addPointToSegImages(i, j, e.entityID);
+    addPointToSegImages(i, j, e->entityID);
 }
 
 void ObjectDetection::addPointToSegImages(int i, int j, int entityID) {
