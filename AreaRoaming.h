@@ -63,8 +63,8 @@ static bool in_bounds(float x, float y, int loc, std::vector<std::vector<char>> 
                 float slope = diff_y / diff_x;
                 float intercept = s_locationBounds[loc][1][point] - slope * s_locationBounds[loc][0][point];
 
-                for (float x = min(s_locationBounds[loc][0][point], s_locationBounds[loc][0][next_point]);
-                    x <= max(s_locationBounds[loc][0][point], s_locationBounds[loc][0][next_point]); x++)
+                for (float x = std::min(s_locationBounds[loc][0][point], s_locationBounds[loc][0][next_point]);
+                    x <= std::max(s_locationBounds[loc][0][point], s_locationBounds[loc][0][next_point]); x++)
                 {
                     int x_index = int(round(x)) - min_x;
                     int y_index = int(round(slope * x + intercept)) - min_y;
@@ -76,8 +76,8 @@ static bool in_bounds(float x, float y, int loc, std::vector<std::vector<char>> 
                 float slope = diff_x / diff_y;
                 float intercept = s_locationBounds[loc][0][point] - slope * s_locationBounds[loc][1][point];
 
-                for (float y = min(s_locationBounds[loc][1][point], s_locationBounds[loc][1][next_point]);
-                    y <= max(s_locationBounds[loc][1][point], s_locationBounds[loc][1][next_point]); y++)
+                for (float y = std::min(s_locationBounds[loc][1][point], s_locationBounds[loc][1][next_point]);
+                    y <= std::max(s_locationBounds[loc][1][point], s_locationBounds[loc][1][next_point]); y++)
                 {
                     int y_index = int(round(y)) - min_y;
                     int x_index = int(round(slope * y + intercept)) - min_x;
