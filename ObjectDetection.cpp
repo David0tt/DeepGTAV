@@ -2202,8 +2202,9 @@ void ObjectDetection::exportEntity(ObjEntity e, std::ostringstream& oss, bool un
         e.rotation_y;
 
     if (augmented) {
+        int vPedIsIn = e.isPedInV ? e.vPedIsIn : 0;
         oss << " " << e.entityID << " " << e.pointsHit2D << " " << e.pointsHit3D << " " << e.speed << " "
-            << e.roll << " " << e.pitch << " " << e.modelString << " " << e.isPedInV;
+            << e.roll << " " << e.pitch << " " << e.modelString << " " << vPedIsIn;
     }
     oss << "\n";
 }
