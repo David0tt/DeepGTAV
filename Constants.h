@@ -18,7 +18,7 @@ const float CAR_CENTER_OFFSET_UP = 0.665;//Distance to ground is ~1.73m (as per 
 
 const bool SET_PED_BOXES = true;
 const float PED_BOX_WIDTH = 1.2f;
-const float PED_BOX_LENGTH = 0.5f;
+const float PED_BOX_LENGTH = 1.0f;
 const float PED_BOX_WALKING_LEN = 1.44f;
 
 const float BBOX_ADJUSTMENT_FACTOR = 1.1f;
@@ -28,8 +28,8 @@ const float BBOX_ADJUSTMENT_FACTOR = 1.1f;
 //Use the same time of day throughout the collection process
 const bool SAME_TIME_OF_DAY = true;
 //Drive in specified area or wander entire map
-const bool DRIVE_SPEC_AREA = false;
-const bool START_SPEC_AREA = false;
+const bool DRIVE_SPEC_AREA = true;
+const bool START_SPEC_AREA = true;
 
 //TODO -> stencil/depth semantic segmentation for depthmap->lidar interpolation
 
@@ -40,9 +40,9 @@ const bool GENERATE_2D_POINTMAP = false;
 const bool OUTPUT_RAYCAST_POINTS = false;
 
 //Outputs pointcloud with 1:1 ratio of pixels in image < MAX_LIDAR_DIST
-const bool OUTPUT_DM_POINTCLOUD = true;
+const bool OUTPUT_DM_POINTCLOUD = false;
 //If OUTPUT_DM_POINTCLOUD, outputs all points, even those past MAX_LIDAR_DIST (good for testing)
-const bool OUTPUT_FULL_DM_POINTCLOUD = true;
+const bool OUTPUT_FULL_DM_POINTCLOUD = false;
 
 //Sends animals to client. Check client also outputs them
 const bool RETAIN_ANIMALS = true;
