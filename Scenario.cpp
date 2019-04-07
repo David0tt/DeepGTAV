@@ -187,8 +187,8 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
         dir.x = s_locationBounds[0][0][m_startArea];
         dir.y = s_locationBounds[0][1][m_startArea];
         dir.z = 0.f;
-        x = s_locationBounds[0][0][0];
-        y = s_locationBounds[0][1][0];
+        x = s_locationBounds[0][0][1];
+        y = s_locationBounds[0][1][1];
     }
 
     if (stationaryScene) {
@@ -240,6 +240,7 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
                 }
             }
         }
+        vehicles_created = false;
     }
 
 	//Create JSON DOM
@@ -562,10 +563,8 @@ StringBuffer Scenario::generateMessage() {
     log("After generate msg");
     d["index"] = fObjInfo.instanceIdx;
 
-    if (fObjInfo.instanceIdx == m_startIndex) {
-        //Create vehicles if it is a stationary scenario
-        createVehicles();
-    }
+    //Create vehicles if it is a stationary scenario
+    createVehicles();
 
     GAMEPLAY::SET_GAME_PAUSED(false);
 
