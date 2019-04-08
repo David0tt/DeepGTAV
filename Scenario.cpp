@@ -542,7 +542,7 @@ StringBuffer Scenario::generateMessage() {
 
     setCamParams();
     //setColorBuffer();
-    if (depthMap) setDepthBuffer();
+    int depthSize = setDepthBuffer();
     if (depthMap) setStencilBuffer();
 	if (trafficSigns); //TODO
 	if (direction) setDirection();
@@ -557,7 +557,7 @@ StringBuffer Scenario::generateMessage() {
         m_pObjDet->initCollection(s_camParams.width, s_camParams.height, false, instance_index);
         m_startIndex = instance_index;
     }
-    if (size != -1) {
+    if (depthSize != -1) {
         FrameObjectInfo fObjInfo = m_pObjDet->generateMessage(depth_map, m_stencilBuffer);
         m_pObjDet->exportDetections(fObjInfo);
         //m_pObjDet->exportImage(screenCapturer->pixels);
