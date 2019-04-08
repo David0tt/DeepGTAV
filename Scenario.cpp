@@ -187,7 +187,7 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
         dir.x = s_locationBounds[0][0][m_startArea];
         dir.y = s_locationBounds[0][1][m_startArea];
         dir.z = 0.f;
-        x = s_locationBounds[0][0][1];
+        x = s_locationBounds[0][0][1];//0,1,2,3,4,5,6,7,8 are all good
         y = s_locationBounds[0][1][1];
     }
 
@@ -557,27 +557,32 @@ StringBuffer Scenario::generateMessage() {
         m_pObjDet->initCollection(s_camParams.width, s_camParams.height, false, instance_index);
         m_startIndex = instance_index;
     }
-    FrameObjectInfo fObjInfo = m_pObjDet->generateMessage(depth_map, m_stencilBuffer);
-    m_pObjDet->exportDetections(fObjInfo);
-    //m_pObjDet->exportImage(screenCapturer->pixels);
-    log("After generate msg");
-    d["index"] = fObjInfo.instanceIdx;
+    if (size != -1) {
+        FrameObjectInfo fObjInfo = m_pObjDet->generateMessage(depth_map, m_stencilBuffer);
+        m_pObjDet->exportDetections(fObjInfo);
+        //m_pObjDet->exportImage(screenCapturer->pixels);
+        d["index"] = fObjInfo.instanceIdx;
 
-    //Create vehicles if it is a stationary scenario
-    createVehicles();
+        //Create vehicles if it is a stationary scenario
+        createVehicles();
 
-    GAMEPLAY::SET_GAME_PAUSED(false);
+        GAMEPLAY::SET_GAME_PAUSED(false);
 
-    if (GENERATE_SECONDARY_PERSPECTIVES) {
-        for (EntityMapEntry entry : fObjInfo.vehicles) {
-            generateSecondaryPerspective(entry.second);
+        if (GENERATE_SECONDARY_PERSPECTIVES) {
+            for (EntityMapEntry entry : fObjInfo.vehicles) {
+                generateSecondaryPerspective(entry.second);
+            }
         }
+
+        //For testing to ensure secondary ownvehicle aligns with main perspective
+        //generateSecondaryPerspective(m_ownVehicle, CAM_OFFSET_UP*2);
+
+        m_pObjDet->increaseIndex();
     }
-
-    //For testing to ensure secondary ownvehicle aligns with main perspective
-    //generateSecondaryPerspective(m_ownVehicle, CAM_OFFSET_UP*2);
-
-    m_pObjDet->increaseIndex();
+    else {
+        GAMEPLAY::SET_GAME_PAUSED(false);
+        log("ERROR: Depth buffer could not be properly set!!!!!!!!!!!!!!!!!!!!!!", true);
+    }
     GAMEPLAY::SET_TIME_SCALE(1.0f);
 
 	d.Accept(writer);
@@ -769,11 +774,16 @@ void Scenario::setStencilBuffer() {
     log("After getting stencil buffer");
 }
 
-void Scenario::setDepthBuffer(bool prevDepth) {
+int Scenario::setDepthBuffer(bool prevDepth) {
     log("About to get depth buffer");
     int size = export_get_depth_buffer((void**)&depth_map);
 
+    std::ostringstream oss;
+    oss << "Depth buffer size: " << size;
+    log(oss.str(), true);
+
     log("After getting depth buffer");
+    return size;
 }
 
 void Scenario::drawBoxes(Vector3 BLL, Vector3 FUR, Vector3 dim, Vector3 upVector, Vector3 rightVector, Vector3 forwardVector, Vector3 position, int colour) {

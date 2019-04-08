@@ -98,7 +98,7 @@ public:
 	void run();
 
     //Depth buffer fn/var needs to be accessed by server
-    void setDepthBuffer(bool prevDepth = false);
+    int setDepthBuffer(bool prevDepth = false);
     bool m_prevDepth = false;
 
 	ScreenCapturer* screenCapturer;
