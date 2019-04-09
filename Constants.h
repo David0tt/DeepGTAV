@@ -87,3 +87,6 @@ const bool GENERATE_SECONDARY_PERSPECTIVES = false;
 
 //Outputs self location (For finding spots for stationary scenes)
 const bool OUTPUT_SELF_LOCATION = false;
+
+//Outputs unprocessed labels file (for testing)
+const bool OUTPUT_UNPROCESSED_LABELS = false;

@@ -2390,15 +2390,17 @@ void ObjectDetection::exportDetections(FrameObjectInfo fObjInfo, ObjEntity* vPer
     fprintf(f, str.c_str());
     fclose(f);
 
-    f = fopen(m_labelsUnprocessedFilename.c_str(), "w");
-    std::ostringstream oss1;
+    if (OUTPUT_UNPROCESSED_LABELS) {
+        f = fopen(m_labelsUnprocessedFilename.c_str(), "w");
+        std::ostringstream oss1;
 
-    exportEntities(fObjInfo.vehicles, oss1, true, false, OBJECT_MAX_DIST, 1, 1);
-    exportEntities(fObjInfo.peds, oss1, true, false, OBJECT_MAX_DIST, 1, 1);
+        exportEntities(fObjInfo.vehicles, oss1, true, false, true, OBJECT_MAX_DIST, 1, 1);
+        exportEntities(fObjInfo.peds, oss1, true, false, true, OBJECT_MAX_DIST, 1, 1);
 
-    std::string str1 = oss1.str();
-    fprintf(f, str1.c_str());
-    fclose(f);
+        std::string str1 = oss1.str();
+        fprintf(f, str1.c_str());
+        fclose(f);
+    }
 
     f = fopen(m_labelsAugFilename.c_str(), "w");
     std::ostringstream oss2;
