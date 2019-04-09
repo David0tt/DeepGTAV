@@ -715,6 +715,7 @@ void ObjectDetection::processOverlappingPoints() {
     //Process one set of entity IDs at a time
     while (!m_overlappingPoints.empty()) {
         std::vector<ObjEntity*> objEntities = m_overlappingPoints.begin()->second;
+        int ptIdx = m_overlappingPoints.begin()->first;
 
         int stencilType = STENCIL_TYPE_VEHICLE;
         if (objEntities[0]->objType == "Pedestrian") {
@@ -810,14 +811,32 @@ void ObjectDetection::processOverlappingPoints() {
             for (int i = 0; i < s_camParams.width; ++i) {
                 int curFloodVal = allPointsMask.at<uchar>(j, i);
 
-                if (curFloodVal != 0 && goodFloods[curFloodVal - 1] && m_pInstanceSeg[j * s_camParams.width + i] == 0) {
-                    for (ObjEntity* objEnt : objEntities) {
-                        if (objEnt->entityID == floodFillEntities[curFloodVal - 1]) {
-                            addSegmentedPoint3D(i, j, objEnt);
-                            //Also zero the mask pixel so we don't use it in the future
-                            allPointsMask.at<uchar>(j, i) = 0;
-                            break;
+                if (curFloodVal != 0 && m_pInstanceSeg[j * s_camParams.width + i] == 0) {
+                    if (goodFloods[curFloodVal - 1]) {
+                        for (ObjEntity* objEnt : objEntities) {
+                            if (objEnt->entityID == floodFillEntities[curFloodVal - 1]) {
+                                addSegmentedPoint3D(i, j, objEnt);
+                                //Also zero the mask pixel so we don't use it in the future
+                                allPointsMask.at<uchar>(j, i) = 0;
+                                break;
+                            }
                         }
+                    }
+                    else {
+                        int idx = j * s_camParams.width + i;
+                        //Last resort just set the point to be the entity of the nearest 3D point
+                        float dist = FLT_MAX;
+                        ObjEntity* closestObj = NULL;
+                        float ndc = m_pDepth[idx];
+                        Vector3 relPos = depthToCamCoords(ndc, i, j);
+                        for (auto pObjEntity : objEntities) {
+                            float distToObj = sqrt(SYSTEM::VDIST2(pObjEntity->location.x, pObjEntity->location.y, pObjEntity->location.z, relPos.x, relPos.y, relPos.z));
+                            if (distToObj < dist) {
+                                dist = distToObj;
+                                closestObj = pObjEntity;
+                            }
+                        }
+                        addSegmentedPoint3D(i, j, closestObj);
                     }
                 }
             }
@@ -827,7 +846,7 @@ void ObjectDetection::processOverlappingPoints() {
         for (int i = 0; i < floodVal; ++i) {
             if (goodFloods[i] == false) {
                 std::ostringstream oss2;
-                oss2 << "**************Found bad flood at index: " << instance_index;
+                oss2 << "**************Found bad flood at index: " << instance_index << " with floodval: " <<floodVal << " and i: " << i;
                 std::string str = oss2.str();
                 log(str, true);
             }
@@ -839,24 +858,31 @@ void ObjectDetection::processOverlappingPoints() {
 
         //Create an image with the depth values only where the mask is
         //Initialize depth mask
-        cv::Mat depthMasked;
-        m_depthMat.copyTo(depthMasked, allPointsMask);
-        depthMasked *= FLT_MAX / s_camParams.farClip;
+        //cv::Mat depthMasked;
+        //m_depthMat.copyTo(depthMasked, allPointsMask);
+        //depthMasked *= FLT_MAX / s_camParams.farClip;
 
-        //Test by printing out image
-        {
-            std::string entitiesStr;
-            for (auto pObjEntity : objEntities) {
-            entitiesStr.append(std::to_string(pObjEntity->entityID));
-            entitiesStr.append("-");
-            }
-            entitiesStr.append("depthMasked");
-            std::string filename = getStandardFilename(entitiesStr, ".png");
-            cv::imwrite(filename, depthMasked);
+        ////Test by printing out image
+        //{
+        //    std::string entitiesStr;
+        //    for (auto pObjEntity : objEntities) {
+        //    entitiesStr.append(std::to_string(pObjEntity->entityID));
+        //    entitiesStr.append("-");
+        //    }
+        //    entitiesStr.append("depthMasked");
+        //    std::string filename = getStandardFilename(entitiesStr, ".png");
+        //    cv::imwrite(filename, depthMasked);
+        //}
+
+        std::ostringstream oss2;
+        oss2 << "Overlapping points size: " << m_overlappingPoints.size();
+        std::string str = oss2.str();
+        log(str, true);
+        
+        //If point is still in overlapping points then remove it
+        if (m_overlappingPoints.find(ptIdx) != m_overlappingPoints.end()) {
+            m_overlappingPoints.erase(ptIdx);
         }
-
-        //Last resort just set the point to be the entity of the nearest 3D point
-        //TODO
     }
 
     //Reset the map once done processing
@@ -1719,12 +1745,14 @@ void ObjectDetection::setStencilBuffer() {
 
     if (OUTPUT_SEPARATE_STENCILS) {
         for (int s : stencilValues) {
+            int count = 0;
             for (int j = 0; j < s_camParams.height; ++j) {
                 for (int i = 0; i < s_camParams.width; ++i) {
                     uint8_t val = m_pStencil[j * s_camParams.width + i];
                     uint8_t* p = m_pStencilImage + (j * s_camParams.width) + i;
                     if (val == s) {
                         *p = 255; //Stencil value
+                        ++count;
                     }
                     else {
                         *p = 0;
@@ -1745,7 +1773,7 @@ void ObjectDetection::setStencilBuffer() {
 
             if (ONLY_OUTPUT_UNKNOWN_STENCILS) {
                 std::ostringstream oss;
-                oss << "***************************************unknown stencil type: " << s << " at index: " << instance_index;
+                oss << "***************************************unknown stencil type: " << s << " at index: " << instance_index << " with count: " << count;
                 log(oss.str(), true);
             }
         }
