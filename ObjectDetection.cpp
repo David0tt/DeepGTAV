@@ -232,7 +232,9 @@ FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStenci
     log("After output unused stencil");
 
     setGroundPlanePoints();
-    getNearbyVehicles();
+
+    //TODO: This code needs to be moved to where secondary perspectives are generated
+    //getNearbyVehicles();
 
     return m_curFrame;
 }
