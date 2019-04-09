@@ -1575,28 +1575,42 @@ void ObjectDetection::setPedsList() {
 }
 
 void ObjectDetection::setFilenames() {
+    //These are standard files
     m_imgFilename = getStandardFilename("image_2", ".png");
-    m_veloFilename = getStandardFilename("velodyne", ".bin");
     m_depthFilename = getStandardFilename("depth", ".bin");
-    m_depthPCFilename = getStandardFilename("depthPC", ".bin");
-    m_depthImgFilename = getStandardFilename("depthImage", ".png");
     m_stencilFilename = getStandardFilename("stencil", ".raw");
-    m_stencilImgFilename = getStandardFilename("stencilImage", ".png");
-    m_segImgFilename = getStandardFilename("segImage", ".png");
-    m_occImgFilename = getStandardFilename("occlusionImage", ".png");
-    m_unusedPixelsFilename = getStandardFilename("unusedPixelsImage", ".png");
-    m_calibFilename = getStandardFilename("calib", ".txt");
     m_labelsFilename = getStandardFilename("label_2", ".txt");
-    m_labelsUnprocessedFilename = getStandardFilename("labelsUnprocessed", ".txt");
     m_labelsAugFilename = getStandardFilename("label_aug_2", ".txt");
-    m_groundPointsFilename = getStandardFilename("groundPointsImg", ".png");
+    m_calibFilename = getStandardFilename("calib", ".txt");
+
+    //TODO - Why are two seg images being printed (there are some minor differences in images it appears)
+    m_segImgFilename = getStandardFilename("segImage", ".png");
     m_instSegFilename = getStandardFilename("instSeg", ".png");
     m_instSegImgFilename = getStandardFilename("instSegImage", ".png");
-    m_posFilename = getStandardFilename("position_world", ".txt");
-    m_egoObjectFilename = getStandardFilename("ego_object", ".txt");
 
-    m_veloFilenameU = getStandardFilename("velodyneU", ".bin");
-    m_depthPCFilenameU = getStandardFilename("depthPCU", ".bin");
+    //These files are for relating object positions to each other
+    if (GENERATE_SECONDARY_PERSPECTIVES) {
+        m_posFilename = getStandardFilename("position_world", ".txt");
+        m_egoObjectFilename = getStandardFilename("ego_object", ".txt");
+    }
+
+    //The following are for testing, only create filenames/directories if they are set to be on
+    if (OUTPUT_DM_POINTCLOUD) {
+        m_depthPCFilename = getStandardFilename("depthPC", ".bin");
+        m_depthPCFilenameU = getStandardFilename("depthPCU", ".bin");
+        m_depthImgFilename = getStandardFilename("depthImage", ".png");
+    }
+    if (OUTPUT_RAYCAST_POINTS) {
+        m_veloFilename = getStandardFilename("velodyne", ".bin");
+        m_veloFilenameU = getStandardFilename("velodyneU", ".bin");
+    }
+    if (OUTPUT_GROUND_PIXELS) {
+        m_groundPointsFilename = getStandardFilename("groundPointsImg", ".png");
+    }
+    if (OUTPUT_UNUSED_PIXELS_IMAGE) m_unusedPixelsFilename = getStandardFilename("unusedPixelsImage", ".png");
+    if (OUTPUT_STENCIL_IMAGE) m_stencilImgFilename = getStandardFilename("stencilImage", ".png");
+    if (OUTPUT_OCCLUSION_IMAGE) m_occImgFilename = getStandardFilename("occlusionImage", ".png");
+    if (OUTPUT_UNPROCESSED_LABELS) m_labelsUnprocessedFilename = getStandardFilename("labelsUnprocessed", ".txt");
 }
 
 void ObjectDetection::setupLiDAR() {
@@ -1738,11 +1752,13 @@ void ObjectDetection::setStencilBuffer() {
         }
     }
 
-    log("Before saving stencil image");
-    std::vector<std::uint8_t> ImageBuffer;
-    lodepng::encode(ImageBuffer, (unsigned char*)m_pStencilImage, s_camParams.width, s_camParams.height, LCT_GREY, 8);
-    lodepng::save_file(ImageBuffer, m_stencilImgFilename);
-    log("After saving stencil image");
+    if (OUTPUT_STENCIL_IMAGE) {
+        log("Before saving stencil image");
+        std::vector<std::uint8_t> ImageBuffer;
+        lodepng::encode(ImageBuffer, (unsigned char*)m_pStencilImage, s_camParams.width, s_camParams.height, LCT_GREY, 8);
+        lodepng::save_file(ImageBuffer, m_stencilImgFilename);
+        log("After saving stencil image");
+    }
 
     if (OUTPUT_SEPARATE_STENCILS) {
         for (int s : stencilValues) {
@@ -2414,13 +2430,15 @@ void ObjectDetection::exportDetections(FrameObjectInfo fObjInfo, ObjEntity* vPer
     fclose(f);
 
     exportCalib();
-    exportPosition();
 
-    if (!vPerspective) {
-        exportEgoObject(m_ownVehicleObj);
-    }
-    else {
-        exportEgoObject(*vPerspective);
+    if (GENERATE_SECONDARY_PERSPECTIVES) {
+        exportPosition();
+        if (!vPerspective) {
+            exportEgoObject(m_ownVehicleObj);
+        }
+        else {
+            exportEgoObject(*vPerspective);
+        }
     }
 }
 

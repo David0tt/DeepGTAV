@@ -79,6 +79,9 @@ const bool OUTPUT_GROUND_PIXELS = false;
 //Outputs separate stencil segmentation images for each stencil value
 const bool OUTPUT_SEPARATE_STENCILS = true;
 
+//Outputs stencil image which shows stencil of some classes (for debugging)
+const bool OUTPUT_STENCIL_IMAGE = false;
+
 //Needs OUTPUT_SEPARATE_STENCILS to be true, only outputs log messages for values which are unknown 
 const bool ONLY_OUTPUT_UNKNOWN_STENCILS = true;
 
