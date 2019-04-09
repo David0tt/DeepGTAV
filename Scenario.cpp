@@ -569,9 +569,12 @@ StringBuffer Scenario::generateMessage() {
         GAMEPLAY::SET_GAME_PAUSED(false);
 
         if (GENERATE_SECONDARY_PERSPECTIVES) {
-            for (EntityMapEntry entry : fObjInfo.vehicles) {
+            //TODO - Set this to use all vehicles within a certain radius (m_worldVehicles)
+            //Objects in fObjInfo.vehicles will only be from the ego vehicle's screen perspective
+            /*for (EntityMapEntry entry : fObjInfo.vehicles) {
                 generateSecondaryPerspective(entry.second);
-            }
+            }*/
+            log("Obtain vehicles from m_worldVehicles!!!!!!!!!!!!!!!!!!!!!!!!", true);
         }
 
         //For testing to ensure secondary ownvehicle aligns with main perspective
