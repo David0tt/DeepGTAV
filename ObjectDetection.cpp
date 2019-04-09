@@ -36,9 +36,10 @@ const int STENCIL_TYPE_VEHICLE = 2;
 const int STENCIL_TYPE_VEGETATION = 3;
 const int STENCIL_TYPE_FLOOR = 4;//Seems to be floors and some boulevards
 const int STENCIL_TYPE_SKY = 7;
+const int STENCIL_TYPE_UNDERGROUND_ENTRANCE = 8;
 const int STENCIL_TYPE_SELF = 129;
 const int STENCIL_TYPE_OWNCAR = 130;
-const std::vector<int> KNOWN_STENCIL_TYPES = { STENCIL_TYPE_DEFAULT, STENCIL_TYPE_NPC, STENCIL_TYPE_VEHICLE, STENCIL_TYPE_VEGETATION, STENCIL_TYPE_FLOOR, STENCIL_TYPE_SKY, STENCIL_TYPE_SELF, STENCIL_TYPE_OWNCAR };
+const std::vector<int> KNOWN_STENCIL_TYPES = { STENCIL_TYPE_DEFAULT, STENCIL_TYPE_NPC, STENCIL_TYPE_VEHICLE, STENCIL_TYPE_VEGETATION, STENCIL_TYPE_FLOOR, STENCIL_TYPE_SKY, STENCIL_TYPE_SELF, STENCIL_TYPE_OWNCAR, STENCIL_TYPE_UNDERGROUND_ENTRANCE };
 
 const int PEDESTRIAN_CLASS_ID = 10;
 
@@ -1858,10 +1859,6 @@ void ObjectDetection::setDepthBuffer(bool prevDepth) {
         }
 
         if (OUTPUT_GROUND_PIXELS) {
-            std::ofstream ofile1(depthPCFilename, std::ios::binary);
-            ofile1.write((char*)m_pDMPointClouds, FLOATS_PER_POINT * sizeof(float) * pointCount);
-            ofile1.close();
-
             std::vector<std::uint8_t> ImageBuffer;
             lodepng::encode(ImageBuffer, (unsigned char*)m_pGroundPointsImage, s_camParams.width, s_camParams.height, LCT_GREY, 8);
             lodepng::save_file(ImageBuffer, m_groundPointsFilename);
