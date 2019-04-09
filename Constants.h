@@ -43,6 +43,8 @@ const bool OUTPUT_RAYCAST_POINTS = false;
 const bool OUTPUT_DM_POINTCLOUD = false;
 //If OUTPUT_DM_POINTCLOUD, outputs all points, even those past MAX_LIDAR_DIST (good for testing)
 const bool OUTPUT_FULL_DM_POINTCLOUD = false;
+//Output offset pointclouds (for testing alignment)
+const bool OUTPUT_OFFSET_POINTCLOUDS = false;
 
 //Sends animals to client. Check client also outputs them
 const bool RETAIN_ANIMALS = true;

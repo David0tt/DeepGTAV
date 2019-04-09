@@ -1579,6 +1579,7 @@ void ObjectDetection::setPedsList() {
 void ObjectDetection::setFilenames() {
     //These are standard files
     m_imgFilename = getStandardFilename("image_2", ".png");
+    m_veloFilename = getStandardFilename("velodyne", ".bin");
     m_depthFilename = getStandardFilename("depth", ".bin");
     m_stencilFilename = getStandardFilename("stencil", ".raw");
     m_labelsFilename = getStandardFilename("label_2", ".txt");
@@ -1599,12 +1600,11 @@ void ObjectDetection::setFilenames() {
     //The following are for testing, only create filenames/directories if they are set to be on
     if (OUTPUT_DM_POINTCLOUD) {
         m_depthPCFilename = getStandardFilename("depthPC", ".bin");
-        m_depthPCFilenameU = getStandardFilename("depthPCU", ".bin");
         m_depthImgFilename = getStandardFilename("depthImage", ".png");
     }
-    if (OUTPUT_RAYCAST_POINTS) {
-        m_veloFilename = getStandardFilename("velodyne", ".bin");
+    if (OUTPUT_OFFSET_POINTCLOUDS) {
         m_veloFilenameU = getStandardFilename("velodyneU", ".bin");
+        m_depthPCFilenameU = getStandardFilename("depthPCU", ".bin");
     }
     if (OUTPUT_GROUND_PIXELS) {
         m_groundPointsFilename = getStandardFilename("groundPointsImg", ".png");
