@@ -195,8 +195,7 @@ public:
     bool trSeriesGap = false;
 
     //Other vehicle detection labels
-    std::vector<WorldObject> m_worldVehicles;
-    std::vector<WorldObject> m_worldPeds;
+    std::vector<ObjEntity> m_nearbyVehicles;
 
 private:
     void setVehiclesList();
@@ -216,7 +215,7 @@ private:
     void setIndex();
     void calcCameraIntrinsics();
     void setFocalLength();
-    bool getEntityVector(ObjEntity &entity, int entityID, Hash model, int classid, std::string type, std::string modelString, bool isPedInV, Vehicle vPedIsIn);
+    bool getEntityVector(ObjEntity &entity, int entityID, Hash model, int classid, std::string type, std::string modelString, bool isPedInV, Vehicle vPedIsIn, bool &nearbyVehicle);
     void setPosition();
     Vector3 correctOffcenter(Vector3 position, Vector3 min, Vector3 max, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector, Vector3 &offcenter);
     float observationAngle(Vector3 position);

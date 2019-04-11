@@ -1174,11 +1174,11 @@ void ObjectDetection::update3DPointsHit() {
     }
 }
 
-bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash model, int classid, std::string type, std::string modelString, bool isPedInV, int vPedIsIn) {
+bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash model, int classid, std::string type, std::string modelString, bool isPedInV, int vPedIsIn, bool &nearbyVehicle) {
     bool success = false;
 
     Vector3 FUR; //Front Upper Right
-    Vector3 BLL; //Back Lower Lelft
+    Vector3 BLL; //Back Lower Left
     Vector3 dim; //Vehicle dimensions
     Vector3 upVector, rightVector, forwardVector, position; //Vehicle position
     Vector3 min;
@@ -1186,12 +1186,24 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
     Vector3 speedVector;
     float heading, speed;
 
-    bool isOnScreen = ENTITY::IS_ENTITY_ON_SCREEN(entityID);
-    if (isOnScreen) {
-        //Check if it is in screen
-        ENTITY::GET_ENTITY_MATRIX(entityID, &forwardVector, &rightVector, &upVector, &position); //Blue or red pill
+    ENTITY::GET_ENTITY_MATRIX(entityID, &forwardVector, &rightVector, &upVector, &position); //Blue or red pill
+    float distance = sqrt(SYSTEM::VDIST2(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, position.x, position.y, position.z));
+    if (nearbyVehicle) {
+        //nearbyVehicle needs to be within range
+        if (distance > SECONDARY_PERSPECTIVE_RANGE) {
+            nearbyVehicle = false;
+        }//nearby vehicle needs to be occupied
+        else if (VEHICLE::IS_VEHICLE_SEAT_FREE(entityID, -1)) {
+            nearbyVehicle = false;
+        }
+    }
 
-        float distance = sqrt(SYSTEM::VDIST2(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, position.x, position.y, position.z));
+    //Check if it is on screen
+    bool isOnScreen = ENTITY::IS_ENTITY_ON_SCREEN(entityID);
+    if (isOnScreen || nearbyVehicle) {
+        if (isOnScreen) {
+            success = true;
+        }
         
         //Need to limit distance as pixels won't register entities past the far clip
         if (distance > s_camParams.farClip) return false;
@@ -1247,8 +1259,6 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
 
         Vector3 offcenter;
         position = correctOffcenter(position, min, max, forwardVector, rightVector, upVector, offcenter);
-
-        success = true;
 
         speedVector = ENTITY::GET_ENTITY_SPEED_VECTOR(entityID, false);
         if (speed > 0) {
@@ -1369,12 +1379,9 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
         }
         log("After pedsonbikes");
 
-        //Attempts to find bbox on screen, if entire 2D box is offscreen returns false
+        //Attempts to find bbox on screen
         float truncation = 0;
         BBox2D bbox2d = BBox2DFrom3DObject(position, dim, forwardVector, rightVector, upVector, success, truncation);
-        if (!success) {
-            return success;
-        }
 
         //stencil type for vehicles like cars, bikes...
         int stencilType = STENCIL_TYPE_VEHICLE;
@@ -1498,18 +1505,18 @@ void ObjectDetection::setVehiclesList() {
             else if (VEHICLE::_IS_THIS_MODEL_A_SUBMERSIBLE(model)) type = "Boat";
         }
 
-        WorldObject wObj;
-        wObj.e = vehicles[i];
-        wObj.type = type;
-        wObj.model = model;
-        m_worldVehicles.push_back(wObj);
-
         ObjEntity objEntity;
-        bool success = getEntityVector(objEntity, vehicles[i], model, classid, type, modelString, false, -1);
+        //Gets set to false in getEntityVector if outside SECONDARY_PERSPECTIVE_RANGE or if vehicle is unoccupied
+        bool nearbyVehicle = true;
+        bool success = getEntityVector(objEntity, vehicles[i], model, classid, type, modelString, false, -1, nearbyVehicle);
         if (success) {
             if (m_curFrame.vehicles.find(objEntity.entityID) == m_curFrame.vehicles.end()) {
                 m_curFrame.vehicles.insert(std::pair<int, ObjEntity>(objEntity.entityID, objEntity));
             }
+        }
+        //Only change m_nearbyVehicles for the ego vehicle
+        if (nearbyVehicle && m_vehicle == m_ownVehicle) {
+            m_nearbyVehicles.push_back(objEntity);
         }
     }
 }
@@ -1555,18 +1562,11 @@ void ObjectDetection::setPedsList() {
         else classid = PEDESTRIAN_CLASS_ID;
 
         if (RETAIN_ANIMALS || classid != 11) {
-            if (!isPedInV) {
-                WorldObject wObj;
-                wObj.e = peds[i];
-                wObj.type = type;
-                wObj.model = model;
-                m_worldPeds.push_back(wObj);
-            }
-
             model = ENTITY::GET_ENTITY_MODEL(peds[i]);
 
             ObjEntity objEntity;
-            bool success = getEntityVector(objEntity, peds[i], model, classid, type, type, isPedInV, vPedIsIn);
+            bool nearbyVehicle = false;//Don't look if it is a nearby vehicle as we're collecting peds
+            bool success = getEntityVector(objEntity, peds[i], model, classid, type, type, isPedInV, vPedIsIn, nearbyVehicle);
             if (success) {
                 if (m_curFrame.peds.find(objEntity.entityID) == m_curFrame.peds.end()) {
                     m_curFrame.peds.insert(std::pair<int, ObjEntity>(objEntity.entityID, objEntity));
@@ -2543,50 +2543,6 @@ void ObjectDetection::setGroundPlanePoints() {
     std::string str2 = oss2.str();
     fprintf(f2, str2.c_str());
     fclose(f2);
-}
-
-void ObjectDetection::getNearbyVehicles() {
-    for (WorldObject v : m_worldVehicles) {
-        std::ostringstream oss;
-        std::string filename = baseFolder + "extraDetections" + "\\";
-        CreateDirectory(filename.c_str(), NULL);
-        filename.append(instance_string);
-        CreateDirectory(filename.c_str(), NULL);
-        filename.append("\\");
-        char temp[] = "%06d";
-        char strComp[sizeof temp + 100];
-        sprintf(strComp, temp, v.e);
-        filename.append(strComp);
-        filename.append(".txt");
-
-        Vector3 forwardVector, rightVector, upVector, position;
-        ENTITY::GET_ENTITY_MATRIX(v.e, &forwardVector, &rightVector, &upVector, &position); //Blue or red pill
-        float distance = sqrt(SYSTEM::VDIST2(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, position.x, position.y, position.z));
-        if (distance < 200) {
-            Vector3 min, max;
-            Vector3 dim = getVehicleDims(v.e, v.model, min, max);
-
-            SubsetInfo s = getObjectInfoSubset(position, forwardVector, dim);
-            oss << v.type << " " << s.alpha_kitti << " " <<
-                s.kittiHeight << " " << s.kittiWidth << " " << s.kittiLength << " " <<
-                s.kittiPos.x << " " << s.kittiPos.y << " " << s.kittiPos.z << " " <<
-                s.rot_y << "\n";
-
-            for (WorldObject vh : m_worldVehicles) {
-                checkEntity(v.e, vh, position, oss);
-            }
-            for (WorldObject ped : m_worldPeds) {
-                checkEntity(v.e, ped, position, oss);
-            }
-
-            FILE* f = fopen(filename.c_str(), "w");
-            std::string str = oss.str();
-            fprintf(f, str.c_str());
-            fclose(f);
-        }
-    }
-    m_worldVehicles.clear();
-    m_worldPeds.clear();
 }
 
 Vector3 ObjectDetection::getVehicleDims(Entity e, Hash model, Vector3 &min, Vector3 &max) {
