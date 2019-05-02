@@ -706,7 +706,9 @@ void ObjectDetection::processSegmentation3D() {
         }
     }
 
-    processOverlappingPoints();
+    if (PROCESS_OVERLAPPING_POINTS) {
+        processOverlappingPoints();
+    }
 }
 
 //Goes through points which were in multiple 3D boxes (overlapping points)
@@ -886,6 +888,8 @@ void ObjectDetection::processOverlappingPoints() {
         if (m_overlappingPoints.find(ptIdx) != m_overlappingPoints.end()) {
             m_overlappingPoints.erase(ptIdx);
         }
+
+        allPointsMask.release();
     }
 
     //Reset the map once done processing
@@ -993,11 +997,13 @@ void ObjectDetection::processStencilPixel3D(const uint8_t &stencilVal, const int
         int idx = j * s_camParams.width + i;
 
         //Map should only hit each idx once, so no need for alternative if idx is found
-        if (m_overlappingPoints.find(idx) == m_overlappingPoints.end()) {
-            m_overlappingPoints.insert(std::pair<int, std::vector<ObjEntity*>>(idx, pointEntities));
-        }
-        else {
-            log("************************This should never be here!!!!!!!!!!!!!!!!!!!", true);
+        if (PROCESS_OVERLAPPING_POINTS) {
+            if (m_overlappingPoints.find(idx) == m_overlappingPoints.end()) {
+                m_overlappingPoints.insert(std::pair<int, std::vector<ObjEntity*>>(idx, pointEntities));
+            }
+            else {
+                log("************************This should never be here!!!!!!!!!!!!!!!!!!!", true);
+            }
         }
     }
 }
@@ -2192,6 +2198,7 @@ void ObjectDetection::printSegImage() {
     //Print instance segmented image
     cv::Mat tempMat(cv::Size(s_camParams.width, s_camParams.height), CV_32SC1, m_pInstanceSeg);
     imwrite(m_instSegFilename, tempMat);
+    tempMat.release();
 
 
     //Create and print out instance seg image in colour for visualization
@@ -2216,6 +2223,7 @@ void ObjectDetection::printSegImage() {
     cv::Mat colorImg(cv::Size(s_camParams.width, s_camParams.height), CV_8UC3, m_pInstanceSegImg);
     log("About to print seg image3", true);
     imwrite(m_instSegImgFilename, colorImg);
+    colorImg.release();
 
     //Clear all maps and seg image arrays
     memset(m_pStencilSeg, 0, m_stencilSegLength);
@@ -2450,6 +2458,7 @@ void ObjectDetection::exportImage(BYTE* data, std::string filename) {
         filename = m_imgFilename;
     }
     cv::imwrite(filename, tempMat);
+    tempMat.release();
 }
 
 Vector3 ObjectDetection::getGroundPoint(Vector3 point, Vector3 yVectorCam, Vector3 xVectorCam, Vector3 zVectorCam) {

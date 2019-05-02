@@ -96,3 +96,7 @@ const bool OUTPUT_SELF_LOCATION = false;
 
 //Outputs unprocessed labels file (for testing)
 const bool OUTPUT_UNPROCESSED_LABELS = false;
+
+//Processes overlapping points for segmentation images
+//Warning!!!! There is a memory leak in here that needs to be investigated
+const bool PROCESS_OVERLAPPING_POINTS = false;
