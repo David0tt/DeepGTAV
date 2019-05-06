@@ -167,14 +167,14 @@ if __name__ == '__main__':
                 else:
                     indexString = "%06d" % index
                 
-                # The frame is a numpy array and can be displayed using OpenCV or similar       
-                image = frame2numpy(message['frame'], (width,height))
-                filename = "%simage_2\\%s.png" % (base_folder, indexString)
-                ensureDirExists(filename)
-                cv2.imwrite(filename, image)
-                print("image written index %d" % index)
-                
                 if oldExport:
+                    # The frame is a numpy array and can be displayed using OpenCV or similar       
+                    image = frame2numpy(message['frame'], (width,height))
+                    filename = "%simage_2\\%s.png" % (base_folder, indexString)
+                    ensureDirExists(filename)
+                    cv2.imwrite(filename, image)
+                    print("image written index %d" % index)
+                    
                     #Output tracking labels
                     if tracking:
                         filename = "%slabels_tracking\\%04d.txt" % (base_folder, message['seriesIndex'])

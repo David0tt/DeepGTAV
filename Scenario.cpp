@@ -187,8 +187,8 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
         dir.x = s_locationBounds[0][0][m_startArea];
         dir.y = s_locationBounds[0][1][m_startArea];
         dir.z = 0.f;
-        x = s_locationBounds[0][0][1];//0,1,2,3,4,5,6,7,8 are all good
-        y = s_locationBounds[0][1][1];
+        x = s_locationBounds[0][0][2];//1,2,3,4,5,6,7,8 are all good
+        y = s_locationBounds[0][1][2];//1-0 was last one used for 'good' data
     }
 
     if (stationaryScene) {
@@ -560,7 +560,7 @@ StringBuffer Scenario::generateMessage() {
     if (depthSize != -1) {
         FrameObjectInfo fObjInfo = m_pObjDet->generateMessage(depth_map, m_stencilBuffer);
         m_pObjDet->exportDetections(fObjInfo);
-        //m_pObjDet->exportImage(screenCapturer->pixels);
+        m_pObjDet->exportImage(screenCapturer->pixels);
         d["index"] = fObjInfo.instanceIdx;
 
         //Create vehicles if it is a stationary scenario
