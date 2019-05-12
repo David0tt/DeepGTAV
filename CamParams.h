@@ -18,6 +18,16 @@ struct CamParams {
     Vector3 pos; //In world coordinates
     //Theta is in degrees (functions which use it need to convert to radians
     Vector3 theta; //Camera rotation from world coordinates
+
+    //For optimizing 3d to 2d and unit vector to 2d calculations
+    Eigen::Vector3f eigenPos;
+    Eigen::Vector3f eigenRot;
+    Eigen::Vector3f eigenTheta;
+    Eigen::Vector3f eigenCamDir;
+    Eigen::Vector3f eigenCamUp;
+    Eigen::Vector3f eigenCamEast;
+    Eigen::Vector3f eigenClipPlaneCenter;
+    Eigen::Vector3f eigenCameraCenter;
 };
 
 //Global variable to be used by scenario and LiDAR

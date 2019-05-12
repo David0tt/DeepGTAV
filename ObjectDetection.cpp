@@ -426,9 +426,7 @@ BBox2D ObjectDetection::BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector
                 //Calculate with eigen if off-screen
                 Eigen::Vector3f pt(pos.x, pos.y, pos.z);
                 if (screenX < 0 || screenX > 1 || screenY < 0 || screenY > 1) {
-                    Eigen::Vector2f uv = get_2d_from_3d(pt,
-                        Eigen::Vector3f(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z),
-                        Eigen::Vector3f(s_camParams.theta.x, s_camParams.theta.y, s_camParams.theta.z), s_camParams.nearClip, s_camParams.fov);
+                    Eigen::Vector2f uv = get_2d_from_3d(pt);
                     screenX = uv(0);
                     screenY = uv(1);
                 }
@@ -2140,6 +2138,16 @@ void ObjectDetection::setCamParams(float* forwardVec, float* rightVec, float* up
     Vector3 theta = CAM::GET_CAM_ROT(camera, 0);
     Vector3 pos1 = CAM::GET_CAM_COORD(camera);
     Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(m_vehicle, 0);
+
+    //For optimizing 3d to 2d and unit vector to 2d calculations
+    s_camParams.eigenPos = Eigen::Vector3f(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z);
+    s_camParams.eigenRot = Eigen::Vector3f(s_camParams.theta.x, s_camParams.theta.y, s_camParams.theta.z);
+    s_camParams.eigenTheta = (PI / 180.0) * s_camParams.eigenRot;
+    s_camParams.eigenCamDir = rotate(WORLD_NORTH, s_camParams.eigenTheta);
+    s_camParams.eigenCamUp = rotate(WORLD_UP, s_camParams.eigenTheta);
+    s_camParams.eigenCamEast = rotate(WORLD_EAST, s_camParams.eigenTheta);
+    s_camParams.eigenClipPlaneCenter = s_camParams.eigenPos + s_camParams.nearClip * s_camParams.eigenCamDir;
+    s_camParams.eigenCameraCenter = -s_camParams.nearClip * s_camParams.eigenCamDir;
 
     std::ostringstream oss1;
     oss1 << "\ns_camParams.pos X: " << s_camParams.pos.x << " Y: " << s_camParams.pos.y << " Z: " << s_camParams.pos.z <<

@@ -106,64 +106,30 @@ static Eigen::Vector3f rotate(Eigen::Vector3f a, Eigen::Vector3f theta)
     return d;
 }
 
-static Eigen::Vector2f get_2d_from_3d(const Eigen::Vector3f& vertex, const Eigen::Vector3f& cam_coords, const Eigen::Vector3f& cam_rotation, float cam_near_clip, float cam_field_of_view, bool draw_debug = false) {
-    // Inspired by Artur Filopowicz: Video Games for Autonomous Driving: https://github.com/arturf1/GTA5-Scripts/blob/master/Annotator.cs#L379
-
-    Eigen::Vector3f theta = (PI / 180.0) * cam_rotation;
-    auto cam_dir = rotate(WORLD_NORTH, theta);
-    if (draw_debug)
-    {
-        auto cam_dir_line_end = cam_dir + cam_coords;
-
-        GRAPHICS::DRAW_LINE(cam_coords.x(), cam_coords.y(), cam_coords.z(), cam_dir_line_end.x(), cam_dir_line_end.y(), cam_dir_line_end.z(), 0, 255, 0, 200);
-    }
-    auto clip_plane_center = cam_coords + cam_near_clip * cam_dir;
-    auto camera_center = -cam_near_clip * cam_dir;
-    auto near_clip_height = 2 * cam_near_clip * tan(cam_field_of_view / 2. * (3.14159 / 180.)); // field of view is returned vertically
-    auto near_clip_width = near_clip_height * GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false);
-
-    const Eigen::Vector3f cam_up = rotate(WORLD_UP, theta);
-    const Eigen::Vector3f cam_east = rotate(WORLD_EAST, theta);
-    const Eigen::Vector3f near_clip_to_target = vertex - clip_plane_center; // del
-
-    Eigen::Vector3f camera_to_target = near_clip_to_target - camera_center; // Total distance - subtracting a negative to add clip distance
-
-    if (draw_debug)
-    {
-        auto cam_up_end_line = cam_up + cam_coords;
-        GRAPHICS::DRAW_LINE(cam_coords.x(), cam_coords.y(), cam_coords.z(), cam_up_end_line.x(), cam_up_end_line.y(), cam_up_end_line.z(), 100, 100, 255, 200);
-        auto cam_east_end_line = cam_up + cam_coords;
-        GRAPHICS::DRAW_LINE(cam_coords.x(), cam_coords.y(), cam_coords.z(), cam_east_end_line.x(), cam_east_end_line.y(), cam_east_end_line.z(), 100, 100, 255, 200);
-        auto del_draw = cam_coords + near_clip_to_target;
-        GRAPHICS::DRAW_LINE(clip_plane_center.x(), clip_plane_center.y(), clip_plane_center.z(), del_draw.x(), del_draw.y(), del_draw.z(), 255, 255, 100, 255);
-        auto viewerDistDraw = cam_coords + camera_to_target;
-        GRAPHICS::DRAW_LINE(cam_coords.x(), cam_coords.y(), cam_coords.z(), viewerDistDraw.x(), viewerDistDraw.y(), viewerDistDraw.z(), 255, 100, 100, 255);
-    }
-    Eigen::Vector3f camera_to_target_unit_vector = camera_to_target * (1. / camera_to_target.norm()); // Unit vector in direction of plane / line intersection
-
-    double view_plane_dist = cam_near_clip / cam_dir.dot(camera_to_target_unit_vector);
+static Eigen::Vector2f get_2d_from_unit_vector(const Eigen::Vector3f& camera_to_target_unit_vector, bool draw_debug = false) {
+    double view_plane_dist = s_camParams.nearClip / s_camParams.eigenCamDir.dot(camera_to_target_unit_vector);
 
     Eigen::Vector3f up3d, forward3d, right3d;
-    up3d = rotate(WORLD_UP, cam_rotation);
-    right3d = rotate(WORLD_EAST, cam_rotation);
-    forward3d = rotate(WORLD_NORTH, cam_rotation);
-    Eigen::Vector3f new_origin = clip_plane_center + (near_clip_height / 2.) * cam_up - (near_clip_width / 2.) * cam_east;
+    up3d = rotate(WORLD_UP, s_camParams.eigenRot);
+    right3d = rotate(WORLD_EAST, s_camParams.eigenRot);
+    forward3d = rotate(WORLD_NORTH, s_camParams.eigenRot);
+    Eigen::Vector3f new_origin = s_camParams.eigenClipPlaneCenter + (s_camParams.ncHeight / 2.) * s_camParams.eigenCamUp - (s_camParams.ncWidth / 2.) * s_camParams.eigenCamEast;
 
     if (draw_debug)
     {
-        auto top_right = new_origin + near_clip_width * right3d;
+        auto top_right = new_origin + s_camParams.ncWidth * right3d;
 
         GRAPHICS::DRAW_LINE(new_origin.x(), new_origin.y(), new_origin.z(), top_right.x(), top_right.y(), top_right.z(), 100, 255, 100, 255);
 
 
 
-        auto bottom_right = top_right - near_clip_height * up3d;
+        auto bottom_right = top_right - s_camParams.ncHeight * up3d;
 
         GRAPHICS::DRAW_LINE(bottom_right.x(), bottom_right.y(), bottom_right.z(), top_right.x(), top_right.y(), top_right.z(), 100, 255, 100, 255);
 
 
 
-        auto bottom_left = bottom_right - near_clip_width * right3d;
+        auto bottom_left = bottom_right - s_camParams.ncWidth * right3d;
 
         GRAPHICS::DRAW_LINE(bottom_right.x(), bottom_right.y(), bottom_right.z(), bottom_left.x(), bottom_left.y(), bottom_left.z(), 100, 255, 100, 255);
         GRAPHICS::DRAW_LINE(bottom_left.x(), bottom_left.y(), bottom_left.z(), new_origin.x(), new_origin.y(), new_origin.z(), 100, 255, 100, 255);
@@ -174,25 +140,55 @@ static Eigen::Vector2f get_2d_from_3d(const Eigen::Vector3f& vertex, const Eigen
 
     if (use_artur_method)
     {
-        Eigen::Vector3f view_plane_point = view_plane_dist * camera_to_target_unit_vector + camera_center;
-        view_plane_point = (view_plane_point + clip_plane_center) - new_origin;
-        double viewPlaneX = view_plane_point.dot(cam_east) / cam_east.dot(cam_east);
-        double viewPlaneZ = view_plane_point.dot(cam_up) / cam_up.dot(cam_up);
-        double screenX = viewPlaneX / near_clip_width;
-        double screenY = -viewPlaneZ / near_clip_height;
+        Eigen::Vector3f view_plane_point = view_plane_dist * camera_to_target_unit_vector + s_camParams.eigenCameraCenter;
+        view_plane_point = (view_plane_point + s_camParams.eigenClipPlaneCenter) - new_origin;
+        double viewPlaneX = view_plane_point.dot(s_camParams.eigenCamEast) / s_camParams.eigenCamEast.dot(s_camParams.eigenCamEast);
+        double viewPlaneZ = view_plane_point.dot(s_camParams.eigenCamUp) / s_camParams.eigenCamUp.dot(s_camParams.eigenCamUp);
+        double screenX = viewPlaneX / s_camParams.ncWidth;
+        double screenY = -viewPlaneZ / s_camParams.ncHeight;
         ret = { screenX, screenY };
     }
     else
     {
-        auto intersection = cam_coords + view_plane_dist * camera_to_target_unit_vector;
-        auto center_to_intersection = clip_plane_center - intersection;
+        auto intersection = s_camParams.eigenPos + view_plane_dist * camera_to_target_unit_vector;
+        auto center_to_intersection = s_camParams.eigenClipPlaneCenter - intersection;
         auto x_dist = center_to_intersection.dot(right3d);
         auto z_dist = center_to_intersection.dot(up3d);
-        auto screen_x = 1. - (near_clip_width / 2. + x_dist) / near_clip_width;
-        auto screen_y = (near_clip_height / 2. + z_dist) / near_clip_height;
+        auto screen_x = 1. - (s_camParams.ncWidth / 2. + x_dist) / s_camParams.ncWidth;
+        auto screen_y = (s_camParams.ncHeight / 2. + z_dist) / s_camParams.ncHeight;
         ret = { screen_x, screen_y };
     }
     return ret;
+}
+
+static Eigen::Vector2f get_2d_from_3d(const Eigen::Vector3f& vertex, bool draw_debug = false) {
+    // Inspired by Artur Filopowicz: Video Games for Autonomous Driving: https://github.com/arturf1/GTA5-Scripts/blob/master/Annotator.cs#L379
+
+    if (draw_debug)
+    {
+        auto cam_dir_line_end = s_camParams.eigenCamDir + s_camParams.eigenPos;
+
+        GRAPHICS::DRAW_LINE(s_camParams.eigenPos.x(), s_camParams.eigenPos.y(), s_camParams.eigenPos.z(), cam_dir_line_end.x(), cam_dir_line_end.y(), cam_dir_line_end.z(), 0, 255, 0, 200);
+    }
+
+    const Eigen::Vector3f near_clip_to_target = vertex - s_camParams.eigenClipPlaneCenter; // del
+
+    Eigen::Vector3f camera_to_target = near_clip_to_target - s_camParams.eigenCameraCenter; // Total distance - subtracting a negative to add clip distance
+
+    if (draw_debug)
+    {
+        auto cam_up_end_line = s_camParams.eigenCamUp + s_camParams.eigenPos;
+        GRAPHICS::DRAW_LINE(s_camParams.eigenPos.x(), s_camParams.eigenPos.y(), s_camParams.eigenPos.z(), cam_up_end_line.x(), cam_up_end_line.y(), cam_up_end_line.z(), 100, 100, 255, 200);
+        auto cam_east_end_line = s_camParams.eigenCamUp + s_camParams.eigenPos;
+        GRAPHICS::DRAW_LINE(s_camParams.eigenPos.x(), s_camParams.eigenPos.y(), s_camParams.eigenPos.z(), cam_east_end_line.x(), cam_east_end_line.y(), cam_east_end_line.z(), 100, 100, 255, 200);
+        auto del_draw = s_camParams.eigenPos + near_clip_to_target;
+        GRAPHICS::DRAW_LINE(s_camParams.eigenClipPlaneCenter.x(), s_camParams.eigenClipPlaneCenter.y(), s_camParams.eigenClipPlaneCenter.z(), del_draw.x(), del_draw.y(), del_draw.z(), 255, 255, 100, 255);
+        auto viewerDistDraw = s_camParams.eigenPos + camera_to_target;
+        GRAPHICS::DRAW_LINE(s_camParams.eigenPos.x(), s_camParams.eigenPos.y(), s_camParams.eigenPos.z(), viewerDistDraw.x(), viewerDistDraw.y(), viewerDistDraw.z(), 255, 100, 100, 255);
+    }
+    Eigen::Vector3f camera_to_target_unit_vector = camera_to_target * (1. / camera_to_target.norm()); // Unit vector in direction of plane / line intersection
+
+    return get_2d_from_unit_vector(camera_to_target_unit_vector);
 }
 
 static const std::vector<Eigen::Vector3f> coefficients = {

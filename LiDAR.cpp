@@ -494,9 +494,7 @@ float LiDAR::getDepthFromScreenPos(float screenX, float screenY) {
 Vector3 LiDAR::adjustEndCoord(Vector3 pos, Vector3 relPos) {
     float scrX, scrY;
     //Use this function over native function as native function fails at edges of screen
-    Eigen::Vector2f uv = get_2d_from_3d(Eigen::Vector3f(pos.x, pos.y, pos.z),
-        Eigen::Vector3f(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z),
-        Eigen::Vector3f(s_camParams.theta.x, s_camParams.theta.y, s_camParams.theta.z), s_camParams.nearClip, s_camParams.fov);
+    Eigen::Vector2f uv = get_2d_from_3d(Eigen::Vector3f(pos.x, pos.y, pos.z));
 
     scrX = uv(0);
     scrY = uv(1);
@@ -618,9 +616,7 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
     //TODO Try using endpoint with this, comparing the two
     //The 2D screen coords of the target
     //This is what should be used for sampling depth map as endCoord will not hit same points as depth map
-    Eigen::Vector2f target2D = get_2d_from_3d(Eigen::Vector3f(target.x, target.y, target.z),
-        Eigen::Vector3f(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z),
-        Eigen::Vector3f(s_camParams.theta.x, s_camParams.theta.y, s_camParams.theta.z), s_camParams.nearClip, s_camParams.fov);
+    Eigen::Vector2f target2D = get_2d_from_3d(Eigen::Vector3f(target.x, target.y, target.z));
 
     if (GENERATE_2D_POINTMAP) {
         *(m_lidar2DPoints + 2 * m_beamCount) = target2D(0);
