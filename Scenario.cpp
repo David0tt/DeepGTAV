@@ -882,6 +882,16 @@ void Scenario::setCamParams() {
     std::string str1 = oss1.str();
     log(str1);
 
+    //For optimizing 3d to 2d and unit vector to 2d calculations
+    s_camParams.eigenPos = Eigen::Vector3f(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z);
+    s_camParams.eigenRot = Eigen::Vector3f(s_camParams.theta.x, s_camParams.theta.y, s_camParams.theta.z);
+    s_camParams.eigenTheta = (PI / 180.0) * s_camParams.eigenRot;
+    s_camParams.eigenCamDir = rotate(WORLD_NORTH, s_camParams.eigenTheta);
+    s_camParams.eigenCamUp = rotate(WORLD_UP, s_camParams.eigenTheta);
+    s_camParams.eigenCamEast = rotate(WORLD_EAST, s_camParams.eigenTheta);
+    s_camParams.eigenClipPlaneCenter = s_camParams.eigenPos + s_camParams.nearClip * s_camParams.eigenCamDir;
+    s_camParams.eigenCameraCenter = -s_camParams.nearClip * s_camParams.eigenCamDir;
+
     //For measuring height of camera (LiDAR) to ground plane
     /*float groundZ;
     GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, &(groundZ), 0);
