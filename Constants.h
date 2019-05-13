@@ -38,6 +38,8 @@ const bool START_SPEC_AREA = true;
 const bool GENERATE_2D_POINTMAP = false;
 //Outputs secondary pointcloud with raycast points
 const bool OUTPUT_RAYCAST_POINTS = false;
+//Uses ray casting then transforms 3D point back to 2D plane to use depth buffer value
+const bool USE_RAYCASTING = false;
 
 //Outputs pointcloud with 1:1 ratio of pixels in image < MAX_LIDAR_DIST
 const bool OUTPUT_DM_POINTCLOUD = false;

@@ -440,6 +440,7 @@ float LiDAR::getDepthFromScreenPos(float screenX, float screenY) {
     bool interpolated = false;
     if (screenX > halfW && screenX < 1 - halfW
         && screenY > halfH && screenY < 1 - halfH) {
+        //Need to do -0.5 as indexing starts at 0
         float x = screenX * s_camParams.width - 0.5;
         float y = screenY * s_camParams.height - 0.5;
 
@@ -560,6 +561,7 @@ Vector3 LiDAR::get3DFromDepthTarget(Vector3 target, Eigen::Vector2f target2D){
 //Add a point hit to the entityID
 void LiDAR::addToHitEntities(const Eigen::Vector2f &target2D) {
     //Will convert to the nearest pixel
+    //Need to do -0.5 as indexing starts at 0
     int x = int(target2D(0) * s_camParams.width - 0.5);
     int y = int(target2D(1) * s_camParams.height - 0.5);
 
@@ -588,10 +590,11 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
     if (m_pointsHit >= MAX_POINTS) {
         log("WARNING: MAX NUMBER OF POINTS REACHED! INCREASE MAX_POINTS\n", true);
     }
-    BOOL isHit;
+    BOOL isHit = false;
     Entity hitEntity;
     Vector3 target, endCoord, surfaceNorm;
     int raycast_handle;
+    Eigen::Vector2f target2D;
     float phi_rad = phi * D2R, theta_rad = theta * D2R;
 
     endCoord.x = -m_maxRange * sin(phi_rad) * sin(theta_rad);	//rightward(east) is positive
@@ -602,21 +605,18 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
     target.y = m_rotDCM[3] * endCoord.x + m_rotDCM[4] * endCoord.y + m_rotDCM[5] * endCoord.z + s_camParams.pos.y;
     target.z = m_rotDCM[6] * endCoord.x + m_rotDCM[7] * endCoord.y + m_rotDCM[8] * endCoord.z + s_camParams.pos.z;
 
-    //options: -1=everything
-    //New function is called _START_SHAPE_TEST_RAY
-    raycast_handle = WORLDPROBE::_CAST_RAY_POINT_TO_POINT(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, target.x, target.y, target.z, -1, m_lidarVehicle, native_param);
+    if (USE_RAYCASTING) {
+        //options: -1=everything
+        //New function is called _START_SHAPE_TEST_RAY
+        raycast_handle = WORLDPROBE::_CAST_RAY_POINT_TO_POINT(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, target.x, target.y, target.z, -1, m_lidarVehicle, native_param);
 
-    //New function is called GET_SHAPE_TEST_RESULT
-    WORLDPROBE::_GET_RAYCAST_RESULT(raycast_handle, &isHit, &endCoord, &surfaceNorm, &hitEntity);
+        //New function is called GET_SHAPE_TEST_RESULT
+        WORLDPROBE::_GET_RAYCAST_RESULT(raycast_handle, &isHit, &endCoord, &surfaceNorm, &hitEntity);
+    }
 
-    float groundZ;
-    GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(endCoord.x, endCoord.y, endCoord.z, &(groundZ), 0);
-    float groundDist = endCoord.z - groundZ;
-
-    //TODO Try using endpoint with this, comparing the two
     //The 2D screen coords of the target
     //This is what should be used for sampling depth map as endCoord will not hit same points as depth map
-    Eigen::Vector2f target2D = get_2d_from_3d(Eigen::Vector3f(target.x, target.y, target.z));
+    target2D = get_2d_from_3d(Eigen::Vector3f(target.x, target.y, target.z));
 
     if (GENERATE_2D_POINTMAP) {
         *(m_lidar2DPoints + 2 * m_beamCount) = target2D(0);
@@ -624,24 +624,27 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
         ++m_beamCount;
     }
 
-    /*std::ostringstream oss2;
-    oss2 << "***Endcoord is: " << endCoord.x << ", " << endCoord.y << ", " << endCoord.z <<
-        "\n Current position is: " << s_camParams.pos.x << ", " << s_camParams.pos.y << ", " << s_camParams.pos.z;
-    std::string str = oss2.str();
-    */
-    //log(str);
-
     bool targetOnScreen = isPositionOnScreen(target2D(0), target2D(1));
     if (targetOnScreen) {
         Hit2DDepth hitDepth;
         hitDepth.target = target;
         hitDepth.target2D = target2D;
-        hitDepth.groundDist = groundDist;
+        hitDepth.groundDist = -1;
+        if (OUTPUT_DEPTH_STATS) {
+            float groundZ;
+            GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(endCoord.x, endCoord.y, endCoord.z, &(groundZ), 0);
+            hitDepth.groundDist = endCoord.z - groundZ;
+        }
         float rayDist = sqrt(SYSTEM::VDIST2(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, endCoord.x, endCoord.y, endCoord.z));
         hitDepth.rayCastDepth = rayDist;
         m_hitDepthPoints.push_back(hitDepth);
 
         Vector3 vec_cam_coord = get3DFromDepthTarget(target, target2D);
+
+        /*std::ostringstream oss2;
+        oss2 << "***vec_cam_coord is: " << vec_cam_coord.x << ", " << vec_cam_coord.y << ", " << vec_cam_coord.z;
+        std::string str = oss2.str();
+        log(str, true);*/
 
         float newDistance = sqrt(SYSTEM::VDIST2(0, 0, 0, vec_cam_coord.x, vec_cam_coord.y, vec_cam_coord.z));
         if (newDistance <= MAX_LIDAR_DIST) {
@@ -649,7 +652,10 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
             *p = vec_cam_coord.y;
             *(p + 1) = -vec_cam_coord.x;
             *(p + 2) = vec_cam_coord.z;
-            *(p + 3) = groundDist;//We don't have the entityID if we're using the depth map
+            //Need to do -0.5 as indexing starts at 0
+            int i = floor(target2D(0) * s_camParams.width - 0.5);
+            int j = floor(target2D(1) * s_camParams.height - 0.5);
+            *(p + 3) = m_pInstanceSeg[s_camParams.width * j + i];//We don't have the entityID if we're using the depth map
             ++m_pointsHit;
             ++m_depthMapPoints;
 
@@ -657,7 +663,7 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
         }
     }
 
-    if (isHit) {
+    if (USE_RAYCASTING && isHit) {
         int entityID = 0;
         if ((ENTITY::IS_ENTITY_A_PED(hitEntity) && PED::GET_PED_TYPE(hitEntity) != 28) //PED_TYPE 28 are animals
             || ENTITY::IS_ENTITY_A_VEHICLE(hitEntity)) {
