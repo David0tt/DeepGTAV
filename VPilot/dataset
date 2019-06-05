@@ -69,15 +69,18 @@ if __name__ == '__main__':
         vehicles = []
         # model, forward, right, heading, color (-1 default, 27 red, 64blue, 0 black)
         # vehicles.append(["voltic", 20, 10, 90, 27, 0])
-        #vehicles.append(["voltic", 15, 10, 90, 64, 0])
-        vehicles.append(["bus", 18, 15, 0, 0, 0])
-        vehicles.append(["bus", 150, 10, 90, 0, 0])
-        vehicles.append(["bus", 100, -20, 90, 0, 0])
-        vehicles.append(["bus", 200, 10, 90, 0, 0])
-        vehicles.append(["bus", 125, -50, 90, 0, 0])
-        vehicles.append(["bus", 75, -70, 90, 0, 0])
-        vehicles.append(["bus", 150, 80, 90, 0, 0])
-        vehicles.append(["bus", 50, 20, 90, 0, 0])
+        # vehicles.append(["voltic", 17, 10, 90, 64, 0])
+        # vehicles.append(["voltic", 15, 2, 90, 27, 0])
+        # vehicles.append(["voltic", 15, -2, 90, 64, 0])
+        # vehicles.append(["bus", 18, 15, 0, 0, 0])
+        # vehicles.append(["bus", 18, 15, 90, 0, 0])
+        # vehicles.append(["bus", 150, 10, 90, 0, 0])
+        # vehicles.append(["bus", 100, -20, 90, 0, 0])
+        # vehicles.append(["bus", 200, 10, 90, 0, 0])
+        # vehicles.append(["bus", 125, -50, 90, 0, 0])
+        # vehicles.append(["bus", 75, -70, 90, 0, 0])
+        # vehicles.append(["bus", 150, 80, 90, 0, 0])
+        # vehicles.append(["bus", 50, 20, 90, 0, 0])
         # vehicles.append(["benson", 50, 0, 0, 0, 0])
         # #vehicles.append(["trash", 60, -20, 0, 0, 0])
         # vehicles.append(["benson", 80, -15, 0, 0, 0])
@@ -87,23 +90,24 @@ if __name__ == '__main__':
         # vehicles.append(["benson", 0, 4, 90, 0, 0])
         #vehicles.append(["vindicator", 7, 1, 0, 0, 0])
         peds = []
-        #peds.append([0, 10, 5, 0])
-        #peds.append([0, 10, 0, 0])
+        peds.append([0, 70, 35, 0])
+        #peds.append([1, 10, 0, 0])
+        #peds.append([2, 10, 1, 0])
+        #peds.append([9, 9, 0, 90])
         #peds.append([1, 10, -5, 13])
         #peds.append([0, 13, 5, 1])
         #peds.append([2, 7, 5, -3])
         #peds.append([0, 10, -5, 2])
         #peds.append([0, 10, -4, 60])
         #peds.append([9, 12, 5, 120])
+
         #For graphics
         #vehicles.append(["bmx", 9, -1, 0, 0, 0])
         #peds.append([3, 10, 1, 180])
         #peds.append([5, 8, 0, 270])
-        lidarParam = 7
-        dataset = Dataset(rate=captureRate, frame=[width,height], throttle=True, brake=True, steering=True, vehicles=collectVehicles, peds=collectPeds, reward=[15.0, 0.0],
-                        direction=None, speed=True, yawRate=True, location=True, time=True, offscreen=collectOffscreen, showBoxes=False, pointclouds=True,
-                        stationaryScene=True, collectTracking=tracking, vehiclesToCreate=vehicles, pedsToCreate=peds, startIndex=startIndex, lidarParam=lidarParam,
-                        recordScenario=recordScenario, positionScenario=positionScenario)
+
+        # Pitch view
+        
         #List of locations
         #Nearplane
         # startLocation = [320.0,3600.0]
@@ -115,16 +119,21 @@ if __name__ == '__main__':
         # startLocation = [1041, 53, 340]
 
         # Airport
-        startLocation = [-942, -3500, 15]
+        # startLocation = [-942, -3500, 15]
 
         # Pitch view
         # startLocation = [-697.306, 995.426, 241, 25.1029]
         # startLocation = [-539.831, 665.427, 142.673, 0]
         # startLocation = [-554.445, 134.722, 62.6856, 313.719]
 
-        # startLocation = [-564.368, 26.8335, 47, 295.413]
+        vehicles.append(["bus", 14, 0, 0, 0, 0])
+        startLocation = [-564.368, 26.8335, 47, 295.413]
 
-
+        lidarParam = 7
+        dataset = Dataset(rate=captureRate, frame=[width,height], throttle=True, brake=True, steering=True, vehicles=collectVehicles, peds=collectPeds, reward=[15.0, 0.0],
+                        direction=None, speed=True, yawRate=True, location=True, time=True, offscreen=collectOffscreen, showBoxes=False, pointclouds=True,
+                        stationaryScene=True, collectTracking=tracking, vehiclesToCreate=vehicles, pedsToCreate=peds, startIndex=startIndex, lidarParam=lidarParam,
+                        recordScenario=recordScenario, positionScenario=positionScenario)
 
         scenario = Scenario(drivingMode=[-1,0], location=startLocation) #Stationary/manual mode
     else:
