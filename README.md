@@ -1,6 +1,6 @@
-# DeepGTAV v2
+# DeepGTAV - PreSIL
 
-*A plugin for GTAV that transforms it into a vision-based self-driving car research environment.*
+*A plugin for GTAV that transforms it into a vision-based self-driving car research environment. This repo outputs HD images, LiDAR, depth, stencil, and labels in KITTI and augmented formats. Please cite our work, the PreSIL dataset for autonomous vehicle perception (https://arxiv.org/abs/1905.00160) if using this repo.*
 
 <img src="https://img.gta5-mods.com/q95/images/naturalvision-photorealistic-gtav/b4de94-GTA5%202016-08-28%2022-05-52.jpg" alt="Self-Driving Car" width="900px">
 
@@ -16,6 +16,7 @@
 9. Create an environment variable (DEEPGTAV_DIR) pointing to the directory of this repository.
 10. Create an environment variable (DEEPGTAV_LOG_FILE) pointing to the file for logging (debugging purposes).
 11. Create an environment variable (DEEPGTAV_EXPORT_DIR) pointing to the export location.
+12. Download and install opencv (https://opencv.org/releases/). Place opencv_world343.dll in the GTAV installation directory.
 
 ## Recommendations
 
