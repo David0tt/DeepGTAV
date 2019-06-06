@@ -163,3 +163,5 @@ __TODO:__
 * Add support for traffic signs detection
 * Add support for driving mode override
 * General bug fixing
+* Config file
+* Improved logging
