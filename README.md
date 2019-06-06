@@ -3,6 +3,9 @@
 
 *A plugin for GTAV that transforms it into a vision-based self-driving car research environment. This repo outputs HD images, LiDAR, depth, stencil, and labels in KITTI and augmented formats. Please cite our work, the PreSIL dataset for autonomous vehicle perception (https://arxiv.org/abs/1905.00160) if using this repo.*
 
+To download pre-generated data see: https://uwaterloo.ca/waterloo-intelligent-systems-engineering-lab/presil-dataset-downloader
+Repo was originally cloned from: https://github.com/aitorzip/DeepGTAV
+
 <img src="https://img.gta5-mods.com/q95/images/naturalvision-photorealistic-gtav/b4de94-GTA5%202016-08-28%2022-05-52.jpg" alt="Self-Driving Car" width="900px">
 
 ## Installation
