@@ -1,0 +1,4 @@
+[submodule "GTAV_ObjectDetection"]
+	path = ObjectDet
+	url = https://github.com/bradenhurl/GTAV_ObjectDetection
+	branch = master
