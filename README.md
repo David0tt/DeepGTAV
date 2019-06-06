@@ -1,4 +1,5 @@
 # DeepGTAV - PreSIL
+## Precise Synthetic Image and LiDAR Dataset for Autonomous Vehicle Perception
 
 *A plugin for GTAV that transforms it into a vision-based self-driving car research environment. This repo outputs HD images, LiDAR, depth, stencil, and labels in KITTI and augmented formats. Please cite our work, the PreSIL dataset for autonomous vehicle perception (https://arxiv.org/abs/1905.00160) if using this repo.*
 
