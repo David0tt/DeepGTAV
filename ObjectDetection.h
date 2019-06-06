@@ -8,6 +8,7 @@
 #include "CamParams.h"
 #include "FrameObjectInfo.h"
 #include <opencv2\opencv.hpp>
+#include <boost/shared_ptr.hpp>
 
 //#define DEBUG 1
 
@@ -200,15 +201,8 @@ public:
 private:
     void setVehiclesList();
     void setPedsList();
-    void setTrafficSignsList();
-    void setDirection();
-    void setReward();
-    void setThrottle();
-    void setBrake();
-    void setSteering();
     void setSpeed();
     void setYawRate();
-    void setDrivingMode();
     void setTime();
     void setupLiDAR();
     void collectLiDAR();
@@ -220,7 +214,6 @@ private:
     Vector3 correctOffcenter(Vector3 position, Vector3 min, Vector3 max, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector, Vector3 &offcenter);
     float observationAngle(Vector3 position);
     void drawVectorFromPosition(Vector3 vector, int blue, int green);
-    void setDepthParams();
     Vector3 depthToCamCoords(float depth, float screenX, float screenY);
     void outputRealSpeed();
     void setStencilBuffer();
@@ -243,9 +236,6 @@ private:
     void addSegmentedPoint3D(int i, int j, ObjEntity *e);
     void addPointToSegImages(int i, int j, int entityID);
     void printSegImage();
-    void getContours();
-    //void outputGroundSeg();
-    //void updateSegImage();
 
     void update3DPointsHit();
     void update3DPointsHit(ObjEntity* e);
@@ -274,7 +264,6 @@ private:
     void setGroundPlanePoints();
 
     //Other vehicle detections
-    void getNearbyVehicles();
     void checkEntity(Vehicle p, WorldObject e, Vector3 pPos, std::ostringstream& oss);
     SubsetInfo getObjectInfoSubset(Vector3 position, Vector3 forwardVector, Vector3 dim);
     Vector3 getVehicleDims(Entity e, Hash model, Vector3 &min, Vector3 &max);

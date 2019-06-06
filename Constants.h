@@ -31,8 +31,6 @@ const bool SAME_TIME_OF_DAY = true;
 const bool DRIVE_SPEC_AREA = true;
 const bool START_SPEC_AREA = true;
 
-//TODO -> stencil/depth semantic segmentation for depthmap->lidar interpolation
-
 //Some settings for testing pointcloud generation
 //This prints the 2D map of where lidar beams hit on the screen (not consistent when moving)
 const bool GENERATE_2D_POINTMAP = false;
@@ -90,7 +88,7 @@ const bool OUTPUT_STENCIL_IMAGE = false;
 const bool ONLY_OUTPUT_UNKNOWN_STENCILS = true;
 
 //If set to true DeepGTAV outputs all information from nearby vehicles within specified range
-const bool GENERATE_SECONDARY_PERSPECTIVES = true;
+const bool GENERATE_SECONDARY_PERSPECTIVES = false;
 const int SECONDARY_PERSPECTIVE_RANGE = 100;
 
 //Outputs self location (For finding spots for stationary scenes)

@@ -204,17 +204,11 @@ FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStenci
     //Need to set peds list first for integrating peds on bikes
     setPedsList();
     setVehiclesList();
-    //setDirection();
-    //setSteering();
     setSpeed();
     setYawRate();
     setTime();
     setFocalLength();
     log("After focalLength");
-    //if (depthMap && lidar_initialized) outputGroundSeg();
-    //if (depthMap && lidar_initialized) updateSegImage();
-
-    if (lidar_initialized) getContours();
 
     //Update 2D bboxes, and create segmentation of stencil values
     processSegmentation2D();
@@ -232,9 +226,6 @@ FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStenci
     log("After output unused stencil");
 
     setGroundPlanePoints();
-
-    //TODO: This code needs to be moved to where secondary perspectives are generated
-    //getNearbyVehicles();
 
     return m_curFrame;
 }
@@ -647,6 +638,9 @@ bool ObjectDetection::isPointOccluding(Vector3 worldPos, ObjEntity *e) {
 }
 
 //TODO Need to fix this now that we know stencil/depth buffers do not align
+//The problem is that depth buffer hits vehicle windows.
+//The stencil buffer goes through the vehicle windows and captures whatever is behind them.
+//This makes it difficult for segmentation and 2D vs 3D segmentation will be different.
 void ObjectDetection::processSegmentation2D() {
     /*for (int j = 0; j < s_camParams.height; ++j) {
         for (int i = 0; i < s_camParams.width; ++i) {
@@ -1708,16 +1702,6 @@ void ObjectDetection::collectLiDAR() {
     }
 }
 
-//Maybe todo. Need to see results of other detection first
-void ObjectDetection::getContours() {
-    /*cv::Mat tempMat(cv::Size(s_camParams.width, s_camParams.height), CV_8UC1, m_pStencil);
-    std::vector<std::vector<cv::Point> > contours;
-    cv::Mat output;
-    im2, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE);*/
-
-    //Print separate segmentation images using drawContours
-}
-
 void ObjectDetection::setStencilBuffer() {
     log("About to set stencil buffer");
     int size = s_camParams.width * s_camParams.height;
@@ -2333,14 +2317,6 @@ void ObjectDetection::exportEntity(ObjEntity e, std::ostringstream& oss, bool un
             return;
         }
     }
-    //TODO OBTAIN_RAY_POINTS_HIT is off now.
-    //3D points hit should be based off stencil seg with depth
-    /*if (min3DPoints != -1) {
-        if (e.pointsHit3D < min3DPoints) {
-            log("pointsHit3D failed.", true);
-            return;
-        }
-    }*/
 
     oss << e.objType << " " << e.truncation << " " << e.occlusion << " " << e.alpha << " " <<
         (int)b.left << " " << (int)b.top << " " <<
