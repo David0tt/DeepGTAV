@@ -5,7 +5,7 @@
 
 To download pre-generated data see: https://uwaterloo.ca/waterloo-intelligent-systems-engineering-lab/presil-dataset-downloader
 
-Repo was originally cloned from: https://github.com/aitorzip/DeepGTAV
+Visualization and tools to work with the data can be found here: https://github.com/bradenhurl/PreSIL-tools
 
 Visualizations from the PreSIL Dataset:
 
@@ -178,3 +178,5 @@ __TODO:__
 * General bug fixing
 * Config file
 * Improved logging
+
+Repo was originally cloned from: https://github.com/aitorzip/DeepGTAV
