@@ -7,7 +7,20 @@ To download pre-generated data see: https://uwaterloo.ca/waterloo-intelligent-sy
 
 Repo was originally cloned from: https://github.com/aitorzip/DeepGTAV
 
-<img src="https://img.gta5-mods.com/q95/images/naturalvision-photorealistic-gtav/b4de94-GTA5%202016-08-28%2022-05-52.jpg" alt="Self-Driving Car" width="900px">
+Visualizations from the PreSIL Dataset:
+
+Image with 2D Boxes
+<img src="https://github.com/bradenhurl/DeepGTAV-PreSIL/blob/master/samples/342-image.png" alt="Image with 2D boxes" width="900px">
+Pointcloud with 3D Boxes
+<img src="https://github.com/bradenhurl/DeepGTAV-PreSIL/blob/master/samples/342-pc.png" alt="Pointcloud with 3D boxes" width="900px">
+Linearized Depth Buffer
+<img src="https://github.com/bradenhurl/DeepGTAV-PreSIL/blob/master/samples/342-depth.png" alt="Linearized Depth Buffer" width="900px">
+Linearized Depth Buffer shown in color
+<img src="https://github.com/bradenhurl/DeepGTAV-PreSIL/blob/master/samples/342-depth-color.png" alt="Linearized Depth Buffer with Color" width="900px">
+Instance Level Object Segmentation
+<img src="https://github.com/bradenhurl/DeepGTAV-PreSIL/blob/master/samples/342-segImg.png" alt="Object instance level segmentation" width="900px">
+Stencil Buffer
+<img src="https://github.com/bradenhurl/DeepGTAV-PreSIL/blob/master/samples/342-stencil.png" alt="Stencil Buffer" width="900px">
 
 ## Installation
 1. Make sure GTAV is on version 1.0.1180.2 or below
