@@ -106,6 +106,12 @@ if __name__ == '__main__':
         #peds.append([3, 10, 1, 180])
         #peds.append([5, 8, 0, 270])
 
+        # TruPercept Scenario: Occluded pedestrian
+        startLocation = [245, -995, 30]
+        vehicles.append(["granger", 7, 3, 0, 0, 0])
+        peds.append([10, 10, 5, 90])
+        vehicles.append(["voltic", 25, -2, 180, 0, 0])
+
         # Pitch view
         
         #List of locations
@@ -126,8 +132,8 @@ if __name__ == '__main__':
         # startLocation = [-539.831, 665.427, 142.673, 0]
         # startLocation = [-554.445, 134.722, 62.6856, 313.719]
 
-        vehicles.append(["bus", 14, 0, 0, 0, 0])
-        startLocation = [-564.368, 26.8335, 47, 295.413]
+        # vehicles.append(["bus", 14, 0, 0, 0, 0])
+        # startLocation = [-564.368, 26.8335, 47, 295.413]
 
         lidarParam = 7
         dataset = Dataset(rate=captureRate, frame=[width,height], throttle=True, brake=True, steering=True, vehicles=collectVehicles, peds=collectPeds, reward=[15.0, 0.0],
@@ -137,9 +143,17 @@ if __name__ == '__main__':
 
         scenario = Scenario(drivingMode=[-1,0], location=startLocation) #Stationary/manual mode
     else:
+        
+        # TruPercept Scenario: Occluded pedestrian
+        vehicles = []
+        peds = []
+        # model, forward, right, heading, color (-1 default, 27 red, 64blue, 0 black)
+        vehicles.append(["granger", 7, 3, 0, 0, 0])
+        peds.append([10, 10, 5, 90])
+        vehicles.append(["voltic", 25, -2, 180, 0, 0])
         dataset = Dataset(rate=captureRate, frame=[width,height], throttle=True, brake=True, steering=True, vehicles=collectVehicles, peds=collectPeds, reward=[15.0, 0.0],
                         direction=None, speed=True, yawRate=True, location=True, time=True, offscreen=collectOffscreen, showBoxes=False, pointclouds=True,
-                        stationaryScene=False, collectTracking=tracking, startIndex=startIndex, recordScenario=recordScenario, positionScenario=positionScenario)
+                        stationaryScene=False, collectTracking=tracking, vehiclesToCreate=vehicles, pedsToCreate=peds, startIndex=startIndex, recordScenario=recordScenario, positionScenario=positionScenario)
 
         # Pitch view
         # startLocation = [-697.306, 995.426, 239, 55.1029]
