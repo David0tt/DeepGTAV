@@ -566,21 +566,19 @@ StringBuffer Scenario::generateMessage() {
         //Create vehicles if it is a stationary scenario
         createVehicles();
 
-        GAMEPLAY::SET_GAME_PAUSED(false);
-
         if (GENERATE_SECONDARY_PERSPECTIVES) {
             generateSecondaryPerspectives();
         }
 
         //For testing to ensure secondary ownvehicle aligns with main perspective
-        //generateSecondaryPerspective(m_ownVehicle, CAM_OFFSET_UP*2);
+        //generateSecondaryPerspective(m_pObjDet->m_ownVehicleObj);
 
         m_pObjDet->increaseIndex();
     }
     else {
-        GAMEPLAY::SET_GAME_PAUSED(false);
         log("ERROR: Depth buffer could not be properly set!!!!!!!!!!!!!!!!!!!!!!", true);
     }
+    GAMEPLAY::SET_GAME_PAUSED(false);
     GAMEPLAY::SET_TIME_SCALE(1.0f);
 
 	d.Accept(writer);
@@ -604,10 +602,13 @@ void Scenario::setRenderingCam(Vehicle v, int height, int length) {
     offsetWorld.y -= s_camParams.pos.y;
     offsetWorld.z -= s_camParams.pos.z;
 
+    GAMEPLAY::SET_TIME_SCALE(0.0f);
+    GAMEPLAY::SET_GAME_PAUSED(false);
+    GAMEPLAY::SET_TIME_SCALE(0.0f);
     CAM::SET_CAM_COORD(camera, position.x + offsetWorld.x, position.y + offsetWorld.y, position.z + offsetWorld.z);
     CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 0);
     scriptWait(0);
-    Sleep(500);
+    GAMEPLAY::SET_GAME_PAUSED(true);
 
     std::ostringstream oss;
     oss << "EntityID/rotation/position: " << v << "\n" <<
@@ -632,7 +633,9 @@ void Scenario::capture() {
 //Generate a secondary perspective for all nearby vehicles
 void Scenario::generateSecondaryPerspectives() {
     for (ObjEntity v : m_pObjDet->m_nearbyVehicles) {
-        generateSecondaryPerspective(v);
+        if (VEHICLE::IS_THIS_MODEL_A_CAR(v.model)) {
+            generateSecondaryPerspective(v);
+        }
     }
     m_pObjDet->m_nearbyVehicles.clear();
 }
@@ -640,7 +643,7 @@ void Scenario::generateSecondaryPerspectives() {
 void Scenario::generateSecondaryPerspective(ObjEntity vInfo) {
     setRenderingCam(vInfo.entityID, vInfo.height, vInfo.length);
 
-    GAMEPLAY::SET_GAME_PAUSED(true);
+    //GAMEPLAY::SET_GAME_PAUSED(true);
     capture();
 
     setCamParams();
@@ -652,7 +655,7 @@ void Scenario::generateSecondaryPerspective(ObjEntity vInfo) {
     std::string filename = m_pObjDet->getStandardFilename("image_2", ".png");
     m_pObjDet->exportImage(screenCapturer->pixels, filename);
 
-    GAMEPLAY::SET_GAME_PAUSED(false);
+    //GAMEPLAY::SET_GAME_PAUSED(false);
 }
 
 void Scenario::setThrottle(){
@@ -746,7 +749,7 @@ void Scenario::createPed(int model, float relativeForward, float relativeRight, 
 
 void Scenario::createVehicles() {
     setPosition();
-    if (stationaryScene && !vehicles_created) {
+    if ((stationaryScene || TRUPERCEPT_SCENARIO) && !vehicles_created) {
         log("Creating peds");
         for (int i = 0; i < pedsToCreate.size(); i++) {
             PedToCreate p = pedsToCreate[i];
