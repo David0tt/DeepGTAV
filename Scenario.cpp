@@ -184,14 +184,15 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
     else if (setDefaults) m_positionScenario = _POSITION_SCENARIO_;
 
     if (DRIVE_SPEC_AREA && !stationaryScene) {
-        dir.x = s_locationBounds[0][0][m_startArea];
-        dir.y = s_locationBounds[0][1][m_startArea];
+        int startArea = 0;
+        dir.x = s_locationBounds[0][0][startArea];
+        dir.y = s_locationBounds[0][1][startArea];
         dir.z = 0.f;
-        x = s_locationBounds[0][0][1];//1,2,3,4,5,6,7,8 are all good
-        y = s_locationBounds[0][1][1];//1-0 was last one used for 'good' data
+        x = s_locationBounds[0][0][startArea];//1,2,3,4,5,6,7,8 are all good
+        y = s_locationBounds[0][1][startArea];//1-0 was last one used for 'good' data
     }
 
-    if (stationaryScene) {
+    if (stationaryScene || TRUPERCEPT_SCENARIO) {
         vehiclesToCreate.clear();
         log("About to get vehicles");
         if (!dc["vehiclesToCreate"].IsNull()) {
@@ -732,18 +733,6 @@ void Scenario::createPed(int model, float relativeForward, float relativeRight, 
     Ped temp = PED::CREATE_PED(4, hash, pos.x, pos.y, pos.z, heading, FALSE, FALSE);
     WAIT(0);
     AI::TASK_WANDER_STANDARD(ped, 10.0f, 10);
-    if (task == 0) {
-        AI::TASK_STAND_STILL(temp, -1);
-    }
-    else if (task == 1) {
-        PED::SET_PED_PINNED_DOWN(temp, true, -1);
-    }
-    else if (task == 2) {
-        AI::TASK_WRITHE(temp, player, 999999, false);
-    }
-    else if (task == 3) {
-        PED::SET_PED_DUCKING(temp, true);
-    }
     ENTITY::SET_ENTITY_AS_NO_LONGER_NEEDED(&temp);
 }
 

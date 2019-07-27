@@ -144,13 +144,17 @@ if __name__ == '__main__':
         scenario = Scenario(drivingMode=[-1,0], location=startLocation) #Stationary/manual mode
     else:
         
+        set_speed = 15.0
+
         # TruPercept Scenario: Occluded pedestrian
         vehicles = []
         peds = []
-        # model, forward, right, heading, color (-1 default, 27 red, 64blue, 0 black)
-        vehicles.append(["granger", 7, 3, 0, 0, 0])
-        peds.append([10, 10, 5, 90])
-        vehicles.append(["voltic", 25, -2, 180, 0, 0])
+        vehicles.append(["benson", 7, 3.5, 340, 0, 0])
+        peds.append([10, 13, 5, 90])
+        vehicles.append(["voltic", 30, -6, 160, 0, 0])
+        set_speed = 2.0
+
+        # Call to start dataset collection
         dataset = Dataset(rate=captureRate, frame=[width,height], throttle=True, brake=True, steering=True, vehicles=collectVehicles, peds=collectPeds, reward=[15.0, 0.0],
                         direction=None, speed=True, yawRate=True, location=True, time=True, offscreen=collectOffscreen, showBoxes=False, pointclouds=True,
                         stationaryScene=False, collectTracking=tracking, vehiclesToCreate=vehicles, pedsToCreate=peds, startIndex=startIndex, recordScenario=recordScenario, positionScenario=positionScenario)
