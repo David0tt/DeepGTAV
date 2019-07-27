@@ -51,7 +51,6 @@ private:
     Ped ped = NULL;
     Cam camera = NULL;
     Vector3 dir;
-    ObjEntity m_ownVehicleObj;
 
     float x, y, z;
     float startHeading;
@@ -197,6 +196,7 @@ public:
 
     //Other vehicle detection labels
     std::vector<ObjEntity> m_nearbyVehicles;
+    ObjEntity m_ownVehicleObj;
 
 private:
     void setVehiclesList();

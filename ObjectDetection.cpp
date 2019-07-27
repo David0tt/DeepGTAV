@@ -42,6 +42,7 @@ const int STENCIL_TYPE_OWNCAR = 130;
 const std::vector<int> KNOWN_STENCIL_TYPES = { STENCIL_TYPE_DEFAULT, STENCIL_TYPE_NPC, STENCIL_TYPE_VEHICLE, STENCIL_TYPE_VEGETATION, STENCIL_TYPE_FLOOR, STENCIL_TYPE_SKY, STENCIL_TYPE_SELF, STENCIL_TYPE_OWNCAR, STENCIL_TYPE_UNDERGROUND_ENTRANCE };
 
 const int PEDESTRIAN_CLASS_ID = 10;
+const int CAR_CLASS_ID = 0;
 
 void ObjectDetection::initCollection(UINT camWidth, UINT camHeight, bool exportEVE, int startIndex) {
     if (m_initialized) {
@@ -1191,15 +1192,15 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
         if (distance > SECONDARY_PERSPECTIVE_RANGE) {
             nearbyVehicle = false;
         }//nearby vehicle needs to be occupied
-        else if (VEHICLE::IS_VEHICLE_SEAT_FREE(entityID, -1)) {
+        else if (ONLY_OCCUPIED_VEHICLES && VEHICLE::IS_VEHICLE_SEAT_FREE(entityID, -1)) {
             nearbyVehicle = false;
         }
     }
 
     //Check if it is on screen
     bool isOnScreen = ENTITY::IS_ENTITY_ON_SCREEN(entityID);
-    if (isOnScreen || nearbyVehicle) {
-        if (isOnScreen) {
+    if (isOnScreen || nearbyVehicle || AUGMENT_ALL_VEHICLES_IN_RANGE) {
+        if (isOnScreen || AUGMENT_ALL_VEHICLES_IN_RANGE) {
             success = true;
         }
         
@@ -1379,8 +1380,10 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
 
         //Attempts to find bbox on screen
         float truncation = 0;
-        BBox2D bbox2d = BBox2DFrom3DObject(position, dim, forwardVector, rightVector, upVector, success, truncation);
-
+        BBox2D bbox2d;
+        if (isOnScreen) {
+            bbox2d = BBox2DFrom3DObject(position, dim, forwardVector, rightVector, upVector, success, truncation);
+        }
         //stencil type for vehicles like cars, bikes...
         int stencilType = STENCIL_TYPE_VEHICLE;
         //Pedestrian classid
@@ -2359,6 +2362,8 @@ void ObjectDetection::exportPosition() {
 void ObjectDetection::exportEgoObject(ObjEntity vPerspective) {
     FILE* f = fopen(m_egoObjectFilename.c_str(), "w");
     std::ostringstream oss;
+
+    vPerspective.speed = ENTITY::GET_ENTITY_SPEED(vPerspective.entityID);
 
     exportEntity(vPerspective, oss, false, true, false);
 

@@ -88,8 +88,12 @@ const bool OUTPUT_STENCIL_IMAGE = false;
 const bool ONLY_OUTPUT_UNKNOWN_STENCILS = true;
 
 //If set to true DeepGTAV outputs all information from nearby vehicles within specified range
-const bool GENERATE_SECONDARY_PERSPECTIVES = false;
+const bool GENERATE_SECONDARY_PERSPECTIVES = true;
 const int SECONDARY_PERSPECTIVE_RANGE = 100;
+//Only generates secondary perspectives from occupied vehicles (prevents capturing parking garages)
+//This should be set to true except for stationary scenarios
+const bool ONLY_OCCUPIED_VEHICLES = true;
+const bool TRUPERCEPT_SCENARIO = false;
 
 //Outputs self location (For finding spots for stationary scenes)
 const bool OUTPUT_SELF_LOCATION = false;
@@ -100,3 +104,6 @@ const bool OUTPUT_UNPROCESSED_LABELS = false;
 //Processes overlapping points for segmentation images
 //Warning!!!! There is a memory leak in here that needs to be investigated
 const bool PROCESS_OVERLAPPING_POINTS = false;
+
+//Outputs all vehicles within range in augmented labels
+const bool AUGMENT_ALL_VEHICLES_IN_RANGE = true;
