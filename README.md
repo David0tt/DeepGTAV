@@ -42,6 +42,13 @@ Stencil Buffer
 2. Bypass the menu screen by configuring GTAV to start directly into Story Mode
 3. To avoid the Rockstar updates, start the game using GTA5.exe, otherwise use GTAVLauncher.exe or PlayGTAV.exe
 
+## Running Data Collection
+
+1. Start the game, walk outside of building if player is in one (game can crash if inside a building)
+2. Open a terminal to the VPilot subdirectory in this repository
+3. Start collection by running the dataset script in python i.e. 'python dataset'
+4. Press Ctrl + c with focus on the terminal to terminate the script
+
 ## How it works
 
 If installation was successful, GTAV will automatically load the DeepGTAV plugin. Once the game starts DeepGTAV will wait for TCP clients to connect on port 8000.
