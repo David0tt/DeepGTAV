@@ -633,16 +633,9 @@ void Scenario::setRenderingCam(Vehicle v, int height, int length) {
     GAMEPLAY::SET_GAME_PAUSED(false);
     GAMEPLAY::SET_TIME_SCALE(0.0f);
 
-	//TODO CHANGED
-	if (CAPTURE_FROM_UAV_PERSPECTIVE) {
-		CAM::SET_CAM_COORD(camera, position.x + offsetWorld.x, position.y + offsetWorld.y, position.z + offsetWorld.z - 2);
-		CAM::SET_CAM_ROT(camera, rotation.x - 90, rotation.y, rotation.z, 0);
-	}
-	else {
-		CAM::SET_CAM_COORD(camera, position.x + offsetWorld.x, position.y + offsetWorld.y, position.z + offsetWorld.z);
-		CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 0);
-	}
 
+    CAM::SET_CAM_COORD(camera, position.x + offsetWorld.x + cameraPositionOffset.x, position.y + offsetWorld.y + cameraPositionOffset.y, position.z + offsetWorld.z + cameraPositionOffset.z);
+    CAM::SET_CAM_ROT(camera, rotation.x + cameraRotationOffset.x, rotation.y + cameraRotationOffset.y, rotation.z + cameraRotationOffset.z, 0);
 
 
     scriptWait(0);
@@ -656,6 +649,16 @@ void Scenario::setRenderingCam(Vehicle v, int height, int length) {
         "\nOffsetworld: " << offsetWorld.x << ", " << offsetWorld.y << ", " << offsetWorld.z;
     log(oss.str(), true);
 }
+
+void Scenario::setCameraPositionAndRotation(float x, float y, float z, float rot_x, float rot_y, float rot_z) {
+    cameraPositionOffset.x = x;
+    cameraPositionOffset.y = y;
+    cameraPositionOffset.z = z;
+    cameraRotationOffset.x = rot_x;
+    cameraRotationOffset.y = rot_y;
+    cameraRotationOffset.z = rot_z;
+}
+
 
 void Scenario::capture() {
     //Time synchronization seems to be correct with 2 render calls

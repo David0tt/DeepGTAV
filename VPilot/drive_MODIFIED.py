@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from deepgtav.messages import Start, Stop, Scenario, Dataset, Commands, frame2numpy
+from deepgtav.messages import Start, Stop, Scenario, Commands, frame2numpy, GoToLocation, TeleportToLocation, SetCameraPositionAndRotation
 from deepgtav.client import Client
 
 import argparse
@@ -35,8 +35,8 @@ if __name__ == '__main__':
     # See deepgtav/messages.py to see what options are supported
     # scenario = Scenario(drivingMode=-1) #manual driving (Works, but is too slow to be used)
     # scenario = Scenario(drivingMode=786603) #automatic driving
-    # scenario = Scenario(drivingMode=786603, vehicle="buzzard") #automatic driving
-    scenario = Scenario(drivingMode=-1, vehicle="buzzard") #automatic driving
+    scenario = Scenario(drivingMode=786603, vehicle="buzzard") #automatic driving
+    # scenario = Scenario(drivingMode=-1, vehicle="buzzard") #automatic driving
 
     dataset=None
     # dataset = Dataset(recordScenario=True)
@@ -47,6 +47,15 @@ if __name__ == '__main__':
     # Send the Start request to DeepGTAV. Dataset is set as default, we only receive frames at 10Hz (320, 160)
     client.sendMessage(Start(scenario=scenario, dataset=dataset))
     
+
+    # Adjustments for recording from UAV perspective
+    client.sendMessage(SetCameraPositionAndRotation(z = -3, rot_x = -90))
+
+
+
+    # Manual Control
+    # client.sendMessage(Commands(throttle=1.))
+
     # Dummy agent
     model = Model()
 
@@ -57,6 +66,8 @@ if __name__ == '__main__':
             # We receive a message as a Python dictionary
             message = client.recvMessage()  
                 
+            # client.sendMessage(Commands(throttle=1.))
+
             # The frame is a numpy array that can we pass through a CNN for example     
             # image = frame2numpy(message['frame'], (320,160))
             # commands = model.run(image)

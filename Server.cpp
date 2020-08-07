@@ -118,6 +118,17 @@ void Server::checkRecvMessage() {
 		sendOutputs = false;
 		scenario.stop();
 	}
+	else if (d.HasMember("GoToLocation")) {
+
+	}
+	else if (d.HasMember("TeleportToLocation")) {
+
+	}
+	else if (d.HasMember("SetCameraPositionAndRotation")) {
+		printf("New Camera Settings received\n");
+		const Value& camset = d["SetCameraPositionAndRotation"];
+		scenario.setCameraPositionAndRotation(camset["x"].GetFloat(), camset["y"].GetFloat(), camset["z"].GetFloat(), camset["rot_x"].GetFloat(), camset["rot_y"].GetFloat(), camset["rot_z"].GetFloat());
+	}
 	else {
 		return; //Invalid message
 	}

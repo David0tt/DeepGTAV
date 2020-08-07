@@ -5,3 +5,4 @@ bin/Release/paths.xml
 *.ipch
 *.suo
 /.vs/DeepGTAV/v16/Browse.VC.db
+/.vs

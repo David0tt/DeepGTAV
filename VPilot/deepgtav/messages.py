@@ -125,11 +125,14 @@ class TeleportToLocation:
 # A command to set the camera rotation (relative to the vehicle).
 # Angles are in Degree 
 # Default is to directly look to the ground  
-class SetCameraAngle:
-    def __init__(self, rot_x = 0, rot_y = 90, rot_z = 0):
+class SetCameraPositionAndRotation:
+    def __init__(self, x=0, y=0, z=0, rot_x=0, rot_y=0, rot_z=0):
+        self.x = x
+        self.y = y 
+        self.z = z
         self.rot_x = rot_x
         self.rot_y = rot_y
         self.rot_z = rot_z
     
     def to_json(self):
-        return json.dumps({'SetCameraAngle':self.__dict__})
+        return json.dumps({'SetCameraPositionAndRotation':self.__dict__})

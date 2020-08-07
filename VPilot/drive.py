@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from deepgtav.messages import Start, Stop, Scenario, Commands, frame2numpy
+from deepgtav.messages import Start, Stop, Scenario, Commands, frame2numpy, GoToLocation, TeleportToLocation, SetCameraPositionAndRotation
 from deepgtav.client import Client
 
 import argparse
@@ -45,7 +45,8 @@ if __name__ == '__main__':
         try:
             # We receive a message as a Python dictionary
             message = client.recvMessage()  
-                
+
+
             # The frame is a numpy array that can we pass through a CNN for example     
             # image = frame2numpy(message['frame'], (320,160))
             # commands = model.run(image)

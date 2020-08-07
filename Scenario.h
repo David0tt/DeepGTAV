@@ -63,6 +63,11 @@ private:
 	float currentBrake = 0.0;
 	float currentSteering = 0.0;
 
+    // Persistent Camera offsets
+    Vector3 cameraPositionOffset = { 0, 0, 0};
+    Vector3 cameraRotationOffset = { 0, 0, 0};
+
+
     Vector3 currentPos;
     Vector3 currentForwardVector;
     Vector3 currentUpVector;
@@ -105,6 +110,7 @@ public:
 	StringBuffer generateMessage();
 
     void setRenderingCam(Vehicle v, int height, int length);
+    void setCameraPositionAndRotation(float x, float y, float z, float rot_x, float rot_y, float rot_z);
     void generateSecondaryPerspectives();
     void generateSecondaryPerspective(ObjEntity vInfo);
     void capture();
