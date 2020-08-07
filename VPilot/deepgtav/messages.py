@@ -100,3 +100,36 @@ def frame2numpy(frame, frameSize):
     # Return a copy because custom strides are not supported by OpenCV.
     return as_strided(buff, strides=(strideWidth, 3, 1), shape=(frameSize[1], frameSize[0], 3)).copy()
 
+
+# A command to use the AI in GTAV to walk to the specified location, from the current location
+class GoToLocation:
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
+    
+    def to_json(self):
+        return json.dumps({'GoToLocation':self.__dict__})
+
+# A command to Teleport to the specified location
+class TeleportToLocation:
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
+
+    def to_json(self):
+        return json.dumps({'TeleportToLocation':self.__dict__})
+
+
+# A command to set the camera rotation (relative to the vehicle).
+# Angles are in Degree 
+# Default is to directly look to the ground  
+class SetCameraAngle:
+    def __init__(self, rot_x = 0, rot_y = 90, rot_z = 0):
+        self.rot_x = rot_x
+        self.rot_y = rot_y
+        self.rot_z = rot_z
+    
+    def to_json(self):
+        return json.dumps({'SetCameraAngle':self.__dict__})

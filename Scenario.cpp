@@ -322,7 +322,18 @@ void Scenario::buildScenario() {
 	//else CAM::ATTACH_CAM_TO_ENTITY(camera, vehicle, 0, CAM_OFFSET_FORWARD, CAM_OFFSET_UP, TRUE);
 	CAM::SET_CAM_FOV(camera, VERT_CAM_FOV);
 	CAM::SET_CAM_ACTIVE(camera, TRUE);
+	
+
+	// TODO CANGED
 	CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 0);
+	//CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, 2, 0);
+
+	// pos = CAM::GET_CAM_COORD()
+	//Vector3 camPos;
+	//camPos = CAM::GET_CAM_COORD(camera);
+	//CAM::SET_CAM_COORD(camera, camPos.x + 40.0, camPos.y + 40.0, camPos.z + 40.0);
+
+
 	CAM::SET_CAM_INHERIT_ROLL_VEHICLE(camera, TRUE);
 
     if (stationaryScene) {
@@ -518,6 +529,7 @@ StringBuffer Scenario::generateMessage() {
         CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 0);
         if (m_positionScenario) return buffer;
     }
+
 	
     log("About to pause game");
     GAMEPLAY::SET_GAME_PAUSED(true);
@@ -534,9 +546,23 @@ StringBuffer Scenario::generateMessage() {
     //std::string str1 = oss1.str();
     //log(str1);
 
+	
+	// TODO CHANGED
+	// This works. Kind of laggy but is enough
+	if (NO_CAPTURE_FOR_DEBUG) {
+		GAMEPLAY::SET_GAME_PAUSED(false);
+		GAMEPLAY::SET_TIME_SCALE(1.0f);
+
+		d.Accept(writer);
+
+		return buffer;
+	}
+
+
+
     log("Script cams rendered");
-    capture();
-    log("Screen captured");
+	capture();
+	log("Screen captured");
 
     //TODO pass this through
     bool depthMap = true;
@@ -606,8 +632,19 @@ void Scenario::setRenderingCam(Vehicle v, int height, int length) {
     GAMEPLAY::SET_TIME_SCALE(0.0f);
     GAMEPLAY::SET_GAME_PAUSED(false);
     GAMEPLAY::SET_TIME_SCALE(0.0f);
-    CAM::SET_CAM_COORD(camera, position.x + offsetWorld.x, position.y + offsetWorld.y, position.z + offsetWorld.z);
-    CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 0);
+
+	//TODO CHANGED
+	if (CAPTURE_FROM_UAV_PERSPECTIVE) {
+		CAM::SET_CAM_COORD(camera, position.x + offsetWorld.x, position.y + offsetWorld.y, position.z + offsetWorld.z - 2);
+		CAM::SET_CAM_ROT(camera, rotation.x - 90, rotation.y, rotation.z, 0);
+	}
+	else {
+		CAM::SET_CAM_COORD(camera, position.x + offsetWorld.x, position.y + offsetWorld.y, position.z + offsetWorld.z);
+		CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 0);
+	}
+
+
+
     scriptWait(0);
     GAMEPLAY::SET_GAME_PAUSED(true);
 
