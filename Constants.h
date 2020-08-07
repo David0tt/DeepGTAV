@@ -108,8 +108,5 @@ const bool PROCESS_OVERLAPPING_POINTS = false;
 //Outputs all vehicles within range in augmented labels
 const bool AUGMENT_ALL_VEHICLES_IN_RANGE = true;
 
-// Make Camera adjustments to capture with a flying vehicle from UAV perspective
-const bool CAPTURE_FROM_UAV_PERSPECTIVE = true;
-
 // This disables the Data Capture. This is mainly used for debugging purposes (esp. for the wayfinding)
-const bool NO_CAPTURE_FOR_DEBUG = false;
+const bool NO_CAPTURE_FOR_DEBUG = true;
