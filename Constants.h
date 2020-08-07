@@ -88,7 +88,7 @@ const bool OUTPUT_STENCIL_IMAGE = false;
 const bool ONLY_OUTPUT_UNKNOWN_STENCILS = true;
 
 //If set to true DeepGTAV outputs all information from nearby vehicles within specified range
-const bool GENERATE_SECONDARY_PERSPECTIVES = true;
+const bool GENERATE_SECONDARY_PERSPECTIVES = false;
 const int SECONDARY_PERSPECTIVE_RANGE = 100;
 //Only generates secondary perspectives from occupied vehicles (prevents capturing parking garages)
 //This should be set to true except for stationary scenarios
@@ -107,3 +107,9 @@ const bool PROCESS_OVERLAPPING_POINTS = false;
 
 //Outputs all vehicles within range in augmented labels
 const bool AUGMENT_ALL_VEHICLES_IN_RANGE = true;
+
+// Make Camera adjustments to capture with a flying vehicle from UAV perspective
+const bool CAPTURE_FROM_UAV_PERSPECTIVE = true;
+
+// This disables the Data Capture. This is mainly used for debugging purposes (esp. for the wayfinding)
+const bool NO_CAPTURE_FOR_DEBUG = false;
