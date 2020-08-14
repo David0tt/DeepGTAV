@@ -15,6 +15,8 @@
 #include <sstream>
 #include "AreaRoaming.h"
 
+#include "base64.h"
+
 extern "C" {
     __declspec(dllimport) int export_get_depth_buffer(void** buf);
     __declspec(dllexport) int export_get_color_buffer(void** buf);
@@ -266,6 +268,7 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
     d.AddMember("focalLen", 0.0, allocator);
     d.AddMember("curPosition", a, allocator);
     d.AddMember("seriesIndex", a, allocator);
+	d.AddMember("image_2", a, allocator);
 
 	screenCapturer = new ScreenCapturer(s_camParams.width, s_camParams.height);
 }
@@ -546,38 +549,56 @@ StringBuffer Scenario::generateMessage() {
     //std::string str1 = oss1.str();
     //log(str1);
 
-	
-	// TODO CHANGED
-	// This works. Kind of laggy but is enough
-	if (NO_CAPTURE_FOR_DEBUG) {
-		GAMEPLAY::SET_GAME_PAUSED(false);
-		GAMEPLAY::SET_TIME_SCALE(1.0f);
-
-		d.Accept(writer);
-
-		return buffer;
-	}
-
 
 
     log("Script cams rendered");
 	capture();
 	log("Screen captured");
 
-    //TODO pass this through
-    bool depthMap = true;
 
-    setCamParams();
-    //setColorBuffer();
-    int depthSize = setDepthBuffer();
-    if (depthMap) setStencilBuffer();
-	if (trafficSigns); //TODO
+	int depthSize = -1;
+
+	if (!NO_CAPTURE_FOR_DEBUG) {
+		//TODO pass this through
+		bool depthMap = true;
+
+		setCamParams();
+		//setColorBuffer();
+		depthSize = setDepthBuffer();
+		if (depthMap) setStencilBuffer();
+	}
+
+
+	// Setting bufffers for the Server
+	// Those were the original commands from DeepGTAV
+	// They each need Scenario::setVehicleList(), Scenario::setPedsList() etc.
+	// Those commands would set the JSON document, e.g. d["vehicles"] = _vehicles;
+
+	// Those functionalities have been somehow moved to ObjectDetection.cpp, e.g. ObjectDetection::setVehiclesList()
+	// To fix the JSON / Server those have to be implemented again to correctly set e.g. d["vehicles"] = _vehicles
+	// A quick fix would be to copy the old Definitions from DeepGTAV, but I don't know if there would be side effects
+	// The correct solution would be to integrate the functionalities of e.g. Scenario::setVehiclesList() and ObjectDetection::setVehiclesList()
+	// into one.
+	//
+	// For now i only implement the messages I need and have the rest commented out.
+
+	// if (vehicles) setVehiclesList();
+	// if (peds) setPedsList();
+	// if (trafficSigns); //TODO
 	if (direction) setDirection();
 	if (reward) setReward();
 	if (throttle) setThrottle();
 	if (brake) setBrake();
 	if (steering) setSteering();
+	if (speed) setSpeed();
+	if (yawRate) setYawRate();
 	if (drivingMode); //TODO
+	if (location) setLocation();
+	if (time) setTime();
+
+
+
+
 
     if (!m_pObjDet) {
         m_pObjDet.reset(new ObjectDetection());
@@ -587,7 +608,38 @@ StringBuffer Scenario::generateMessage() {
     if (depthSize != -1) {
         FrameObjectInfo fObjInfo = m_pObjDet->generateMessage(depth_map, m_stencilBuffer);
         m_pObjDet->exportDetections(fObjInfo);
-        m_pObjDet->exportImage(screenCapturer->pixels);
+		BYTE* data = screenCapturer->pixels;
+        m_pObjDet->exportImage(data);
+
+		//cv::Mat tempMat(cv::Size(s_camParams.width, s_camParams.height), CV_8UC3, data);
+		//std::vector<uchar> buf;
+		//cv::imencode(".png", tempMat, buf);
+
+
+		//uchar *enc_msg = new uchar[buf.size()];
+		//for (int i = 0; i < buf.size(); i++) enc_msg[i] = buf[i];
+		//std::string encoded = base64_encode(enc_msg, buf.size());
+
+		//auto *enc_msg = reinterpret_cast<unsigned char*>(buf.data());
+		//std::string encoded = base64_encode(enc_msg, buf.size());
+
+
+		//std::string encoding = base64_encode(buf.data(), buf.size());
+
+		//Document::AllocatorType& allocator = d.GetAllocator();
+		//Value image_2(kArrayType);
+		//image_2.PushBack("test", allocator).PushBack("test", allocator).PushBack("test", allocator);
+		//d["image_2"] = image_2;
+
+
+		//Document::AllocatorType& allocator = d.GetAllocator();
+		//Value image_2(kStringType);
+		////image_2.PushBack(encoded, allocator);
+		//image_2.PushBack("test", allocator);
+		////d["image_2"] = image_2;
+		//d["image_2"] = image_2;
+
+
         d["index"] = fObjInfo.instanceIdx;
 
         //Create vehicles if it is a stationary scenario
@@ -709,6 +761,27 @@ void Scenario::setBrake(){
 
 void Scenario::setSteering(){
 	d["steering"] = -getFloatValue(m_ownVehicle, 0x924) / 0.6981317008;
+}
+
+void Scenario::setSpeed() {
+	d["speed"] = ENTITY::GET_ENTITY_SPEED(m_ownVehicle);
+}
+
+void Scenario::setYawRate() {
+	Vector3 rates = ENTITY::GET_ENTITY_ROTATION_VELOCITY(m_ownVehicle);
+	d["yawRate"] = rates.z*180.0 / 3.14159265359;
+}
+
+void Scenario::setLocation() {
+	Document::AllocatorType& allocator = d.GetAllocator();
+	Vector3 pos = ENTITY::GET_ENTITY_COORDS(m_ownVehicle, false);
+	Value location(kArrayType);
+	location.PushBack(pos.x, allocator).PushBack(pos.y, allocator).PushBack(pos.z, allocator);
+	d["location"] = location;
+}
+
+void Scenario::setTime() {
+	d["time"] = TIME::GET_CLOCK_HOURS();
 }
 
 void Scenario::setDirection(){

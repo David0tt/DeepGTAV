@@ -32,6 +32,10 @@
 
 4. Use 1080px Screen to fix screen resolution issues
 
+5. Get exact camera position and rotation with 
+
+        CAM::GET_CAM_COORD()
+        CAM::GET_CAM_ROT()
 
 
 
@@ -45,6 +49,9 @@ Would be nice to have:
    - or at least show model loss in the VPilot script (for current location)
 
    - extract UAV height and metadata (rotations etc.)
+   - Send data in messages
+   - In DeepGTAV-PreSIL the TCP-messages are broken. Fix this?
+
 
 
 Speed Comparison (EXPORT_DIR on HDD vs SSD):

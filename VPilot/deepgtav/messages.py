@@ -7,7 +7,7 @@ from numpy.lib.stride_tricks import as_strided
 
 class Scenario:
     def __init__(self, location=None, time=None, weather=None, vehicle=None, drivingMode=None):
-        self.location = location #[x,y,heading] (heading optional)
+        self.location = location #[x,y,z,heading] (heading optional)
         self.time = time #[hour, minute]
         self.weather = weather #string
         self.vehicle = vehicle #string

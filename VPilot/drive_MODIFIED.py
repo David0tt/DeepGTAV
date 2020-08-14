@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from deepgtav.messages import Start, Stop, Scenario, Commands, frame2numpy, GoToLocation, TeleportToLocation, SetCameraPositionAndRotation
+from deepgtav.messages import Start, Stop, Scenario, Dataset, Commands, frame2numpy, GoToLocation, TeleportToLocation, SetCameraPositionAndRotation
 from deepgtav.client import Client
 
 import argparse
 import time
 import cv2
+
+import matplotlib.pyplot as plt
 
 class Model:
     def run(self,frame):
@@ -35,10 +37,12 @@ if __name__ == '__main__':
     # See deepgtav/messages.py to see what options are supported
     # scenario = Scenario(drivingMode=-1) #manual driving (Works, but is too slow to be used)
     # scenario = Scenario(drivingMode=786603) #automatic driving
-    scenario = Scenario(drivingMode=786603, vehicle="buzzard") #automatic driving
+    # scenario = Scenario(drivingMode=786603, vehicle="buzzard") #automatic driving
+    # scenario = Scenario(drivingMode=786603, vehicle="buzzard", location=[-424.991, -522.049, 50]) #automatic driving
+    scenario = Scenario(drivingMode=786603, vehicle="buzzard", location=[-2573.13916015625, 3292.256103515625, 13.241103172302246]) #automatic driving
     # scenario = Scenario(drivingMode=-1, vehicle="buzzard") #automatic driving
 
-    dataset=None
+    dataset=Dataset(showBoxes=True, location=True)
     # dataset = Dataset(recordScenario=True)
     # dataset = Dataset(stationaryScene=True)
    
@@ -60,12 +64,29 @@ if __name__ == '__main__':
     model = Model()
 
     # Start listening for messages coming from DeepGTAV. We do it for 80 hours
-    stoptime = time.time() + 80*3600
+
+    stoptime = time.time() + 80 * 3600
     while time.time() < stoptime:
         try:
             # We receive a message as a Python dictionary
             message = client.recvMessage()  
-                
+            print("vehicles: ", message["vehicles"])
+            print("peds: ", message["peds"])
+            print("location: ", message["location"])
+            print("index: ", message["index"])
+            print("focalLen: ", message["focalLen"])
+            print("curPosition: ", message["curPosition"])
+            print("seriesIndex: ", message["seriesIndex"])
+            
+            print("image_2: ", message["image_2"])
+            frame = message["frame"]
+            image = frame2numpy(frame, (1920,1080))
+            cv2.imshow('img',image)
+            cv2.waitKey(1) # wait 50ms
+            
+            # imgplot = plt.imshow(image)
+            # plt.show()
+
             # client.sendMessage(Commands(throttle=1.))
 
             # The frame is a numpy array that can we pass through a CNN for example     
