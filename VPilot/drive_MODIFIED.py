@@ -133,8 +133,6 @@ if __name__ == '__main__':
     # Adjustments for recording from UAV perspective
     client.sendMessage(SetCameraPositionAndRotation(z = -3, rot_x = -90))
 
-
-
     # Manual Control
     # client.sendMessage(Commands(throttle=1.))
 
@@ -147,7 +145,15 @@ if __name__ == '__main__':
     while time.time() < stoptime:
         try:
             # We receive a message as a Python dictionary
+
+            
             message = client.recvMessage()  
+            
+            # None message from utf-8 decode error
+            # TODO this should be managed better
+            if message == None:
+                continue
+
             print("vehicles: ", message["vehicles"])
             print("peds: ", message["peds"])
             print("location: ", message["location"])
@@ -155,7 +161,6 @@ if __name__ == '__main__':
             print("focalLen: ", message["focalLen"])
             print("curPosition: ", message["curPosition"])
             print("seriesIndex: ", message["seriesIndex"])
-            
             print("bbox2d: ", message["bbox2d"])
 
 
@@ -181,5 +186,6 @@ if __name__ == '__main__':
     # We tell DeepGTAV to stop
     client.sendMessage(Stop())
     client.close()
+
 
 

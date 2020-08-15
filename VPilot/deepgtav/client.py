@@ -57,7 +57,13 @@ class Client:
         if not data: 
             print('ERROR: Failed to receive message')       
             return None
-        return self.targets.parse(frame, data.decode('utf-8'))
+
+        try:
+            message = self.targets.parse(frame, data.decode('utf-8'))
+        except UnicodeDecodeError:
+            # TODO this should be managed better than just setting None
+            message = None
+        return message
 
     def _recvall(self):
         #Receive first size of message in bytes

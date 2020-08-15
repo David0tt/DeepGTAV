@@ -136,3 +136,4 @@ class SetCameraPositionAndRotation:
     
     def to_json(self):
         return json.dumps({'SetCameraPositionAndRotation':self.__dict__})
+

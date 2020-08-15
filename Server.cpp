@@ -119,10 +119,10 @@ void Server::checkRecvMessage() {
 		scenario.stop();
 	}
 	else if (d.HasMember("GoToLocation")) {
-
+		//TODO
 	}
 	else if (d.HasMember("TeleportToLocation")) {
-
+		//TODO
 	}
 	else if (d.HasMember("SetCameraPositionAndRotation")) {
 		printf("New Camera Settings received\n");
