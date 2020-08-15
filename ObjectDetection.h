@@ -174,7 +174,8 @@ public:
     bool m_prevDepth = false;
 
     FrameObjectInfo generateMessage(float* pDepth, uint8_t* pStencil, int entityID = -1);
-    void exportDetections(FrameObjectInfo fObjInfo, ObjEntity* vPerspective = NULL);
+	std::string exportDetectionsString(FrameObjectInfo fObjInfo, ObjEntity * vPerspective = NULL);
+	void exportDetections(FrameObjectInfo fObjInfo, ObjEntity* vPerspective = NULL);
     void exportImage(BYTE* data, std::string filename = "");
     void increaseIndex();
     std::string getStandardFilename(std::string subDir, std::string extension);
