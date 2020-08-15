@@ -268,7 +268,7 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
     d.AddMember("focalLen", 0.0, allocator);
     d.AddMember("curPosition", a, allocator);
     d.AddMember("seriesIndex", a, allocator);
-	d.AddMember("image_2", a, allocator);
+	d.AddMember("bbox2d", a, allocator);
 
 	screenCapturer = new ScreenCapturer(s_camParams.width, s_camParams.height);
 }
@@ -608,6 +608,27 @@ StringBuffer Scenario::generateMessage() {
     if (depthSize != -1) {
         FrameObjectInfo fObjInfo = m_pObjDet->generateMessage(depth_map, m_stencilBuffer);
         m_pObjDet->exportDetections(fObjInfo);
+
+		const std::string detections = m_pObjDet->exportDetectionsString(fObjInfo);
+
+		// set BBoxes to send as JSON
+		Document::AllocatorType& allocator = d.GetAllocator();
+		Value bbox2d(kArrayType);
+		//Value det;
+		//char buffer[10];
+		//int len = sprintf(buffer, detections)
+		//s.SetString("test");
+		//const char *c = detections.c_str();
+
+		//const char buffer[detections.length()];
+
+
+		bbox2d.SetString(StringRef(detections.c_str()));
+
+		//bbox2d.PushBack(detections, allocator);
+		d["bbox2d"] = bbox2d;
+
+
 		BYTE* data = screenCapturer->pixels;
         m_pObjDet->exportImage(data);
 
