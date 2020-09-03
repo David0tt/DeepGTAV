@@ -155,9 +155,9 @@ if __name__ == '__main__':
     # Dummy agent
     model = Model()
 
-    # Start listening for messages coming from DeepGTAV. We do it for 16 hours
+    # Start listening for messages coming from DeepGTAV. We do it for 20 hours
 
-    stoptime = time.time() + 16 * 3600
+    stoptime = time.time() + 20 * 3600
     count = 0
     bbox2d_old = ""
     errors = []
@@ -170,8 +170,9 @@ if __name__ == '__main__':
 
 
 
-    currentTravelHeight = 10
+    currentTravelHeight = 100
     x_target, y_target = generateNewTargetLocation(-1960, 1900, -3360, 2000)
+    # x_target, y_target = (-182.139, -507.529)
     correcting_height = False
 
 
