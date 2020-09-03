@@ -29,6 +29,8 @@ private:
 	static char* weatherList[14];
 	static char* vehicleList[3];
 
+	bool recording_active = false;
+
 	Vehicle m_ownVehicle = NULL;
 	Player player = NULL;
 	Ped ped = NULL;
@@ -110,7 +112,10 @@ public:
 	StringBuffer generateMessage();
 
     void setRenderingCam(Vehicle v, int height, int length);
-    void setCameraPositionAndRotation(float x, float y, float z, float rot_x, float rot_y, float rot_z);
+	void setRecording_active(bool x);
+	void goToLocation(float x, float y, float z, float setSpeed);
+	void teleportToLocation(float x, float y, float z);
+	void setCameraPositionAndRotation(float x, float y, float z, float rot_x, float rot_y, float rot_z);
     void generateSecondaryPerspectives();
     void generateSecondaryPerspective(ObjEntity vInfo);
     void capture();

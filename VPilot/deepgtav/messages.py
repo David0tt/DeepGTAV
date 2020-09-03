@@ -100,16 +100,29 @@ def frame2numpy(frame, frameSize):
     # Return a copy because custom strides are not supported by OpenCV.
     return as_strided(buff, strides=(strideWidth, 3, 1), shape=(frameSize[1], frameSize[0], 3)).copy()
 
+# TODO not yet implemented in DeepGTAV-PreSIL
+class StartRecording:
+    def to_json(self):
+        return json.dumps({'StartRecording':None}) #super dummy
+
+# TODO not yet implemented in DeepGTAV-PreSIL
+class StopRecording:
+    def to_json(self):
+        return json.dumps({'StopRecording':None}) #super dummy
+
+
 
 # A command to use the AI in GTAV to walk to the specified location, from the current location
 class GoToLocation:
-    def __init__(self, x, y, z):
+    def __init__(self, x, y, z, speed = 20.0):
         self.x = x
         self.y = y
         self.z = z
+        self.speed = speed
     
     def to_json(self):
         return json.dumps({'GoToLocation':self.__dict__})
+    
 
 # A command to Teleport to the specified location
 class TeleportToLocation:

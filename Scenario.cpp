@@ -558,7 +558,7 @@ StringBuffer Scenario::generateMessage() {
 
 	int depthSize = -1;
 
-	if (!NO_CAPTURE_FOR_DEBUG) {
+	if (recording_active) {
 		//TODO pass this through
 		bool depthMap = true;
 
@@ -721,6 +721,66 @@ void Scenario::setRenderingCam(Vehicle v, int height, int length) {
         "\nOffset: " << offset.x << ", " << offset.y << ", " << offset.z <<
         "\nOffsetworld: " << offsetWorld.x << ", " << offsetWorld.y << ", " << offsetWorld.z;
     log(oss.str(), true);
+}
+
+void Scenario::setRecording_active(bool x) {
+	recording_active = x;
+}
+
+void Scenario::goToLocation(float x, float y, float z, float speed) {
+	Hash vehicleHash;
+	vehicleHash = GAMEPLAY::GET_HASH_KEY((char*)_vehicle);
+
+	AI::CLEAR_PED_TASKS(ped);
+	AI::TASK_VEHICLE_DRIVE_TO_COORD(ped, m_ownVehicle, x, y, z, speed, Any(1.f), vehicleHash, _drivingMode, 2.f, true);
+}
+
+void Scenario::teleportToLocation(float x, float y, float z) {
+	//Hash vehicleHash;
+	//float heading;
+
+	//ENTITY::DELETE_ENTITY(&m_ownVehicle);
+	//vehicleHash = GAMEPLAY::GET_HASH_KEY((char*)_vehicle);
+	//STREAMING::REQUEST_MODEL(vehicleHash);
+
+	//m_ownVehicle = VEHICLE::CREATE_VEHICLE(vehicleHash, x, y, z, heading, FALSE, FALSE);
+	////VEHICLE::SET_VEHICLE_ON_GROUND_PROPERLY(m_ownVehicle);
+
+	//while (!ENTITY::DOES_ENTITY_EXIST(ped)) {
+	//	ped = PLAYER::PLAYER_PED_ID();
+	//	WAIT(0);
+	//}
+
+	//player = PLAYER::PLAYER_ID();
+
+
+	//PLAYER::START_PLAYER_TELEPORT(player, x, y, z, heading, 0, 0, 0);
+	//while (PLAYER::IS_PLAYER_TELEPORT_ACTIVE()) WAIT(0);
+
+	//PED::SET_PED_INTO_VEHICLE(ped, m_ownVehicle, -1);
+	//STREAMING::SET_MODEL_AS_NO_LONGER_NEEDED(vehicleHash);
+
+
+	//ENTITY::SET_ENTITY_COORDS(m_ownVehicle, x, y, z, 0, 0, 1);
+	ENTITY::SET_ENTITY_COORDS_NO_OFFSET(m_ownVehicle, x, y, z, 0, 0, 1);
+	ENTITY::SET_ENTITY_HAS_GRAVITY(m_ownVehicle, false);
+
+	bool isStrong = true;
+	int forceFlags = 0u;
+	if (isStrong) forceFlags |= (1u << 0);
+	//Set first bit	
+	//LAST BOOL HAS TO BE FALSE (SCRIPT STOPS RUNNING)
+	bool isDirRel = false;
+	bool isMassRel = false;
+	ENTITY::APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(m_ownVehicle, forceFlags, 0, 0, 5000, FALSE, isDirRel, isMassRel, FALSE);
+	//ENTITY::APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(m_ownVehicle, 0, 0, 0, 50, false, BOOL p6, BOOL p7, BOOL p8);
+	//ENTITY::APPLY_FORCE_TO_ENTITY(Entity entity, int forceType, float x, float y, float z, float xRot, float yRot, float zRot, int p8, BOOL isRel, BOOL ignoreUpVec, BOOL p11, BOOL p12, BOOL p13);
+
+	// TODO try to set vehicle controls (e.g. rotors half speed at start
+
+	//SIMULATE_PLAYER_INPUT_GAIT(Player player, float amount, int gaitType, float speed, BOOL p4, BOOL p5) { invoke<Void>(0x477D5D63E63ECA5D, player, amount, gaitType, speed, p4, p5); } // 0x477D5D63E63ECA5D 0x0D77CC34
+	//static void RESET_PLAYER_INPUT_GAIT(Player player)
+
 }
 
 void Scenario::setCameraPositionAndRotation(float x, float y, float z, float rot_x, float rot_y, float rot_z) {

@@ -118,11 +118,19 @@ void Server::checkRecvMessage() {
 		sendOutputs = false;
 		scenario.stop();
 	}
+	else if (d.HasMember("StartRecording")) {
+		scenario.setRecording_active(true);
+	}
+	else if (d.HasMember("StopRecording")) {
+		scenario.setRecording_active(false);
+	}
 	else if (d.HasMember("GoToLocation")) {
-		//TODO
+		const Value& target = d["GoToLocation"];
+		scenario.goToLocation(target["x"].GetFloat(), target["y"].GetFloat(), target["z"].GetFloat(), target["speed"].GetFloat());
 	}
 	else if (d.HasMember("TeleportToLocation")) {
-		//TODO
+		const Value& target = d["TeleportToLocation"];
+		scenario.teleportToLocation(target["x"].GetFloat(), target["y"].GetFloat(), target["z"].GetFloat());
 	}
 	else if (d.HasMember("SetCameraPositionAndRotation")) {
 		printf("New Camera Settings received\n");

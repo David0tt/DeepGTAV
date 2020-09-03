@@ -66,3 +66,33 @@ SSD + Only one Agent | 1060 | 3.13 GB
 SSD is a speedup by 1 - 2.9/2.5 = 16%
 
 Used file space is OK
+
+
+
+
+Add "Time taken" field?
+
+
+The recording only works correctly on a 1080p display in windowed (no border) mode
+
+Increase recording speed by disabling unnecessary recordings
+esp. LiDAR Data
+
+
+The pathfinding from PreSIL with `dir` from `"direction"` in `dataset` does similar things as my newly added `GoToLocation` and `TeleportToLocation` Messages. This should be fixed for code quality
+
+
+
+# Changes
+
+# Changes I have made to DeepGTAV-PreSIL
+
+- Added Functionality for UAV Recording
+- Added Handeling for Messages `GoToLocation`, `SetCameraPositionAndRotation`, `TeleportToLocation`
+- Restored messaging functionality (The fields in the returned JSON `frame`, `location`,... (This worked in DeepGTAV, but not in DeepGTAV-PreSIL)
+
+
+# Things to note
+
+- DeepGTAV-PreSIL has the setting `GENERATE_SECONDARY_PERSPECTIVES` which also records from the position of all cars in the proximity of the player vehicle. This would not work for the UAV-perspective. Some of the changes I have made could possibly clash with this. 
+  - From some Benchmarking I have made this setting could not even be that useful. I record ~20% more images/minute only from player perspective without this setting.

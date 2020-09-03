@@ -65,6 +65,8 @@ def add_bboxes(image, bboxes):
 
     
 def parseBBox2d(bbox2d):
+    if bbox2d == None:
+        return []
     items = bbox2d.split("\n")
     ret = []
     for item in items[:-1]:
@@ -117,7 +119,8 @@ if __name__ == '__main__':
     # scenario = Scenario(drivingMode=786603) #automatic driving
     # scenario = Scenario(drivingMode=786603, vehicle="buzzard") #automatic driving
     # scenario = Scenario(drivingMode=786603, vehicle="buzzard", location=[-424.991, -522.049, 50]) #automatic driving
-    scenario = Scenario(drivingMode=786603, vehicle="buzzard", location=[-2573.13916015625, 3292.256103515625, 13.241103172302246]) #automatic driving
+    scenario = Scenario(drivingMode=786603, vehicle="buzzard", location=[245.23306274414062, -998.244140625, 29.205352783203125]) #automatic driving
+    # scenario = Scenario(drivingMode=[786603, 20.0], vehicle="buzzard", location=[275.23306274414062, -998.244140625, 29.205352783203125]) #automatic driving
     # scenario = Scenario(drivingMode=-1, vehicle="buzzard") #automatic driving
 
     dataset=Dataset(showBoxes=True, location=True)
@@ -142,10 +145,17 @@ if __name__ == '__main__':
     # Start listening for messages coming from DeepGTAV. We do it for 80 hours
 
     stoptime = time.time() + 80 * 3600
+    count = 0
     while time.time() < stoptime:
         try:
             # We receive a message as a Python dictionary
+            count += 1
 
+            if count == 2:
+                client.sendMessage(TeleportToLocation(955.23306274414062, -998.244140625, 200.205352783203125))
+                # client.sendMessage(GoToLocation(1955.23306274414062, -998.244140625, 50.205352783203125))
+            # if count == 2:
+            #     client.sendMessage(GoToLocation(955.23306274414062, -998.244140625, 50.205352783203125, 20.0))
             
             message = client.recvMessage()  
             
@@ -162,7 +172,6 @@ if __name__ == '__main__':
             print("curPosition: ", message["curPosition"])
             print("seriesIndex: ", message["seriesIndex"])
             print("bbox2d: ", message["bbox2d"])
-
 
             img = add_bboxes(frame2numpy(message['frame'], (1920,1080)), parseBBox2d(message["bbox2d"]))
             cv2.imshow("test", img)
