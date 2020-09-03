@@ -149,38 +149,61 @@ if __name__ == '__main__':
 
     stoptime = time.time() + 80 * 3600
     count = 0
+    bbox2d_old = ""
+    errors = []
     while time.time() < stoptime:
         try:
             # We receive a message as a Python dictionary
             count += 1
             print("count: ", count)
 
+
+            if count % 10 == 0:
+                client.sendMessage(StartRecording())
+            if count % 10 == 1:
+                client.sendMessage(StopRecording())
+
             if count == 2:
                 client.sendMessage(TeleportToLocation(955.23306274414062, -998.244140625, 200.205352783203125))
                 client.sendMessage(GoToLocation(1955.23306274414062, -998.244140625, 50.205352783203125))
+            # if count == 50:
+            #     client.sendMessage(TeleportToLocation(955.23306274414062, -998.244140625, 200.205352783203125))
+            #     client.sendMessage(GoToLocation(1955.23306274414062, -998.244140625, 50.205352783203125))
+            
+            # if count == 100:
+            #     client.sendMessage(TeleportToLocation(1555.23306274414062, -998.244140625, 200.205352783203125))
+            #     client.sendMessage(GoToLocation(1955.23306274414062, -998.244140625, 50.205352783203125))
+            
+            # if count == 110:
+            #     client.sendMessage(StartRecording())
+
+            # if count == 120:
+            #     client.sendMessage(StopRecording())
+            # if count == 150:
+            #     client.sendMessage(StartRecording())
+
+            # if count == 170:
+            #     client.sendMessage(StopRecording())
+            # if count == 172:
+            #     client.sendMessage(TeleportToLocation(955.23306274414062, -998.244140625, 200.205352783203125))
+            #     client.sendMessage(GoToLocation(1955.23306274414062, -998.244140625, 50.205352783203125))
+            # if count == 180:
+            #     client.sendMessage(StartRecording())
+
             if count == 50:
-                client.sendMessage(TeleportToLocation(955.23306274414062, -998.244140625, 200.205352783203125))
-                client.sendMessage(GoToLocation(1955.23306274414062, -998.244140625, 50.205352783203125))
-            
-            if count == 100:
-                client.sendMessage(TeleportToLocation(1555.23306274414062, -998.244140625, 200.205352783203125))
-                client.sendMessage(GoToLocation(1955.23306274414062, -998.244140625, 50.205352783203125))
-            
-            if count == 110:
-                client.sendMessage(StartRecording())
+                client.sendMessage(GoToLocation(1955.23306274414062, 998.244140625, 50.205352783203125))
 
-            if count == 120:
-                client.sendMessage(StopRecording())
-            if count == 150:
-                client.sendMessage(StartRecording())
+            if count == 200:
+                client.sendMessage(GoToLocation(1955.23306274414062, 2998.244140625, 50.205352783203125))
 
-            if count == 170:
-                client.sendMessage(StopRecording())
-            if count == 172:
-                client.sendMessage(TeleportToLocation(955.23306274414062, -998.244140625, 200.205352783203125))
-                client.sendMessage(GoToLocation(1955.23306274414062, -998.244140625, 50.205352783203125))
-            if count == 180:
-                client.sendMessage(StartRecording())
+            if count == 300:
+                client.sendMessage(GoToLocation(1955.23306274414062, 2998.244140625, 20.205352783203125))
+            if count == 400:
+                client.sendMessage(GoToLocation(1955.23306274414062, -2998.244140625, 20.205352783203125))
+            if count == 500:
+                client.sendMessage(GoToLocation(-1955.23306274414062, -2998.244140625, 20.205352783203125))
+
+
 
             # if count == 2:
             #     client.sendMessage(GoToLocation(955.23306274414062, -998.244140625, 50.205352783203125, 20.0))
@@ -194,18 +217,25 @@ if __name__ == '__main__':
             if message == None:
                 continue
 
-            print("vehicles: ", message["vehicles"])
-            print("peds: ", message["peds"])
-            print("location: ", message["location"])
-            print("index: ", message["index"])
-            print("focalLen: ", message["focalLen"])
-            print("curPosition: ", message["curPosition"])
-            print("seriesIndex: ", message["seriesIndex"])
+            # print("vehicles: ", message["vehicles"])
+            # print("peds: ", message["peds"])
+            # print("location: ", message["location"])
+            # print("index: ", message["index"])
+            # print("focalLen: ", message["focalLen"])
+            # print("curPosition: ", message["curPosition"])
+            # print("seriesIndex: ", message["seriesIndex"])
             print("bbox2d: ", message["bbox2d"])
 
-            img = add_bboxes(frame2numpy(message['frame'], (1920,1080)), parseBBox2d(message["bbox2d"]))
-            cv2.imshow("test", img)
-            cv2.waitKey(1) 
+            if message["bbox2d"] != bbox2d_old:
+                try: # Sometimes there are errors with the message, i catch those here
+                    img = add_bboxes(frame2numpy(message['frame'], (1920,1080)), parseBBox2d(message["bbox2d"]))
+                    cv2.imshow("test", img)
+                    cv2.waitKey(1) 
+                    bbox2d_old = message["bbox2d"]
+                except Exception as e:
+                    print(Exception)
+                    errors.append(e)
+
 
 
             
@@ -225,6 +255,4 @@ if __name__ == '__main__':
     # We tell DeepGTAV to stop
     client.sendMessage(Stop())
     client.close()
-
-
 
