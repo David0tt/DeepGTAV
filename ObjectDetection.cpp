@@ -211,22 +211,25 @@ FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStenci
     setFocalLength();
     log("After focalLength");
 
-    //Update 2D bboxes, and create segmentation of stencil values
-    processSegmentation2D();
-    processSegmentation3D();
-    processOcclusion();
+	//Update 2D bboxes, and create segmentation of stencil values
+	processSegmentation2D();
+	processSegmentation3D();
+	processOcclusion();
 
-    if (pointclouds && lidar_initialized) collectLiDAR();
-    update3DPointsHit();
+	if (pointclouds && lidar_initialized) collectLiDAR();
+	update3DPointsHit();
 
-    if (depthMap && lidar_initialized) printSegImage();
-    log("After printSeg");
-    if (depthMap && lidar_initialized) outputOcclusion();
-    log("After output occlusion");
-    if (depthMap && lidar_initialized) outputUnusedStencilPixels();
-    log("After output unused stencil");
+    // TODO Don't run these?
+	if (!ONLY_COLLECT_IMAGE_AND_BBOXES) {
+		if (depthMap && lidar_initialized) printSegImage();
+		log("After printSeg");
+		if (depthMap && lidar_initialized) outputOcclusion();
+		log("After output occlusion");
+		if (depthMap && lidar_initialized) outputUnusedStencilPixels();
+		log("After output unused stencil");
 
-    setGroundPlanePoints();
+		setGroundPlanePoints();
+	}
 
     return m_curFrame;
 }
@@ -1649,10 +1652,12 @@ void ObjectDetection::collectLiDAR() {
     lidar.updateCurrentPosition(m_camForwardVector, m_camRightVector, m_camUpVector);
     float * pointCloud = lidar.GetPointClouds(pointCloudSize, &m_entitiesHit, lidar_param, m_pDepth, m_pInstanceSeg, m_vehicle);
 
-    std::ofstream ofile(m_veloFilename, std::ios::binary);
-    ofile.write((char*)pointCloud, FLOATS_PER_POINT * sizeof(float)*pointCloudSize);
-    ofile.close();
-
+	if (!ONLY_COLLECT_IMAGE_AND_BBOXES) {
+		std::ofstream ofile(m_veloFilename, std::ios::binary);
+		ofile.write((char*)pointCloud, FLOATS_PER_POINT * sizeof(float)*pointCloudSize);
+		ofile.close();
+	}
+    
     if (OUTPUT_RAYCAST_POINTS) {
         int pointCloudSize2;
         float* pointCloud2 = lidar.GetRaycastPointcloud(pointCloudSize2);
@@ -1709,9 +1714,11 @@ void ObjectDetection::setStencilBuffer() {
     log("About to set stencil buffer");
     int size = s_camParams.width * s_camParams.height;
 
-    std::ofstream ofile(m_stencilFilename, std::ios::binary);
-    ofile.write((char*)m_pStencil, size);
-    ofile.close();
+	if (!ONLY_COLLECT_IMAGE_AND_BBOXES) {
+		std::ofstream ofile(m_stencilFilename, std::ios::binary);
+		ofile.write((char*)m_pStencil, size);
+		ofile.close();
+	}
 
     std::vector<int> stencilValues;
     log("After writing stencil buffer");
@@ -1812,9 +1819,11 @@ void ObjectDetection::setDepthBuffer(bool prevDepth) {
         depthPCFilename = m_depthPCFilenameU;
     }
 
-    std::ofstream ofile(m_depthFilename, std::ios::binary);
-    ofile.write((char*)m_pDepth, size * sizeof(float));
-    ofile.close();
+	if (!ONLY_COLLECT_IMAGE_AND_BBOXES) {
+		std::ofstream ofile(m_depthFilename, std::ios::binary);
+		ofile.write((char*)m_pDepth, size * sizeof(float));
+		ofile.close();
+	}
 
     int nonzero = 0;
     if (OUTPUT_DM_POINTCLOUD || OUTPUT_GROUND_PIXELS) {
@@ -2410,27 +2419,32 @@ void ObjectDetection::exportDetections(FrameObjectInfo fObjInfo, ObjEntity* vPer
     if (collectTracking) {
         //TODO
     }
-    FILE* f = fopen(m_labelsFilename.c_str(), "w");
-    std::ostringstream oss;
 
-    exportEntities(fObjInfo.vehicles, oss, false, false, true, OBJECT_MAX_DIST, 1, 1);
-    exportEntities(fObjInfo.peds, oss, false, false, true, OBJECT_MAX_DIST, 1, 1);
+	FILE* f;
+	if (!ONLY_COLLECT_IMAGE_AND_BBOXES) {
+		f = fopen(m_labelsFilename.c_str(), "w");
+		std::ostringstream oss;
 
-    std::string str = oss.str();
-    fprintf(f, str.c_str());
-    fclose(f);
+		exportEntities(fObjInfo.vehicles, oss, false, false, true, OBJECT_MAX_DIST, 1, 1);
+		exportEntities(fObjInfo.peds, oss, false, false, true, OBJECT_MAX_DIST, 1, 1);
 
-    if (OUTPUT_UNPROCESSED_LABELS) {
-        f = fopen(m_labelsUnprocessedFilename.c_str(), "w");
-        std::ostringstream oss1;
+		std::string str = oss.str();
+		fprintf(f, str.c_str());
+		fclose(f);
 
-        exportEntities(fObjInfo.vehicles, oss1, true, false, true, OBJECT_MAX_DIST, 1, 1);
-        exportEntities(fObjInfo.peds, oss1, true, false, true, OBJECT_MAX_DIST, 1, 1);
+		if (OUTPUT_UNPROCESSED_LABELS) {
+			f = fopen(m_labelsUnprocessedFilename.c_str(), "w");
+			std::ostringstream oss1;
 
-        std::string str1 = oss1.str();
-        fprintf(f, str1.c_str());
-        fclose(f);
-    }
+			exportEntities(fObjInfo.vehicles, oss1, true, false, true, OBJECT_MAX_DIST, 1, 1);
+			exportEntities(fObjInfo.peds, oss1, true, false, true, OBJECT_MAX_DIST, 1, 1);
+
+			std::string str1 = oss1.str();
+			fprintf(f, str1.c_str());
+			fclose(f);
+		}
+
+	}
 
     f = fopen(m_labelsAugFilename.c_str(), "w");
     std::ostringstream oss2;
@@ -2443,8 +2457,10 @@ void ObjectDetection::exportDetections(FrameObjectInfo fObjInfo, ObjEntity* vPer
     fprintf(f, str2.c_str());
     fclose(f);
 
-    exportCalib();
-
+	if (!ONLY_COLLECT_IMAGE_AND_BBOXES) {
+		exportCalib();
+	}
+    
     if (GENERATE_SECONDARY_PERSPECTIVES) {
         exportPosition();
         if (!vPerspective) {

@@ -109,7 +109,8 @@ const bool PROCESS_OVERLAPPING_POINTS = false;
 const bool AUGMENT_ALL_VEHICLES_IN_RANGE = true;
 
 //Prevents writing the recorded data to disk. This is meant to improve speed when only using the data sent via the TCP-Server
+//THIS FUNCTIONALITY IS NOT IMPLEMENTED YET!
 const bool DO_NOT_WRITE_TO_DISK = true;
 
-//Only collect image data and bounding boxes to improve speed for this task
+//Only collects and writes to file system image data and bounding boxes to improve speed for this task
 const bool ONLY_COLLECT_IMAGE_AND_BBOXES = true;
