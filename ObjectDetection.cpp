@@ -2395,8 +2395,11 @@ void ObjectDetection::exportCalib() {
 std::string ObjectDetection::exportDetectionsString(FrameObjectInfo fObjInfo, ObjEntity* vPerspective) {
 	std::ostringstream oss;
 
-	exportEntities(fObjInfo.vehicles, oss, false, false, true, OBJECT_MAX_DIST, 1, 1);
-	exportEntities(fObjInfo.peds, oss, false, false, true, OBJECT_MAX_DIST, 1, 1);
+	//exportEntities(fObjInfo.vehicles, oss, false, false, true, OBJECT_MAX_DIST, 1, 1);
+	//exportEntities(fObjInfo.peds, oss, false, false, true, OBJECT_MAX_DIST, 1, 1);
+
+	exportEntities(fObjInfo.vehicles, oss, false, true, false);
+	exportEntities(fObjInfo.peds, oss, false, true, false);
 
 	std::string str = oss.str();
 	
