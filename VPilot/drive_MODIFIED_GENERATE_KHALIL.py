@@ -213,35 +213,35 @@ if __name__ == '__main__':
             currentTravelHeight
             
             
-            # estimated_ground_height = message["location"][2] - message["HeightAboveGround"]
+            estimated_ground_height = message["location"][2] - message["HeightAboveGround"]
 
-            # # if we are near the target location generate a new target location
-            # if sqrt((message["location"][0] - x_target) ** 2 + (message["location"][1] - y_target) ** 2) < 10:
-            #     x_target, y_target = generateNewTargetLocation(-1960, 1900, -3360, 2000)
-            #     client.sendMessage(GoToLocation(x_target, y_target, estimated_ground_height + currentTravelHeight))
-            #     print("Going to new loctation: ", x_target, y_target, currentTravelHeight)
+            # if we are near the target location generate a new target location
+            if sqrt((message["location"][0] - x_target) ** 2 + (message["location"][1] - y_target) ** 2) < 10:
+                x_target, y_target = generateNewTargetLocation(-1960, 1900, -3360, 2000)
+                client.sendMessage(GoToLocation(x_target, y_target, estimated_ground_height + currentTravelHeight))
+                print("Going to new loctation: ", x_target, y_target, currentTravelHeight)
 
 
 
-            # # keep the currentTravelHeight under the wanted one
-            # # Move a little bit in the desired direction but primarily correct the height
-            # if message["HeightAboveGround"] > currentTravelHeight + 3 or message["HeightAboveGround"] < currentTravelHeight - 3:
-            #     direction = np.array([x_target - message["location"][0], y_target - message["location"][1]])
-            #     direction = direction / np.linalg.norm(direction)
-            #     direction = direction * 50
-            #     x_temporary = message["location"][0] + direction[0]
-            #     y_temporary = message["location"][1] + direction[1]
-            #     client.sendMessage(GoToLocation(x_temporary, y_temporary, estimated_ground_height + currentTravelHeight))
-            #     correcting_height = True
-            #     print("Correcting height")
-            # # elif correcting_height:
-            # #     # end height correction
-            # #     client.sendMessage(GoToLocation(x_target, y_target, currentTravelHeight))
-            # #     correcting_height = False
-            # else:
+            # keep the currentTravelHeight under the wanted one
+            # Move a little bit in the desired direction but primarily correct the height
+            if message["HeightAboveGround"] > currentTravelHeight + 3 or message["HeightAboveGround"] < currentTravelHeight - 3:
+                direction = np.array([x_target - message["location"][0], y_target - message["location"][1]])
+                direction = direction / np.linalg.norm(direction)
+                direction = direction * 50
+                x_temporary = message["location"][0] + direction[0]
+                y_temporary = message["location"][1] + direction[1]
+                client.sendMessage(GoToLocation(x_temporary, y_temporary, estimated_ground_height + currentTravelHeight))
+                correcting_height = True
+                print("Correcting height")
+            # elif correcting_height:
             #     # end height correction
-            #     client.sendMessage(GoToLocation(x_target, y_target, estimated_ground_height + currentTravelHeight))
+            #     client.sendMessage(GoToLocation(x_target, y_target, currentTravelHeight))
             #     correcting_height = False
+            else:
+                # end height correction
+                client.sendMessage(GoToLocation(x_target, y_target, estimated_ground_height + currentTravelHeight))
+                correcting_height = False
 
             print("current target: ", x_target, y_target, currentTravelHeight)
             print("current location: ", message["location"])
