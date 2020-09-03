@@ -79,13 +79,13 @@ const float GROUND_POINT_MAX_DIST = 0.1;//in metres
 const bool OUTPUT_GROUND_PIXELS = false;
 
 //Outputs separate stencil segmentation images for each stencil value
-const bool OUTPUT_SEPARATE_STENCILS = true;
+const bool OUTPUT_SEPARATE_STENCILS = false;
 
 //Outputs stencil image which shows stencil of some classes (for debugging)
 const bool OUTPUT_STENCIL_IMAGE = false;
 
 //Needs OUTPUT_SEPARATE_STENCILS to be true, only outputs log messages for values which are unknown 
-const bool ONLY_OUTPUT_UNKNOWN_STENCILS = true;
+const bool ONLY_OUTPUT_UNKNOWN_STENCILS = false;
 
 //If set to true DeepGTAV outputs all information from nearby vehicles within specified range
 const bool GENERATE_SECONDARY_PERSPECTIVES = false;
