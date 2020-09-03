@@ -269,6 +269,7 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
     d.AddMember("curPosition", a, allocator);
     d.AddMember("seriesIndex", a, allocator);
 	d.AddMember("bbox2d", a, allocator);
+	d.AddMember("HeightAboveGround", 0.0, allocator);
 
 	screenCapturer = new ScreenCapturer(s_camParams.width, s_camParams.height);
 }
@@ -595,7 +596,7 @@ StringBuffer Scenario::generateMessage() {
 	if (drivingMode); //TODO
 	if (location) setLocation();
 	if (time) setTime();
-
+	setHeightAboveGround();
 
 
 
@@ -863,6 +864,10 @@ void Scenario::setLocation() {
 
 void Scenario::setTime() {
 	d["time"] = TIME::GET_CLOCK_HOURS();
+}
+
+void Scenario::setHeightAboveGround() {
+	d["HeightAboveGround"] = ENTITY::GET_ENTITY_HEIGHT_ABOVE_GROUND(m_ownVehicle);
 }
 
 void Scenario::setDirection(){

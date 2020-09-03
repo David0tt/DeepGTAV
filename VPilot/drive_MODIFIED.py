@@ -78,7 +78,10 @@ def parseBBox2d(bbox2d):
         top = int(data[5])
         right = int(data[6])
         bottom = int(data[7])
-        ret.append({"label": label,"left": left,"top": top,"right": right,"bottom": bottom})
+
+        # ignore 1920 1080 0 0 boxes
+        if not (left > right or top > bottom):
+            ret.append({"label": label,"left": left,"top": top,"right": right,"bottom": bottom})
     return ret
 
 
@@ -145,9 +148,9 @@ if __name__ == '__main__':
     # Dummy agent
     model = Model()
 
-    # Start listening for messages coming from DeepGTAV. We do it for 80 hours
+    # Start listening for messages coming from DeepGTAV. We do it for 16 hours
 
-    stoptime = time.time() + 80 * 3600
+    stoptime = time.time() + 16 * 3600
     count = 0
     bbox2d_old = ""
     errors = []
@@ -157,11 +160,15 @@ if __name__ == '__main__':
             count += 1
             print("count: ", count)
 
-
+            # Only record every 10th frame
             if count % 10 == 0:
                 client.sendMessage(StartRecording())
             if count % 10 == 1:
                 client.sendMessage(StopRecording())
+
+
+            
+
 
             if count == 2:
                 client.sendMessage(TeleportToLocation(955.23306274414062, -998.244140625, 200.205352783203125))
@@ -216,6 +223,17 @@ if __name__ == '__main__':
             # TODO this should be managed better
             if message == None:
                 continue
+
+            # Go to some random location in area 
+            # x in [-1960, 1900]
+            # y in [-3360, 2000]
+            # This is the metropolitan area and some outskirts
+            # locations can be found here https://www.gtagmodding.com/maps/gta5/
+
+            # currentTravelHeight = 
+
+            # keep the currentTravelHeight under the wanted one
+            # if currentTravelHeight < message["location"]
 
             # print("vehicles: ", message["vehicles"])
             # print("peds: ", message["peds"])

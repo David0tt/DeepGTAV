@@ -155,6 +155,7 @@ private:
 	void setYawRate();
 	void setLocation();
 	void setTime();
+	void setHeightAboveGround();
     void drawBoxes(Vector3 BLL, Vector3 FUR, Vector3 dim, Vector3 upVector, Vector3 rightVector, Vector3 forwardVector, Vector3 position, int colour);
     void createVehicles();
     void createVehicle(const char* model, float relativeForward, float relativeRight, float heading, int color, int color2);
