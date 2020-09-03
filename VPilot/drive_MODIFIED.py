@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from deepgtav.messages import Start, Stop, Scenario, Dataset, Commands, frame2numpy, GoToLocation, TeleportToLocation, SetCameraPositionAndRotation
+from deepgtav.messages import StartRecording, StopRecording
 from deepgtav.client import Client
 
 import argparse
@@ -136,6 +137,8 @@ if __name__ == '__main__':
     # Adjustments for recording from UAV perspective
     client.sendMessage(SetCameraPositionAndRotation(z = -3, rot_x = -90))
 
+    # client.sendMessage(StartRecording())
+
     # Manual Control
     # client.sendMessage(Commands(throttle=1.))
 
@@ -150,13 +153,40 @@ if __name__ == '__main__':
         try:
             # We receive a message as a Python dictionary
             count += 1
+            print("count: ", count)
 
             if count == 2:
                 client.sendMessage(TeleportToLocation(955.23306274414062, -998.244140625, 200.205352783203125))
-                # client.sendMessage(GoToLocation(1955.23306274414062, -998.244140625, 50.205352783203125))
+                client.sendMessage(GoToLocation(1955.23306274414062, -998.244140625, 50.205352783203125))
+            if count == 50:
+                client.sendMessage(TeleportToLocation(955.23306274414062, -998.244140625, 200.205352783203125))
+                client.sendMessage(GoToLocation(1955.23306274414062, -998.244140625, 50.205352783203125))
+            
+            if count == 100:
+                client.sendMessage(TeleportToLocation(1555.23306274414062, -998.244140625, 200.205352783203125))
+                client.sendMessage(GoToLocation(1955.23306274414062, -998.244140625, 50.205352783203125))
+            
+            if count == 110:
+                client.sendMessage(StartRecording())
+
+            if count == 120:
+                client.sendMessage(StopRecording())
+            if count == 150:
+                client.sendMessage(StartRecording())
+
+            if count == 170:
+                client.sendMessage(StopRecording())
+            if count == 172:
+                client.sendMessage(TeleportToLocation(955.23306274414062, -998.244140625, 200.205352783203125))
+                client.sendMessage(GoToLocation(1955.23306274414062, -998.244140625, 50.205352783203125))
+            if count == 180:
+                client.sendMessage(StartRecording())
+
             # if count == 2:
             #     client.sendMessage(GoToLocation(955.23306274414062, -998.244140625, 50.205352783203125, 20.0))
             
+            # if count == 20:
+            #     client.sendMessage(StartRecording())
             message = client.recvMessage()  
             
             # None message from utf-8 decode error
