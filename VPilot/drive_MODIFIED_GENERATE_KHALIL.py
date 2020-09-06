@@ -209,9 +209,8 @@ if __name__ == '__main__':
             # locations can be found here https://www.gtagmodding.com/maps/gta5/
 
             # Generate a new Travelheight for every x frames (which are x / 10 recorded frames):
-            if count == 500:
+            if count % 500 == 0:
                 currentTravelHeight = uniform(10, 150)
-            currentTravelHeight
             
             
             estimated_ground_height = message["location"][2] - message["HeightAboveGround"]
