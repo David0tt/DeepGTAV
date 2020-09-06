@@ -141,6 +141,11 @@ public:
     //Mode for outputting current position/heading (data not generated)
     bool m_positionScenario;
 
+
+	void createVehicle(const char* model, float relativeForward, float relativeRight, float heading, int color, int color2);
+	void createPed(int model, float relativeForward, float relativeRight, float heading, int task);
+
+
 private:
 	void parseScenarioConfig(const Value& sc, bool setDefaults);
 	void parseDatasetConfig(const Value& dc, bool setDefaults);
@@ -158,8 +163,6 @@ private:
 	void setHeightAboveGround();
     void drawBoxes(Vector3 BLL, Vector3 FUR, Vector3 dim, Vector3 upVector, Vector3 rightVector, Vector3 forwardVector, Vector3 position, int colour);
     void createVehicles();
-    void createVehicle(const char* model, float relativeForward, float relativeRight, float heading, int color, int color2);
-    void createPed(int model, float relativeForward, float relativeRight, float heading, int task);
     void setCamParams();
     void setPosition();
     void setStencilBuffer();

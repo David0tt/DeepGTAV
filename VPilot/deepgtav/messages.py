@@ -150,3 +150,29 @@ class SetCameraPositionAndRotation:
     def to_json(self):
         return json.dumps({'SetCameraPositionAndRotation':self.__dict__})
 
+# support for some of the settings (model, task) is not given in deepGTAV
+class CreatePed:
+    def __init__(self, model, relativeForward, relativeRight, heading, task):
+        self.model = model
+        self.relativeForward = relativeForward
+        self. relativeRight = relativeRight
+        self.heading = heading
+        self.task = task
+    
+    def to_json(self):
+        return json.dumps({'CreatePed':self.__dict__})
+
+
+class CreateVehicle:
+    def __init__(self, model, relativeForward, relativeRight, heading, color, color2):
+        self.model = model
+        self.relativeForward = relativeForward
+        self.relativeRight = relativeRight
+        self.heading = heading
+        self.color = color
+        self.color2 = color2
+
+    def to_json(self):
+        return json.dumps({'CreateVehicle':self.__dict__})
+
+    

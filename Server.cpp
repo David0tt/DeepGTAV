@@ -137,6 +137,16 @@ void Server::checkRecvMessage() {
 		const Value& camset = d["SetCameraPositionAndRotation"];
 		scenario.setCameraPositionAndRotation(camset["x"].GetFloat(), camset["y"].GetFloat(), camset["z"].GetFloat(), camset["rot_x"].GetFloat(), camset["rot_y"].GetFloat(), camset["rot_z"].GetFloat());
 	}
+	else if (d.HasMember("CreatePed")) {
+		const Value& pd = d["CreatePed"];
+		scenario.createPed(pd["model"].GetFloat(), pd["relativeForward"].GetFloat(), pd["relativeRight"].GetFloat(), pd["heading"].GetFloat(), pd["task"].GetInt());
+	}
+	else if (d.HasMember("CreateVehicle")) {
+		const Value& vd = d["CreateVehicle"];
+		scenario.createVehicle(vd["model"].GetString(), vd["relativeForward"].GetFloat(), vd["relativeRight"].GetFloat(), vd["heading"].GetFloat(), vd["color"].GetInt(), vd["color2"].GetInt());
+	}
+
+
 	else {
 		return; //Invalid message
 	}
