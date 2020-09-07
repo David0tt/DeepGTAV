@@ -1,8 +1,11 @@
 # Newly Added
 - this was compiled using Visual Studio Code 2017
-- 
 
 
+- This repository was made by different authors with different coding styles, and build only for functionality, not really refactored. Therefore it is a bit of a mess...
+- It is highly likely that I destroyed some functionality of DeepGTAV or DeepGTAV-PreSIL in my refactorings
+
+- sometimes training starts in bad locations, then simply restart training
 
 
 

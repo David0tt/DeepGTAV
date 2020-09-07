@@ -263,7 +263,7 @@ if __name__ == '__main__':
                     cv2.waitKey(1) 
                     bbox2d_old = message["bbox2d"]
                 except Exception as e:
-                    print(Exception)
+                    print(e)
                     errors.append(e)
 
 
