@@ -7,7 +7,7 @@
 
 - sometimes training starts in bad locations, then simply restart training
 
-
+- I skip at some points if errors are produced, thereby possibly loosing training data. I did not want to put the work into fixing those very scarce and specific errors
 
 
 

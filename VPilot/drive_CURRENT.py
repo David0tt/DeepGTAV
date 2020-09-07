@@ -5,8 +5,8 @@ from deepgtav.messages import Start, Stop, Scenario, Dataset, Commands, frame2nu
 from deepgtav.messages import StartRecording, StopRecording
 from deepgtav.client import Client
 
-# from utils.BoundingBoxes import
-import utils.BoundingBoxes 
+from utils.BoundingBoxes import add_bboxes, parseBBox2d
+# import utils.BoundingBoxes 
 
 import argparse
 import time
@@ -24,7 +24,7 @@ import os
 
 
 
-
+# saves image in np format and bboxes in string format
 def save_image_and_bbox(save_dir, filename, image, bboxes):
     # convert image BGR -> RGB
     image = image[...,::-1]
@@ -195,7 +195,7 @@ if __name__ == '__main__':
             # print("seriesIndex: ", message["seriesIndex"])
             # print("bbox2d: ", message["bbox2d"])
 
-            if message["bbox2d"] != bbox2d_old:
+            if message["bbox2d"] != bbox2d_old and message["bbox2d"] != None:
                 try: # Sometimes there are errors with the message, i catch those here
 
                     # save Data
