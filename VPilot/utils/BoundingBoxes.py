@@ -3,6 +3,20 @@
 
 import cv2
 import numpy as np
+import os
+
+# I use VisDrone Categories as follows:
+OBJECT_CATEGORY_TO_NUMBER = {'pedestrian': 0,
+                             'people': 1,
+                             'bicycle': 2,
+                             'car': 3,
+                             'van': 4,
+                             'truck': 5,
+                             'tricycle': 6,
+                             'awning-tricycle': 7,
+                             'bus': 8,
+                             'motor': 9}
+
 
 NUMBER_TO_OBJECT_CATEGORIES = {0: 'ignored_regions',
                                 1: 'pedestrian',
@@ -19,6 +33,47 @@ NUMBER_TO_OBJECT_CATEGORIES = {0: 'ignored_regions',
 
 OBJECT_CATEGORY_TO_NUMBER = {v: k for k, v in NUMBER_TO_OBJECT_CATEGORIES.items()}
 
+with open(os.path.normpath("utils/vehicle_names_and_categories.csv"), "r") as namefile:
+    namedata = namefile.read()
+namedata = namedata.split("\n")
+namedata = [n.split(",") for n in namedata]
+namedata = {n[0].lower(): n[2] for n in namedata}
+VEHICLE_NAME_TO_CATEGORY = namedata
+
+# This mapping is made according to 
+# https://wiki.gtanet.work/index.php?title=Vehicle_Models
+GTAV_CATEGORY_TO_VISDRONE_CATEGORY = {'Boats': 'UNRECOGNIZED_CATEGORY', # 'boat', # This should not happen
+                                      'Commercials': 'truck',
+                                      'Compacts': 'car',
+                                      'Coupes': 'car',
+                                      'Cycles': 'bicycle',
+                                      'Emergency': 'MANUAL_CHECK',
+                                      'Helicopters': 'UNRECOGNIZED_CATEGORY', # 'helicopter'
+                                      'Industrial': 'MANUAL_CHECK',
+                                      'Military': 'MANUAL_CHECK',
+                                      'Motorcycles': 'motor',
+                                      'Muscle': 'MANUAL_CHECK',
+                                      'Off-Road': 'MANUAL_CHECK',
+                                      'Planes': 'UNRECOGNIZED_CATEGORY',
+                                      'SUVs': 'van',
+                                      'Sedans': 'car',
+                                      'Service': 'MANUAL_CHECK',
+                                      'Sports': 'car',
+                                      'Sports Classic': 'car',
+                                      'Sports Classics': 'car',
+                                      'Super': 'car',
+                                      'Trailer': 'UNRECOGNIZED_CATEGORY',
+                                      'Trains': 'UNRECOGNIZED_CATEGORY',
+                                      'Utility': 'MANUAL_CHECK',
+                                      'Vans': 'van',
+                                      'Uncategorized': 'UNRECOGNIZED_CATEGORY'}
+
+
+
+
+
+
+                                      
 
 
 def add_bboxes(image, bboxes):
@@ -84,8 +139,168 @@ def parseBBox2d(bbox2d):
             ret.append({"label": label,"left": left,"top": top,"right": right,"bottom": bottom})
     return ret
 
+
+MANUAL_CATEGORY = {#Emergency:
+                   'Ambulance': 'truck',
+                   'FBI': 'car',
+                   'FBI2': 'van',
+                   'FireTruck': 'truck',
+                   'PBus': 'bus',
+                   'Police': 'car',
+                   'Police2': 'car',
+                   'Police3': 'car',
+                   'Police4': 'car',
+                   'PoliceOld1': 'car',
+                   'PoliceOld2': 'car',
+                   'PoliceT': 'van',
+                   'Policeb': 'motor',
+                   'Polmav': 'UNRECOGNIZED_CATEGORY', # 'helicopter'
+                   'Pranger': 'van',
+                   'Predator': 'UNRECOGNIZED_CATEGORY', # 'boat'
+                   'Riot': 'truck',
+                   'Sheriff': 'car',
+                   'Sheriff2': 'van',
+                   #Industrial:
+                   'Bulldozer': 'UNRECOGNIZED_CATEGORY', # other
+                   'Cutter': 'UNRECOGNIZED_CATEGORY', #other
+                   'Dump': 'truck',
+                   'Flatbed': 'truck',
+                   'Guardian': 'truck',
+                   'Handler': 'UNRECOGNIZED_CATEGORY', # other
+                   'Mixer': 'truck',
+                   'Mixer2': 'truck',
+                   'Rubble': 'truck',
+                   'TipTruck': 'truck',
+                   'TipTruck2': 'truck',
+                    #Service:
+                    'Airbus': 'bus',
+                    'Brickade': 'truck',
+                    'Bus': 'bus',
+                    'Coach': 'bus',
+                    'Rallytruck': 'truck',
+                    'RentalBus': 'bus',
+                    'Taxi': 'car',
+                    'Tourbus': 'bus',
+                    'Trash': 'truck',
+                    'Trash2': 'truck',
+                    #Utility:
+                    'Airtug': 'UNRECOGNIZED_CATEGORY',
+                    'Caddy': 'UNRECOGNIZED_CATEGORY',
+                    'Caddy2': 'UNRECOGNIZED_CATEGORY',
+                    'Caddy3': 'UNRECOGNIZED_CATEGORY',
+                    'Docktug': 'UNRECOGNIZED_CATEGORY',
+                    'Forklift': 'UNRECOGNIZED_CATEGORY',
+                    'Mower': 'UNRECOGNIZED_CATEGORY',
+                    'Ripley': 'truck',
+                    'Sadler': 'van',
+                    'Scrap': 'truck',
+                    'TowTruck': 'truck',
+                    'TowTruck2': 'truck',
+                    'Tractor': 'UNRECOGNIZED_CATEGORY',
+                    'Tractor2': 'UNRECOGNIZED_CATEGORY',
+                    'Tractor3': 'UNRECOGNIZED_CATEGORY',
+                    'TrailerLarge': 'UNRECOGNIZED_CATEGORY',
+                    'TrailerS4': 'UNRECOGNIZED_CATEGORY',
+                    'UtiliTruck': 'truck',
+                    'UtiliTruck3': 'truck',
+                    'UtiliTruck2': 'truck'}
+MANUAL_CATEGORY = {k.lower(): v for k,v in MANUAL_CATEGORY.items()}
+
+def getLabelFromObjectName(obj_name):
+    # Make function case insensitive (all lists are lower case)
+    obj_name = obj_name.lower()
+
+    gtav_category = VEHICLE_NAME_TO_CATEGORY[obj_name]
+    obj_category = GTAV_CATEGORY_TO_VISDRONE_CATEGORY[gtav_category]
+    if obj_category == 'MANUAL_CHECK':
+        if gtav_category == 'Military':
+            MILITARY_NAMES = {'Rhino'}
+            MILITARY_NAMES = {v.lower() for v in MILITARY_NAMES}
+            if obj_name in MILITARY_NAMES:
+                obj_category = 'UNRECOGNIZED_CATEGORY'
+            else:
+                obj_category = 'truck'
+        elif gtav_category == 'Muscle':
+            MUSCLE_NAMES = {'Moonbeam', 'Moonbeam2', 'RatLoader', 'RatLoader2', 'Sadler2', 'SlamVan', 'SlamVan2', 'SlamVan3'}
+            MUSCLE_NAMES = {v.lower() for v in MUSCLE_NAMES}
+            if obj_name in MUSCLE_NAMES:
+                obj_category = 'van'
+            else:
+                obj_category = 'car'
+        elif gtav_category == 'Off-Road':
+            OFF_ROAD_NAMES = {'Bifta', 'Blazer', 'Blazer2', 'Blazer3', 'Blazer5', 'Dune4', 'Dune5'}
+            OFF_ROAD_NAMES = {v.lower() for v in OFF_ROAD_NAMES}
+            if obj_name in OFF_ROAD_NAMES:
+                obj_category = 'UNRECOGNIZED_CATEGORY'
+            else:
+                obj_category = 'van'
+
+        else:
+            obj_category = MANUAL_CATEGORY[obj_name]
+    
+    return obj_category
+
+
+assert getLabelFromObjectName('blista') == 'car'
+assert getLabelFromObjectName('dinghy') == 'UNRECOGNIZED_CATEGORY'
+assert getLabelFromObjectName('Dinghy') == 'UNRECOGNIZED_CATEGORY'
+assert getLabelFromObjectName('Biff') == 'truck'
+assert getLabelFromObjectName('Pounder') == 'truck'
+assert getLabelFromObjectName('Issi2') == 'car'
+assert getLabelFromObjectName('Sentinel2') == 'car'
+assert getLabelFromObjectName('Bmx') == 'bicycle'
+assert getLabelFromObjectName('cruiser') == 'bicycle'
+assert getLabelFromObjectName('Ambulance') == 'truck'
+assert getLabelFromObjectName('Pranger') == 'van'
+assert getLabelFromObjectName('Frogger2') == 'UNRECOGNIZED_CATEGORY'
+assert getLabelFromObjectName('Flatbed') == 'truck'
+assert getLabelFromObjectName('Barracks3') == 'truck'
+assert getLabelFromObjectName('Akuma') == 'motor'
+assert getLabelFromObjectName('Daemon') == 'motor'
+assert getLabelFromObjectName('Blade') == 'car'
+assert getLabelFromObjectName('RatLoader2') == 'van'
+assert getLabelFromObjectName('Insurgent') == 'van'
+assert getLabelFromObjectName('Blazer2') == 'UNRECOGNIZED_CATEGORY'
+assert getLabelFromObjectName('Besra') == 'UNRECOGNIZED_CATEGORY'
+assert getLabelFromObjectName('Luxor') == 'UNRECOGNIZED_CATEGORY'
+assert getLabelFromObjectName('BJXL') == 'van'
+assert getLabelFromObjectName('Dubsta2') == 'van'
+assert getLabelFromObjectName('Fugitive') == 'car'
+assert getLabelFromObjectName('Stanier') == 'car'
+assert getLabelFromObjectName('Airbus') == 'bus'
+assert getLabelFromObjectName('Coach') == 'bus'
+assert getLabelFromObjectName('Trash') == 'truck'
+assert getLabelFromObjectName('Elegy') == 'car'
+assert getLabelFromObjectName('Ninef2') == 'car'
+assert getLabelFromObjectName('Peyote') == 'car'
+assert getLabelFromObjectName('Tornado5') == 'car'
+assert getLabelFromObjectName('GP1') == 'car'
+assert getLabelFromObjectName('Turismo2') == 'car'
+assert getLabelFromObjectName('ArmyTrailer2') == 'UNRECOGNIZED_CATEGORY'
+assert getLabelFromObjectName('Trailers') == 'UNRECOGNIZED_CATEGORY'
+assert getLabelFromObjectName('Freight') == 'UNRECOGNIZED_CATEGORY'
+assert getLabelFromObjectName('TankerCar') == 'UNRECOGNIZED_CATEGORY'
+assert getLabelFromObjectName('Airtug') == 'UNRECOGNIZED_CATEGORY'
+assert getLabelFromObjectName('Ripley') == 'truck'
+assert getLabelFromObjectName('Bison2') == 'van'
+assert getLabelFromObjectName('Camper') == 'van'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # parse the bbboxes from label_aug format to VisDrone format. This also catches some wrong class labels by looking at the models, e.g. SUVs as  truck
 # TODO improve
+# see file "Decision on the classes"
 def parseBBoxLabel_augToVisDrone(bboxes):
     items = bboxes.split("\n")
     ret = []
@@ -98,8 +313,55 @@ def parseBBoxLabel_augToVisDrone(bboxes):
         right = int(data[6])
         bottom = int(data[7])
 
+        object_name = data[21]
+
+        ignore_this_bbox = False
+        # Convert Label to VisDrone Label
+        if label == 'Airplane':
+            ignore_this_bbox = True
+        if label == 'Animal':
+            ignore_this_bbox = True
+        if label == 'Boat':
+            ignore_this_bbox = True
+        if label == 'Bus':
+            label = 'bus'
+        
+        if label == 'Car':
+            label = 'car'
+        
+        if label == 'Cyclist':
+            label = 'bicycle'
+        if label == 'Motorbike':
+            label = 'motor'
+        if label == 'Pedestrian':
+            label = 'pedestrian'
+        if label == 'PersPerson_sitting':
+            label = 'people'
+        if label == 'Railed':
+            ignore_this_bbox = True
+        
+        if label == 'Trailer':
+            # Trailer Bounding Boxes on vehicles are wrong, but on standing trailers they are right
+            # Also some of the standing Trailers are not labeled at all
+            ignore_this_bbox = True
+
+        if label == 'Truck':
+            label = 'truck'
+        if label == 'Utility':
+            pass
+
+        # This does not seem to exist
+        if label == 'Van':
+            label = 'van'
+
+        # TODO Bus
+
+        
+        if label == 'UNRECOGNIZED_CATEGORY':
+            raise ValueError('Encountered Unrecognized object_label in line: \n' + item)
+
         # ignore 1920 1080 0 0 boxes
-        if not (left > right or top > bottom):
+        if not (left > right or top > bottom) and not ignore_this_bbox:
             ret.append({"label": label,"left": left,"top": top,"right": right,"bottom": bottom})
     return ret
 
