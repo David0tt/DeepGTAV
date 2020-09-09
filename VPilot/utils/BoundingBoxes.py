@@ -17,21 +17,8 @@ OBJECT_CATEGORY_TO_NUMBER = {'pedestrian': 0,
                              'bus': 8,
                              'motor': 9}
 
+NUMBER_TO_OBJECT_CATEGORY = {v: k for k,v in OBJECT_CATEGORY_TO_NUMBER.items()}
 
-NUMBER_TO_OBJECT_CATEGORIES = {0: 'ignored_regions',
-                                1: 'pedestrian',
-                                2: 'people',
-                                3: 'bicycle',
-                                4: 'car',
-                                5: 'van',
-                                6: 'truck',
-                                7: 'tricycle',
-                                8: 'awning-tricycle',
-                                9: 'bus',
-                                10: 'motor',
-                                11: 'other'}
-
-OBJECT_CATEGORY_TO_NUMBER = {v: k for k, v in NUMBER_TO_OBJECT_CATEGORIES.items()}
 
 with open(os.path.normpath("utils/vehicle_names_and_categories.csv"), "r") as namefile:
     namedata = namefile.read()
@@ -39,6 +26,45 @@ namedata = namedata.split("\n")
 namedata = [n.split(",") for n in namedata]
 namedata = {n[0].lower(): n[2] for n in namedata}
 VEHICLE_NAME_TO_CATEGORY = namedata
+
+VEHICLE_NAME_TO_CATEGORY['comet'] = 'Sports'
+VEHICLE_NAME_TO_CATEGORY['astrope'] = 'Sedans'
+
+# For those I am not sure of the specific category, but they are definitely cars, so setting them to 'Sports' is fine
+VEHICLE_NAME_TO_CATEGORY['f'] = 'Sports'
+VEHICLE_NAME_TO_CATEGORY['fq'] = 'Sports'
+VEHICLE_NAME_TO_CATEGORY['schwarze'] = 'Sports'
+VEHICLE_NAME_TO_CATEGORY['firetruk'] = 'Commercials'
+VEHICLE_NAME_TO_CATEGORY['dominato'] = 'Sports'
+VEHICLE_NAME_TO_CATEGORY['fork'] = 'UNRECOGNIZED_CATEGORY'
+VEHICLE_NAME_TO_CATEGORY['issi'] = 'Compacts'
+VEHICLE_NAME_TO_CATEGORY['ambulan'] = 'Commercials'
+VEHICLE_NAME_TO_CATEGORY['carboniz'] = 'Sports'
+VEHICLE_NAME_TO_CATEGORY['feltzer'] = 'Sports'
+VEHICLE_NAME_TO_CATEGORY['buccanee'] = 'Sports'
+VEHICLE_NAME_TO_CATEGORY['landstal'] = 'SUVs'
+VEHICLE_NAME_TO_CATEGORY['furore'] = 'Sports'
+VEHICLE_NAME_TO_CATEGORY['utiltruc'] = 'Commercials'
+VEHICLE_NAME_TO_CATEGORY['bfinject'] = 'SUVs'
+VEHICLE_NAME_TO_CATEGORY['rancherx'] = 'SUVs'
+VEHICLE_NAME_TO_CATEGORY['roosevelt'] = 'Sports'
+VEHICLE_NAME_TO_CATEGORY['cavcade'] = 'SUVs'
+VEHICLE_NAME_TO_CATEGORY['washingt'] = 'Sports'
+VEHICLE_NAME_TO_CATEGORY['rentbus'] = 'Sports'
+VEHICLE_NAME_TO_CATEGORY['dilettan'] = 'Compacts'
+VEHICLE_NAME_TO_CATEGORY['sandkin'] = 'SUVs'
+VEHICLE_NAME_TO_CATEGORY['schafter'] = 'Sports'
+
+
+
+
+
+
+
+
+
+
+
 
 # This mapping is made according to 
 # https://wiki.gtanet.work/index.php?title=Vehicle_Models
@@ -66,7 +92,9 @@ GTAV_CATEGORY_TO_VISDRONE_CATEGORY = {'Boats': 'UNRECOGNIZED_CATEGORY', # 'boat'
                                       'Trains': 'UNRECOGNIZED_CATEGORY',
                                       'Utility': 'MANUAL_CHECK',
                                       'Vans': 'van',
-                                      'Uncategorized': 'UNRECOGNIZED_CATEGORY'}
+                                      'Uncategorized': 'UNRECOGNIZED_CATEGORY',
+                                      
+                                      'UNRECOGNIZED_CATEGORY': 'UNRECOGNIZED_CATEGORY'}
 
 
 
@@ -203,7 +231,10 @@ MANUAL_CATEGORY = {#Emergency:
                     'TrailerS4': 'UNRECOGNIZED_CATEGORY',
                     'UtiliTruck': 'truck',
                     'UtiliTruck3': 'truck',
-                    'UtiliTruck2': 'truck'}
+                    'UtiliTruck2': 'truck',
+                    
+                    # Extra
+                    'rentbus': 'bus'}
 MANUAL_CATEGORY = {k.lower(): v for k,v in MANUAL_CATEGORY.items()}
 
 def getLabelFromObjectName(obj_name):
@@ -315,50 +346,78 @@ def parseBBoxLabel_augToVisDrone(bboxes):
 
         object_name = data[21]
 
+        
         ignore_this_bbox = False
         # Convert Label to VisDrone Label
-        if label == 'Airplane':
-            ignore_this_bbox = True
-        if label == 'Animal':
-            ignore_this_bbox = True
-        if label == 'Boat':
-            ignore_this_bbox = True
-        if label == 'Bus':
-            label = 'bus'
-        
-        if label == 'Car':
-            label = 'car'
-        
-        if label == 'Cyclist':
-            label = 'bicycle'
-        if label == 'Motorbike':
-            label = 'motor'
-        if label == 'Pedestrian':
-            label = 'pedestrian'
-        if label == 'PersPerson_sitting':
-            label = 'people'
-        if label == 'Railed':
-            ignore_this_bbox = True
-        
-        if label == 'Trailer':
-            # Trailer Bounding Boxes on vehicles are wrong, but on standing trailers they are right
-            # Also some of the standing Trailers are not labeled at all
-            ignore_this_bbox = True
 
-        if label == 'Truck':
-            label = 'truck'
-        if label == 'Utility':
-            pass
+        # if object_name in {'firetruk',
+        #                     'dominato',
+        #                     'fork',
+        #                     'issi',
+        #                     'ambulan',
+        #                     'carboniz',
+        #                     'feltzer',
+        #                     'buccanee',
+        #                     'landstal',
+        #                     'furore',
+        #                     'utiltruc',
+        #                     'bfinject',
+        #                     'rancherx',
+        #                     'roosevelt',
+        #                     'cavcade',
+        #                     'washingt',
+        #                     'rentbus',
+        #                     'dilettan',
+        #                     'sandkin',
+        #                     'schafter',
+        #                     'roosevelt'}:
+        #     label = object_name
 
-        # This does not seem to exist
-        if label == 'Van':
-            label = 'van'
 
-        # TODO Bus
+        try:
+            if label == 'Airplane':
+                ignore_this_bbox = True
+            elif label == 'Animal':
+                ignore_this_bbox = True
+            elif label == 'Boat':
+                ignore_this_bbox = True
+            elif label == 'Bus':
+                label = getLabelFromObjectName(object_name)        
+            elif label == 'Car':
+                label = getLabelFromObjectName(object_name)
+            elif label == 'Cyclist':
+                label = 'bicycle'
+            elif label == 'Motorbike':
+                label = getLabelFromObjectName(object_name)
+            elif label == 'Pedestrian':
+                label = 'pedestrian'
+            elif label == 'PersPerson_sitting':
+                label = 'people'
+            elif label == 'Railed':
+                ignore_this_bbox = True
+            elif label == 'Trailer':
+                # Trailer Bounding Boxes on vehicles are wrong, but on standing trailers they are right
+                # Also some of the standing Trailers are not labeled at all
+                ignore_this_bbox = True
+            elif label == 'Truck':
+                label = getLabelFromObjectName(object_name)
+            elif label == 'Utility':
+                label = getLabelFromObjectName(object_name)
+            # This does not seem to exist
+            elif label == 'Van':
+                label = getLabelFromObjectName(object_name)
 
-        
-        if label == 'UNRECOGNIZED_CATEGORY':
-            raise ValueError('Encountered Unrecognized object_label in line: \n' + item)
+            
+            if label == 'UNRECOGNIZED_CATEGORY':
+                # print('Encountered Unrecognized object_label in line: \n' + item)
+                ignore_this_bbox = True
+        except KeyError:
+
+            # Not Found Labels are ignored. This should not be that important, but in the future it can be improved with the NotFoundObjectNames.txt
+            label = object_name
+            with open("NotFoundObjectNames.txt", "a") as not_found_file:
+                not_found_file.write(object_name + "\n") # + "\n From Labels: \n" + bboxes)
+            ignore_this_bbox = True
 
         # ignore 1920 1080 0 0 boxes
         if not (left > right or top > bottom) and not ignore_this_bbox:
@@ -377,7 +436,7 @@ def convertBBoxesYolo_relative(bboxes_yolo, img_width, img_height):
     return bboxes_new
 
 def revertconvertBBoxVisDroneToYolo(bboxes):
-    bboxes_new = [{'label': NUMBER_TO_OBJECT_CATEGORIES[b[0]], 'left': b[1] - b[3]/2, 'right': b[1] + b[3]/2, 'top': b[2] - b[4]/2, 'bottom': b[2] + b[4]/2} for b in bboxes]
+    bboxes_new = [{'label': NUMBER_TO_OBJECT_CATEGORY[b[0]], 'left': b[1] - b[3]/2, 'right': b[1] + b[3]/2, 'top': b[2] - b[4]/2, 'bottom': b[2] + b[4]/2} for b in bboxes]
     return bboxes_new
 
 def revertConvertBBoxesYolo_relative(bboxes, img_width, img_height):
@@ -412,6 +471,8 @@ def convertBBoxesDeepGTAToYolo(bboxes):
     bboxes = parseBBoxLabel_augToVisDrone(bboxes)
     bboxes = convertBBoxVisDroneToYolo(bboxes)
     bboxes = convertBBoxesYolo_relative(bboxes, 1920, 1080)
+    bboxes = ["{:d} {:1.6f} {:1.6f} {:1.6f} {:1.6f}".format(*bbox) for bbox in bboxes]
+    bboxes = "\n".join(bboxes)
     return bboxes
 
 
