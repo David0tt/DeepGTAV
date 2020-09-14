@@ -3,32 +3,32 @@ import cv2
 import os
 import numpy as np
 
-from utils.BoundingBoxes import add_bboxes, parseBBoxLabel_augToVisDrone, parseBBox2d, convertBBoxesDeepGTAToYolo
+from utils.BoundingBoxes import add_bboxes, parseBBoxLabel_augToVisDrone, parseBBox2d, convertBBoxesDeepGTAToYolo, show_image_with_bboxes
 
 
 if __name__ == '__main__':
     pass
 
 
-def show_dataset(images_path):
-    images_path = os.path.normpath(images_path)
-    for file_name in os.listdir(images_path):
-        image = Image.open(os.path.join(images_path, file_name))
-        with open(os.path.join(images_path.replace("image_2", "label_aug_2"), file_name.replace(".png", ".txt")), "r") as bbox_file:
-            bbox2d_aug = bbox_file.read()
+# def show_dataset(images_path):
+#     images_path = os.path.normpath(images_path)
+#     for file_name in os.listdir(images_path):
+#         image = Image.open(os.path.join(images_path, file_name))
+#         with open(os.path.join(images_path.replace("image_2", "label_aug_2"), file_name.replace(".png", ".txt")), "r") as bbox_file:
+#             bbox2d_aug = bbox_file.read()
         
-        image = np.array(image)
-        bboxes = parseBBoxLabel_augToVisDrone(bbox2d_aug)
-        img = add_bboxes(image, bboxes)
+#         image = np.array(image)
+#         bboxes = parseBBoxLabel_augToVisDrone(bbox2d_aug)
+#         img = add_bboxes(image, bboxes)
 
-        print("file_name: ", file_name)
-        print(convertBBoxesDeepGTAToYolo(bbox2d_aug))
+#         print("file_name: ", file_name)
+#         print(convertBBoxesDeepGTAToYolo(bbox2d_aug))
 
-        # if [b for b in bboxes if b['label'] == 'van'] != []:
-        cv2.imshow("test", img)
-        cv2.waitKey(-1)
+#         # if [b for b in bboxes if b['label'] == 'van'] != []:
+#         cv2.imshow("test", img)
+#         cv2.waitKey(-1)
 
-show_dataset("C:\\EXPORTDIR\\Record_Khalil\\object_RECORD_KHALIL2\\image_2")
+# show_dataset("C:\\EXPORTDIR\\Record_Khalil\\object_RECORD_KHALIL2\\image_2")
 
 def show_specified_label(label, images_path):
     images_path = os.path.normpath(images_path)
@@ -41,15 +41,13 @@ def show_specified_label(label, images_path):
         if [b for b in bboxes if b['label'] == label] != []:
             image = Image.open(os.path.join(images_path, file_name))
             image = np.array(image)
-            img = add_bboxes(image, bboxes)
+            show_image_with_bboxes(image, bboxes)
 
             print("file_name: ", file_name)
             print(bbox2d_aug)
 
-            cv2.imshow("test", img)
-            cv2.waitKey(-1)
 
-# show_specified_label('roosevelt', "C:\\EXPORTDIR\\Record_Khalil\\object_RECORD_KHALIL2\\image_2")
+show_specified_label('pedestrian', "C:\\EXPORTDIR\\Record_Khalil\\object_RECORD_KHALIL2\\image_2")
 
 def getAllMissingObjectLabels(images_path):
     images_path = os.path.normpath(images_path)

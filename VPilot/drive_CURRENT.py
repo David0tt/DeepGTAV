@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from utils.Constants import IMG_WIDTH, IMG_HEIGHT
+
+
 from deepgtav.messages import Start, Stop, Scenario, Dataset, Commands, frame2numpy, GoToLocation, TeleportToLocation, SetCameraPositionAndRotation
 from deepgtav.messages import StartRecording, StopRecording
 from deepgtav.client import Client
 
-from utils.BoundingBoxes import add_bboxes, parseBBox2d
+from utils.BoundingBoxes import add_bboxes, parseBBox2d, convertBBoxesDeepGTAToYolo, parseBBox_YoloFormat_to_Image
+from utils.utils import save_image_and_bbox, getRunCount, generateNewTargetLocation
 # import utils.BoundingBoxes 
 
 import argparse
@@ -17,50 +21,12 @@ import matplotlib.pyplot as plt
 from PIL import Image
 
 from random import uniform
+
 from math import sqrt
 import numpy as np
 
 import os
 
-
-
-# saves image in np format and bboxes in string format
-def save_image_and_bbox(save_dir, filename, image, bboxes):
-    # convert image BGR -> RGB
-    image = image[...,::-1]
-
-    img = Image.fromarray(image)
-    img.save(os.path.join(save_dir, 'images', filename + ".jpg"))
-    # bboxes = convertBBoxesYolo_relative(convertBBoxYolo(bboxes), 1920, 1080)
-    # label_texts = ["{:d} {:1.6f} {:1.6f} {:1.6f} {:1.6f}".format(*bbox) for bbox in bboxes]
-    # label_texts = "\n".join(label_texts)
-
-    # TODO this is temporary, thill i correctly parse the bbox texts
-    label_texts = bboxes
-    with open(os.path.join(save_dir, 'labels', filename + ".txt"), 'w') as file:
-        file.write(label_texts)
-
-
-
-# returns the highest run in the directory + 1
-def getRunCount(save_dir):
-    files = os.listdir(os.path.join(save_dir, 'images'))
-    files = [int(f[:4]) for f in files]
-    return max(files) + 1
-
-
-
-
-# Go to some random location in area 
-# x in [-1960, 1900]
-# y in [-3360, 2000]
-# This is the metropolitan area and some outskirts
-# locations can be found here https://www.gtagmodding.com/maps/gta5/
-
-def generateNewTargetLocation(x_min=-1960, x_max=1900, y_min=-3360, y_max=2000):
-    x_target = uniform(x_min, x_max)
-    y_target = uniform(y_min, y_max)
-    return x_target, y_target
 
 
 # Controls the DeepGTAV vehicle
@@ -196,22 +162,23 @@ if __name__ == '__main__':
             # print("bbox2d: ", message["bbox2d"])
 
             if message["bbox2d"] != bbox2d_old and message["bbox2d"] != None:
-                try: # Sometimes there are errors with the message, i catch those here
+                # try: # Sometimes there are errors with the message, i catch those here
 
                     # save Data
                     # Use filename of the format [run]_[count] with padding, e.g. for the 512th image in the 21th run:
                     # 0021_000000512
                     filename = f'{run_count:04}' + '_' + f'{count:010}'
-                    save_image_and_bbox(args.save_dir, filename, frame2numpy(message['frame'], (1920,1080)), message["bbox2d"])
+                    bboxes = convertBBoxesDeepGTAToYolo(message["bbox2d"])
+                    save_image_and_bbox(args.save_dir, filename, frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), bboxes)
 
-
-                    img = add_bboxes(frame2numpy(message['frame'], (1920,1080)), parseBBox2d(message["bbox2d"]))
+                    
+                    img = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormat_to_Image(bboxes))
                     cv2.imshow("test", img)
                     cv2.waitKey(1) 
                     bbox2d_old = message["bbox2d"]
-                except Exception as e:
-                    print(e)
-                    errors.append(e)
+                # except Exception as e:
+                    # print(e)
+                    # errors.append(e)
 
             
         except KeyboardInterrupt:

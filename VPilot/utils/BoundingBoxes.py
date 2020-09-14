@@ -5,6 +5,11 @@ import cv2
 import numpy as np
 import os
 
+from utils.Constants import IMG_WIDTH, IMG_HEIGHT
+
+# There are some rounding Errors when converting from Yolo to Visdrone Format and Back (because of converting from relative image coordinates to Pixel values and vice versa)
+
+
 # I use VisDrone Categories as follows:
 OBJECT_CATEGORY_TO_NUMBER = {'pedestrian': 0,
                              'people': 1,
@@ -102,6 +107,17 @@ GTAV_CATEGORY_TO_VISDRONE_CATEGORY = {'Boats': 'UNRECOGNIZED_CATEGORY', # 'boat'
 
 
                                       
+
+def show_image_with_bboxes(image, bboxes):
+    # image = np.array(image)
+    # image = image[...,::-1]
+    image = np.array(image)
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
+    image = add_bboxes(image, bboxes)
+    cv2.imshow("test", image)
+    cv2.waitKey(-1)
+
 
 
 def add_bboxes(image, bboxes):
@@ -435,12 +451,12 @@ def convertBBoxesYolo_relative(bboxes_yolo, img_width, img_height):
     bboxes_new = [[b[0], b[1] / img_width, b[2] / img_height, b[3] / img_width, b[4] / img_height] for b in bboxes_yolo]
     return bboxes_new
 
-def revertconvertBBoxVisDroneToYolo(bboxes):
-    bboxes_new = [{'label': NUMBER_TO_OBJECT_CATEGORY[b[0]], 'left': b[1] - b[3]/2, 'right': b[1] + b[3]/2, 'top': b[2] - b[4]/2, 'bottom': b[2] + b[4]/2} for b in bboxes]
+def revertConvertBBoxVisDroneToYolo(bboxes):
+    bboxes_new = [{'label': NUMBER_TO_OBJECT_CATEGORY[b[0]], 'left': int(b[1] - b[3]/2), 'right': int(b[1] + b[3]/2), 'top': int(b[2] - b[4]/2), 'bottom': int(b[2] + b[4]/2)} for b in bboxes]
     return bboxes_new
 
 def revertConvertBBoxesYolo_relative(bboxes, img_width, img_height):
-    bboxes_new = [[b[0], b[1] * img_width, b[2] * img_height, b[3] * img_width, b[4] * img_height] for b in bboxes]
+    bboxes_new = [[b[0], int(b[1] * img_width), int(b[2] * img_height), int(b[3] * img_width), int(b[4] * img_height)] for b in bboxes]
     return bboxes_new
 
 bbox_test = [[5, 0.474632, 0.828758, 0.104412, 0.100654],
@@ -452,15 +468,15 @@ bbox_test = [[5, 0.474632, 0.828758, 0.104412, 0.100654],
             [6, 0.309926, 0.481699, 0.134559, 0.116340],
             [4, 0.418382, 0.419608, 0.082353, 0.062745]
             ]
-assert np.isclose(bbox_test, convertBBoxesYolo_relative(revertConvertBBoxesYolo_relative(bbox_test, 1920, 1080), 1920, 1080)).all()
-assert np.isclose(bbox_test, convertBBoxesYolo_relative(convertBBoxVisDroneToYolo(revertconvertBBoxVisDroneToYolo(revertConvertBBoxesYolo_relative(bbox_test, 1920, 1080))), 1920, 1080)).all()
+assert np.isclose(bbox_test, convertBBoxesYolo_relative(revertConvertBBoxesYolo_relative(bbox_test, IMG_WIDTH, IMG_HEIGHT), IMG_WIDTH, IMG_HEIGHT), atol=1.e-3).all()
+assert np.isclose(bbox_test, convertBBoxesYolo_relative(convertBBoxVisDroneToYolo(revertConvertBBoxVisDroneToYolo(revertConvertBBoxesYolo_relative(bbox_test, IMG_WIDTH, IMG_HEIGHT))), IMG_WIDTH, IMG_HEIGHT), atol=1.e-2).all()
 
 
 bbox_test2 = [{'label': 'truck', 'left': 240, 'right': 260, 'top': 450, 'bottom': 550},
             {'label': 'truck', 'left': 440, 'right': 460, 'top': 550, 'bottom': 650},
             {'label': 'truck', 'left': 540, 'right': 560, 'top': 450, 'bottom': 550},
             {'label': 'truck', 'left': 240, 'right': 260, 'top': 150, 'bottom': 250}]
-assert bbox_test2 == revertconvertBBoxVisDroneToYolo(convertBBoxVisDroneToYolo(bbox_test2))
+assert bbox_test2 == revertConvertBBoxVisDroneToYolo(convertBBoxVisDroneToYolo(bbox_test2))
 
 
 
@@ -470,10 +486,29 @@ assert bbox_test2 == revertconvertBBoxVisDroneToYolo(convertBBoxVisDroneToYolo(b
 def convertBBoxesDeepGTAToYolo(bboxes):
     bboxes = parseBBoxLabel_augToVisDrone(bboxes)
     bboxes = convertBBoxVisDroneToYolo(bboxes)
-    bboxes = convertBBoxesYolo_relative(bboxes, 1920, 1080)
+    bboxes = convertBBoxesYolo_relative(bboxes, IMG_WIDTH, IMG_HEIGHT)
     bboxes = ["{:d} {:1.6f} {:1.6f} {:1.6f} {:1.6f}".format(*bbox) for bbox in bboxes]
     bboxes = "\n".join(bboxes)
     return bboxes
 
 
+# string bboxes to list
+def parseBBox_to_List(bboxes):
+    if bboxes == "":
+        return []
+    bboxes = [bbox.split(" ") for bbox in bboxes.split("\n")]
+    bboxes = [[int(b[0]), float(b[1]), float(b[2]), float(b[3]), float(b[4])] for b in bboxes]
+    return bboxes
 
+bbox_test = "5 0.474632 0.828758 0.104412 0.100654\n5 0.485662 0.751634 0.108824 0.079739\n4 0.484559 0.686275 0.113235 0.078431\n4 0.511029 0.614379 0.097794 0.075817"
+assert parseBBox_to_List(bbox_test) == [[5, 0.474632, 0.828758, 0.104412, 0.100654],
+                                        [5, 0.485662, 0.751634, 0.108824, 0.079739],
+                                        [4, 0.484559, 0.686275, 0.113235, 0.078431],
+                                        [4, 0.511029, 0.614379, 0.097794, 0.075817]]
+
+
+def parseBBox_YoloFormat_to_Image(bboxes):
+    bboxes = parseBBox_to_List(bboxes)
+    bboxes = revertConvertBBoxesYolo_relative(bboxes, IMG_WIDTH, IMG_HEIGHT)
+    bboxes = revertConvertBBoxVisDroneToYolo(bboxes)
+    return bboxes
