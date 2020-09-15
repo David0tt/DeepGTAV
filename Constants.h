@@ -114,3 +114,5 @@ const bool DO_NOT_WRITE_TO_DISK = true;
 
 //Only collects and writes to file system image data and bounding boxes to improve speed for this task
 const bool ONLY_COLLECT_IMAGE_AND_BBOXES = true;
+
+const bool DONT_COLLECT_IMAGE_AND_BBOXES = true;

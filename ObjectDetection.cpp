@@ -2446,16 +2446,18 @@ void ObjectDetection::exportDetections(FrameObjectInfo fObjInfo, ObjEntity* vPer
 
 	}
 
-    f = fopen(m_labelsAugFilename.c_str(), "w");
-    std::ostringstream oss2;
+	if (!DONT_COLLECT_IMAGE_AND_BBOXES) {
+		f = fopen(m_labelsAugFilename.c_str(), "w");
+		std::ostringstream oss2;
 
-    //Augmented files also exports objects at any distance, with no 3D or 2D points
-    exportEntities(fObjInfo.vehicles, oss2, false, true, false);
-    exportEntities(fObjInfo.peds, oss2, false, true, false);
+		//Augmented files also exports objects at any distance, with no 3D or 2D points
+		exportEntities(fObjInfo.vehicles, oss2, false, true, false);
+		exportEntities(fObjInfo.peds, oss2, false, true, false);
 
-    std::string str2 = oss2.str();
-    fprintf(f, str2.c_str());
-    fclose(f);
+		std::string str2 = oss2.str();
+		fprintf(f, str2.c_str());
+		fclose(f);
+	}
 
 	if (!ONLY_COLLECT_IMAGE_AND_BBOXES) {
 		exportCalib();
@@ -2473,12 +2475,14 @@ void ObjectDetection::exportDetections(FrameObjectInfo fObjInfo, ObjEntity* vPer
 }
 
 void ObjectDetection::exportImage(BYTE* data, std::string filename) {
-    cv::Mat tempMat(cv::Size(s_camParams.width, s_camParams.height), CV_8UC3, data);
-    if (filename.empty()) {
-        filename = m_imgFilename;
-    }
-    cv::imwrite(filename, tempMat);
-    tempMat.release();
+	if (!DONT_COLLECT_IMAGE_AND_BBOXES) {
+		cv::Mat tempMat(cv::Size(s_camParams.width, s_camParams.height), CV_8UC3, data);
+		if (filename.empty()) {
+			filename = m_imgFilename;
+		}
+		cv::imwrite(filename, tempMat);
+		tempMat.release();
+	}
 }
 
 Vector3 ObjectDetection::getGroundPoint(Vector3 point, Vector3 yVectorCam, Vector3 xVectorCam, Vector3 zVectorCam) {
