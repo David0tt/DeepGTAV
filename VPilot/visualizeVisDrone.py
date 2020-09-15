@@ -139,10 +139,8 @@ def add_bboxes(image, bboxes):
         y2 = int(bbox['bottom'])
         label = bbox['label']
 
-        # if label == 'bicycle' or label == 'tricycle' or label == 'awning-tricycle' or label == 'motor' or label == 'people':
-        if label == 'van':
-            cv2.putText(image, label, (x1, y1+25), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 0), thickness = 2, lineType=cv2.LINE_AA) 
-            cv2.rectangle(image, (x1, y1), (x2, y2), (255, 255, 0), 2)
+        cv2.putText(image, label, (x1, y1+25), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 0), thickness = 2, lineType=cv2.LINE_AA) 
+        cv2.rectangle(image, (x1, y1), (x2, y2), (255, 255, 0), 2)
 
     return image
 
@@ -333,8 +331,6 @@ def main(_argv):
     #     os.makedirs(os.path.join(savedir, "val", "labels"))
         
 
-
-    print("Writing Training Data")
     for file in os.listdir(train_dir):
         img_dir = os.path.join(train_dir, file)
         # copyfile(img_dir, os.path.join(savedir, "train", "images", file))
@@ -342,8 +338,8 @@ def main(_argv):
          
         image, bboxes = loadImageAndBBoxes(img_dir)
     
-        if [b for b in bboxes if b['label'] == 'van'] != []:
-            drawImageWithBBox(image, bboxes)
+        # if [b for b in bboxes if b['label'] == 'van'] != []:
+        drawImageWithBBox(image, bboxes)
 
 
 

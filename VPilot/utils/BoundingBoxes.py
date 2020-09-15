@@ -455,6 +455,11 @@ def revertConvertBBoxVisDroneToYolo(bboxes):
     bboxes_new = [{'label': NUMBER_TO_OBJECT_CATEGORY[b[0]], 'left': int(b[1] - b[3]/2), 'right': int(b[1] + b[3]/2), 'top': int(b[2] - b[4]/2), 'bottom': int(b[2] + b[4]/2)} for b in bboxes]
     return bboxes_new
 
+def revertConvertBBoxVisDroneToYolo_ONLY_NUMBER(bboxes):
+    bboxes_new = [{'label': str(b[0]), 'left': int(b[1] - b[3]/2), 'right': int(b[1] + b[3]/2), 'top': int(b[2] - b[4]/2), 'bottom': int(b[2] + b[4]/2)} for b in bboxes]
+    return bboxes_new
+
+
 def revertConvertBBoxesYolo_relative(bboxes, img_width, img_height):
     bboxes_new = [[b[0], int(b[1] * img_width), int(b[2] * img_height), int(b[3] * img_width), int(b[4] * img_height)] for b in bboxes]
     return bboxes_new
@@ -507,8 +512,14 @@ assert parseBBox_to_List(bbox_test) == [[5, 0.474632, 0.828758, 0.104412, 0.1006
                                         [4, 0.511029, 0.614379, 0.097794, 0.075817]]
 
 
-def parseBBox_YoloFormat_to_Image(bboxes):
+def parseBBox_YoloFormat_to_Image(bboxes, img_width=IMG_WIDTH, img_height=IMG_HEIGHT):
     bboxes = parseBBox_to_List(bboxes)
-    bboxes = revertConvertBBoxesYolo_relative(bboxes, IMG_WIDTH, IMG_HEIGHT)
+    bboxes = revertConvertBBoxesYolo_relative(bboxes, img_width, img_height)
     bboxes = revertConvertBBoxVisDroneToYolo(bboxes)
+    return bboxes
+
+def parseBBox_YoloFormat_to_Number(bboxes, img_width=IMG_WIDTH, img_height=IMG_HEIGHT):
+    bboxes = parseBBox_to_List(bboxes)
+    bboxes = revertConvertBBoxesYolo_relative(bboxes, img_width, img_height)
+    bboxes = revertConvertBBoxVisDroneToYolo_ONLY_NUMBER(bboxes)
     return bboxes
