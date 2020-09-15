@@ -26,7 +26,7 @@ const float BBOX_ADJUSTMENT_FACTOR = 1.1f;
 //TODO: These should be moved to a settings file so don't need to rebuild when only changing settings
 
 //Use the same time of day throughout the collection process
-const bool SAME_TIME_OF_DAY = true;
+const bool SAME_TIME_OF_DAY = false;
 //Drive in specified area or wander entire map
 const bool DRIVE_SPEC_AREA = true;
 const bool START_SPEC_AREA = true;
