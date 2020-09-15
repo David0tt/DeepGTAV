@@ -144,6 +144,9 @@ public:
 
 	void createVehicle(const char* model, float relativeForward, float relativeRight, float heading, int color, int color2);
 	void createPed(int model, float relativeForward, float relativeRight, float heading, int task);
+	void setWeather(const char * weather);
+	void setClockTime(int hour, int minute, int second);
+
 
 
 private:

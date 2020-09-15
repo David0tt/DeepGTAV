@@ -175,4 +175,20 @@ class CreateVehicle:
     def to_json(self):
         return json.dumps({'CreateVehicle':self.__dict__})
 
+
+# weather can be one of { "CLEAR", "EXTRASUNNY", "CLOUDS", "OVERCAST", "RAIN", "CLEARING", "THUNDER", "SMOG", "FOGGY", "XMAS", "SNOWLIGHT", "BLIZZARD", "NEUTRAL", "SNOW" }
+class SetWeather:
+    def __init__(self, weather):
+        self.weather = weather
     
+    def to_json(self):
+        return json.dumps({'SetWeather':self.__dict__})
+
+class SetClockTime:
+    def __init__(self, hour = 0, minute = 0, second = 0):
+        self.hour = hour 
+        self.minute = minute
+        self.second = second
+    
+    def to_json(self):
+        return json.dumps({'SetClockTime':self.__dict__})

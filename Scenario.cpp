@@ -952,6 +952,15 @@ void Scenario::createVehicles() {
     }
 }
 
+
+void Scenario::setWeather(const char* weather) {
+	GAMEPLAY::SET_WEATHER_TYPE_NOW_PERSIST((char*)weather);
+}
+
+void Scenario::setClockTime(int hour, int minute, int second) {
+	TIME::SET_CLOCK_TIME(hour, minute, second);
+}
+
 //Saves the position and vectors of the capture vehicle
 void Scenario::setPosition() {
     //NOTE: The forward and right vectors are swapped (compared to native function labels) to keep consistency with coordinate system

@@ -145,7 +145,14 @@ void Server::checkRecvMessage() {
 		const Value& vd = d["CreateVehicle"];
 		scenario.createVehicle(vd["model"].GetString(), vd["relativeForward"].GetFloat(), vd["relativeRight"].GetFloat(), vd["heading"].GetFloat(), vd["color"].GetInt(), vd["color2"].GetInt());
 	}
-
+	else if (d.HasMember("SetWeather")) {
+		const Value& wd = d["SetWeather"];
+		scenario.setWeather(wd["weather"].GetString());
+	}
+	else if (d.HasMember("SetClockTime")) {
+		const Value& ct = d["SetClockTime"];
+		scenario.setClockTime(ct["hour"].GetInt(), ct["minute"].GetInt(), ct["second"].GetInt());
+	}
 
 	else {
 		return; //Invalid message

@@ -6,6 +6,7 @@ from utils.Constants import IMG_WIDTH, IMG_HEIGHT
 
 from deepgtav.messages import Start, Stop, Scenario, Dataset, Commands, frame2numpy, GoToLocation, TeleportToLocation, SetCameraPositionAndRotation
 from deepgtav.messages import StartRecording, StopRecording
+from deepgtav.messages import SetClockTime, SetWeather
 from deepgtav.client import Client
 
 from utils.BoundingBoxes import add_bboxes, parseBBox2d, convertBBoxesDeepGTAToYolo, parseBBox_YoloFormat_to_Image
@@ -35,7 +36,7 @@ if __name__ == '__main__':
     parser.add_argument('-l', '--host', default='localhost', help='The IP where DeepGTAV is running')
     parser.add_argument('-p', '--port', default=8000, help='The port where DeepGTAV is running')
     # parser.add_argument('-s', '--save_dir', default='E:\\Bachelorarbeit\\DataGeneration_DeepGTAV-PreSIL\\EXPORTDIR_OWN', help='The directory the generated data is saved to')
-    parser.add_argument('-s', '--save_dir', default='Z:\\DeepGTAV-EXPORTDIR-TEST\\Generation1', help='The directory the generated data is saved to')
+    parser.add_argument('-s', '--save_dir', default='Z:\\DeepGTAV-EXPORTDIR-TEST\\Generation2_Test_ClockTime_and_Weather', help='The directory the generated data is saved to')
     # args = parser.parse_args()
 
     # TODO for running in VSCode
@@ -111,6 +112,47 @@ if __name__ == '__main__':
 
             if count == 2:
                 client.sendMessage(TeleportToLocation(x_target, y_target, 200))
+
+
+            # if count == 50:
+            #     client.sendMessage(SetWeather("RAIN"))
+
+            # if count == 100:
+            #     client.sendMessage(SetWeather("SMOG"))
+
+            # if count == 150:
+            #     client.sendMessage(SetWeather("THUNDER"))
+
+            # if count == 200:
+            #     client.sendMessage(SetWeather("XMAS"))
+
+            # if count == 250:
+            #     client.sendMessage(SetWeather("SNOWLIGHT"))
+
+            # if count == 300:
+            #     client.sendMessage(SetWeather("BLIZZARD"))
+
+
+            if count == 50:
+                client.sendMessage(SetClockTime(0, 0))
+
+            if count == 100:
+                client.sendMessage(SetClockTime(5, 0))
+
+            if count == 150:
+                client.sendMessage(SetClockTime(10, 0))
+
+            if count == 200:
+                client.sendMessage(SetClockTime(15, 0))
+
+            if count == 200:
+                client.sendMessage(SetClockTime(20, 0))
+
+
+
+            # if count == 250:
+            #     client.sendMessage(SetClockTime(0, 0))
+
 
             message = client.recvMessage()  
             
