@@ -35,7 +35,7 @@ if __name__ == '__main__':
     parser.add_argument('-l', '--host', default='localhost', help='The IP where DeepGTAV is running')
     parser.add_argument('-p', '--port', default=8000, help='The port where DeepGTAV is running')
     # parser.add_argument('-s', '--save_dir', default='E:\\Bachelorarbeit\\DataGeneration_DeepGTAV-PreSIL\\EXPORTDIR_OWN', help='The directory the generated data is saved to')
-    parser.add_argument('-s', '--save_dir', default='Z:\\DeepGTAV-EXPORTDIR-TEST', help='The directory the generated data is saved to')
+    parser.add_argument('-s', '--save_dir', default='Z:\\DeepGTAV-EXPORTDIR-TEST\\Generation1', help='The directory the generated data is saved to')
     # args = parser.parse_args()
 
     # TODO for running in VSCode
@@ -77,7 +77,7 @@ if __name__ == '__main__':
 
 
     # SETTINGS
-    STARTING_COUNT = 20
+    STARTING_COUNT = 100
 
 
 
@@ -162,23 +162,24 @@ if __name__ == '__main__':
             # print("bbox2d: ", message["bbox2d"])
 
             if message["bbox2d"] != bbox2d_old and message["bbox2d"] != None:
-                # try: # Sometimes there are errors with the message, i catch those here
+                try: # Sometimes there are errors with the message, i catch those here
 
                     # save Data
                     # Use filename of the format [run]_[count] with padding, e.g. for the 512th image in the 21th run:
                     # 0021_000000512
                     filename = f'{run_count:04}' + '_' + f'{count:010}'
                     bboxes = convertBBoxesDeepGTAToYolo(message["bbox2d"])
-                    save_image_and_bbox(args.save_dir, filename, frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), bboxes)
+                    if bboxes != "":
+                        save_image_and_bbox(args.save_dir, filename, frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), bboxes)
 
                     
                     img = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormat_to_Image(bboxes))
                     cv2.imshow("test", img)
                     cv2.waitKey(1) 
                     bbox2d_old = message["bbox2d"]
-                # except Exception as e:
-                    # print(e)
-                    # errors.append(e)
+                except Exception as e:
+                    print(e)
+                    errors.append(e)
 
             
         except KeyboardInterrupt:
