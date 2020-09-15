@@ -407,7 +407,7 @@ def parseBBoxLabel_augToVisDrone(bboxes):
                 label = getLabelFromObjectName(object_name)
             elif label == 'Pedestrian':
                 label = 'pedestrian'
-            elif label == 'PersPerson_sitting':
+            elif label == 'Person_sitting':
                 label = 'people'
             elif label == 'Railed':
                 ignore_this_bbox = True
