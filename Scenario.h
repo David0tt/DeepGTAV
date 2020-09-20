@@ -156,6 +156,8 @@ private:
 
 	void setDirection();
 	void setReward();
+	void exportCameraPosition();
+	void exportCameraAngle();
 	void setThrottle();
 	void setBrake();
 	void setSteering();

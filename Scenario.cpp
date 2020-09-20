@@ -263,13 +263,15 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
 	if (yawRate) d.AddMember("yawRate", 0.0, allocator);
 	if (drivingMode) d.AddMember("drivingMode", 0, allocator);
 	if (location) d.AddMember("location", a, allocator);
-	if (time) d.AddMember("time", 0, allocator);
+	if (time) d.AddMember("time", a, allocator);
     d.AddMember("index", 0, allocator);
     d.AddMember("focalLen", 0.0, allocator);
     d.AddMember("curPosition", a, allocator);
     d.AddMember("seriesIndex", a, allocator);
 	d.AddMember("bbox2d", a, allocator);
 	d.AddMember("HeightAboveGround", 0.0, allocator);
+	d.AddMember("CameraAngle", a, allocator);
+	d.AddMember("CameraPosition", a, allocator);
 
 	screenCapturer = new ScreenCapturer(s_camParams.width, s_camParams.height);
 }
@@ -597,6 +599,9 @@ StringBuffer Scenario::generateMessage() {
 	if (location) setLocation();
 	if (time) setTime();
 	setHeightAboveGround();
+	exportCameraPosition();
+	exportCameraAngle();
+
 
 
 
@@ -863,7 +868,10 @@ void Scenario::setLocation() {
 }
 
 void Scenario::setTime() {
-	d["time"] = TIME::GET_CLOCK_HOURS();
+	Document::AllocatorType& allocator = d.GetAllocator();
+	Value time(kArrayType);
+	time.PushBack(TIME::GET_CLOCK_HOURS(), allocator).PushBack(TIME::GET_CLOCK_MINUTES(), allocator).PushBack(TIME::GET_CLOCK_SECONDS(), allocator);
+	d["time"] = time;
 }
 
 void Scenario::setHeightAboveGround() {
@@ -884,6 +892,27 @@ void Scenario::setDirection(){
 void Scenario::setReward() {
 	d["reward"] = rewarder->computeReward(m_ownVehicle);
 }
+
+
+void Scenario::exportCameraPosition() {
+	Document::AllocatorType& allocator = d.GetAllocator();
+	Vector3 pos = CAM::GET_CAM_COORD(camera);
+	Value position(kArrayType);
+	position.PushBack(pos.x, allocator).PushBack(pos.y, allocator).PushBack(pos.z, allocator);
+	d["CameraPosition"] = position;
+}
+
+void Scenario::exportCameraAngle() {
+	Document::AllocatorType& allocator = d.GetAllocator();
+	Vector3 ang = CAM::GET_CAM_ROT(camera, 0);
+	Value angles(kArrayType);
+	angles.PushBack(ang.x, allocator).PushBack(ang.y, allocator).PushBack(ang.z, allocator);
+	d["CameraAngle"] = angles;
+}
+
+//void Scenario::exportWeather() {
+//	d["Weather"] = ...;
+//}
 
 static int bike_num = 0;
 

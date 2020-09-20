@@ -21,6 +21,17 @@ def save_image_and_bbox(save_dir, filename, image, bboxes):
         file.write(bboxes)
 
 
+# Format for the saved meta data is [x y z heightAboveGround, campos_x, campos_y, campos_z, camrot_x, camrot_y, camrot_z, time_hours, time_min, time_sec]
+def save_meta_data(save_dir, filename, location, heightAboveGround, cameraPosition, cameraRotation, time):
+    location = [str(i) for i in location]
+    heightAboveGround = str(heightAboveGround)
+    cameraPosition = [str(i) for i in cameraPosition]
+    cameraRotation = [str(i) for i in cameraRotation]
+    time = [str(i) for i in time]
+    meta_text = " ".join(location) + " " + heightAboveGround + " " + " ".join(cameraPosition) + " " + " ".join(cameraRotation) + " " + " ".join(time)
+    with open(os.path.join(save_dir, 'meta_data', filename + ".txt"), 'w') as file:
+        file.write(meta_text)
+
 
 # returns the highest run in the directory + 1
 def getRunCount(save_dir):

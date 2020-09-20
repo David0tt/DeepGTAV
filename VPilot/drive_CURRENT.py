@@ -10,7 +10,7 @@ from deepgtav.messages import SetClockTime, SetWeather
 from deepgtav.client import Client
 
 from utils.BoundingBoxes import add_bboxes, parseBBox2d, convertBBoxesDeepGTAToYolo, parseBBox_YoloFormat_to_Image
-from utils.utils import save_image_and_bbox, getRunCount, generateNewTargetLocation
+from utils.utils import save_image_and_bbox, save_meta_data, getRunCount, generateNewTargetLocation
 # import utils.BoundingBoxes 
 
 import argparse
@@ -36,7 +36,7 @@ if __name__ == '__main__':
     parser.add_argument('-l', '--host', default='localhost', help='The IP where DeepGTAV is running')
     parser.add_argument('-p', '--port', default=8000, help='The port where DeepGTAV is running')
     # parser.add_argument('-s', '--save_dir', default='E:\\Bachelorarbeit\\DataGeneration_DeepGTAV-PreSIL\\EXPORTDIR_OWN', help='The directory the generated data is saved to')
-    parser.add_argument('-s', '--save_dir', default='Z:\\DeepGTAV-EXPORTDIR-TEST\\Generation2_Test_ClockTime_and_Weather', help='The directory the generated data is saved to')
+    parser.add_argument('-s', '--save_dir', default='Z:\\DeepGTAV-EXPORTDIR-TEST\\Generation4_More_Traffic_and_Pedestrians_Mod', help='The directory the generated data is saved to')
     # args = parser.parse_args()
 
     # TODO for running in VSCode
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     # scenario = Scenario(drivingMode=[786603, 20.0], vehicle="buzzard", location=[275.23306274414062, -998.244140625, 29.205352783203125]) #automatic driving
     # scenario = Scenario(drivingMode=-1, vehicle="buzzard") #automatic driving
 
-    dataset=Dataset(showBoxes=True, location=True)
+    dataset=Dataset(location=True, time=True)
 
     client.sendMessage(Start(scenario=scenario, dataset=dataset))
     
@@ -93,6 +93,9 @@ if __name__ == '__main__':
         os.makedirs(os.path.join(args.save_dir, 'images'))
     if not os.path.exists(os.path.join(args.save_dir, 'labels')):
         os.makedirs(os.path.join(args.save_dir, 'labels'))
+    if not os.path.exists(os.path.join(args.save_dir, 'meta_data')):
+        os.makedirs(os.path.join(args.save_dir, 'meta_data'))
+        
 
     run_count = getRunCount(args.save_dir)
 
@@ -133,20 +136,20 @@ if __name__ == '__main__':
             #     client.sendMessage(SetWeather("BLIZZARD"))
 
 
-            if count == 50:
-                client.sendMessage(SetClockTime(0, 0))
+            # if count == 50:
+            #     client.sendMessage(SetClockTime(0, 0))
 
-            if count == 100:
-                client.sendMessage(SetClockTime(5, 0))
+            # if count == 100:
+            #     client.sendMessage(SetClockTime(5, 0))
 
-            if count == 150:
-                client.sendMessage(SetClockTime(10, 0))
+            # if count == 150:
+            #     client.sendMessage(SetClockTime(10, 0))
 
-            if count == 200:
-                client.sendMessage(SetClockTime(15, 0))
+            # if count == 200:
+            #     client.sendMessage(SetClockTime(15, 0))
 
-            if count == 200:
-                client.sendMessage(SetClockTime(20, 0))
+            # if count == 200:
+            #     client.sendMessage(SetClockTime(20, 0))
 
 
 
@@ -213,11 +216,12 @@ if __name__ == '__main__':
                     bboxes = convertBBoxesDeepGTAToYolo(message["bbox2d"])
                     if bboxes != "":
                         save_image_and_bbox(args.save_dir, filename, frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), bboxes)
-
+                        save_meta_data(args.save_dir, filename, message["location"], message["HeightAboveGround"], message["CameraPosition"], message["CameraAngle"], message["time"])
+                        
                     
-                    img = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormat_to_Image(bboxes))
-                    cv2.imshow("test", img)
-                    cv2.waitKey(1) 
+                    # img = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormat_to_Image(bboxes))
+                    # cv2.imshow("test", img)
+                    # cv2.waitKey(1) 
                     bbox2d_old = message["bbox2d"]
                 except Exception as e:
                     print(e)

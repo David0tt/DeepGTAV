@@ -17,8 +17,8 @@ def show_dataset_online_format(images_path):
         image = np.array(image)
         show_image_with_bboxes(image, bboxes)
 
-# show_dataset_online_format("Z:\\DeepGTAV-EXPORTDIR-TEST\\images")
-show_dataset_online_format("E:\\Bachelorarbeit\\Datasets\\VisDrone\\VisDrone_YOLO_FORMAT_CLEANED\\train\\images")
+show_dataset_online_format("Z:\\DeepGTAV-EXPORTDIR-TEST\\Generation4_More_Traffic_and_Pedestrians_Mod\\images")
+# show_dataset_online_format("E:\\Bachelorarbeit\\Datasets\\VisDrone\\VisDrone_YOLO_FORMAT_CLEANED\\train\\images")
 
 
 
@@ -38,7 +38,7 @@ def show_dataset_online_format_NUMBERS_ONLY(images_path):
 # show_dataset_online_format_NUMBERS_ONLY("E:\\Bachelorarbeit\\Datasets\\VisDrone\\VisDrone_YOLO_FORMAT\\train\\images")
 # show_dataset_online_format_NUMBERS_ONLY("E:\\Bachelorarbeit\\Datasets\\VisDrone\\VisDrone_YOLO_FORMAT_CLEANED\\train\\images")
 # show_dataset_online_format_NUMBERS_ONLY("Z:\\visdrone-dataset\\VisDrone_YOLO_FORMAT\\train\\images")
-# show_dataset_online_format_NUMBERS_ONLY("Z:\\DeepGTAV-EXPORTDIR-TEST\\images")
+# show_dataset_online_format_NUMBERS_ONLY("Z:\\DeepGTAV-EXPORTDIR-TEST\\Generation1\\images")
 
 if __name__ == '__main__':
     pass
