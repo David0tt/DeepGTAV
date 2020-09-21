@@ -10,7 +10,7 @@ from deepgtav.messages import SetClockTime, SetWeather
 from deepgtav.client import Client
 
 from utils.BoundingBoxes import add_bboxes, parseBBox2d, convertBBoxesDeepGTAToYolo, parseBBox_YoloFormat_to_Image
-from utils.utils import save_image_and_bbox, save_meta_data, getRunCount, generateNewTargetLocation
+from utils.utils import save_image_and_bbox, save_meta_data, getRunCount, generateNewTargetLocation, getRandomWeather
 # import utils.BoundingBoxes 
 
 import argparse
@@ -36,7 +36,7 @@ if __name__ == '__main__':
     parser.add_argument('-l', '--host', default='localhost', help='The IP where DeepGTAV is running')
     parser.add_argument('-p', '--port', default=8000, help='The port where DeepGTAV is running')
     # parser.add_argument('-s', '--save_dir', default='E:\\Bachelorarbeit\\DataGeneration_DeepGTAV-PreSIL\\EXPORTDIR_OWN', help='The directory the generated data is saved to')
-    parser.add_argument('-s', '--save_dir', default='Z:\\DeepGTAV-EXPORTDIR-TEST\\Generation4_More_Traffic_and_Pedestrians_Mod', help='The directory the generated data is saved to')
+    parser.add_argument('-s', '--save_dir', default='Z:\\DeepGTAV-EXPORTDIR-TEST\\Generation5_Obvious_Improvements', help='The directory the generated data is saved to')
     # args = parser.parse_args()
 
     # TODO for running in VSCode
@@ -55,7 +55,8 @@ if __name__ == '__main__':
     # scenario = Scenario(drivingMode=786603) #automatic driving
     # scenario = Scenario(drivingMode=786603, vehicle="buzzard") #automatic driving
     # scenario = Scenario(drivingMode=786603, vehicle="buzzard", location=[-424.991, -522.049, 50]) #automatic driving
-    scenario = Scenario(drivingMode=786603, vehicle="buzzard", location=[245.23306274414062, -998.244140625, 29.205352783203125]) #automatic driving
+    # scenario = Scenario(drivingMode=786603, vehicle="buzzard", location=[245.23306274414062, -998.244140625, 29.205352783203125]) #automatic driving
+    scenario = Scenario(drivingMode=786603, vehicle="buzzard2", location=[245.23306274414062, -998.244140625, 29.205352783203125]) #automatic driving
     # scenario = Scenario(drivingMode=[786603, 20.0], vehicle="buzzard", location=[275.23306274414062, -998.244140625, 29.205352783203125]) #automatic driving
     # scenario = Scenario(drivingMode=-1, vehicle="buzzard") #automatic driving
 
@@ -65,12 +66,12 @@ if __name__ == '__main__':
     
 
     # Adjustments for recording from UAV perspective
-    client.sendMessage(SetCameraPositionAndRotation(z = -3, rot_x = -90))
+    # client.sendMessage(SetCameraPositionAndRotation(z = -5, rot_x = 0))
 
 
     # Start listening for messages coming from DeepGTAV. We do it for 20 hours
 
-    stoptime = time.time() + 20 * 3600
+    # stoptime = time.time() + 20 * 3600
     count = 0
     bbox2d_old = ""
     errors = []
@@ -87,7 +88,6 @@ if __name__ == '__main__':
 
     x_target, y_target = generateNewTargetLocation(-1960, 1900, -3360, 2000)
     # x_target, y_target = (-182.139, -507.529)
-    correcting_height = False
 
     if not os.path.exists(os.path.join(args.save_dir, 'images')):
         os.makedirs(os.path.join(args.save_dir, 'images'))
@@ -100,12 +100,9 @@ if __name__ == '__main__':
     run_count = getRunCount(args.save_dir)
 
 
-    while time.time() < stoptime:
+    # while time.time() < stoptime:
+    while True:
         try:
-            # We receive a message as a Python dictionary
-            count += 1
-            print("count: ", count)
-
             # Only record every 10th frame
             if count > STARTING_COUNT and count % 10 == 0:
                 client.sendMessage(StartRecording())
@@ -117,44 +114,21 @@ if __name__ == '__main__':
                 client.sendMessage(TeleportToLocation(x_target, y_target, 200))
 
 
-            # if count == 50:
-            #     client.sendMessage(SetWeather("RAIN"))
-
-            # if count == 100:
-            #     client.sendMessage(SetWeather("SMOG"))
-
-            # if count == 150:
-            #     client.sendMessage(SetWeather("THUNDER"))
-
-            # if count == 200:
-            #     client.sendMessage(SetWeather("XMAS"))
-
-            # if count == 250:
-            #     client.sendMessage(SetWeather("SNOWLIGHT"))
-
-            # if count == 300:
-            #     client.sendMessage(SetWeather("BLIZZARD"))
+            # Generate a new Travelheight for every x frames (which are x / 10 recorded frames):
+            if count % 500 == 0:
+                currentTravelHeight = uniform(10, 150)
+            
+            if count % 1000 == 0:
+                client.sendMessage(SetCameraPositionAndRotation(z=-5, rot_x=uniform(0, -90)))
+            
+            if count % 3000 == 0:
+                current_weather = getRandomWeather()
+                client.sendMessage(SetWeather(current_weather))
 
 
-            # if count == 50:
-            #     client.sendMessage(SetClockTime(0, 0))
+            count += 1
+            print("count: ", count)
 
-            # if count == 100:
-            #     client.sendMessage(SetClockTime(5, 0))
-
-            # if count == 150:
-            #     client.sendMessage(SetClockTime(10, 0))
-
-            # if count == 200:
-            #     client.sendMessage(SetClockTime(15, 0))
-
-            # if count == 200:
-            #     client.sendMessage(SetClockTime(20, 0))
-
-
-
-            # if count == 250:
-            #     client.sendMessage(SetClockTime(0, 0))
 
 
             message = client.recvMessage()  
@@ -165,10 +139,10 @@ if __name__ == '__main__':
                 continue
 
 
-            # Generate a new Travelheight for every x frames (which are x / 10 recorded frames):
-            if count % 500 == 0:
-                currentTravelHeight = uniform(10, 150)
-            
+
+
+
+
             
             estimated_ground_height = message["location"][2] - message["HeightAboveGround"]
 
@@ -216,7 +190,7 @@ if __name__ == '__main__':
                     bboxes = convertBBoxesDeepGTAToYolo(message["bbox2d"])
                     if bboxes != "":
                         save_image_and_bbox(args.save_dir, filename, frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), bboxes)
-                        save_meta_data(args.save_dir, filename, message["location"], message["HeightAboveGround"], message["CameraPosition"], message["CameraAngle"], message["time"])
+                        save_meta_data(args.save_dir, filename, message["location"], message["HeightAboveGround"], message["CameraPosition"], message["CameraAngle"], message["time"], current_weather)
                         
                     
                     # img = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormat_to_Image(bboxes))

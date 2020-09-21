@@ -1,5 +1,5 @@
 from PIL import Image
-from random import uniform
+from random import uniform, sample
 import cv2
 import os
 
@@ -21,14 +21,14 @@ def save_image_and_bbox(save_dir, filename, image, bboxes):
         file.write(bboxes)
 
 
-# Format for the saved meta data is [x y z heightAboveGround, campos_x, campos_y, campos_z, camrot_x, camrot_y, camrot_z, time_hours, time_min, time_sec]
-def save_meta_data(save_dir, filename, location, heightAboveGround, cameraPosition, cameraRotation, time):
+# Format for the saved meta data is [x y z heightAboveGround, campos_x, campos_y, campos_z, camrot_x, camrot_y, camrot_z, time_hours, time_min, time_sec, weather]
+def save_meta_data(save_dir, filename, location, heightAboveGround, cameraPosition, cameraRotation, time, weather):
     location = [str(i) for i in location]
     heightAboveGround = str(heightAboveGround)
     cameraPosition = [str(i) for i in cameraPosition]
     cameraRotation = [str(i) for i in cameraRotation]
     time = [str(i) for i in time]
-    meta_text = " ".join(location) + " " + heightAboveGround + " " + " ".join(cameraPosition) + " " + " ".join(cameraRotation) + " " + " ".join(time)
+    meta_text = " ".join(location) + " " + heightAboveGround + " " + " ".join(cameraPosition) + " " + " ".join(cameraRotation) + " " + " ".join(time) + " " + weather
     with open(os.path.join(save_dir, 'meta_data', filename + ".txt"), 'w') as file:
         file.write(meta_text)
 
@@ -55,3 +55,7 @@ def generateNewTargetLocation(x_min=-1960, x_max=1900, y_min=-3360, y_max=2000):
     x_target = uniform(x_min, x_max)
     y_target = uniform(y_min, y_max)
     return x_target, y_target
+
+def getRandomWeather():
+    weathers = {"CLEAR", "EXTRASUNNY", "CLOUDS", "OVERCAST", "RAIN", "CLEARING", "THUNDER", "SMOG", "FOGGY", "XMAS", "SNOWLIGHT", "BLIZZARD", "NEUTRAL", "SNOW"}
+    return sample(weathers, 1)[0]
