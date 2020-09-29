@@ -9,8 +9,10 @@ static const Eigen::Vector3f WORLD_EAST(1.0, 0.0, 0.0);
 
 //Floats per point in the pointcloud (x, y, z, reflectance)
 const int FLOATS_PER_POINT = 4;
-const float MAX_LIDAR_DIST = 120.0f;//in metres
-const int OBJECT_MAX_DIST = 200;//in metres (label_aug will have objects past this value)
+const float MAX_LIDAR_DIST = 0.0f; // 120.0f; //in metres
+const int OBJECT_MAX_DIST = 0; // 200; //in metres (label_aug will have objects past this value)
+
+// The max distances Above have been adjusted for only bounding box capturing
 
 const float CAM_OFFSET_FORWARD = 0;// .5;
 const float CAM_OFFSET_UP = 1.065;
