@@ -11,7 +11,7 @@
 
 - i built it having VisDrone as a target benchmark in mind
 
-
+- Flying DeepGTAV somehow crashes for camera angles around -40. This can be mitigated by setting MAX_LIDAR_DIST and OBJECT_MAX_DIST both to 0.
 
 
 

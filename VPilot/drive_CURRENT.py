@@ -113,13 +113,13 @@ if __name__ == '__main__':
             if count == 2:
                 client.sendMessage(TeleportToLocation(x_target, y_target, 200))
 
-
             # Generate a new Travelheight for every x frames (which are x / 10 recorded frames):
             if count % 500 == 0:
                 currentTravelHeight = uniform(10, 150)
             
             if count % 1000 == 0:
-                client.sendMessage(SetCameraPositionAndRotation(z=-5, rot_x=uniform(0, -90)))
+                rot_x_new = uniform(0, -90)
+                client.sendMessage(SetCameraPositionAndRotation(z=-5, rot_x=rot_x_new))
             
             if count % 3000 == 0:
                 current_weather = getRandomWeather()
