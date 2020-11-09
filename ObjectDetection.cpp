@@ -2446,7 +2446,7 @@ void ObjectDetection::exportDetections(FrameObjectInfo fObjInfo, ObjEntity* vPer
 
 	}
 
-	if (!DONT_COLLECT_IMAGE_AND_BBOXES) {
+	if (!DONT_COLLECT_IMAGE_AND_BBOXES_TO_FILE) {
 		f = fopen(m_labelsAugFilename.c_str(), "w");
 		std::ostringstream oss2;
 
@@ -2475,7 +2475,7 @@ void ObjectDetection::exportDetections(FrameObjectInfo fObjInfo, ObjEntity* vPer
 }
 
 void ObjectDetection::exportImage(BYTE* data, std::string filename) {
-	if (!DONT_COLLECT_IMAGE_AND_BBOXES) {
+	if (!DONT_COLLECT_IMAGE_AND_BBOXES_TO_FILE) {
 		cv::Mat tempMat(cv::Size(s_camParams.width, s_camParams.height), CV_8UC3, data);
 		if (filename.empty()) {
 			filename = m_imgFilename;
