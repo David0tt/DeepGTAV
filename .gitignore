@@ -6,3 +6,4 @@ bin/Release/paths.xml
 *.suo
 /.vs/DeepGTAV/v16/Browse.VC.db
 /.vs
+.vs/
