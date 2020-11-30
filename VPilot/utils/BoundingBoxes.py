@@ -60,6 +60,9 @@ VEHICLE_NAME_TO_CATEGORY['dilettan'] = 'Compacts'
 VEHICLE_NAME_TO_CATEGORY['sandkin'] = 'SUVs'
 VEHICLE_NAME_TO_CATEGORY['schafter'] = 'Sports'
 
+# Custom added not found cars
+VEHICLE_NAME_TO_CATEGORY['policeo'] = 'Sports'
+VEHICLE_NAME_TO_CATEGORY['tailgate'] = 'Sports'
 
 
 
