@@ -1,14 +1,17 @@
 # VPilot
-Scripts and tools to easily communicate with [DeepGTAV](https://github.com/ai-tor/DeepGTAV). In the future a self-driving agent will be implemented.
-
-<img src="http://forococheselectricos.com/wp-content/uploads/2016/07/tesla-autopilot-1.jpg" alt="Self-Driving Car" width="900px">
+Scripts and tools to easily communicate with DeepGTAV. 
 
 ## How it works
 
-VPilot uses JSON over TCP sockets to start, configure and send/receive commands to/from [DeepGTAV](https://github.com/ai-tor/DeepGTAV) by using the Python DeepGTAV libraries. 
+VPilot uses JSON over TCP sockets to start, configure and send/receive commands to/from DeepGTAV by using the Python DeepGTAV libraries. 
 
-_dataset_ and _drive_ serve as examples to collect a dataset using DeepGTAV and giving the control to an agent respectively. Minimum requirement: Python 3.2 or greater
 
-### Examples
 
-[SantosNet](https://github.com/cpgeier/SantosNet) - Simple model and tools to use with VPilot
+## Scripts in this directory
+`drive_FOR_PRESENTATION.py` shows most of the possible commands and was used to capture a demo of the functionality. 
+`drive_LOW_USED_GENERATION.py` and `drive_NO_IMPROVEMENTS(10-100m).py` are the two scripts that were used to generate the datasets DeepGTAV_LOW and DeepGTAV_HIGH respectively, that were used for training in my Bachelors Thesis. 
+
+`visualizeGeneratedExportDir.py` can be used to visualize the exported directory with bounding boxes. 
+
+
+_dataset_ and _drive_ are legacy files that were used to collect data in the initial version of DeepGTAV. 
