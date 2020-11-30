@@ -40,16 +40,24 @@ for me employed GTAV from the Epic store in version 1.0.2060.1
 
 
 ## Data Generation using VPilot
-VPilot uses simple Python commands to interact with DeepGTAV. TODO example
-script
+VPilot uses simple Python commands to interact with DeepGTAV. Examples of how
+VPilot can be used are shown in `VPilot/drive_FOR_PRESENTATION.py`. The
+currently best ready to use data generation script is
+`VPilot/drive_LOW_USED_GENERATION.py`. With data generated with this script good
+performances have been achieved in object detection training, as can be seen in
+my Bachelors Thesis. 
 
 
 ## Modification of GTAV
 In general DeepGTAV should work stable with modifications of GTAV. 
 
 For my works I used the following modifications:
-1. More Objects, balanced Objects [TODO]
+1. Simple Increase Traffic(and Pedestrian)
+2. HeapLimitAdjuster
+3. Balanced Classes
 
+
+The modifications and install instructions can be found in the folder `Mods`
 
 In the future additional modifications will be added, mainly for graphics
 improvements. If you have use this repository in conjunction with graphics
@@ -93,7 +101,8 @@ to do better documentation, but for now this has to suffice.
 If you want to compile the binaries by yourself or make your own changes you
 have to do the following things:
 
-MS Visual Studio 2017 
+DeepGTAV was built using MS Visual Studio 2017 and I recommend to also use it to
+circumvent compatability issues.
 
 1. clone this repository
 2. TODO get all requirements for DeepGTAV-PreSIL and copy them to this
@@ -167,6 +176,7 @@ A detailed description of the changes is presented in my bachelors thesis.
   raycasting
 - Improve the graphics quality 
 - Improve the water quality 
+- Adapt for higher resolution capturing 
 
 
 ## Things that I will not do in the near future that would be easy to implement/useful
