@@ -1,10 +1,15 @@
 # DeepGTA
 ## Ground Truth Data Generation for UAV Object detection
-TODO introductory description
 
+The DeepGTAV framework can be used to produce ground truth training data with
+high accuracy for different tasks, by leveraging the high visual fidelity
+environment of GTAV.
 
-
-
+In particular HD images, LiDAR, depth, stencil, labels, object segmentation and
+bounding boxes can be exported for self-driving car and aerial scenarios.
+Furthermore the system implements easy control through messages from a python
+client, that make it suitable for custom scenarios and in principle even
+reinforcement learning tasks. 
 
 
 # Simple Use
