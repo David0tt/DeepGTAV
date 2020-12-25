@@ -118,10 +118,14 @@ circumvent compatability issues.
    3. opencv343 (https://opencv.org/releases/ get the source of version 3.4.3)
    4. boost_1_73_0 (https://www.boost.org/users/history/version_1_73_0.html get
       the source of verions 1.73.0)
-3. Set environment variable `GTAV_INSTALL_DIR` to point to the root directory of
+3. Build GTAVisionExport-DepthExtractor as described. Copy the files from
+   `GTAVisionExport-DepthExtractor\native\build\src\Release` to
+   `DeepGTAV-PreSIL\bin\Release` (This is not necessary, if DepthExtractor has
+   not been changes).
+4. Set environment variable `GTAV_INSTALL_DIR` to point to the root directory of
    GTAV. This is done so that on building DeepGTAV-PreSIL the newly built files
    are automatically copied into the GTAV install directory.
-4. Set environment variables `DEEPGTAV_EXPORT_DIR` and `DEEPGTAV_LOG_FILE`
+5. Set environment variables `DEEPGTAV_EXPORT_DIR` and `DEEPGTAV_LOG_FILE`
    (those are legacy requirements and should be removed in future versions)
 
 
