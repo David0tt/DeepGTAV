@@ -135,7 +135,6 @@ if __name__ == '__main__':
 
             if message["bbox2d"] != None:
                 bboxes = convertBBoxesDeepGTAToYolo(message["bbox2d"])
-                print(bboxes)
                 if bboxes != bbox2d_old:
                     bbox2d_old = bboxes
                     try: # Sometimes there are errors with the message, i catch those here
