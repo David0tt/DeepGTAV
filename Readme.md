@@ -39,9 +39,10 @@ for me employed GTAV from the Epic store in version 1.0.2060.1
 
 ## Game Settings
 1. Set the game in windowed mode.
-2. In the graphics setting (TODO MSAA?) has to be disabled. The correct settings
-   should be loaded by replacing the files in `Documents/Rockstar Games/GTA
-   V/Profiles/`, but keep this in mind if you modify the game settings.
+2. In the graphics setting MSAA has to be disabled, otherwise no objects are
+   detected. The correct settings should be loaded by replacing the files in
+   `Documents/Rockstar Games/GTA V/Profiles/`, but keep this in mind if you
+   modify the game settings.
 
 
 ## Data Generation using VPilot
