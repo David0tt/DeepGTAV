@@ -61,13 +61,11 @@ private:
     Vector3 currentUpVector;
     Vector3 currentRightVector;
 
-	Rewarder* rewarder;
 	std::clock_t lastSafetyCheck;
 	int _drivingMode;
 	float _setSpeed;
 
 	bool running = false;
-	//Document d;
 
     int m_startArea = 1; //Downtown (see s_locationBounds)
     std::vector<std::vector<char>> m_polyGrid;
@@ -89,8 +87,6 @@ public:
     //Depth buffer fn/var needs to be accessed by server
     bool m_prevDepth = false;
 
-	//TODO remove
-	//ScreenCapturer* screenCapturer;
 	StringBuffer generateMessage();
 
 	void setRecording_active(bool x);
