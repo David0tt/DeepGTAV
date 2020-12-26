@@ -224,16 +224,16 @@ StringBuffer DataExport::generateMessage() {
 	// if (peds) setPedsList();
 	// if (trafficSigns); //TODO
 	//if (direction) setDirection(); // TODO add again
-	if (reward) setReward();
-	if (throttle) setThrottle();
-	if (brake) setBrake();
-	if (steering) setSteering();
-	if (speed) setSpeed();
-	if (yawRate) setYawRate();
+	if (reward) exportReward();
+	if (throttle) exportThrottle();
+	if (brake) exportBrake();
+	if (steering) exportSteering();
+	if (speed) exportSpeed();
+	if (yawRate) exportYawRate();
 	if (drivingMode); //TODO
-	if (location) setLocation();
-	if (time) setTime();
-	setHeightAboveGround();
+	if (location) exportLocation();
+	if (time) exportTime();
+	exportHeightAboveGround();
 	exportCameraPosition();
 	exportCameraAngle();
 
@@ -400,28 +400,28 @@ void DataExport::setRecording_active(bool x) {
  ********************************************************************
 */
 
-void DataExport::setThrottle() {
+void DataExport::exportThrottle() {
 	d["throttle"] = getFloatValue(*m_ownVehicle, 0x92C);
 }
 
-void DataExport::setBrake() {
+void DataExport::exportBrake() {
 	d["brake"] = getFloatValue(*m_ownVehicle, 0x930);
 }
 
-void DataExport::setSteering() {
+void DataExport::exportSteering() {
 	d["steering"] = -getFloatValue(*m_ownVehicle, 0x924) / 0.6981317008;
 }
 
-void DataExport::setSpeed() {
+void DataExport::exportSpeed() {
 	d["speed"] = ENTITY::GET_ENTITY_SPEED(*m_ownVehicle);
 }
 
-void DataExport::setYawRate() {
+void DataExport::exportYawRate() {
 	Vector3 rates = ENTITY::GET_ENTITY_ROTATION_VELOCITY(*m_ownVehicle);
 	d["yawRate"] = rates.z*180.0 / 3.14159265359;
 }
 
-void DataExport::setLocation() {
+void DataExport::exportLocation() {
 	Document::AllocatorType& allocator = d.GetAllocator();
 	Vector3 pos = ENTITY::GET_ENTITY_COORDS(*m_ownVehicle, false);
 	Value location(kArrayType);
@@ -429,14 +429,14 @@ void DataExport::setLocation() {
 	d["location"] = location;
 }
 
-void DataExport::setTime() {
+void DataExport::exportTime() {
 	Document::AllocatorType& allocator = d.GetAllocator();
 	Value time(kArrayType);
 	time.PushBack(TIME::GET_CLOCK_HOURS(), allocator).PushBack(TIME::GET_CLOCK_MINUTES(), allocator).PushBack(TIME::GET_CLOCK_SECONDS(), allocator);
 	d["time"] = time;
 }
 
-void DataExport::setHeightAboveGround() {
+void DataExport::exportHeightAboveGround() {
 	d["HeightAboveGround"] = ENTITY::GET_ENTITY_HEIGHT_ABOVE_GROUND(*m_ownVehicle);
 }
 
@@ -451,7 +451,7 @@ void DataExport::setHeightAboveGround() {
 //	d["direction"] = _direction;
 //}
 
-void DataExport::setReward() {
+void DataExport::exportReward() {
 	d["reward"] = rewarder->computeReward(*m_ownVehicle);
 }
 

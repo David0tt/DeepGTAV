@@ -47,17 +47,17 @@ private:
 	Document d;
 
 	//void setDirection();
-	void setReward();
+	void exportReward();
 	void exportCameraPosition();
 	void exportCameraAngle();
-	void setThrottle();
-	void setBrake();
-	void setSteering();
-	void setSpeed();
-	void setYawRate();
-	void setLocation();
-	void setTime();
-	void setHeightAboveGround();
+	void exportThrottle();
+	void exportBrake();
+	void exportSteering();
+	void exportSpeed();
+	void exportYawRate();
+	void exportLocation();
+	void exportTime();
+	void exportHeightAboveGround();
 
 
 	void setRenderingCam(Vehicle v, int height, int length);
