@@ -33,6 +33,7 @@ extern "C" {
 
 
 void DataExport::parseDatasetConfig(const Value& dc, bool setDefaults) {
+	if (DEBUG_MODE) log("DataExport::parseDatasetConifg");
 	if (!dc["frame"].IsNull()) {
 		if (!dc["frame"][0].IsNull()) s_camParams.width = dc["frame"][0].GetInt();
 		else if (setDefaults) s_camParams.width = _WIDTH_;
@@ -91,6 +92,7 @@ void DataExport::parseDatasetConfig(const Value& dc, bool setDefaults) {
 
 
 void DataExport::buildJSONObject() {
+	if (DEBUG_MODE) log("DataExport::buildJSONObject");
 	d.SetObject();
 	Document::AllocatorType& allocator = d.GetAllocator();
 	Value a(kArrayType);
@@ -123,6 +125,7 @@ void DataExport::buildJSONObject() {
 
 
 void DataExport::setRenderingCam(Vehicle v, int height, int length) {
+	if (DEBUG_MODE) log("DataExport::setRenderingCam");
 	Vector3 position;
 	Vector3 fVec, rVec, uVec;
 	Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(v, 0);
@@ -163,6 +166,7 @@ void DataExport::setRenderingCam(Vehicle v, int height, int length) {
 
 
 StringBuffer DataExport::generateMessage() {
+	if (DEBUG_MODE) log("DataExport::GenerateMessage");
 	StringBuffer buffer;
 	buffer.Clear();
 	Writer<StringBuffer> writer(buffer);
@@ -287,6 +291,7 @@ StringBuffer DataExport::generateMessage() {
 
 
 void DataExport::setCamParams() {
+	if (DEBUG_MODE) log("DataExport::setCamParams");
 	//These values stay the same throughout a collection period
 	if (!s_camParams.init) {
 		s_camParams.nearClip = CAM::GET_CAM_NEAR_CLIP(*camera);
@@ -341,6 +346,7 @@ void DataExport::setCamParams() {
 
 
 void DataExport::capture() {
+	if (DEBUG_MODE) log("DataExport::capture");
 	//Time synchronization seems to be correct with 2 render calls
 	CAM::RENDER_SCRIPT_CAMS(TRUE, FALSE, 0, FALSE, FALSE);
 	scriptWait(0);
@@ -471,18 +477,21 @@ void DataExport::exportCameraAngle() {
 
 
 void DataExport::setColorBuffer() {
+	if (DEBUG_MODE) log("DataExport::setColorBuffer");
 	log("Before color buffer", true);
 	int size = export_get_color_buffer((void**)&color_buf);
 	log("After color buffer", true);
 }
 
 void DataExport::setStencilBuffer() {
+	if (DEBUG_MODE) log("DataExport::setStencilBuffer");
 	log("About to get stencil buffer");
 	int size = export_get_stencil_buffer((void**)&m_stencilBuffer);
 	log("After getting stencil buffer");
 }
 
 int DataExport::setDepthBuffer(bool prevDepth) {
+	if (DEBUG_MODE) log("DataExport::setDepthBuffer");
 	log("About to get depth buffer");
 	int size = export_get_depth_buffer((void**)&depth_map);
 

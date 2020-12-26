@@ -59,7 +59,6 @@ private:
 	void setTime();
 	void setHeightAboveGround();
 
-	ScreenCapturer* screenCapturer;
 
 	void setRenderingCam(Vehicle v, int height, int length);
 	void capture();
@@ -102,6 +101,9 @@ public:
 
 	// TODO make private, after having camera fully in DataExport ownership
 	void setCamParams();
+
+	// TODO move to private
+	ScreenCapturer* screenCapturer;
 
 
 };

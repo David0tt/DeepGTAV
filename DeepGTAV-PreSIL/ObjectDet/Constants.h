@@ -114,3 +114,7 @@ const bool AUGMENT_ALL_VEHICLES_IN_RANGE = true;
 const bool ONLY_COLLECT_IMAGE_AND_BBOXES = true;
 
 const bool DONT_COLLECT_IMAGE_AND_BBOXES_TO_FILE = true;
+
+
+// Use this to print Debugging information to logfile at getenv("DEEPGTAV_LOG_FILE")
+const bool DEBUG_MODE = true;

@@ -436,43 +436,43 @@ StringBuffer Scenario::generateMessage() {
 }
 
 
-// TODO remove
-void Scenario::setRenderingCam(Vehicle v, int height, int length) {
-    Vector3 position;
-    Vector3 fVec, rVec, uVec;
-    Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(v, 0);
-    ENTITY::GET_ENTITY_MATRIX(v, &fVec, &rVec, &uVec, &position);
-
-    Vector3 offset;
-    offset.x = 0;
-    offset.y = length / 2;
-    offset.z = height;
-    Vector3 offsetWorld = camToWorld(offset, fVec, rVec, uVec);
-    //Since it's offset need to subtract the cam position
-    offsetWorld.x -= s_camParams.pos.x;
-    offsetWorld.y -= s_camParams.pos.y;
-    offsetWorld.z -= s_camParams.pos.z;
-
-    GAMEPLAY::SET_TIME_SCALE(0.0f);
-    GAMEPLAY::SET_GAME_PAUSED(false);
-    GAMEPLAY::SET_TIME_SCALE(0.0f);
-
-
-    CAM::SET_CAM_COORD(camera, position.x + offsetWorld.x + cameraPositionOffset.x, position.y + offsetWorld.y + cameraPositionOffset.y, position.z + offsetWorld.z + cameraPositionOffset.z);
-    CAM::SET_CAM_ROT(camera, rotation.x + cameraRotationOffset.x, rotation.y + cameraRotationOffset.y, rotation.z + cameraRotationOffset.z, 0);
-
-
-    scriptWait(0);
-    GAMEPLAY::SET_GAME_PAUSED(true);
-
-    std::ostringstream oss;
-    oss << "EntityID/rotation/position: " << v << "\n" <<
-        position.x << ", " << position.y << ", " << position.z <<
-        "\n" << rotation.x << ", " << rotation.y << ", " << rotation.z <<
-        "\nOffset: " << offset.x << ", " << offset.y << ", " << offset.z <<
-        "\nOffsetworld: " << offsetWorld.x << ", " << offsetWorld.y << ", " << offsetWorld.z;
-    log(oss.str(), true);
-}
+//// TODO remove
+//void Scenario::setRenderingCam(Vehicle v, int height, int length) {
+//    Vector3 position;
+//    Vector3 fVec, rVec, uVec;
+//    Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(v, 0);
+//    ENTITY::GET_ENTITY_MATRIX(v, &fVec, &rVec, &uVec, &position);
+//
+//    Vector3 offset;
+//    offset.x = 0;
+//    offset.y = length / 2;
+//    offset.z = height;
+//    Vector3 offsetWorld = camToWorld(offset, fVec, rVec, uVec);
+//    //Since it's offset need to subtract the cam position
+//    offsetWorld.x -= s_camParams.pos.x;
+//    offsetWorld.y -= s_camParams.pos.y;
+//    offsetWorld.z -= s_camParams.pos.z;
+//
+//    GAMEPLAY::SET_TIME_SCALE(0.0f);
+//    GAMEPLAY::SET_GAME_PAUSED(false);
+//    GAMEPLAY::SET_TIME_SCALE(0.0f);
+//
+//
+//    CAM::SET_CAM_COORD(camera, position.x + offsetWorld.x + cameraPositionOffset.x, position.y + offsetWorld.y + cameraPositionOffset.y, position.z + offsetWorld.z + cameraPositionOffset.z);
+//    CAM::SET_CAM_ROT(camera, rotation.x + cameraRotationOffset.x, rotation.y + cameraRotationOffset.y, rotation.z + cameraRotationOffset.z, 0);
+//
+//
+//    scriptWait(0);
+//    GAMEPLAY::SET_GAME_PAUSED(true);
+//
+//    std::ostringstream oss;
+//    oss << "EntityID/rotation/position: " << v << "\n" <<
+//        position.x << ", " << position.y << ", " << position.z <<
+//        "\n" << rotation.x << ", " << rotation.y << ", " << rotation.z <<
+//        "\nOffset: " << offset.x << ", " << offset.y << ", " << offset.z <<
+//        "\nOffsetworld: " << offsetWorld.x << ", " << offsetWorld.y << ", " << offsetWorld.z;
+//    log(oss.str(), true);
+//}
 
 
 //TODO remove

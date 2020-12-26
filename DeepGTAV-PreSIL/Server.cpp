@@ -184,7 +184,7 @@ void Server::checkSendMessage() {
 
 		if (!frameSent) {
 			if (!readyToSend) {
-				send(ClientSocket, (const char*)&scenario.screenCapturer->length, sizeof(scenario.screenCapturer->length), 0);
+				send(ClientSocket, (const char*)&scenario.exporter.screenCapturer->length, sizeof(scenario.exporter.screenCapturer->length), 0);
 				error = WSAGetLastError();
 				if (error == WSAEWOULDBLOCK) return;
 				if (error != 0) {
@@ -196,8 +196,8 @@ void Server::checkSendMessage() {
 				sendMessageLen = 0;
 			}
 
-			while (readyToSend && (sendMessageLen < scenario.screenCapturer->length)) {
-				r = send(ClientSocket, (const char*)(scenario.screenCapturer->pixels + sendMessageLen), scenario.screenCapturer->length - sendMessageLen, 0);
+			while (readyToSend && (sendMessageLen < scenario.exporter.screenCapturer->length)) {
+				r = send(ClientSocket, (const char*)(scenario.exporter.screenCapturer->pixels + sendMessageLen), scenario.exporter.screenCapturer->length - sendMessageLen, 0);
 				error = WSAGetLastError();
 				if (error == WSAEWOULDBLOCK) return;
 				if (error != 0 || r <= 1) {

@@ -67,7 +67,7 @@ private:
 	float _setSpeed;
 
 	bool running = false;
-	Document d;
+	//Document d;
 
     int m_startArea = 1; //Downtown (see s_locationBounds)
     std::vector<std::vector<char>> m_polyGrid;
@@ -89,10 +89,10 @@ public:
     //Depth buffer fn/var needs to be accessed by server
     bool m_prevDepth = false;
 
-	ScreenCapturer* screenCapturer;
+	//TODO remove
+	//ScreenCapturer* screenCapturer;
 	StringBuffer generateMessage();
 
-    void setRenderingCam(Vehicle v, int height, int length);
 	void setRecording_active(bool x);
 	void goToLocation(float x, float y, float z, float setSpeed);
 	void teleportToLocation(float x, float y, float z);
@@ -124,6 +124,8 @@ public:
 	void setWeather(const char * weather);
 	void setClockTime(int hour, int minute, int second);
 
+	//TODO move to private
+	DataExport exporter;
 
 
 private:
@@ -135,5 +137,4 @@ private:
     void createVehicles();
     void setPosition();
 
-	DataExport exporter;
 };

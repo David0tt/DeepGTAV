@@ -5,8 +5,12 @@
 #pragma once
 
 static char* logDir = getenv("DEEPGTAV_LOG_FILE");
-static bool LOGGING = false;
-static bool DEBUG_LOGGING = false;
+
+//TODO rename/refactor
+static bool LOGGING = DEBUG_MODE;
+static bool DEBUG_LOGGING = DEBUG_MODE;
+
+
 static void log(std::string str, bool override = false) {
     if ((override || LOGGING) && logDir != NULL) {
         FILE* f = fopen(logDir, "a");
