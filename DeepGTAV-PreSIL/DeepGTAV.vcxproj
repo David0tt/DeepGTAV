@@ -7,6 +7,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="DataExport.cpp" />
     <ClCompile Include="ObjectDet\LiDAR.cpp" />
     <ClCompile Include="ObjectDet\lodepng.cpp" />
     <ClCompile Include="ObjectDet\ObjectDetection.cpp" />
@@ -23,6 +24,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AreaRoaming.h" />
+    <ClInclude Include="DataExport.h" />
     <ClInclude Include="defaults.h" />
     <ClInclude Include="ObjectDetIncludes.h" />
     <ClInclude Include="ObjectDet\CamParams.h" />

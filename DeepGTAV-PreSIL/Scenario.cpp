@@ -15,13 +15,8 @@
 #include <sstream>
 #include "AreaRoaming.h"
 
-#include "base64.h"
+// #include "base64.h"
 
-extern "C" {
-    __declspec(dllimport) int export_get_depth_buffer(void** buf);
-    __declspec(dllexport) int export_get_color_buffer(void** buf);
-    __declspec(dllexport) int export_get_stencil_buffer(void** buf);
-}
 
 const float VERT_CAM_FOV = 59; //In degrees
 //Need to input the vertical FOV with GTA functions.
@@ -123,53 +118,7 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
     //Need to reset camera params when dataset config is received
     s_camParams.init = false;
 
-	if (!dc["vehicles"].IsNull()) vehicles = dc["vehicles"].GetBool();
-	else if (setDefaults) vehicles = _VEHICLES_;
 
-	if (!dc["peds"].IsNull()) peds = dc["peds"].GetBool();
-	else if (setDefaults) peds = _PEDS_;
-
-	if (!dc["trafficSigns"].IsNull()) trafficSigns = dc["trafficSigns"].GetBool();
-	else if (setDefaults) trafficSigns = _TRAFFIC_SIGNS_;
-
-	if (!dc["direction"].IsNull()) {
-		direction = true;
-		if (!dc["direction"][0].IsNull()) dir.x = dc["direction"][0].GetFloat();
-		else if (setDefaults) direction = _DIRECTION_;
-
-		if (!dc["direction"][1].IsNull()) dir.y = dc["direction"][1].GetFloat();
-		else if (setDefaults) direction = _DIRECTION_;
-
-		if (!dc["direction"][2].IsNull()) dir.z = dc["direction"][2].GetFloat();
-		else if (setDefaults) direction = _DIRECTION_;
-	}
-	else if (setDefaults) direction = _DIRECTION_;
-
-	if (dc["reward"].IsArray()) {
-		if (dc["reward"][0].IsFloat() && dc["reward"][1].IsFloat()) {
-			rewarder = new GeneralRewarder((char*)(GetCurrentModulePath() + "paths.xml").c_str(), dc["reward"][0].GetFloat(), dc["reward"][1].GetFloat());
-			reward = true;
-		}
-		else if (setDefaults) reward = _REWARD_;
-	}
-	else if (setDefaults) reward = _REWARD_;
-
-	if (!dc["throttle"].IsNull()) throttle = dc["throttle"].GetBool();
-	else if (setDefaults) throttle = _THROTTLE_;
-	if (!dc["brake"].IsNull()) brake = dc["brake"].GetBool();
-	else if (setDefaults) brake = _BRAKE_;
-	if (!dc["steering"].IsNull()) steering = dc["steering"].GetBool();
-	else if (setDefaults) steering = _STEERING_;
-	if (!dc["speed"].IsNull()) speed = dc["speed"].GetBool();
-	else if (setDefaults) speed = _SPEED_;
-	if (!dc["yawRate"].IsNull()) yawRate = dc["yawRate"].GetBool();
-	else if (setDefaults) yawRate = _YAW_RATE_;
-	if (!dc["drivingMode"].IsNull()) drivingMode = dc["drivingMode"].GetBool();
-	else if (setDefaults) drivingMode = _DRIVING_MODE_;
-	if (!dc["location"].IsNull()) location = dc["location"].GetBool();
-	else if (setDefaults) location = _LOCATION_;
-	if (!dc["time"].IsNull()) time = dc["time"].GetBool();
-	else if (setDefaults) time = _TIME_;
     if (!dc["offscreen"].IsNull()) offscreen = dc["offscreen"].GetBool();
     else if (setDefaults) offscreen = _OFFSCREEN_;
     if (!dc["showBoxes"].IsNull()) showBoxes = dc["showBoxes"].GetBool();
@@ -246,34 +195,13 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
         vehicles_created = false;
     }
 
-	//Create JSON DOM
-	d.SetObject();
-	Document::AllocatorType& allocator = d.GetAllocator();
-	Value a(kArrayType);
 
-	if (vehicles) d.AddMember("vehicles", a, allocator);
-	if (peds) d.AddMember("peds", a, allocator);
-	if (trafficSigns) d.AddMember("trafficSigns", a, allocator);
-	if (direction) d.AddMember("direction", a, allocator);
-	if (reward) d.AddMember("reward", 0.0, allocator);
-	if (throttle) d.AddMember("throttle", 0.0, allocator);
-	if (brake) d.AddMember("brake", 0.0, allocator);
-	if (steering) d.AddMember("steering", 0.0, allocator);
-	if (speed) d.AddMember("speed", 0.0, allocator);
-	if (yawRate) d.AddMember("yawRate", 0.0, allocator);
-	if (drivingMode) d.AddMember("drivingMode", 0, allocator);
-	if (location) d.AddMember("location", a, allocator);
-	if (time) d.AddMember("time", a, allocator);
-    d.AddMember("index", 0, allocator);
-    d.AddMember("focalLen", 0.0, allocator);
-    d.AddMember("curPosition", a, allocator);
-    d.AddMember("seriesIndex", a, allocator);
-	d.AddMember("bbox2d", a, allocator);
-	d.AddMember("HeightAboveGround", 0.0, allocator);
-	d.AddMember("CameraAngle", a, allocator);
-	d.AddMember("CameraPosition", a, allocator);
-
-	screenCapturer = new ScreenCapturer(s_camParams.width, s_camParams.height);
+	exporter.parseDatasetConfig(dc, setDefaults);
+	exporter.camera = &camera;
+	exporter.cameraPositionOffset = &cameraPositionOffset;
+	exporter.cameraRotationOffset = &cameraRotationOffset;
+	exporter.m_ownVehicle = &m_ownVehicle;
+	exporter.instance_index = &instance_index;
 }
 
 void Scenario::buildScenario() {
@@ -455,7 +383,7 @@ void Scenario::run() {
             //Need to delay first camera parameters being set so native functions return correct values
             if (!s_camParams.firstInit) {
                 s_camParams.init = false;
-                setCamParams();
+                exporter.setCamParams();
                 s_camParams.firstInit = true;
             }
 
@@ -504,194 +432,11 @@ void Scenario::setCommands(float throttle, float brake, float steering) {
 }
 
 StringBuffer Scenario::generateMessage() {
-	StringBuffer buffer;
-	buffer.Clear();
-	Writer<StringBuffer> writer(buffer);
-
-    if (m_recordScenario) {
-        Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(m_ownVehicle, 0);
-        CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 0);
-        return buffer;
-    }
-
-    if (m_positionScenario || OUTPUT_SELF_LOCATION) {
-        Vector3 currentPos;
-        Vector3 vehicleForwardVector, vehicleRightVector, vehicleUpVector;
-
-        ENTITY::GET_ENTITY_MATRIX(m_ownVehicle, &vehicleForwardVector, &vehicleRightVector, &vehicleUpVector, &currentPos);
-        float heading = GAMEPLAY::GET_HEADING_FROM_VECTOR_2D(vehicleForwardVector.x, vehicleForwardVector.y);
-
-        std::string baseFolder = std::string(getenv("DEEPGTAV_EXPORT_DIR")) + "\\";
-        std::string filename = baseFolder + "object\\" + "location.txt";
-        FILE* f = fopen(filename.c_str(), "w");
-        std::ostringstream oss;
-        oss << currentPos.x << ", " << currentPos.y << ", " << currentPos.z << ", " << heading;
-        std::string str = oss.str();
-        fprintf(f, str.c_str());
-        fprintf(f, "\n");
-        fclose(f);
-
-        Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(m_ownVehicle, 0);
-        CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 0);
-        if (m_positionScenario) return buffer;
-    }
-
-	
-    log("About to pause game");
-    GAMEPLAY::SET_GAME_PAUSED(true);
-    GAMEPLAY::SET_TIME_SCALE(0.0f);
-
-    setRenderingCam(m_ownVehicle, CAM_OFFSET_UP, CAM_OFFSET_FORWARD);
-
-    ////Can check whether camera and vehicle are aligned
-    //Vector3 camRot2 = CAM::GET_CAM_ROT(camera, 0);
-    //std::ostringstream oss1;
-    //oss1 << "entityRotation X: " << rotation.x << " Y: " << rotation.y << " Z: " << rotation.z <<
-    //    "\n camRot X: " << camRot.x << " Y: " << camRot.y << " Z: " << camRot.z <<
-    //    "\n camRot2 X: " << camRot2.x << " Y: " << camRot2.y << " Z: " << camRot2.z;
-    //std::string str1 = oss1.str();
-    //log(str1);
-
-
-
-    log("Script cams rendered");
-	capture();
-	log("Screen captured");
-
-
-	int depthSize = -1;
-
-	if (recording_active) {
-		//TODO pass this through
-		bool depthMap = true;
-
-		setCamParams();
-		//setColorBuffer();
-		depthSize = setDepthBuffer();
-		if (depthMap) setStencilBuffer();
-	}
-
-
-	// Setting bufffers for the Server
-	// Those were the original commands from DeepGTAV
-	// They each need Scenario::setVehicleList(), Scenario::setPedsList() etc.
-	// Those commands would set the JSON document, e.g. d["vehicles"] = _vehicles;
-
-	// Those functionalities have been somehow moved to ObjectDetection.cpp, e.g. ObjectDetection::setVehiclesList()
-	// To fix the JSON / Server those have to be implemented again to correctly set e.g. d["vehicles"] = _vehicles
-	// A quick fix would be to copy the old Definitions from DeepGTAV, but I don't know if there would be side effects
-	// The correct solution would be to integrate the functionalities of e.g. Scenario::setVehiclesList() and ObjectDetection::setVehiclesList()
-	// into one.
-	//
-	// For now i only implement the messages I need and have the rest commented out.
-
-	// if (vehicles) setVehiclesList();
-	// if (peds) setPedsList();
-	// if (trafficSigns); //TODO
-	if (direction) setDirection();
-	if (reward) setReward();
-	if (throttle) setThrottle();
-	if (brake) setBrake();
-	if (steering) setSteering();
-	if (speed) setSpeed();
-	if (yawRate) setYawRate();
-	if (drivingMode); //TODO
-	if (location) setLocation();
-	if (time) setTime();
-	setHeightAboveGround();
-	exportCameraPosition();
-	exportCameraAngle();
-
-
-
-
-
-    if (!m_pObjDet) {
-        m_pObjDet.reset(new ObjectDetection());
-        m_pObjDet->initCollection(s_camParams.width, s_camParams.height, false, instance_index);
-        m_startIndex = instance_index;
-    }
-    if (depthSize != -1) {
-        FrameObjectInfo fObjInfo = m_pObjDet->generateMessage(depth_map, m_stencilBuffer);
-        m_pObjDet->exportDetections(fObjInfo);
-
-		const std::string detections = m_pObjDet->exportDetectionsString(fObjInfo);
-
-		// set BBoxes to send as JSON
-		Document::AllocatorType& allocator = d.GetAllocator();
-		Value bbox2d(kArrayType);
-		//Value det;
-		//char buffer[10];
-		//int len = sprintf(buffer, detections)
-		//s.SetString("test");
-		//const char *c = detections.c_str();
-
-		//const char buffer[detections.length()];
-
-
-		bbox2d.SetString(StringRef(detections.c_str()));
-
-		//bbox2d.PushBack(detections, allocator);
-		d["bbox2d"] = bbox2d;
-
-
-		BYTE* data = screenCapturer->pixels;
-        m_pObjDet->exportImage(data);
-
-		//cv::Mat tempMat(cv::Size(s_camParams.width, s_camParams.height), CV_8UC3, data);
-		//std::vector<uchar> buf;
-		//cv::imencode(".png", tempMat, buf);
-
-
-		//uchar *enc_msg = new uchar[buf.size()];
-		//for (int i = 0; i < buf.size(); i++) enc_msg[i] = buf[i];
-		//std::string encoded = base64_encode(enc_msg, buf.size());
-
-		//auto *enc_msg = reinterpret_cast<unsigned char*>(buf.data());
-		//std::string encoded = base64_encode(enc_msg, buf.size());
-
-
-		//std::string encoding = base64_encode(buf.data(), buf.size());
-
-		//Document::AllocatorType& allocator = d.GetAllocator();
-		//Value image_2(kArrayType);
-		//image_2.PushBack("test", allocator).PushBack("test", allocator).PushBack("test", allocator);
-		//d["image_2"] = image_2;
-
-
-		//Document::AllocatorType& allocator = d.GetAllocator();
-		//Value image_2(kStringType);
-		////image_2.PushBack(encoded, allocator);
-		//image_2.PushBack("test", allocator);
-		////d["image_2"] = image_2;
-		//d["image_2"] = image_2;
-
-
-        d["index"] = fObjInfo.instanceIdx;
-
-        //Create vehicles if it is a stationary scenario
-        createVehicles();
-
-        if (GENERATE_SECONDARY_PERSPECTIVES) {
-            generateSecondaryPerspectives();
-        }
-
-        //For testing to ensure secondary ownvehicle aligns with main perspective
-        //generateSecondaryPerspective(m_pObjDet->m_ownVehicleObj);
-
-        m_pObjDet->increaseIndex();
-    }
-    else {
-        log("ERROR: Depth buffer could not be properly set!!!!!!!!!!!!!!!!!!!!!!", true);
-    }
-    GAMEPLAY::SET_GAME_PAUSED(false);
-    GAMEPLAY::SET_TIME_SCALE(1.0f);
-
-	d.Accept(writer);
-
-	return buffer;
+	return exporter.generateMessage();
 }
 
+
+// TODO remove
 void Scenario::setRenderingCam(Vehicle v, int height, int length) {
     Vector3 position;
     Vector3 fVec, rVec, uVec;
@@ -729,8 +474,10 @@ void Scenario::setRenderingCam(Vehicle v, int height, int length) {
     log(oss.str(), true);
 }
 
+
+//TODO remove
 void Scenario::setRecording_active(bool x) {
-	recording_active = x;
+	exporter.setRecording_active(x);
 }
 
 void Scenario::goToLocation(float x, float y, float z, float speed) {
@@ -799,120 +546,8 @@ void Scenario::setCameraPositionAndRotation(float x, float y, float z, float rot
 }
 
 
-void Scenario::capture() {
-    //Time synchronization seems to be correct with 2 render calls
-    CAM::RENDER_SCRIPT_CAMS(TRUE, FALSE, 0, FALSE, FALSE);
-    scriptWait(0);
-    CAM::RENDER_SCRIPT_CAMS(TRUE, FALSE, 0, FALSE, FALSE);
-    scriptWait(0);
-    CAM::RENDER_SCRIPT_CAMS(TRUE, FALSE, 0, FALSE, FALSE);
-    scriptWait(0);
-    screenCapturer->capture();
-}
-
-//Generate a secondary perspective for all nearby vehicles
-void Scenario::generateSecondaryPerspectives() {
-    for (ObjEntity v : m_pObjDet->m_nearbyVehicles) {
-        if (VEHICLE::IS_THIS_MODEL_A_CAR(v.model)) {
-            generateSecondaryPerspective(v);
-        }
-    }
-    m_pObjDet->m_nearbyVehicles.clear();
-}
-
-void Scenario::generateSecondaryPerspective(ObjEntity vInfo) {
-    setRenderingCam(vInfo.entityID, vInfo.height, vInfo.length);
-
-    //GAMEPLAY::SET_GAME_PAUSED(true);
-    capture();
-
-    setCamParams();
-    setDepthBuffer();
-    setStencilBuffer();
-
-    FrameObjectInfo fObjInfo = m_pObjDet->generateMessage(depth_map, m_stencilBuffer, vInfo.entityID);
-    m_pObjDet->exportDetections(fObjInfo, &vInfo);
-    std::string filename = m_pObjDet->getStandardFilename("image_2", ".png");
-    m_pObjDet->exportImage(screenCapturer->pixels, filename);
-
-    //GAMEPLAY::SET_GAME_PAUSED(false);
-}
-
-void Scenario::setThrottle(){
-	d["throttle"] = getFloatValue(m_ownVehicle, 0x92C);
-}
-
-void Scenario::setBrake(){
-	d["brake"] = getFloatValue(m_ownVehicle, 0x930);
-}
-
-void Scenario::setSteering(){
-	d["steering"] = -getFloatValue(m_ownVehicle, 0x924) / 0.6981317008;
-}
-
-void Scenario::setSpeed() {
-	d["speed"] = ENTITY::GET_ENTITY_SPEED(m_ownVehicle);
-}
-
-void Scenario::setYawRate() {
-	Vector3 rates = ENTITY::GET_ENTITY_ROTATION_VELOCITY(m_ownVehicle);
-	d["yawRate"] = rates.z*180.0 / 3.14159265359;
-}
-
-void Scenario::setLocation() {
-	Document::AllocatorType& allocator = d.GetAllocator();
-	Vector3 pos = ENTITY::GET_ENTITY_COORDS(m_ownVehicle, false);
-	Value location(kArrayType);
-	location.PushBack(pos.x, allocator).PushBack(pos.y, allocator).PushBack(pos.z, allocator);
-	d["location"] = location;
-}
-
-void Scenario::setTime() {
-	Document::AllocatorType& allocator = d.GetAllocator();
-	Value time(kArrayType);
-	time.PushBack(TIME::GET_CLOCK_HOURS(), allocator).PushBack(TIME::GET_CLOCK_MINUTES(), allocator).PushBack(TIME::GET_CLOCK_SECONDS(), allocator);
-	d["time"] = time;
-}
-
-void Scenario::setHeightAboveGround() {
-	d["HeightAboveGround"] = ENTITY::GET_ENTITY_HEIGHT_ABOVE_GROUND(m_ownVehicle);
-}
-
-void Scenario::setDirection(){
-	int direction;
-	float distance;
-	Vehicle temp_vehicle;
-	Document::AllocatorType& allocator = d.GetAllocator();
-	PATHFIND::GENERATE_DIRECTIONS_TO_COORD(dir.x, dir.y, dir.z, TRUE, &direction, &temp_vehicle, &distance);
-	Value _direction(kArrayType);
-	_direction.PushBack(direction, allocator).PushBack(distance, allocator);
-	d["direction"] = _direction;
-}
-
-void Scenario::setReward() {
-	d["reward"] = rewarder->computeReward(m_ownVehicle);
-}
 
 
-void Scenario::exportCameraPosition() {
-	Document::AllocatorType& allocator = d.GetAllocator();
-	Vector3 pos = CAM::GET_CAM_COORD(camera);
-	Value position(kArrayType);
-	position.PushBack(pos.x, allocator).PushBack(pos.y, allocator).PushBack(pos.z, allocator);
-	d["CameraPosition"] = position;
-}
-
-void Scenario::exportCameraAngle() {
-	Document::AllocatorType& allocator = d.GetAllocator();
-	Vector3 ang = CAM::GET_CAM_ROT(camera, 0);
-	Value angles(kArrayType);
-	angles.PushBack(ang.x, allocator).PushBack(ang.y, allocator).PushBack(ang.z, allocator);
-	d["CameraAngle"] = angles;
-}
-
-//void Scenario::exportWeather() {
-//	d["Weather"] = ...;
-//}
 
 static int bike_num = 0;
 
@@ -996,30 +631,6 @@ void Scenario::setPosition() {
     ENTITY::GET_ENTITY_MATRIX(m_ownVehicle, &currentForwardVector, &currentRightVector, &currentUpVector, &currentPos); //Blue or red pill
 }
 
-//TODO Calls to export_get_color_buffer are causing GTA to crash
-void Scenario::setColorBuffer() {
-    log("Before color buffer", true);
-    int size = export_get_color_buffer((void**)&color_buf);
-    log("After color buffer", true);
-}
-
-void Scenario::setStencilBuffer() {
-    log("About to get stencil buffer");
-    int size = export_get_stencil_buffer((void**)&m_stencilBuffer);
-    log("After getting stencil buffer");
-}
-
-int Scenario::setDepthBuffer(bool prevDepth) {
-    log("About to get depth buffer");
-    int size = export_get_depth_buffer((void**)&depth_map);
-
-    std::ostringstream oss;
-    oss << "Depth buffer size: " << size;
-    log(oss.str(), true);
-
-    log("After getting depth buffer");
-    return size;
-}
 
 void Scenario::drawBoxes(Vector3 BLL, Vector3 FUR, Vector3 dim, Vector3 upVector, Vector3 rightVector, Vector3 forwardVector, Vector3 position, int colour) {
     //log("Inside draw boxes");
@@ -1079,54 +690,3 @@ void Scenario::drawBoxes(Vector3 BLL, Vector3 FUR, Vector3 dim, Vector3 upVector
     }
 }
 
-void Scenario::setCamParams() {
-    //These values stay the same throughout a collection period
-    if (!s_camParams.init) {
-        s_camParams.nearClip = CAM::GET_CAM_NEAR_CLIP(camera);
-        s_camParams.farClip = CAM::GET_CAM_FAR_CLIP(camera);
-        s_camParams.fov = CAM::GET_CAM_FOV(camera);
-        s_camParams.ncHeight = 2 * s_camParams.nearClip * tan(s_camParams.fov / 2. * (PI / 180.)); // field of view is returned vertically
-        s_camParams.ncWidth = s_camParams.ncHeight * GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false);
-        s_camParams.init = true;
-
-        if (m_recordScenario) {
-            float gameFC = CAM::GET_CAM_FAR_CLIP(camera);
-            std::ostringstream oss;
-            oss << "NC, FC (gameFC), FOV: " << s_camParams.nearClip << ", " << s_camParams.farClip << " (" << gameFC << "), " << s_camParams.fov;
-            std::string str = oss.str();
-            log(str, true);
-        }
-    }
-
-    //These values change frame to frame
-    s_camParams.theta = CAM::GET_CAM_ROT(camera, 0);
-    s_camParams.pos = CAM::GET_CAM_COORD(camera);
-
-    std::ostringstream oss1;
-    oss1 << "\ns_camParams.pos X: " << s_camParams.pos.x << " Y: " << s_camParams.pos.y << " Z: " << s_camParams.pos.z <<
-        "\nvehicle.pos X: " << currentPos.x << " Y: " << currentPos.y << " Z: " << currentPos.z <<
-        "\nfar: " << s_camParams.farClip << " nearClip: " << s_camParams.nearClip << " fov: " << s_camParams.fov <<
-        "\nrotation gameplay: " << s_camParams.theta.x << " Y: " << s_camParams.theta.y << " Z: " << s_camParams.theta.z <<
-        "\n AspectRatio: " << GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false);
-    std::string str1 = oss1.str();
-    log(str1);
-
-    //For optimizing 3d to 2d and unit vector to 2d calculations
-    s_camParams.eigenPos = Eigen::Vector3f(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z);
-    s_camParams.eigenRot = Eigen::Vector3f(s_camParams.theta.x, s_camParams.theta.y, s_camParams.theta.z);
-    s_camParams.eigenTheta = (PI / 180.0) * s_camParams.eigenRot;
-    s_camParams.eigenCamDir = rotate(WORLD_NORTH, s_camParams.eigenTheta);
-    s_camParams.eigenCamUp = rotate(WORLD_UP, s_camParams.eigenTheta);
-    s_camParams.eigenCamEast = rotate(WORLD_EAST, s_camParams.eigenTheta);
-    s_camParams.eigenClipPlaneCenter = s_camParams.eigenPos + s_camParams.nearClip * s_camParams.eigenCamDir;
-    s_camParams.eigenCameraCenter = -s_camParams.nearClip * s_camParams.eigenCamDir;
-
-    //For measuring height of camera (LiDAR) to ground plane
-    /*float groundZ;
-    GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, &(groundZ), 0);
-    
-    std::ostringstream oss;
-    oss << "LiDAR height: " << s_camParams.pos.z - groundZ;
-    std::string str = oss.str();
-    log(str);*/
-}

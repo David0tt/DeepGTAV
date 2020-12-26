@@ -18,18 +18,17 @@
 #include "ObjectDetection.h"
 #include "Constants.h"
 
+#include "DataExport.h"
+
 using namespace rapidjson;
 
 //#define DEBUG 1
 
 class Scenario {
 private:
-    std::unique_ptr<ObjectDetection> m_pObjDet = NULL;
-
 	static char* weatherList[14];
 	static char* vehicleList[3];
 
-	bool recording_active = false;
 
 	Vehicle m_ownVehicle = NULL;
 	Player player = NULL;
@@ -43,19 +42,6 @@ private:
 	const char* _weather;
 	const char* _vehicle;
 
-	bool vehicles;
-	bool peds;
-	bool trafficSigns; //TODO
-	bool direction;
-	bool reward;
-	bool throttle;
-	bool brake;
-	bool steering;
-	bool speed;
-	bool yawRate;
-	bool drivingMode; //TODO
-	bool location;
-	bool time;
     bool offscreen;
     bool showBoxes;
     bool pointclouds;
@@ -86,10 +72,6 @@ private:
     int m_startArea = 1; //Downtown (see s_locationBounds)
     std::vector<std::vector<char>> m_polyGrid;
 
-    //Depth Map variables
-    float* depth_map = NULL;
-    uint8_t* m_stencilBuffer = NULL;
-    unsigned char* color_buf = NULL;
 
     bool vehicles_created = false;
     std::vector<VehicleToCreate> vehiclesToCreate;
@@ -105,7 +87,6 @@ public:
 	void run();
 
     //Depth buffer fn/var needs to be accessed by server
-    int setDepthBuffer(bool prevDepth = false);
     bool m_prevDepth = false;
 
 	ScreenCapturer* screenCapturer;
@@ -116,16 +97,12 @@ public:
 	void goToLocation(float x, float y, float z, float setSpeed);
 	void teleportToLocation(float x, float y, float z);
 	void setCameraPositionAndRotation(float x, float y, float z, float rot_x, float rot_y, float rot_z);
-    void generateSecondaryPerspectives();
-    void generateSecondaryPerspective(ObjEntity vInfo);
-    void capture();
 
     int instance_index = 0;
     int series_index = 0;
     std::string series_string = "0000";
     std::string instance_string;
     int baseTrackingIndex = instance_index;
-    int m_startIndex;
 
     //Tracking variables
     bool collectTracking;
@@ -154,24 +131,9 @@ private:
 	void parseDatasetConfig(const Value& dc, bool setDefaults);
 	void buildScenario();
 
-	void setDirection();
-	void setReward();
-	void exportCameraPosition();
-	void exportCameraAngle();
-	void setThrottle();
-	void setBrake();
-	void setSteering();
-	void setSpeed();
-	void setYawRate();
-	void setLocation();
-	void setTime();
-	void setHeightAboveGround();
     void drawBoxes(Vector3 BLL, Vector3 FUR, Vector3 dim, Vector3 upVector, Vector3 rightVector, Vector3 forwardVector, Vector3 position, int colour);
     void createVehicles();
-    void setCamParams();
     void setPosition();
-    void setStencilBuffer();
 
-    //Do not use this function. Causes GTA to crash - need to figure out why
-    void setColorBuffer();
+	DataExport exporter;
 };
