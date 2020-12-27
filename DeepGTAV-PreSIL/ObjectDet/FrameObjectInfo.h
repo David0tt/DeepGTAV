@@ -73,10 +73,6 @@ struct FrameObjectInfo
     int instanceIdx;
     int seriesIdx;
 
-    Vector3 position;
-    float heading;
-    float roll;
-    float pitch;
 
     //In world coordinates
     Vector3 forwardVec;
@@ -85,11 +81,8 @@ struct FrameObjectInfo
     Vector3 camPos;
     Vector3 kittiWorldPos;//Bottom center (after correcting for offset) in GTA world coords
 
-    float speed;
-    float yawRate;
 
     float focalLen;
-    int timeHours;//In-game time of day (hours)
 
     //These are maps for when we do 4 cameras for full LiDAR
     //It will enable quicker checking to see if entity is already discovered

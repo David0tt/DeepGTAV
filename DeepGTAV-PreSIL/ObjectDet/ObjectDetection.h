@@ -185,10 +185,11 @@ private:
     void setPedsList();
 
 	// TODO remove those (this can not be done right now, because they set m_curFrame
-    void setSpeed();
-    void setYawRate();
-    void setTime();
-    void setupLiDAR();
+    // void setSpeed();
+    // void setYawRate();
+    // void setTime();
+    
+	void setupLiDAR();
     void collectLiDAR();
     void setIndex();
     void calcCameraIntrinsics();

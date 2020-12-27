@@ -205,10 +205,8 @@ FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStenci
     //Need to set peds list first for integrating peds on bikes
     setPedsList();
     setVehiclesList();
-    setSpeed();
-    setYawRate();
-    setTime();
-    setFocalLength();
+
+	setFocalLength();
     log("After focalLength");
 
 	//Update 2D bboxes, and create segmentation of stencil values
@@ -307,14 +305,6 @@ void ObjectDetection::setPosition() {
         ENTITY::GET_ENTITY_MATRIX(m_vehicle, &vehicleForwardVector, &vehicleRightVector, &vehicleUpVector, &currentPos); //Blue or red pill
     }
 
-    m_curFrame.position = currentPos;
-
-    m_curFrame.roll = atan2(-vehicleRightVector.z, sqrt(pow(vehicleRightVector.y, 2) + pow(vehicleRightVector.x, 2)));
-    m_curFrame.pitch = atan2(-vehicleForwardVector.z, sqrt(pow(vehicleForwardVector.y, 2) + pow(vehicleForwardVector.x, 2)));
-
-    //Should use atan2 over gameplay heading
-    //float heading = GAMEPLAY::GET_HEADING_FROM_VECTOR_2D(vehicleForwardVector.x, vehicleForwardVector.y);
-    m_curFrame.heading = atan2(vehicleForwardVector.y, vehicleForwardVector.x);
 
     m_curFrame.forwardVec = vehicleForwardVector;
     m_curFrame.upVec = vehicleUpVector;
@@ -329,18 +319,6 @@ void ObjectDetection::setPosition() {
     m_curFrame.kittiWorldPos = kittiWorldPos;
 }
 
-void ObjectDetection::setSpeed() {
-    m_curFrame.speed = ENTITY::GET_ENTITY_SPEED(m_vehicle);
-}
-
-void ObjectDetection::setYawRate() {
-    Vector3 rates = ENTITY::GET_ENTITY_ROTATION_VELOCITY(m_vehicle);
-    m_curFrame.yawRate = rates.z*180.0 / 3.14159265359;
-}
-
-void ObjectDetection::setTime() {
-    m_curFrame.timeHours = TIME::GET_CLOCK_HOURS();
-}
 
 //Cycle through 8 corners of bbox and see if the ray makes it to or past this point
 bool ObjectDetection::hasLOSToEntity(Entity entityID, Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector, bool useOrigin, Vector3 origin) {
@@ -2353,6 +2331,8 @@ void ObjectDetection::exportEntities(EntityMap entMap, std::ostringstream& oss, 
     }
 }
 
+
+// TODO remove 
 void ObjectDetection::exportPosition() {
     FILE* f = fopen(m_posFilename.c_str(), "w");
     std::ostringstream oss;
