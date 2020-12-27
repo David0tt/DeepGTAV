@@ -47,24 +47,12 @@ private:
 
     Vehicle m_vehicle = NULL;
     Vehicle m_ownVehicle = NULL;
-    Player player = NULL;
     Ped ped = NULL;
     Cam camera = NULL;
-    Vector3 dir;
-
-    float x, y, z;
-    float startHeading;
-    int hour, minute;
-    const char* _weather;
-    const char* _vehicle;
 
     bool pointclouds;
 
     std::string baseFolder;
-
-    float currentThrottle = 0.0;
-    float currentBrake = 0.0;
-    float currentSteering = 0.0;
 
     Vector3 currentPos;
     Vector3 vehicleForwardVector;
@@ -75,10 +63,6 @@ private:
     Vector3 m_camRightVector;
     Vector3 m_camUpVector;
 
-    bool running = false;
-
-    int m_startArea = 1; //Downtown (see s_locationBounds)
-    std::vector<std::vector<char>> m_polyGrid;
 
     //LiDAR variables
     LiDAR lidar;
@@ -132,9 +116,6 @@ private:
     std::string m_veloFilenameU;
     std::string m_depthPCFilenameU;
 
-    bool vehicles_created = false;
-    std::vector<VehicleToCreate> vehiclesToCreate;
-    std::vector<PedToCreate> pedsToCreate;
 
     //For tracking: first frame in a series that an entity appears
     std::unordered_map<int, int> trackFirstFrame;
@@ -171,7 +152,6 @@ public:
     FrameObjectInfo setDepthAndStencil(bool prevDepth = false, float* pDepth = NULL, uint8_t* pStencil = NULL);
     //Depth buffer fn/var needs to be accessed by server
     void setDepthBuffer(bool prevDepth = false);
-    bool m_prevDepth = false;
 
     FrameObjectInfo generateMessage(float* pDepth, uint8_t* pStencil, int entityID = -1);
 	std::string exportDetectionsString(FrameObjectInfo fObjInfo, ObjEntity * vPerspective = NULL);
@@ -180,11 +160,12 @@ public:
     void increaseIndex();
     std::string getStandardFilename(std::string subDir, std::string extension);
 
-    int instance_index = 0;
+
+	// TODO look if those variables are still used (they were not in Scenario)
+	int instance_index = 0;
     int series_index = 0;
     std::string series_string = "0000";
     std::string instance_string;
-    int baseTrackingIndex = instance_index;
 
     //Tracking variables
     bool collectTracking;
@@ -202,6 +183,8 @@ public:
 private:
     void setVehiclesList();
     void setPedsList();
+
+	// TODO remove those
     void setSpeed();
     void setYawRate();
     void setTime();
