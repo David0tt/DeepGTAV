@@ -225,8 +225,6 @@ FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStenci
 		log("After output occlusion");
 		if (depthMap && lidar_initialized) outputUnusedStencilPixels();
 		log("After output unused stencil");
-
-		setGroundPlanePoints();
 	}
 
     return m_curFrame;
@@ -2438,6 +2436,8 @@ void ObjectDetection::exportDetections(FrameObjectInfo fObjInfo, ObjEntity* vPer
     
 }
 
+
+// TODO rework to allow sending images over TCP
 void ObjectDetection::exportImage(BYTE* data, std::string filename) {
 	if (!DONT_COLLECT_IMAGE_AND_BBOXES_TO_FILE) {
 		cv::Mat tempMat(cv::Size(s_camParams.width, s_camParams.height), CV_8UC3, data);
@@ -2475,7 +2475,7 @@ Vector3 ObjectDetection::getGroundPoint(Vector3 point, Vector3 yVectorCam, Vecto
     return relPoint;
 }
 
-void ObjectDetection::setGroundPlanePoints() {
+std::string ObjectDetection::setGroundPlanePoints() {
     //Distance to ground is ~1.73
     //See CAR_CENTER_OFFSET_UP
     /*float groundZ;
@@ -2504,11 +2504,9 @@ void ObjectDetection::setGroundPlanePoints() {
     Vector3 yVectorCam = convertCoordinateSystem(worldY, m_camForwardVector, m_camRightVector, m_camUpVector);
     Vector3 zVectorCam = convertCoordinateSystem(worldZ, m_camForwardVector, m_camRightVector, m_camUpVector);
 
-    //World coordinates have: y north, x east
-    std::string filename = getStandardFilename("ground_points", ".txt");
-
-    FILE* f = fopen(filename.c_str(), "w");
-    std::ostringstream oss;
+    //World coordinates have: y north, x east    
+	std::ostringstream oss;
+	oss << "ground_points\n";
 
     for (auto point : points) {
         Vector3 relPoint = getGroundPoint(point, yVectorCam, xVectorCam, zVectorCam);
@@ -2516,15 +2514,11 @@ void ObjectDetection::setGroundPlanePoints() {
         //Output kitti velodyne coords relative position with ground z
         oss << relPoint.y << ", " << relPoint.x << ", " << relPoint.z << "\n";
     }
-    std::string str = oss.str();
-    fprintf(f, str.c_str());
-    fclose(f);
+
 
     //**********************Creating ground point grid****************************************
     //World coordinates have: y north, x east
-    std::string filename2 = getStandardFilename("ground_points_grid", ".txt");
-    FILE* f2 = fopen(filename2.c_str(), "w");
-    std::ostringstream oss2;
+	oss << "ground_points_grid\n";
 
     int pointInterval = 2; //Distance between ground points (approximately in metres - game coordinates)
     for (int x = -MAX_LIDAR_DIST; x <= MAX_LIDAR_DIST; x += pointInterval) {
@@ -2533,13 +2527,12 @@ void ObjectDetection::setGroundPlanePoints() {
             Vector3 relPoint = getGroundPoint(point, yVectorCam, xVectorCam, zVectorCam);
 
             //Output kitti velodyne coords relative position with ground z
-            oss2 << relPoint.y << ", " << relPoint.x << ", " << relPoint.z << "\n";
+            oss << relPoint.y << ", " << relPoint.x << ", " << relPoint.z << "\n";
         }
     }
 
-    std::string str2 = oss2.str();
-    fprintf(f2, str2.c_str());
-    fclose(f2);
+    std::string str = oss.str().c_str();
+	return str;
 }
 
 Vector3 ObjectDetection::getVehicleDims(Entity e, Hash model, Vector3 &min, Vector3 &max) {
@@ -2554,58 +2547,58 @@ Vector3 ObjectDetection::getVehicleDims(Entity e, Hash model, Vector3 &min, Vect
     return dim;
 }
 
-//Entity p is the vehicle which is perceiving
-void ObjectDetection::checkEntity(Vehicle p, WorldObject e, Vector3 pPos, std::ostringstream& oss) {
-    if (p != e.e) {
-        Vector3 forwardVector, rightVector, upVector, position;
-        ENTITY::GET_ENTITY_MATRIX(e.e, &forwardVector, &rightVector, &upVector, &position); //Blue or red pill
-        float distance = sqrt(SYSTEM::VDIST2(pPos.x, pPos.y, pPos.z, position.x, position.y, position.z));
-        if (distance < 120) {
-            bool losToCentre = ENTITY::HAS_ENTITY_CLEAR_LOS_TO_ENTITY(p, e.e, 19);
+////Entity p is the vehicle which is perceiving
+//void ObjectDetection::checkEntity(Vehicle p, WorldObject e, Vector3 pPos, std::ostringstream& oss) {
+//    if (p != e.e) {
+//        Vector3 forwardVector, rightVector, upVector, position;
+//        ENTITY::GET_ENTITY_MATRIX(e.e, &forwardVector, &rightVector, &upVector, &position); //Blue or red pill
+//        float distance = sqrt(SYSTEM::VDIST2(pPos.x, pPos.y, pPos.z, position.x, position.y, position.z));
+//        if (distance < 120) {
+//            bool losToCentre = ENTITY::HAS_ENTITY_CLEAR_LOS_TO_ENTITY(p, e.e, 19);
+//
+//            Vector3 min, max;
+//            Vector3 dim = getVehicleDims(e.e, e.model, min, max);
+//
+//            bool hasLOS = hasLOSToEntity(e.e, position, dim, forwardVector, rightVector, upVector, true, pPos);
+//
+//            if (hasLOS || losToCentre) {
+//                SubsetInfo s = getObjectInfoSubset(position, forwardVector, dim);
+//
+//                oss << e.type << " " << s.alpha_kitti << " " <<
+//                    s.kittiHeight << " " << s.kittiWidth << " " << s.kittiLength << " " <<
+//                    s.kittiPos.x << " " << s.kittiPos.y << " " << s.kittiPos.z << " " <<
+//                    s.rot_y << " " << distance << "\n";
+//            }
+//        }
+//    }
+//}
 
-            Vector3 min, max;
-            Vector3 dim = getVehicleDims(e.e, e.model, min, max);
-
-            bool hasLOS = hasLOSToEntity(e.e, position, dim, forwardVector, rightVector, upVector, true, pPos);
-
-            if (hasLOS || losToCentre) {
-                SubsetInfo s = getObjectInfoSubset(position, forwardVector, dim);
-
-                oss << e.type << " " << s.alpha_kitti << " " <<
-                    s.kittiHeight << " " << s.kittiWidth << " " << s.kittiLength << " " <<
-                    s.kittiPos.x << " " << s.kittiPos.y << " " << s.kittiPos.z << " " <<
-                    s.rot_y << " " << distance << "\n";
-            }
-        }
-    }
-}
-
-SubsetInfo ObjectDetection::getObjectInfoSubset(Vector3 position, Vector3 forwardVector, Vector3 dim) {
-    SubsetInfo s;
-
-    Vector3 relativePos;
-    relativePos.x = position.x - s_camParams.pos.x;
-    relativePos.y = position.y - s_camParams.pos.y;
-    relativePos.z = position.z - s_camParams.pos.z;
-
-    Vector3 kittiForwardVector = convertCoordinateSystem(forwardVector, m_camForwardVector, m_camRightVector, m_camUpVector);
-    s.rot_y = -atan2(kittiForwardVector.y, kittiForwardVector.x);
-
-    relativePos = convertCoordinateSystem(relativePos, m_camForwardVector, m_camRightVector, m_camUpVector);
-
-    //Convert to KITTI camera coordinates
-    s.kittiPos.x = relativePos.x;
-    s.kittiPos.y = -relativePos.z;
-    s.kittiPos.z = relativePos.y;
-
-    //Kitti dimensions
-    s.kittiHeight = 2 * dim.z;
-    s.kittiWidth = 2 * dim.x;
-    s.kittiLength = 2 * dim.y;
-
-    //alpha is rot_y + tan^-1(z/x) + PI/2
-    s.beta_kitti = atan2(s.kittiPos.z, s.kittiPos.x);
-    s.alpha_kitti = s.rot_y + s.beta_kitti - PI / 2;
-
-    return s;
-}
+//SubsetInfo ObjectDetection::getObjectInfoSubset(Vector3 position, Vector3 forwardVector, Vector3 dim) {
+//    SubsetInfo s;
+//
+//    Vector3 relativePos;
+//    relativePos.x = position.x - s_camParams.pos.x;
+//    relativePos.y = position.y - s_camParams.pos.y;
+//    relativePos.z = position.z - s_camParams.pos.z;
+//
+//    Vector3 kittiForwardVector = convertCoordinateSystem(forwardVector, m_camForwardVector, m_camRightVector, m_camUpVector);
+//    s.rot_y = -atan2(kittiForwardVector.y, kittiForwardVector.x);
+//
+//    relativePos = convertCoordinateSystem(relativePos, m_camForwardVector, m_camRightVector, m_camUpVector);
+//
+//    //Convert to KITTI camera coordinates
+//    s.kittiPos.x = relativePos.x;
+//    s.kittiPos.y = -relativePos.z;
+//    s.kittiPos.z = relativePos.y;
+//
+//    //Kitti dimensions
+//    s.kittiHeight = 2 * dim.z;
+//    s.kittiWidth = 2 * dim.x;
+//    s.kittiLength = 2 * dim.y;
+//
+//    //alpha is rot_y + tan^-1(z/x) + PI/2
+//    s.beta_kitti = atan2(s.kittiPos.z, s.kittiPos.x);
+//    s.alpha_kitti = s.rot_y + s.beta_kitti - PI / 2;
+//
+//    return s;
+//}

@@ -26,15 +26,15 @@ static Vector3 createVec3(float x, float y, float z) {
     return vec;
 }
 
-struct SubsetInfo {
-    Vector3 kittiPos;
-    float kittiHeight;
-    float kittiWidth;
-    float kittiLength;
-    float beta_kitti;
-    float rot_y;
-    float alpha_kitti;
-};
+//struct SubsetInfo {
+//    Vector3 kittiPos;
+//    float kittiHeight;
+//    float kittiWidth;
+//    float kittiLength;
+//    float beta_kitti;
+//    float rot_y;
+//    float alpha_kitti;
+//};
 
 class ObjectDetection {
 public:
@@ -247,10 +247,10 @@ private:
 
     //Ground plane points
     Vector3 getGroundPoint(Vector3 point, Vector3 yVectorCam, Vector3 xVectorCam, Vector3 zVectorCam);
-    void setGroundPlanePoints();
+    std::string setGroundPlanePoints();
 
     //Other vehicle detections
-    void checkEntity(Vehicle p, WorldObject e, Vector3 pPos, std::ostringstream& oss);
-    SubsetInfo getObjectInfoSubset(Vector3 position, Vector3 forwardVector, Vector3 dim);
+    //void checkEntity(Vehicle p, WorldObject e, Vector3 pPos, std::ostringstream& oss);
+    //SubsetInfo getObjectInfoSubset(Vector3 position, Vector3 forwardVector, Vector3 dim);
     Vector3 getVehicleDims(Entity e, Hash model, Vector3 &min, Vector3 &max);
 };
