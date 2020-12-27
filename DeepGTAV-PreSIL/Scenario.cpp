@@ -198,8 +198,8 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
 
 	exporter.parseDatasetConfig(dc, setDefaults);
 	//exporter.camera = &camera;
-	exporter.cameraPositionOffset = &cameraPositionOffset;
-	exporter.cameraRotationOffset = &cameraRotationOffset;
+	//exporter.cameraPositionOffset = &cameraPositionOffset;
+	//exporter.cameraRotationOffset = &cameraRotationOffset;
 	exporter.m_ownVehicle = &m_ownVehicle;
 	exporter.instance_index = &instance_index;
 }
@@ -288,22 +288,12 @@ void Scenario::buildScenario() {
 void Scenario::start(const Value& sc, const Value& dc) {
 	if (running) return;
 
-	//Parse options
-	srand(std::time(NULL));
-	parseScenarioConfig(sc, true);
-	parseDatasetConfig(dc, true);
-
-	//Build scenario
-	buildScenario();
-
 	running = true;
-	lastSafetyCheck = std::clock();
+	config(sc, dc);
 }
 
 void Scenario::config(const Value& sc, const Value& dc) {
 	if (!running) return;
-
-	running = false;
 
 	//Parse options
 	srand(std::time(NULL));
@@ -313,7 +303,6 @@ void Scenario::config(const Value& sc, const Value& dc) {
 	//Build scenario
 	buildScenario();
 
-	running = true;
 	lastSafetyCheck = std::clock();
 }
 
@@ -476,16 +465,8 @@ void Scenario::teleportToLocation(float x, float y, float z) {
 }
 
 void Scenario::setCameraPositionAndRotation(float x, float y, float z, float rot_x, float rot_y, float rot_z) {
-    cameraPositionOffset.x = x;
-    cameraPositionOffset.y = y;
-    cameraPositionOffset.z = z;
-    cameraRotationOffset.x = rot_x;
-    cameraRotationOffset.y = rot_y;
-    cameraRotationOffset.z = rot_z;
+	exporter.setCameraPositionAndRotation(x, y, z, rot_x, rot_y, rot_z);
 }
-
-
-
 
 
 static int bike_num = 0;

@@ -182,8 +182,8 @@ void DataExport::setRenderingCam(Vehicle v, int height, int length) {
 	GAMEPLAY::SET_TIME_SCALE(0.0f);
 
 	//TODO fix pointer billiard, after making DataExport the owner of the camera
-	CAM::SET_CAM_COORD(camera, position.x + offsetWorld.x + (*cameraPositionOffset).x, position.y + offsetWorld.y + (*cameraPositionOffset).y, position.z + offsetWorld.z + (*cameraPositionOffset).z);
-	CAM::SET_CAM_ROT(camera, rotation.x + (*cameraRotationOffset).x, rotation.y + (*cameraRotationOffset).y, rotation.z + (*cameraRotationOffset).z, 0);
+	CAM::SET_CAM_COORD(camera, position.x + offsetWorld.x + cameraPositionOffset.x, position.y + offsetWorld.y + cameraPositionOffset.y, position.z + offsetWorld.z + cameraPositionOffset.z);
+	CAM::SET_CAM_ROT(camera, rotation.x + cameraRotationOffset.x, rotation.y + cameraRotationOffset.y, rotation.z + cameraRotationOffset.z, 0);
 
 
 	scriptWait(0);
@@ -198,6 +198,16 @@ void DataExport::setRenderingCam(Vehicle v, int height, int length) {
 	log(oss.str(), true);
 }
 
+
+
+void DataExport::setCameraPositionAndRotation(float x, float y, float z, float rot_x, float rot_y, float rot_z) {
+	cameraPositionOffset.x = x;
+	cameraPositionOffset.y = y;
+	cameraPositionOffset.z = z;
+	cameraRotationOffset.x = rot_x;
+	cameraRotationOffset.y = rot_y;
+	cameraRotationOffset.z = rot_z;
+}
 
 
 

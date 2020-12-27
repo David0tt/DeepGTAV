@@ -78,6 +78,11 @@ private:
 
 	Cam camera = NULL;
 
+	// Persistent Camera offsets
+	Vector3 cameraPositionOffset = { 0, 0, 0 };
+	Vector3 cameraRotationOffset = { 0, 0, 0 };
+
+
 
 
 public:
@@ -89,8 +94,8 @@ public:
 
 	// TODO make private, make camera fully owned by DataExport
 	//Cam * camera;
-	Vector3 * cameraPositionOffset;
-	Vector3 * cameraRotationOffset;
+	//Vector3 * cameraPositionOffset;
+	//Vector3 * cameraRotationOffset;
 	Vehicle * m_ownVehicle;
 
 	int setDepthBuffer(bool prevDepth = false);
@@ -111,6 +116,10 @@ public:
 	ScreenCapturer* screenCapturer;
 
 	void initialize();
+
+	//TODO move to private
+	void setCameraPositionAndRotation(float x, float y, float z, float rot_x, float rot_y, float rot_z);
+
 
 
 };

@@ -50,10 +50,6 @@ private:
 	float currentBrake = 0.0;
 	float currentSteering = 0.0;
 
-    // Persistent Camera offsets
-    Vector3 cameraPositionOffset = { 0, 0, 0};
-    Vector3 cameraRotationOffset = { 0, 0, 0};
-
 
     Vector3 currentPos;
     Vector3 currentForwardVector;
@@ -83,14 +79,14 @@ public:
 	void setCommands(float throttle, float brake, float steering);
 	void run();
 
-    //Depth buffer fn/var needs to be accessed by server
-    bool m_prevDepth = false;
-
+	// TODO remove
 	StringBuffer generateMessage();
-
 	void setRecording_active(bool x);
+	
 	void goToLocation(float x, float y, float z, float setSpeed);
 	void teleportToLocation(float x, float y, float z);
+
+	// TODO remove
 	void setCameraPositionAndRotation(float x, float y, float z, float rot_x, float rot_y, float rot_z);
 
     int instance_index = 0;
