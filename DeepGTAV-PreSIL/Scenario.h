@@ -89,11 +89,7 @@ public:
 	// TODO remove
 	void setCameraPositionAndRotation(float x, float y, float z, float rot_x, float rot_y, float rot_z);
 
-    int instance_index = 0;
     int series_index = 0;
-    std::string series_string = "0000";
-    std::string instance_string;
-    int baseTrackingIndex = instance_index;
 
     //Tracking variables
     bool collectTracking;

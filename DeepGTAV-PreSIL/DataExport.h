@@ -73,8 +73,6 @@ private:
 	uint8_t* m_stencilBuffer = NULL;
 	unsigned char* color_buf = NULL;
 
-	int m_startIndex;
-
 
 	Cam camera = NULL;
 
@@ -82,6 +80,7 @@ private:
 	Vector3 cameraPositionOffset = { 0, 0, 0 };
 	Vector3 cameraRotationOffset = { 0, 0, 0 };
 
+	int instance_index = 0;
 
 
 
@@ -103,7 +102,6 @@ public:
 	//Do not use this function. Causes GTA to crash - need to figure out why
 	void setColorBuffer();
 
-	int * instance_index;
 
 	//void generateSecondaryPerspectives();
 	//void generateSecondaryPerspective(ObjEntity vInfo);

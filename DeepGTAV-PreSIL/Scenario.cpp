@@ -93,16 +93,6 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
 	if (!dc["rate"].IsNull()) rate = dc["rate"].GetFloat();
 	else if (setDefaults) rate = _RATE_;
 
-    if (!dc["startIndex"].IsNull()) {
-        instance_index = dc["startIndex"].GetInt();
-        baseTrackingIndex = instance_index;
-    }
-
-    char temp[] = "%06d";
-    char strComp[sizeof temp + 100];
-    sprintf(strComp, temp, instance_index);
-    instance_string = strComp;
-	
 	if (!dc["frame"].IsNull()) {
 		if (!dc["frame"][0].IsNull()) s_camParams.width = dc["frame"][0].GetInt();
 		else if (setDefaults) s_camParams.width = _WIDTH_;
@@ -201,7 +191,7 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
 	//exporter.cameraPositionOffset = &cameraPositionOffset;
 	//exporter.cameraRotationOffset = &cameraRotationOffset;
 	exporter.m_ownVehicle = &m_ownVehicle;
-	exporter.instance_index = &instance_index;
+	//exporter.instance_index = &instance_index;
 }
 
 void Scenario::buildScenario() {

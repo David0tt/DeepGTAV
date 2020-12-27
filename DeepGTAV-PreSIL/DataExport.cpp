@@ -70,6 +70,8 @@ void DataExport::initialize() {
 
 void DataExport::parseDatasetConfig(const Value& dc, bool setDefaults) {
 	if (DEBUG_MODE) log("DataExport::parseDatasetConifg");
+
+
 	if (!dc["frame"].IsNull()) {
 		if (!dc["frame"][0].IsNull()) s_camParams.width = dc["frame"][0].GetInt();
 		else if (setDefaults) s_camParams.width = _WIDTH_;
@@ -103,6 +105,10 @@ void DataExport::parseDatasetConfig(const Value& dc, bool setDefaults) {
 	}
 	else if (setDefaults) reward = _REWARD_;
 
+
+	if (!dc["startIndex"].IsNull()) {
+		instance_index = dc["startIndex"].GetInt();
+	}
 	if (!dc["throttle"].IsNull()) throttle = dc["throttle"].GetBool();
 	else if (setDefaults) throttle = _THROTTLE_;
 	if (!dc["brake"].IsNull()) brake = dc["brake"].GetBool();
@@ -289,8 +295,7 @@ StringBuffer DataExport::generateMessage() {
 
 	if (!m_pObjDet) {
 		m_pObjDet.reset(new ObjectDetection());
-		m_pObjDet->initCollection(s_camParams.width, s_camParams.height, false, *instance_index);
-		m_startIndex = *instance_index;
+		m_pObjDet->initCollection(s_camParams.width, s_camParams.height, false, instance_index);
 	}
 	if (depthSize != -1) {
 		FrameObjectInfo fObjInfo = m_pObjDet->generateMessage(depth_map, m_stencilBuffer);
