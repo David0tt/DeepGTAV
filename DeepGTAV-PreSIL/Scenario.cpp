@@ -279,7 +279,16 @@ void Scenario::start(const Value& sc, const Value& dc) {
 	if (running) return;
 
 	running = true;
-	config(sc, dc);
+	//Parse options
+	srand(std::time(NULL));
+	parseScenarioConfig(sc, true);
+	parseDatasetConfig(dc, true);
+
+	//Build scenario
+	buildScenario();
+
+	running = true;
+	lastSafetyCheck = std::clock();
 }
 
 void Scenario::config(const Value& sc, const Value& dc) {
