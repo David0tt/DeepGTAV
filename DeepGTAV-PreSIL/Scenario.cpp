@@ -465,8 +465,6 @@ void Scenario::setCameraPositionAndRotation(float x, float y, float z, float rot
 }
 
 
-static int bike_num = 0;
-
 void Scenario::createVehicle(const char* model, float relativeForward, float relativeRight, float heading, int color, int color2) {
     Hash vehicleHash = GAMEPLAY::GET_HASH_KEY(const_cast<char*>(model));
     Vector3 pos;
