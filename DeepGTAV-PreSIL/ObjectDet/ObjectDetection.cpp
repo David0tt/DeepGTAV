@@ -2332,9 +2332,8 @@ void ObjectDetection::exportEntities(EntityMap entMap, std::ostringstream& oss, 
 }
 
 
-// TODO remove 
-void ObjectDetection::exportPosition() {
-    FILE* f = fopen(m_posFilename.c_str(), "w");
+// TODO remove (keeping it right now for legacy purposes)
+std::string ObjectDetection::exportPosition() {
     std::ostringstream oss;
 
     oss << m_curFrame.kittiWorldPos.x << " " << m_curFrame.kittiWorldPos.y << " " << m_curFrame.kittiWorldPos.z << "\n"
@@ -2343,9 +2342,8 @@ void ObjectDetection::exportPosition() {
         << m_curFrame.rightVec.x << " " << m_curFrame.rightVec.y << " " << m_curFrame.rightVec.z << "\n"
         << m_curFrame.upVec.x << " " << m_curFrame.upVec.y << " " << m_curFrame.upVec.z;
 
-    std::string str = oss.str();
-    fprintf(f, str.c_str());
-    fclose(f);
+    std::string str = oss.str().c_str();
+	return str;
 }
 
 void ObjectDetection::exportEgoObject(ObjEntity vPerspective) {

@@ -93,6 +93,7 @@ private:
 
     cv::Mat m_depthMat = cv::Mat::zeros(cv::Size(s_camParams.width, s_camParams.height), CV_32FC1);
 
+	// TODO remove all of those, check for no tneeded in future
     std::string m_imgFilename;
     std::string m_veloFilename;
     std::string m_depthFilename;
@@ -241,7 +242,7 @@ private:
     void exportEntity(ObjEntity e, std::ostringstream& oss, bool unprocessed, bool augmented, bool checkbbox2d = true, const int &maxDist = -1, const int &min2DPoints = -1, const int &min3DPoints = -1);
     void exportEntities(EntityMap entMap, std::ostringstream& oss, bool unprocessed = false, bool augmented = false, bool checkbbox2d = true, const int &maxDist = -1, const int &min2DPoints = -1, const int &min3DPoints = -1);
     void exportCalib();
-    void exportPosition();
+    std::string exportPosition();
     void exportEgoObject(ObjEntity vPerspective);
 
     //Ground plane points
