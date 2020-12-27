@@ -184,7 +184,7 @@ private:
     void setVehiclesList();
     void setPedsList();
 
-	// TODO remove those
+	// TODO remove those (this can not be done right now, because they set m_curFrame
     void setSpeed();
     void setYawRate();
     void setTime();
