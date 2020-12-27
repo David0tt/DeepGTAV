@@ -17,7 +17,7 @@
 
 // #include "base64.h"
 
-
+// TODO remove
 const float VERT_CAM_FOV = 59; //In degrees
 //Need to input the vertical FOV with GTA functions.
 //90 degrees horizontal (KITTI) corresponds to 59 degrees vertical (https://www.gtaall.com/info/fov-calculator.html).
@@ -197,7 +197,7 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
 
 
 	exporter.parseDatasetConfig(dc, setDefaults);
-	exporter.camera = &camera;
+	//exporter.camera = &camera;
 	exporter.cameraPositionOffset = &cameraPositionOffset;
 	exporter.cameraRotationOffset = &cameraRotationOffset;
 	exporter.m_ownVehicle = &m_ownVehicle;
@@ -205,7 +205,7 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
 }
 
 void Scenario::buildScenario() {
-	Vector3 pos, rotation;
+	Vector3 pos;
 	Hash vehicleHash;
 	float heading;
 
@@ -249,26 +249,7 @@ void Scenario::buildScenario() {
 
 	GAMEPLAY::SET_WEATHER_TYPE_NOW_PERSIST((char*)_weather);
 
-	rotation = ENTITY::GET_ENTITY_ROTATION(m_ownVehicle, 0);
-	CAM::DESTROY_ALL_CAMS(TRUE);
-	camera = CAM::CREATE_CAM("DEFAULT_SCRIPTED_CAMERA", TRUE);
-	//if (strcmp(_vehicle, "packer") == 0) CAM::ATTACH_CAM_TO_ENTITY(camera, vehicle, 0, 2.35, 1.7, TRUE);
-	//else CAM::ATTACH_CAM_TO_ENTITY(camera, vehicle, 0, CAM_OFFSET_FORWARD, CAM_OFFSET_UP, TRUE);
-	CAM::SET_CAM_FOV(camera, VERT_CAM_FOV);
-	CAM::SET_CAM_ACTIVE(camera, TRUE);
-	
-
-	// TODO CANGED
-	CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 0);
-	//CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, 2, 0);
-
-	// pos = CAM::GET_CAM_COORD()
-	//Vector3 camPos;
-	//camPos = CAM::GET_CAM_COORD(camera);
-	//CAM::SET_CAM_COORD(camera, camPos.x + 40.0, camPos.y + 40.0, camPos.z + 40.0);
-
-
-	CAM::SET_CAM_INHERIT_ROLL_VEHICLE(camera, TRUE);
+	exporter.initialize();
 
     if (stationaryScene) {
         _setSpeed = 0;
@@ -338,10 +319,6 @@ void Scenario::config(const Value& sc, const Value& dc) {
 
 void Scenario::run() {
 	if (running) {
-        if (m_recordScenario) {
-            Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(m_ownVehicle, 0);
-            CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 0);
-        }
 
 		std::clock_t now = std::clock();
 

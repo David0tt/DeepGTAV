@@ -75,6 +75,11 @@ private:
 
 	int m_startIndex;
 
+
+	Cam camera = NULL;
+
+
+
 public:
 	StringBuffer generateMessage();
 	void parseDatasetConfig(const Value& dc, bool setDefaults);
@@ -83,7 +88,7 @@ public:
 	void setRecording_active(bool x);
 
 	// TODO make private, make camera fully owned by DataExport
-	Cam * camera;
+	//Cam * camera;
 	Vector3 * cameraPositionOffset;
 	Vector3 * cameraRotationOffset;
 	Vehicle * m_ownVehicle;
@@ -104,6 +109,8 @@ public:
 
 	// TODO move to private
 	ScreenCapturer* screenCapturer;
+
+	void initialize();
 
 
 };

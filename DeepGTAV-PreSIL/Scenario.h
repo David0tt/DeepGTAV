@@ -33,7 +33,6 @@ private:
 	Vehicle m_ownVehicle = NULL;
 	Player player = NULL;
 	Ped ped = NULL;
-	Cam camera = NULL;
 	Vector3 dir;
 
 	float x, y, z;

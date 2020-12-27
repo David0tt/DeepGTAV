@@ -25,10 +25,46 @@ extern "C" {
 }
 
 
+const float VERT_CAM_FOV = 59; //In degrees
+
+
+
+
+void DataExport::initialize() {
+	Vector3 rotation;
+
+	rotation = ENTITY::GET_ENTITY_ROTATION(*m_ownVehicle, 0);
+	CAM::DESTROY_ALL_CAMS(TRUE);
+	camera = CAM::CREATE_CAM("DEFAULT_SCRIPTED_CAMERA", TRUE);
+	//if (strcmp(_vehicle, "packer") == 0) CAM::ATTACH_CAM_TO_ENTITY(camera, vehicle, 0, 2.35, 1.7, TRUE);
+	//else CAM::ATTACH_CAM_TO_ENTITY(camera, vehicle, 0, CAM_OFFSET_FORWARD, CAM_OFFSET_UP, TRUE);
+	CAM::SET_CAM_FOV(camera, VERT_CAM_FOV);
+	CAM::SET_CAM_ACTIVE(camera, TRUE);
+
+
+	// TODO CANGED
+	CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 0);
+	//CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, 2, 0);
+
+	// pos = CAM::GET_CAM_COORD()
+	//Vector3 camPos;
+	//camPos = CAM::GET_CAM_COORD(camera);
+	//CAM::SET_CAM_COORD(camera, camPos.x + 40.0, camPos.y + 40.0, camPos.z + 40.0);
+
+
+	CAM::SET_CAM_INHERIT_ROLL_VEHICLE(camera, TRUE);
+
+
+}
+
 
 //void DataExport::setCapturedData() {
 //
 //}
+
+
+
+
 
 
 
@@ -146,8 +182,8 @@ void DataExport::setRenderingCam(Vehicle v, int height, int length) {
 	GAMEPLAY::SET_TIME_SCALE(0.0f);
 
 	//TODO fix pointer billiard, after making DataExport the owner of the camera
-	CAM::SET_CAM_COORD(*camera, position.x + offsetWorld.x + (*cameraPositionOffset).x, position.y + offsetWorld.y + (*cameraPositionOffset).y, position.z + offsetWorld.z + (*cameraPositionOffset).z);
-	CAM::SET_CAM_ROT(*camera, rotation.x + (*cameraRotationOffset).x, rotation.y + (*cameraRotationOffset).y, rotation.z + (*cameraRotationOffset).z, 0);
+	CAM::SET_CAM_COORD(camera, position.x + offsetWorld.x + (*cameraPositionOffset).x, position.y + offsetWorld.y + (*cameraPositionOffset).y, position.z + offsetWorld.z + (*cameraPositionOffset).z);
+	CAM::SET_CAM_ROT(camera, rotation.x + (*cameraRotationOffset).x, rotation.y + (*cameraRotationOffset).y, rotation.z + (*cameraRotationOffset).z, 0);
 
 
 	scriptWait(0);
@@ -294,15 +330,15 @@ void DataExport::setCamParams() {
 	if (DEBUG_MODE) log("DataExport::setCamParams");
 	//These values stay the same throughout a collection period
 	if (!s_camParams.init) {
-		s_camParams.nearClip = CAM::GET_CAM_NEAR_CLIP(*camera);
-		s_camParams.farClip = CAM::GET_CAM_FAR_CLIP(*camera);
-		s_camParams.fov = CAM::GET_CAM_FOV(*camera);
+		s_camParams.nearClip = CAM::GET_CAM_NEAR_CLIP(camera);
+		s_camParams.farClip = CAM::GET_CAM_FAR_CLIP(camera);
+		s_camParams.fov = CAM::GET_CAM_FOV(camera);
 		s_camParams.ncHeight = 2 * s_camParams.nearClip * tan(s_camParams.fov / 2. * (PI / 180.)); // field of view is returned vertically
 		s_camParams.ncWidth = s_camParams.ncHeight * GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false);
 		s_camParams.init = true;
 
 		//if (m_recordScenario) {
-		//	float gameFC = CAM::GET_CAM_FAR_CLIP(*camera);
+		//	float gameFC = CAM::GET_CAM_FAR_CLIP(camera);
 		//	std::ostringstream oss;
 		//	oss << "NC, FC (gameFC), FOV: " << s_camParams.nearClip << ", " << s_camParams.farClip << " (" << gameFC << "), " << s_camParams.fov;
 		//	std::string str = oss.str();
@@ -311,8 +347,8 @@ void DataExport::setCamParams() {
 	}
 
 	//These values change frame to frame
-	s_camParams.theta = CAM::GET_CAM_ROT(*camera, 0);
-	s_camParams.pos = CAM::GET_CAM_COORD(*camera);
+	s_camParams.theta = CAM::GET_CAM_ROT(camera, 0);
+	s_camParams.pos = CAM::GET_CAM_COORD(camera);
 
 	//std::ostringstream oss1;
 	//oss1 << "\ns_camParams.pos X: " << s_camParams.pos.x << " Y: " << s_camParams.pos.y << " Z: " << s_camParams.pos.z <<
@@ -457,7 +493,7 @@ void DataExport::exportReward() {
 
 void DataExport::exportCameraPosition() {
 	Document::AllocatorType& allocator = d.GetAllocator();
-	Vector3 pos = CAM::GET_CAM_COORD(*camera);
+	Vector3 pos = CAM::GET_CAM_COORD(camera);
 	Value position(kArrayType);
 	position.PushBack(pos.x, allocator).PushBack(pos.y, allocator).PushBack(pos.z, allocator);
 	d["CameraPosition"] = position;
@@ -465,7 +501,7 @@ void DataExport::exportCameraPosition() {
 
 void DataExport::exportCameraAngle() {
 	Document::AllocatorType& allocator = d.GetAllocator();
-	Vector3 ang = CAM::GET_CAM_ROT(*camera, 0);
+	Vector3 ang = CAM::GET_CAM_ROT(camera, 0);
 	Value angles(kArrayType);
 	angles.PushBack(ang.x, allocator).PushBack(ang.y, allocator).PushBack(ang.z, allocator);
 	d["CameraAngle"] = angles;
