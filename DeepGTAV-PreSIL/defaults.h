@@ -20,5 +20,3 @@
 #define _POINTCLOUDS_ true
 #define _STATIONARY_SCENE_ false
 #define _COLLECT_TRACKING_ false
-#define _RECORD_SCENARIO_ false
-#define _POSITION_SCENARIO_ false

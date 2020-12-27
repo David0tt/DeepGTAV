@@ -119,12 +119,9 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
     else if (setDefaults) stationaryScene = _STATIONARY_SCENE_;
     if (!dc["collectTracking"].IsNull()) collectTracking = dc["collectTracking"].GetBool();
     else if (setDefaults) collectTracking = _COLLECT_TRACKING_;
-    if (!dc["recordScenario"].IsNull()) m_recordScenario = dc["recordScenario"].GetBool();
-    else if (setDefaults) m_recordScenario = _RECORD_SCENARIO_;
-    if (!dc["positionScenario"].IsNull()) m_positionScenario = dc["positionScenario"].GetBool();
-    else if (setDefaults) m_positionScenario = _POSITION_SCENARIO_;
 
-    if (DRIVE_SPEC_AREA && !stationaryScene) {
+	
+	if (DRIVE_SPEC_AREA && !stationaryScene) {
         int startArea = 0;
         dir.x = s_locationBounds[0][0][startArea];
         dir.y = s_locationBounds[0][1][startArea];
@@ -248,7 +245,7 @@ void Scenario::buildScenario() {
     CAM::RENDER_SCRIPT_CAMS(TRUE, FALSE, 0, TRUE, TRUE);
 
 	AI::CLEAR_PED_TASKS(ped);
-	if (_drivingMode >= 0 && !stationaryScene && !m_positionScenario) {
+	if (_drivingMode >= 0 && !stationaryScene) {
         if (DRIVE_SPEC_AREA && !START_SPEC_AREA) {
             AI::TASK_VEHICLE_DRIVE_TO_COORD(ped, m_ownVehicle, dir.x, dir.y, dir.z, _setSpeed, Any(1.f), vehicleHash, _drivingMode, 50.f, true);
         }
@@ -270,9 +267,9 @@ void Scenario::buildScenario() {
     //    CAM::SET_GAMEPLAY_CAM_RELATIVE_PITCH(0, 0x3F800000);//Constant taken from nativedb
     //}
 
-    if (m_recordScenario) {
-        UNK1::_SET_RECORDING_MODE(1);
-    }
+    //if (m_recordScenario) {
+    //    UNK1::_SET_RECORDING_MODE(1);
+    //}
 }
 
 void Scenario::start(const Value& sc, const Value& dc) {

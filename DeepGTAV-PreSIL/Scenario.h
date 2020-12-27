@@ -99,11 +99,6 @@ public:
     //Used for keeing track of when to add the gap
     bool trSeriesGap = false;
 
-    //Mode for recording clips (data not generated)
-    bool m_recordScenario;
-    //Mode for outputting current position/heading (data not generated)
-    bool m_positionScenario;
-
 
 	void createVehicle(const char* model, float relativeForward, float relativeRight, float heading, int color, int color2);
 	void createPed(int model, float relativeForward, float relativeRight, float heading, int task);
