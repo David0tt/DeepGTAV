@@ -74,9 +74,9 @@ if __name__ == '__main__':
             print("count: ", count)
 
             # Only record every 10th frame
-            if count > 100 and count % 10 == 0:
+            if count > 50 and count % 10 == 0:
                 client.sendMessage(StartRecording())
-            if count > 100 and count % 10 == 1:
+            if count > 50 and count % 10 == 1:
                 client.sendMessage(StopRecording())
 
 

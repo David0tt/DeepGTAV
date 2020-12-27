@@ -1168,15 +1168,17 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
 
     ENTITY::GET_ENTITY_MATRIX(entityID, &forwardVector, &rightVector, &upVector, &position); //Blue or red pill
     float distance = sqrt(SYSTEM::VDIST2(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, position.x, position.y, position.z));
-    if (nearbyVehicle) {
-        //nearbyVehicle needs to be within range
-        if (distance > SECONDARY_PERSPECTIVE_RANGE) {
-            nearbyVehicle = false;
-        }//nearby vehicle needs to be occupied
-        else if (ONLY_OCCUPIED_VEHICLES && VEHICLE::IS_VEHICLE_SEAT_FREE(entityID, -1)) {
-            nearbyVehicle = false;
-        }
-    }
+    
+	// TODO remove, refactor the rest of this function afterwards and check for needed stuff
+	//if (nearbyVehicle) {
+    //    //nearbyVehicle needs to be within range
+    //    if (distance > SECONDARY_PERSPECTIVE_RANGE) {
+    //        nearbyVehicle = false;
+    //    }//nearby vehicle needs to be occupied
+    //    else if (ONLY_OCCUPIED_VEHICLES && VEHICLE::IS_VEHICLE_SEAT_FREE(entityID, -1)) {
+    //        nearbyVehicle = false;
+    //    }
+    //}
 
     //Check if it is on screen
     bool isOnScreen = ENTITY::IS_ENTITY_ON_SCREEN(entityID);
@@ -1566,18 +1568,12 @@ void ObjectDetection::setFilenames() {
     m_stencilFilename = getStandardFilename("stencil", ".raw");
     m_labelsFilename = getStandardFilename("label_2", ".txt");
     m_labelsAugFilename = getStandardFilename("label_aug_2", ".txt");
-    m_calibFilename = getStandardFilename("calib", ".txt");
+    //m_calibFilename = getStandardFilename("calib", ".txt");
 
     //TODO - Why are two seg images being printed (there are some minor differences in images it appears)
     m_segImgFilename = getStandardFilename("segImage", ".png");
     m_instSegFilename = getStandardFilename("instSeg", ".png");
     m_instSegImgFilename = getStandardFilename("instSegImage", ".png");
-
-    //These files are for relating object positions to each other
-    if (GENERATE_SECONDARY_PERSPECTIVES) {
-        m_posFilename = getStandardFilename("position_world", ".txt");
-        m_egoObjectFilename = getStandardFilename("ego_object", ".txt");
-    }
 
     //The following are for testing, only create filenames/directories if they are set to be on
     if (OUTPUT_DM_POINTCLOUD) {
@@ -2346,21 +2342,21 @@ std::string ObjectDetection::exportPosition() {
 	return str;
 }
 
-void ObjectDetection::exportEgoObject(ObjEntity vPerspective) {
-    FILE* f = fopen(m_egoObjectFilename.c_str(), "w");
-    std::ostringstream oss;
+// TODO remove
+//void ObjectDetection::exportEgoObject(ObjEntity vPerspective) {
+//    FILE* f = fopen(m_egoObjectFilename.c_str(), "w");
+//    std::ostringstream oss;
+//
+//    vPerspective.speed = ENTITY::GET_ENTITY_SPEED(vPerspective.entityID);
+//
+//    exportEntity(vPerspective, oss, false, true, false);
+//
+//    std::string str = oss.str();
+//    fprintf(f, str.c_str());
+//    fclose(f);
+//}
 
-    vPerspective.speed = ENTITY::GET_ENTITY_SPEED(vPerspective.entityID);
-
-    exportEntity(vPerspective, oss, false, true, false);
-
-    std::string str = oss.str();
-    fprintf(f, str.c_str());
-    fclose(f);
-}
-
-void ObjectDetection::exportCalib() {
-    FILE* f = fopen(m_calibFilename.c_str(), "w");
+std::string ObjectDetection::exportCalib() {
     std::ostringstream oss;
 
     for (int i = 0; i <= 3; ++i) {
@@ -2373,9 +2369,8 @@ void ObjectDetection::exportCalib() {
         "Tr_velo_to_cam: 0 -1 0 0 0 0 -1 0 1 0 0 0\n" <<
         "Tr_imu_to_velo: 1 0 0 0 0 1 0 0 0 0 1 0";
 
-    std::string str = oss.str();
-    fprintf(f, str.c_str());
-    fclose(f);
+    std::string str = oss.str().c_str();
+	return str;
 }
 
 
@@ -2388,7 +2383,7 @@ std::string ObjectDetection::exportDetectionsString(FrameObjectInfo fObjInfo, Ob
 	exportEntities(fObjInfo.vehicles, oss, false, true, false);
 	exportEntities(fObjInfo.peds, oss, false, true, false);
 
-	std::string str = oss.str();
+	std::string str = oss.str().c_str();
 	
 	return str;
 }
@@ -2441,15 +2436,6 @@ void ObjectDetection::exportDetections(FrameObjectInfo fObjInfo, ObjEntity* vPer
 		exportCalib();
 	}
     
-    if (GENERATE_SECONDARY_PERSPECTIVES) {
-        exportPosition();
-        if (!vPerspective) {
-            exportEgoObject(m_ownVehicleObj);
-        }
-        else {
-            exportEgoObject(*vPerspective);
-        }
-    }
 }
 
 void ObjectDetection::exportImage(BYTE* data, std::string filename) {

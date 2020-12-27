@@ -89,12 +89,13 @@ const bool OUTPUT_STENCIL_IMAGE = false;
 //Needs OUTPUT_SEPARATE_STENCILS to be true, only outputs log messages for values which are unknown 
 const bool ONLY_OUTPUT_UNKNOWN_STENCILS = false;
 
-//If set to true DeepGTAV outputs all information from nearby vehicles within specified range
-const bool GENERATE_SECONDARY_PERSPECTIVES = false;
-const int SECONDARY_PERSPECTIVE_RANGE = 100;
-//Only generates secondary perspectives from occupied vehicles (prevents capturing parking garages)
-//This should be set to true except for stationary scenarios
-const bool ONLY_OCCUPIED_VEHICLES = true;
+////If set to true DeepGTAV outputs all information from nearby vehicles within specified range
+//const bool GENERATE_SECONDARY_PERSPECTIVES = false;
+//const int SECONDARY_PERSPECTIVE_RANGE = 100;
+////Only generates secondary perspectives from occupied vehicles (prevents capturing parking garages)
+////This should be set to true except for stationary scenarios
+//const bool ONLY_OCCUPIED_VEHICLES = true;
+
 const bool TRUPERCEPT_SCENARIO = false;
 
 //Outputs self location (For finding spots for stationary scenes)

@@ -104,7 +104,7 @@ private:
     std::string m_segImgFilename;
     std::string m_occImgFilename;
     std::string m_unusedPixelsFilename;
-    std::string m_calibFilename;
+    //std::string m_calibFilename;
     std::string m_labelsFilename;
     std::string m_labelsUnprocessedFilename;
     std::string m_labelsAugFilename;
@@ -112,7 +112,7 @@ private:
     std::string m_instSegFilename;
     std::string m_instSegImgFilename;
     std::string m_posFilename;
-    std::string m_egoObjectFilename;
+    //std::string m_egoObjectFilename;
 
     std::string m_veloFilenameU;
     std::string m_depthPCFilenameU;
@@ -241,9 +241,9 @@ private:
     //Export functions
     void exportEntity(ObjEntity e, std::ostringstream& oss, bool unprocessed, bool augmented, bool checkbbox2d = true, const int &maxDist = -1, const int &min2DPoints = -1, const int &min3DPoints = -1);
     void exportEntities(EntityMap entMap, std::ostringstream& oss, bool unprocessed = false, bool augmented = false, bool checkbbox2d = true, const int &maxDist = -1, const int &min2DPoints = -1, const int &min3DPoints = -1);
-    void exportCalib();
+    std::string exportCalib();
     std::string exportPosition();
-    void exportEgoObject(ObjEntity vPerspective);
+    //void exportEgoObject(ObjEntity vPerspective);
 
     //Ground plane points
     Vector3 getGroundPoint(Vector3 point, Vector3 yVectorCam, Vector3 xVectorCam, Vector3 zVectorCam);
