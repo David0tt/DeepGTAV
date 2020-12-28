@@ -134,7 +134,10 @@ if __name__ == '__main__':
                 client.sendMessage(GoToLocation(x_target, y_target, estimated_ground_height + currentTravelHeight))
 
             if message["bbox2d"] != None:
-                bboxes = convertBBoxesDeepGTAToYolo(message["bbox2d"])
+                try:
+                    bboxes = convertBBoxesDeepGTAToYolo(message["bbox2d"])
+                except Exception as e:
+                    errors.append(e)
                 if bboxes != bbox2d_old:
                     bbox2d_old = bboxes
                     try: # Sometimes there are errors with the message, i catch those here

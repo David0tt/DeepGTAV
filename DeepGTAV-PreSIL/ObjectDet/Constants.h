@@ -52,8 +52,8 @@ const bool OUTPUT_OFFSET_POINTCLOUDS = false;
 const bool RETAIN_ANIMALS = true;
 
 //For testing
-const bool OUTPUT_OCCLUSION_IMAGE = false;
-const bool OUTPUT_UNUSED_PIXELS_IMAGE = false;
+const bool OUTPUT_OCCLUSION_IMAGE = true;
+const bool OUTPUT_UNUSED_PIXELS_IMAGE = true;
 
 //Can be used to get general outline of some objects with raycasting
 //WARNING: NOT ALL VEHICLES ARE HIT WITH RAYCASTING
@@ -112,9 +112,9 @@ const bool PROCESS_OVERLAPPING_POINTS = false;
 const bool AUGMENT_ALL_VEHICLES_IN_RANGE = true;
 
 //Only collects and writes to file system image data and bounding boxes to improve speed for this task
-const bool ONLY_COLLECT_IMAGE_AND_BBOXES = true;
+const bool ONLY_COLLECT_IMAGE_AND_BBOXES = false;
 
-const bool DONT_COLLECT_IMAGE_AND_BBOXES_TO_FILE = true;
+const bool DONT_COLLECT_IMAGE_AND_BBOXES_TO_FILE = false;
 
 
 // Use this to print Debugging information to logfile at getenv("DEEPGTAV_LOG_FILE")

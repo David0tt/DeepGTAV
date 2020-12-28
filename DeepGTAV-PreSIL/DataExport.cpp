@@ -291,6 +291,10 @@ StringBuffer DataExport::generateMessage() {
 
 
 
+	// TODO legacy functions from ObjectDetection: 
+	//exportPosition();
+	//exportCalib();
+	//setGroundPlanePoints();
 
 
 	if (!m_pObjDet) {
