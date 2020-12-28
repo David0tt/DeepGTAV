@@ -150,7 +150,8 @@ public:
     void setCamParams(float* forwardVec = NULL, float* rightVec = NULL, float* upVec = NULL);
     void setOwnVehicleObject();
 
-    FrameObjectInfo setDepthAndStencil(bool prevDepth = false, float* pDepth = NULL, uint8_t* pStencil = NULL);
+	// TODO remove
+    //FrameObjectInfo setDepthAndStencil(bool prevDepth = false, float* pDepth = NULL, uint8_t* pStencil = NULL);
     //Depth buffer fn/var needs to be accessed by server
     void setDepthBuffer(bool prevDepth = false);
 

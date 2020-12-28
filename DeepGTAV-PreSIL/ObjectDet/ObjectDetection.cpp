@@ -161,27 +161,29 @@ void ObjectDetection::setOwnVehicleObject() {
     m_ownVehicleObj.pointsHit3D = -1;
 }
 
-//For updating all depth/stencil related variables when depth/stencil buffer are one frame after game functions
-FrameObjectInfo ObjectDetection::setDepthAndStencil(bool prevDepth, float* pDepth, uint8_t* pStencil) {
-    if (prevDepth) {
-        m_pDepth = pDepth;
-        m_pStencil = pStencil;
-    }
-    else {
-        setFilenames();
-    }
 
-    if (lidar_initialized) setDepthBuffer(prevDepth);
-    if (lidar_initialized) setStencilBuffer();
-
-    if (prevDepth) {
-        if (lidar_initialized) printSegImage();
-        if (lidar_initialized) outputOcclusion();
-        if (lidar_initialized) outputUnusedStencilPixels();
-    }
-
-    return m_curFrame;
-}
+//// TODO This actually should not do anything, because it is always called with prevDepth=false;
+////For updating all depth/stencil related variables when depth/stencil buffer are one frame after game functions
+//FrameObjectInfo ObjectDetection::setDepthAndStencil(bool prevDepth, float* pDepth, uint8_t* pStencil) {
+//    //if (prevDepth) {
+//    //    m_pDepth = pDepth;
+//    //    m_pStencil = pStencil;
+//    //}
+//    //else {
+//        setFilenames();
+//    //}
+//
+//    if (lidar_initialized) setDepthBuffer(prevDepth);
+//    if (lidar_initialized) setStencilBuffer();
+//
+//    //if (prevDepth) {
+//    //    if (lidar_initialized) printSegImage();
+//    //    if (lidar_initialized) outputOcclusion();
+//    //    if (lidar_initialized) outputUnusedStencilPixels();
+//    //}
+//
+//    return m_curFrame;
+//}
 
 FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStencil, int entityID) {
     //LOG(LL_ERR, "Depth data generate: ", pDepth[0], pDepth[1], pDepth[2], pDepth[3], pDepth[4], pDepth[5], pDepth[6], pDepth[7]);
@@ -201,7 +203,15 @@ FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStenci
     setIndex();
     setPosition();
     outputRealSpeed();
-    setDepthAndStencil();
+
+	//TODO
+	//setDepthAndStencil();
+	// This is equal to:
+	setFilenames();
+	if (lidar_initialized) setDepthBuffer(false);
+	if (lidar_initialized) setStencilBuffer();
+
+
     //Need to set peds list first for integrating peds on bikes
     setPedsList();
     setVehiclesList();
