@@ -1,4 +1,6 @@
 //DATASET
+
+// TODO go over those settings
 #define _RATE_ 10
 #define _WIDTH_ 1920
 #define _HEIGHT_ 1080
@@ -20,3 +22,6 @@
 #define _POINTCLOUDS_ true
 #define _STATIONARY_SCENE_ false
 #define _COLLECT_TRACKING_ false
+#define _SEGMENTATION_IMAGE_ true;
+#define _OCCLUSION_IMAGE_ true;
+#define _UNUSED_STENCIL_IMAGE_ true;

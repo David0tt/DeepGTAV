@@ -125,6 +125,13 @@ void DataExport::parseDatasetConfig(const Value& dc, bool setDefaults) {
 	else if (setDefaults) location = _LOCATION_;
 	if (!dc["time"].IsNull()) time = dc["time"].GetBool();
 	else if (setDefaults) time = _TIME_;
+	if (!dc["segmentationImage"].IsNull()) segmentationImage = dc["segmentationImage"].GetBool();
+	else if (setDefaults) segmentationImage = _SEGMENTATION_IMAGE_;
+	if (!dc["occlusionImage"].IsNull()) occlusionImage = dc["occlusionImage"].GetBool();
+	else if (setDefaults) occlusionImage = _OCCLUSION_IMAGE_;
+	if (!dc["unusedStencilIPixelmage"].IsNull()) unusedStencilIPixelmage = dc["unusedStencilIPixelmage"].GetBool();
+	else if (setDefaults) unusedStencilIPixelmage = _UNUSED_STENCIL_IMAGE_;
+
 
 	buildJSONObject();
 
@@ -139,6 +146,9 @@ void DataExport::buildJSONObject() {
 	Document::AllocatorType& allocator = d.GetAllocator();
 	Value a(kArrayType);
 
+
+	//TODO rename those settings properly (export_...)
+
 	if (vehicles) d.AddMember("vehicles", a, allocator);
 	if (peds) d.AddMember("peds", a, allocator);
 	if (trafficSigns) d.AddMember("trafficSigns", a, allocator);
@@ -152,6 +162,8 @@ void DataExport::buildJSONObject() {
 	if (drivingMode) d.AddMember("drivingMode", 0, allocator);
 	if (location) d.AddMember("location", a, allocator);
 	if (time) d.AddMember("time", a, allocator);
+
+	// TODO add setting for those (test for those should also be made below)
 	d.AddMember("index", 0, allocator);
 	d.AddMember("focalLen", 0.0, allocator);
 	d.AddMember("curPosition", a, allocator);
@@ -160,6 +172,11 @@ void DataExport::buildJSONObject() {
 	d.AddMember("HeightAboveGround", 0.0, allocator);
 	d.AddMember("CameraAngle", a, allocator);
 	d.AddMember("CameraPosition", a, allocator);
+
+	if (segmentationImage) d.AddMember("segmentationImage", a, allocator);
+	if (occlusionImage) d.AddMember("occlusionImage", a, allocator);
+	if (unusedStencilIPixelmage) d.AddMember("unusedStencilIPixelmage", a, allocator);
+
 
 	screenCapturer = new ScreenCapturer(s_camParams.width, s_camParams.height);
 
@@ -320,6 +337,18 @@ StringBuffer DataExport::generateMessage() {
 
 		d["index"] = fObjInfo.instanceIdx;
 
+
+
+
+		m_pObjDet->refreshBuffers();
+
+
+
+
+
+
+
+
 		////Create vehicles if it is a stationary scenario
 		//createVehicles();
 
@@ -329,6 +358,10 @@ StringBuffer DataExport::generateMessage() {
 
 		//For testing to ensure secondary ownvehicle aligns with main perspective
 		//generateSecondaryPerspective(m_pObjDet->m_ownVehicleObj);
+
+		if(segmentationImage) m_pObjDet->printSegImage();
+		if (occlusionImage) m_pObjDet->outputOcclusion();
+		if (unusedStencilIPixelmage) m_pObjDet->outputUnusedStencilPixels();
 
 		m_pObjDet->increaseIndex();
 	}

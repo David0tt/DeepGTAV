@@ -27,6 +27,8 @@ using namespace rapidjson;
 */
 class DataExport {
 private:
+
+	// TODO why is this a unique pointer? this should be an object, then the -> should be replaced with .
 	std::unique_ptr<ObjectDetection> m_pObjDet = NULL;
 	Rewarder* rewarder;
 
@@ -43,6 +45,9 @@ private:
 	bool drivingMode; //TODO
 	bool location;
 	bool time;
+	bool segmentationImage;
+	bool occlusionImage;
+	bool unusedStencilIPixelmage;
 
 	Document d;
 

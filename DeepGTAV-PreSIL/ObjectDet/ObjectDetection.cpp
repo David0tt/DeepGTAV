@@ -227,16 +227,16 @@ FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStenci
 	if (pointclouds && lidar_initialized) collectLiDAR();
 	update3DPointsHit();
 
-    // TODO Don't run these?
-	if (!ONLY_COLLECT_IMAGE_AND_BBOXES) {
-		if (depthMap && lidar_initialized) printSegImage();
-		log("After printSeg");
-		if (depthMap && lidar_initialized) outputOcclusion();
-		log("After output occlusion");
-		if (depthMap && lidar_initialized) outputUnusedStencilPixels();
-		log("After output unused stencil");
-		refreshBuffers();
-	}
+ //   // TODO Don't run these?
+	//if (!ONLY_COLLECT_IMAGE_AND_BBOXES) {
+	//	if (depthMap && lidar_initialized) printSegImage();
+	//	log("After printSeg");
+	//	if (depthMap && lidar_initialized) outputOcclusion();
+	//	log("After output occlusion");
+	//	if (depthMap && lidar_initialized) outputUnusedStencilPixels();
+	//	log("After output unused stencil");
+	//	refreshBuffers();
+	//}
 
     return m_curFrame;
 }

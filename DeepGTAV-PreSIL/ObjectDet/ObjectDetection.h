@@ -184,6 +184,13 @@ public:
     std::vector<ObjEntity> m_nearbyVehicles;
     ObjEntity m_ownVehicleObj;
 
+
+	void printSegImage();
+	void outputOcclusion();
+	void outputUnusedStencilPixels();
+
+
+
 private:
     void setVehiclesList();
     void setPedsList();
@@ -224,7 +231,6 @@ private:
     void processStencilPixel3D(const uint8_t &stencilVal, const int &j, const int &i, const Vector3 &xVectorCam, const Vector3 &yVectorCam, const Vector3 &zVectorCam);
     void addSegmentedPoint3D(int i, int j, ObjEntity *e);
     void addPointToSegImages(int i, int j, int entityID);
-    void printSegImage();
 
     void update3DPointsHit();
     void update3DPointsHit(ObjEntity* e);
@@ -238,8 +244,6 @@ private:
 
     void initVehicleLookup();
     bool isPointOccluding(Vector3 worldPos, ObjEntity* e);
-    void outputOcclusion();
-    void outputUnusedStencilPixels();
 
     //Export functions
     void exportEntity(ObjEntity e, std::ostringstream& oss, bool unprocessed, bool augmented, bool checkbbox2d = true, const int &maxDist = -1, const int &min2DPoints = -1, const int &min3DPoints = -1);
