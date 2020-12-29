@@ -235,10 +235,29 @@ FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStenci
 		log("After output occlusion");
 		if (depthMap && lidar_initialized) outputUnusedStencilPixels();
 		log("After output unused stencil");
+		refreshBuffers();
 	}
 
     return m_curFrame;
 }
+
+
+
+
+void ObjectDetection::refreshBuffers() {
+	//Clear all maps and seg image arrays
+	memset(m_pStencilSeg, 0, m_stencilSegLength);
+	memset(m_pInstanceSeg, 0, m_instanceSegLength);
+	memset(m_pInstanceSegImg, 0, m_instanceSegImgLength);
+
+	memset(m_pOcclusionImage, 0, s_camParams.width * s_camParams.height);
+
+	memset(m_pUnusedStencilImage, 0, s_camParams.width * s_camParams.height);
+
+}
+
+
+
 
 //Returns the angle between a relative position vector and the forward vector (rotated about up axis)
 float ObjectDetection::observationAngle(Vector3 position) {
@@ -2211,10 +2230,6 @@ void ObjectDetection::printSegImage() {
     imwrite(m_instSegImgFilename, colorImg);
     colorImg.release();
 
-    //Clear all maps and seg image arrays
-    memset(m_pStencilSeg, 0, m_stencilSegLength);
-    memset(m_pInstanceSeg, 0, m_instanceSegLength);
-    memset(m_pInstanceSegImg, 0, m_instanceSegImgLength);
 }
 
 void ObjectDetection::initVehicleLookup() {
@@ -2258,7 +2273,6 @@ void ObjectDetection::outputOcclusion() {
         std::vector<std::uint8_t> ImageBuffer;
         lodepng::encode(ImageBuffer, (unsigned char*)m_pOcclusionImage, s_camParams.width, s_camParams.height, LCT_GREY, 8);
         lodepng::save_file(ImageBuffer, m_occImgFilename);
-        memset(m_pOcclusionImage, 0, s_camParams.width * s_camParams.height);
     }
 }
 
@@ -2267,7 +2281,6 @@ void ObjectDetection::outputUnusedStencilPixels() {
         std::vector<std::uint8_t> ImageBuffer;
         lodepng::encode(ImageBuffer, (unsigned char*)m_pUnusedStencilImage, s_camParams.width, s_camParams.height, LCT_GREY, 8);
         lodepng::save_file(ImageBuffer, m_unusedPixelsFilename);
-        memset(m_pUnusedStencilImage, 0, s_camParams.width * s_camParams.height);
     }
 }
 

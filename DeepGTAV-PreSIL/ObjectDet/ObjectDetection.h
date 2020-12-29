@@ -156,6 +156,8 @@ public:
     void setDepthBuffer(bool prevDepth = false);
 
     FrameObjectInfo generateMessage(float* pDepth, uint8_t* pStencil, int entityID = -1);
+	void refreshBuffers();
+
 	std::string exportDetectionsString(FrameObjectInfo fObjInfo, ObjEntity * vPerspective = NULL);
 	void exportDetections(FrameObjectInfo fObjInfo, ObjEntity* vPerspective = NULL);
     void exportImage(BYTE* data, std::string filename = "");
