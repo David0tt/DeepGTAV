@@ -348,11 +348,29 @@ StringBuffer DataExport::generateMessage() {
 		//For testing to ensure secondary ownvehicle aligns with main perspective
 		//generateSecondaryPerspective(m_pObjDet->m_ownVehicleObj);
 
+
+
 		if(segmentationImage) m_pObjDet->printSegImage();
+		//if (segmentationImage) {
+		//	const std::string image = m_pObjDet->printSegImage();
+		//	Value dat(kArrayType);
+		//	dat.SetString(StringRef(image.c_str()));
+		//	d["segmentationImage"] = dat;
+		//}
+
 		if (occlusionImage) m_pObjDet->outputOcclusion();
+		//if (occlusionImage) {
+		//	const std::string image = m_pObjDet->outputOcclusion();
+		//	Value dat(kArrayType);
+		//	dat.SetString(StringRef(image.c_str()));
+		//	d["occlusionImage"] = dat;
+		//}
+
+
 		if (unusedStencilIPixelmage) m_pObjDet->outputUnusedStencilPixels();
 
 		m_pObjDet->refreshBuffers();
+		m_pObjDet->increaseIndex();
 
 	}
 	else {
