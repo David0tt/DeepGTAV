@@ -2282,9 +2282,14 @@ void ObjectDetection::outputOcclusion() {
 
 void ObjectDetection::outputUnusedStencilPixels() {
     if (OUTPUT_UNUSED_PIXELS_IMAGE) {
-        std::vector<std::uint8_t> ImageBuffer;
-        lodepng::encode(ImageBuffer, (unsigned char*)m_pUnusedStencilImage, s_camParams.width, s_camParams.height, LCT_GREY, 8);
-        lodepng::save_file(ImageBuffer, m_unusedPixelsFilename);
+        //std::vector<std::uint8_t> ImageBuffer;
+        //lodepng::encode(ImageBuffer, (unsigned char*)m_pUnusedStencilImage, s_camParams.width, s_camParams.height, LCT_GREY, 8);
+        //lodepng::save_file(ImageBuffer, m_unusedPixelsFilename);
+
+		cv::Mat colorImg(cv::Size(s_camParams.width, s_camParams.height), CV_8UC1, m_pUnusedStencilImage);
+		imwrite(m_unusedPixelsFilename, colorImg);
+		colorImg.release();
+
     }
 }
 
