@@ -339,6 +339,7 @@ StringBuffer DataExport::generateMessage() {
 
 
 
+<<<<<<< HEAD
 
 		m_pObjDet->refreshBuffers();
 
@@ -349,6 +350,8 @@ StringBuffer DataExport::generateMessage() {
 
 
 
+=======
+>>>>>>> 4186095... restructuring works, DataExprot calls some of the image producing functions
 		////Create vehicles if it is a stationary scenario
 		//createVehicles();
 
@@ -359,10 +362,20 @@ StringBuffer DataExport::generateMessage() {
 		//For testing to ensure secondary ownvehicle aligns with main perspective
 		//generateSecondaryPerspective(m_pObjDet->m_ownVehicleObj);
 
+<<<<<<< HEAD
 		if(segmentationImage) m_pObjDet->printSegImage();
 		if (occlusionImage) m_pObjDet->outputOcclusion();
 		if (unusedStencilIPixelmage) m_pObjDet->outputUnusedStencilPixels();
 
+=======
+		if (segmentationImage) m_pObjDet->printSegImage();
+		if (occlusionImage) m_pObjDet->outputOcclusion();
+		if (unusedStencilIPixelmage) m_pObjDet->outputUnusedStencilPixels();
+
+		m_pObjDet->refreshBuffers();
+
+
+>>>>>>> 4186095... restructuring works, DataExprot calls some of the image producing functions
 		m_pObjDet->increaseIndex();
 	}
 	else {
