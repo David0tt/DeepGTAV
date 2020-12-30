@@ -186,7 +186,7 @@ public:
 
 
 	void printSegImage();
-	void outputOcclusion();
+	std::string outputOcclusion();
 	void outputUnusedStencilPixels();
 
 

@@ -358,13 +358,20 @@ StringBuffer DataExport::generateMessage() {
 		//	d["segmentationImage"] = dat;
 		//}
 
-		if (occlusionImage) m_pObjDet->outputOcclusion();
-		//if (occlusionImage) {
-		//	const std::string image = m_pObjDet->outputOcclusion();
-		//	Value dat(kArrayType);
-		//	dat.SetString(StringRef(image.c_str()));
-		//	d["occlusionImage"] = dat;
-		//}
+		//if (occlusionImage) m_pObjDet->outputOcclusion();
+		if (occlusionImage) {
+			const std::string image = m_pObjDet->outputOcclusion();
+			Value dat(kArrayType);
+			log("!!!!!!!!!!!!!!!!!! OcclusionImage Start \n");
+			log(image);
+			log("!!!!!!!!!!!!!!!!!! OcclusionImage End \n");
+			dat.SetString(StringRef(image.c_str()));
+			d["occlusionImage"] = dat;
+			log("!!!!!!!!!!!!!!!!!! OcclusionImage2 Start \n");
+			log(d["occlusionImage"].GetString());
+			log("!!!!!!!!!!!!!!!!!! OcclusionImage2 End \n");
+
+		}
 
 
 		if (unusedStencilIPixelmage) m_pObjDet->outputUnusedStencilPixels();

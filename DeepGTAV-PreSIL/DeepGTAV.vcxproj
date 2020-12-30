@@ -8,6 +8,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DataExport.cpp" />
+    <ClCompile Include="lib\base64.cpp" />
     <ClCompile Include="ObjectDet\LiDAR.cpp" />
     <ClCompile Include="ObjectDet\lodepng.cpp" />
     <ClCompile Include="ObjectDet\ObjectDetection.cpp" />
@@ -26,6 +27,7 @@
     <ClInclude Include="AreaRoaming.h" />
     <ClInclude Include="DataExport.h" />
     <ClInclude Include="defaults.h" />
+    <ClInclude Include="lib\base64.h" />
     <ClInclude Include="ObjectDetIncludes.h" />
     <ClInclude Include="ObjectDet\CamParams.h" />
     <ClInclude Include="ObjectDet\Constants.h" />
