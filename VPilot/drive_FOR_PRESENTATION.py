@@ -21,6 +21,7 @@ from math import sqrt
 import numpy as np
 import os
 
+import base64
 
 
 if __name__ == '__main__':
@@ -138,6 +139,8 @@ if __name__ == '__main__':
                     bboxes = convertBBoxesDeepGTAToYolo(message["bbox2d"])
                 except Exception as e:
                     errors.append(e)
+
+
                 if bboxes != bbox2d_old:
                     bbox2d_old = bboxes
                     try: # Sometimes there are errors with the message, i catch those here
@@ -156,6 +159,15 @@ if __name__ == '__main__':
                     except Exception as e:
                         print(e)
                         errors.append(e)
+
+                        
+                    if message["occlusionImage"] != None and message["occlusionImage"] != "":
+                        # print(message["occlusionImage"])
+                        nparr = np.fromstring(base64.b64decode(message["occlusionImage"]), np.uint8)
+                        img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+                        cv2.imshow("occlusionImage", img)
+                        cv2.waitKey(1)
+
 
             
         except KeyboardInterrupt:
