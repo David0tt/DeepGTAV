@@ -2274,43 +2274,11 @@ void ObjectDetection::initVehicleLookup() {
 
 // TODO refactor (those two functions are almost identical)
 std::string ObjectDetection::outputOcclusion() {
-    if (OUTPUT_OCCLUSION_IMAGE) {
-		cv::Mat colorImg(cv::Size(s_camParams.width, s_camParams.height), CV_8UC1, m_pOcclusionImage);
-
-		std::vector<int> params;
-		params.push_back(cv::IMWRITE_PNG_COMPRESSION);
-		// TODO check if this compression level is good
-		params.push_back(6);
-
-		std::vector<uchar> buf;
-		cv::imencode(".png", colorImg, buf, params);
-
-		auto *enc_message = reinterpret_cast<unsigned char*>(buf.data());
-		std::string encoded = base64_encode(enc_message, buf.size());
-		colorImg.release();
-
-		return encoded;
-    }
+	return exportImage(m_pOcclusionImage, CV_8UC1);
 }
 
 std::string ObjectDetection::outputUnusedStencilPixels() {
-    if (OUTPUT_UNUSED_PIXELS_IMAGE) {
-		cv::Mat colorImg(cv::Size(s_camParams.width, s_camParams.height), CV_8UC1, m_pUnusedStencilImage);
-		
-		std::vector<int> params;
-		params.push_back(cv::IMWRITE_PNG_COMPRESSION);
-		// TODO check if this compression level is good
-		params.push_back(6);
-
-		std::vector<uchar> buf;
-		cv::imencode(".png", colorImg, buf, params);
-
-		auto *enc_message = reinterpret_cast<unsigned char*>(buf.data());
-		std::string encoded = base64_encode(enc_message, buf.size());
-		colorImg.release();
-
-		return encoded;
-    }
+	return exportImage(m_pUnusedStencilImage, CV_8UC1);
 }
 
 void ObjectDetection::exportEntity(ObjEntity e, std::ostringstream& oss, bool unprocessed, bool augmented,
@@ -2489,16 +2457,35 @@ void ObjectDetection::exportDetections(FrameObjectInfo fObjInfo, ObjEntity* vPer
 }
 
 
+//// TODO rework to allow sending images over TCP
+//void ObjectDetection::exportImage(BYTE* data, std::string filename) {
+//	if (!DONT_COLLECT_IMAGE_AND_BBOXES_TO_FILE) {
+//		cv::Mat tempMat(cv::Size(s_camParams.width, s_camParams.height), CV_8UC3, data);
+//		if (filename.empty()) {
+//			filename = m_imgFilename;
+//		}
+//		cv::imwrite(filename, tempMat);
+//		tempMat.release();
+//	}
+//}
+
 // TODO rework to allow sending images over TCP
-void ObjectDetection::exportImage(BYTE* data, std::string filename) {
-	if (!DONT_COLLECT_IMAGE_AND_BBOXES_TO_FILE) {
-		cv::Mat tempMat(cv::Size(s_camParams.width, s_camParams.height), CV_8UC3, data);
-		if (filename.empty()) {
-			filename = m_imgFilename;
-		}
-		cv::imwrite(filename, tempMat);
-		tempMat.release();
-	}
+std::string ObjectDetection::exportImage(BYTE* data, int imageType) {
+	cv::Mat tempMat(cv::Size(s_camParams.width, s_camParams.height), imageType, data);
+
+	std::vector<int> params;
+	params.push_back(cv::IMWRITE_PNG_COMPRESSION);
+	// TODO check if this compression level is good
+	params.push_back(6);
+
+	std::vector<uchar> buf;
+	cv::imencode(".png", tempMat, buf, params);
+
+	auto *enc_message = reinterpret_cast<unsigned char*>(buf.data());
+	std::string encoded = base64_encode(enc_message, buf.size());
+	tempMat.release();
+
+	return encoded;
 }
 
 Vector3 ObjectDetection::getGroundPoint(Vector3 point, Vector3 yVectorCam, Vector3 xVectorCam, Vector3 zVectorCam) {

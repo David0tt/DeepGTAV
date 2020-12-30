@@ -160,12 +160,18 @@ if __name__ == '__main__':
                         print(e)
                         errors.append(e)
 
-                        
+
                     if message["occlusionImage"] != None and message["occlusionImage"] != "":
                         # print(message["occlusionImage"])
                         nparr = np.fromstring(base64.b64decode(message["occlusionImage"]), np.uint8)
                         img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
                         cv2.imshow("occlusionImage", img)
+                        cv2.waitKey(1)
+                    if message["occlusionImage"] != None and message["unusedStencilIPixelmage"] != "":
+                        # print(message["occlusionImage"])
+                        nparr = np.fromstring(base64.b64decode(message["unusedStencilIPixelmage"]), np.uint8)
+                        img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+                        cv2.imshow("unusedStencilIPixelmage", img)
                         cv2.waitKey(1)
 
 

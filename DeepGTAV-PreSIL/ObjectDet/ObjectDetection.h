@@ -160,7 +160,7 @@ public:
 
 	std::string exportDetectionsString(FrameObjectInfo fObjInfo, ObjEntity * vPerspective = NULL);
 	void exportDetections(FrameObjectInfo fObjInfo, ObjEntity* vPerspective = NULL);
-    void exportImage(BYTE* data, std::string filename = "");
+    std::string exportImage(BYTE* data, int imageType = CV_8UC3);
     void increaseIndex();
     std::string getStandardFilename(std::string subDir, std::string extension);
 

@@ -332,8 +332,9 @@ StringBuffer DataExport::generateMessage() {
 		d["bbox2d"] = bbox2d;
 
 
-		BYTE* data = screenCapturer->pixels;
-		m_pObjDet->exportImage(data);
+		// TODO legacy image export, this can be reused, after changing the image export in the Server
+		//BYTE* data = screenCapturer->pixels;
+		//m_pObjDet->exportImage(data);
 
 		d["index"] = fObjInfo.instanceIdx;
 
