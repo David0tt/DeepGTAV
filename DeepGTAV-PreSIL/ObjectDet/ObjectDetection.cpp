@@ -2271,15 +2271,11 @@ void ObjectDetection::initVehicleLookup() {
     }
 }
 
+
+// TODO refactor (those two functions are almost identical)
 std::string ObjectDetection::outputOcclusion() {
     if (OUTPUT_OCCLUSION_IMAGE) {
-        //std::vector<std::uint8_t> ImageBuffer;
-        //lodepng::encode(ImageBuffer, (unsigned char*)m_pOcclusionImage, s_camParams.width, s_camParams.height, LCT_GREY, 8);
-        //lodepng::save_file(ImageBuffer, m_occImgFilename);
-
 		cv::Mat colorImg(cv::Size(s_camParams.width, s_camParams.height), CV_8UC1, m_pOcclusionImage);
-		imwrite(m_occImgFilename, colorImg);
-
 
 		std::vector<int> params;
 		params.push_back(cv::IMWRITE_PNG_COMPRESSION);
@@ -2294,20 +2290,26 @@ std::string ObjectDetection::outputOcclusion() {
 		colorImg.release();
 
 		return encoded;
-
     }
 }
 
-void ObjectDetection::outputUnusedStencilPixels() {
+std::string ObjectDetection::outputUnusedStencilPixels() {
     if (OUTPUT_UNUSED_PIXELS_IMAGE) {
-        //std::vector<std::uint8_t> ImageBuffer;
-        //lodepng::encode(ImageBuffer, (unsigned char*)m_pUnusedStencilImage, s_camParams.width, s_camParams.height, LCT_GREY, 8);
-        //lodepng::save_file(ImageBuffer, m_unusedPixelsFilename);
-
 		cv::Mat colorImg(cv::Size(s_camParams.width, s_camParams.height), CV_8UC1, m_pUnusedStencilImage);
-		imwrite(m_unusedPixelsFilename, colorImg);
+		
+		std::vector<int> params;
+		params.push_back(cv::IMWRITE_PNG_COMPRESSION);
+		// TODO check if this compression level is good
+		params.push_back(6);
+
+		std::vector<uchar> buf;
+		cv::imencode(".png", colorImg, buf, params);
+
+		auto *enc_message = reinterpret_cast<unsigned char*>(buf.data());
+		std::string encoded = base64_encode(enc_message, buf.size());
 		colorImg.release();
 
+		return encoded;
     }
 }
 
