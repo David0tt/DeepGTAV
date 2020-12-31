@@ -191,6 +191,13 @@ public:
 
 
 
+	// TODO new image export functions
+	std::string ObjectDetection::exportSegmentationImage();
+	std::string ObjectDetection::printInstanceSegmentationImage();
+	std::string ObjectDetection::printInstanceSegmentationImageColor();
+
+
+
 private:
     void setVehiclesList();
     void setPedsList();
@@ -212,7 +219,7 @@ private:
     void drawVectorFromPosition(Vector3 vector, int blue, int green);
     Vector3 depthToCamCoords(float depth, float screenX, float screenY);
     void outputRealSpeed();
-    void setStencilBuffer();
+    void printStencilImages();
     void setFilenames();
 
     BBox2D BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector, bool &success, float &truncation);

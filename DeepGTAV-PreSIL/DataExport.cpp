@@ -125,12 +125,16 @@ void DataExport::parseDatasetConfig(const Value& dc, bool setDefaults) {
 	else if (setDefaults) location = _LOCATION_;
 	if (!dc["time"].IsNull()) time = dc["time"].GetBool();
 	else if (setDefaults) time = _TIME_;
-	if (!dc["segmentationImage"].IsNull()) segmentationImage = dc["segmentationImage"].GetBool();
-	else if (setDefaults) segmentationImage = _SEGMENTATION_IMAGE_;
 	if (!dc["occlusionImage"].IsNull()) occlusionImage = dc["occlusionImage"].GetBool();
 	else if (setDefaults) occlusionImage = _OCCLUSION_IMAGE_;
 	if (!dc["unusedStencilIPixelmage"].IsNull()) unusedStencilIPixelmage = dc["unusedStencilIPixelmage"].GetBool();
 	else if (setDefaults) unusedStencilIPixelmage = _UNUSED_STENCIL_IMAGE_;
+	if (!dc["segmentationImage"].IsNull()) segmentationImage = dc["segmentationImage"].GetBool();
+	else if (setDefaults) segmentationImage = _SEGMENTATION_IMAGE_;
+	if (!dc["instanceSegmentationImage"].IsNull()) instanceSegmentationImage = dc["instanceSegmentationImage"].GetBool();
+	else if (setDefaults) instanceSegmentationImage = _INSTANCE_SEGMENTATION_IMAGE_;
+	if (!dc["instanceSegmentationImageColor"].IsNull()) instanceSegmentationImageColor = dc["instanceSegmentationImageColor"].GetBool();
+	else if (setDefaults) instanceSegmentationImageColor = _INSTANCE_SEGMENTATION_IMAGE_COLOR_;
 
 
 	buildJSONObject();
@@ -173,9 +177,11 @@ void DataExport::buildJSONObject() {
 	d.AddMember("CameraAngle", a, allocator);
 	d.AddMember("CameraPosition", a, allocator);
 
-	if (segmentationImage) d.AddMember("segmentationImage", a, allocator);
 	if (occlusionImage) d.AddMember("occlusionImage", a, allocator);
 	if (unusedStencilIPixelmage) d.AddMember("unusedStencilIPixelmage", a, allocator);
+	if (segmentationImage) d.AddMember("segmentationImage", a, allocator);
+	if (instanceSegmentationImage) d.AddMember("instanceSegmentationImage", a, allocator);
+	if (instanceSegmentationImageColor) d.AddMember("instanceSegmentationImageColor", a, allocator);
 
 
 	screenCapturer = new ScreenCapturer(s_camParams.width, s_camParams.height);
@@ -351,7 +357,7 @@ StringBuffer DataExport::generateMessage() {
 
 
 
-		if(segmentationImage) m_pObjDet->printSegImage();
+		//if(segmentationImage) m_pObjDet->printSegImage();
 		//if (segmentationImage) {
 		//	const std::string image = m_pObjDet->printSegImage();
 		//	Value dat(kArrayType);
@@ -373,6 +379,28 @@ StringBuffer DataExport::generateMessage() {
 			Value dat(kArrayType);
 			dat.SetString(StringRef(image.c_str()));
 			d["unusedStencilIPixelmage"] = dat;
+		}
+
+		// TODO this is not clean right now, make this better later
+		// Export different Segmentation images:
+		if (segmentationImage) {
+			const std::string image = m_pObjDet->exportSegmentationImage();
+			Value dat(kArrayType);
+			dat.SetString(StringRef(image.c_str()));
+			d["segmentationImage"] = dat;
+		}
+		if (instanceSegmentationImage) {
+			const std::string image = m_pObjDet->printInstanceSegmentationImage();
+			Value dat(kArrayType);
+			dat.SetString(StringRef(image.c_str()));
+			d["instanceSegmentationImage"] = dat;
+		}
+		if (instanceSegmentationImageColor) {
+			const std::string image = m_pObjDet->printInstanceSegmentationImageColor();
+			Value dat(kArrayType);
+			dat.SetString(StringRef(image.c_str()));
+			d["instanceSegmentationImageColor"] = dat;
+
 		}
 
 		m_pObjDet->refreshBuffers();

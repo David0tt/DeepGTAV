@@ -161,17 +161,35 @@ if __name__ == '__main__':
                         errors.append(e)
 
 
-                    if message["occlusionImage"] != None and message["occlusionImage"] != "":
+                    # if message["occlusionImage"] != None and message["occlusionImage"] != "":
+                    #     # print(message["occlusionImage"])
+                    #     nparr = np.fromstring(base64.b64decode(message["occlusionImage"]), np.uint8)
+                    #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+                    #     cv2.imshow("occlusionImage", img)
+                    #     cv2.waitKey(1)
+                    # if message["unusedStencilIPixelmage"] != None and message["unusedStencilIPixelmage"] != "":
+                    #     # print(message["occlusionImage"])
+                    #     nparr = np.fromstring(base64.b64decode(message["unusedStencilIPixelmage"]), np.uint8)
+                    #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+                    #     cv2.imshow("unusedStencilIPixelmage", img)
+                    #     cv2.waitKey(1)
+                    if message["segmentationImage"] != None and message["segmentationImage"] != "":
                         # print(message["occlusionImage"])
-                        nparr = np.fromstring(base64.b64decode(message["occlusionImage"]), np.uint8)
+                        nparr = np.fromstring(base64.b64decode(message["segmentationImage"]), np.uint8)
                         img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
-                        cv2.imshow("occlusionImage", img)
+                        cv2.imshow("segmentationImage", img)
                         cv2.waitKey(1)
-                    if message["occlusionImage"] != None and message["unusedStencilIPixelmage"] != "":
+                    if message["instanceSegmentationImage"] != None and message["instanceSegmentationImage"] != "":
                         # print(message["occlusionImage"])
-                        nparr = np.fromstring(base64.b64decode(message["unusedStencilIPixelmage"]), np.uint8)
+                        nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImage"]), np.uint8)
                         img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
-                        cv2.imshow("unusedStencilIPixelmage", img)
+                        cv2.imshow("instanceSegmentationImage", img)
+                        cv2.waitKey(1)
+                    if message["instanceSegmentationImageColor"] != None and message["instanceSegmentationImageColor"] != "":
+                        # print(message["occlusionImage"])
+                        nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImageColor"]), np.uint8)
+                        img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+                        cv2.imshow("instanceSegmentationImageColor", img)
                         cv2.waitKey(1)
 
 

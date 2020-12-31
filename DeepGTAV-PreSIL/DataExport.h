@@ -45,9 +45,11 @@ private:
 	bool drivingMode; //TODO
 	bool location;
 	bool time;
-	bool segmentationImage;
 	bool occlusionImage;
 	bool unusedStencilIPixelmage;
+	bool segmentationImage;
+	bool instanceSegmentationImage;
+	bool instanceSegmentationImageColor;
 
 	Document d;
 

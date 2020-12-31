@@ -212,7 +212,7 @@ FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStenci
 	// This is equal to:
 	setFilenames();
 	if (lidar_initialized) setDepthBuffer(false);
-	if (lidar_initialized) setStencilBuffer();
+	if (lidar_initialized) printStencilImages();
 
 
     //Need to set peds list first for integrating peds on bikes
@@ -1714,19 +1714,23 @@ void ObjectDetection::collectLiDAR() {
     }
 }
 
-void ObjectDetection::setStencilBuffer() {
-    log("About to set stencil buffer");
-    int size = s_camParams.width * s_camParams.height;
 
+
+// TODO this function is only needed for debugging, so I don't rework it to send the data via TCP right now
+void ObjectDetection::printStencilImages() {
+    log("About to write stencil buffer");
+    int size = s_camParams.width * s_camParams.height;
 	if (!ONLY_COLLECT_IMAGE_AND_BBOXES) {
 		std::ofstream ofile(m_stencilFilename, std::ios::binary);
 		ofile.write((char*)m_pStencil, size);
 		ofile.close();
 	}
+	log("After writing stencil buffer");
+
 
     std::vector<int> stencilValues;
-    log("After writing stencil buffer");
-    for (int j = 0; j < s_camParams.height; ++j) {
+
+	for (int j = 0; j < s_camParams.height; ++j) {
         for (int i = 0; i < s_camParams.width; ++i) {
             uint8_t val = m_pStencil[j * s_camParams.width + i];
             uint8_t* p = m_pStencilImage + (j * s_camParams.width) + i;
@@ -1810,6 +1814,8 @@ void ObjectDetection::setStencilBuffer() {
     }
 }
 
+
+// TODO send this data 
 void ObjectDetection::setDepthBuffer(bool prevDepth) {
     int size = s_camParams.width * s_camParams.height;
     log("About to set depth buffer");
@@ -2163,77 +2169,144 @@ void ObjectDetection::setCamParams(float* forwardVec, float* rightVec, float* up
     log(str1);
 }
 
-void ObjectDetection::printSegImage() {
-    int notUsedStencilPoints = 0;
-
-    for (int j = 0; j < s_camParams.height; ++j) {
-        for (int i = 0; i < s_camParams.width; ++i) {
-            uint8_t stencilVal = m_pStencil[j * s_camParams.width + i];
-            if (stencilVal == STENCIL_TYPE_NPC || stencilVal == STENCIL_TYPE_VEHICLE) {
-                if (m_pStencilSeg[3 * (j * s_camParams.width + i)] == 0 &&
-                    m_pStencilSeg[3 * (j * s_camParams.width + i) + 1] == 0 &&
-                    m_pStencilSeg[3 * (j * s_camParams.width + i) + 2] == 0) {
-                    m_pUnusedStencilImage[j * s_camParams.width + i] = 255;
-                    ++notUsedStencilPoints;
-                }
-            }
-        }
-    }
-    if (notUsedStencilPoints > 10000) {
-        std::ostringstream oss;
-        oss << "***Lots of unused stencil points, total unused: " << notUsedStencilPoints << " instance idx: " << instance_index;
-        if (collectTracking) {
-            oss << " seq idx: " << series_index;
-        }
-        std::string str = oss.str();
-        log(str, true);
-    }
-    FILE* f = fopen(m_usedPixelFile.c_str(), "a");
-    std::ostringstream oss;
-    oss << notUsedStencilPoints << " " << instance_index;
-    if (collectTracking) {
-        oss << " " << series_index;
-    }
-    std::string str = oss.str();
-    fprintf(f, str.c_str());
-    fprintf(f, "\n");
-    fclose(f);
-
-    std::vector<std::uint8_t> ImageBuffer;
-    lodepng::encode(ImageBuffer, (unsigned char*)m_pStencilSeg, s_camParams.width, s_camParams.height, LCT_RGB, 8);
-    lodepng::save_file(ImageBuffer, m_segImgFilename);
-
-    //Print instance segmented image
-    cv::Mat tempMat(cv::Size(s_camParams.width, s_camParams.height), CV_32SC1, m_pInstanceSeg);
-    imwrite(m_instSegFilename, tempMat);
-    tempMat.release();
 
 
-    //Create and print out instance seg image in colour for visualization
-    for (int j = 0; j < s_camParams.height; ++j) {
-        for (int i = 0; i < s_camParams.width; ++i) {
-            //RGB image is 3 bytes per pixel
-            int idx = j * s_camParams.width + i;
-            int segIdx = 3 * idx;
-            int entityID = m_pInstanceSeg[idx];
+std::string ObjectDetection::exportSegmentationImage() {
+	int notUsedStencilPoints = 0;
 
-            int newVal = 47 * entityID; //Just to produce unique but different colours
-            int red = (newVal + 13 * entityID) % 255;
-            int green = (newVal / 255) % 255;
-            int blue = newVal % 255;
-            uint8_t* p = m_pInstanceSegImg + segIdx;
-            *p = red;
-            *(p + 1) = green;
-            *(p + 2) = blue;
-        }
-    }
+	for (int j = 0; j < s_camParams.height; ++j) {
+		for (int i = 0; i < s_camParams.width; ++i) {
+			uint8_t stencilVal = m_pStencil[j * s_camParams.width + i];
+			if (stencilVal == STENCIL_TYPE_NPC || stencilVal == STENCIL_TYPE_VEHICLE) {
+				if (m_pStencilSeg[3 * (j * s_camParams.width + i)] == 0 &&
+					m_pStencilSeg[3 * (j * s_camParams.width + i) + 1] == 0 &&
+					m_pStencilSeg[3 * (j * s_camParams.width + i) + 2] == 0) {
+					m_pUnusedStencilImage[j * s_camParams.width + i] = 255;
+					++notUsedStencilPoints;
+				}
+			}
+		}
+	}
 
-    cv::Mat colorImg(cv::Size(s_camParams.width, s_camParams.height), CV_8UC3, m_pInstanceSegImg);
-    log("About to print seg image3", true);
-    imwrite(m_instSegImgFilename, colorImg);
-    colorImg.release();
+	// TODO  save notUsedStencilPoints and allow exportation
 
+	return exportImage(m_pStencilSeg, CV_8UC3);
 }
+
+std::string ObjectDetection::printInstanceSegmentationImage() {
+	// TODO see if this can also be done with the exportImage function
+
+	//Print instance segmented image
+	cv::Mat tempMat(cv::Size(s_camParams.width, s_camParams.height), CV_32SC1, m_pInstanceSeg);
+
+	std::vector<int> params;
+	params.push_back(cv::IMWRITE_PNG_COMPRESSION);
+	// TODO check if this compression level is good
+	params.push_back(6);
+
+	std::vector<uchar> buf;
+	cv::imencode(".png", tempMat, buf, params);
+
+	auto *enc_message = reinterpret_cast<unsigned char*>(buf.data());
+	std::string encoded = base64_encode(enc_message, buf.size());
+	tempMat.release();
+
+	return encoded;
+}
+
+//Create and print out instance seg image in colour for visualization
+std::string ObjectDetection::printInstanceSegmentationImageColor() {
+	for (int j = 0; j < s_camParams.height; ++j) {
+		for (int i = 0; i < s_camParams.width; ++i) {
+			//RGB image is 3 bytes per pixel
+			int idx = j * s_camParams.width + i;
+			int segIdx = 3 * idx;
+			int entityID = m_pInstanceSeg[idx];
+
+			int newVal = 47 * entityID; //Just to produce unique but different colours
+			int red = (newVal + 13 * entityID) % 255;
+			int green = (newVal / 255) % 255;
+			int blue = newVal % 255;
+			uint8_t* p = m_pInstanceSegImg + segIdx;
+			*p = red;
+			*(p + 1) = green;
+			*(p + 2) = blue;
+		}
+	}
+
+	return exportImage(m_pInstanceSegImg, CV_8UC3);
+}
+//void ObjectDetection::printSegImage() {
+//	int notUsedStencilPoints = 0;
+//
+//	for (int j = 0; j < s_camParams.height; ++j) {
+//		for (int i = 0; i < s_camParams.width; ++i) {
+//			uint8_t stencilVal = m_pStencil[j * s_camParams.width + i];
+//			if (stencilVal == STENCIL_TYPE_NPC || stencilVal == STENCIL_TYPE_VEHICLE) {
+//				if (m_pStencilSeg[3 * (j * s_camParams.width + i)] == 0 &&
+//					m_pStencilSeg[3 * (j * s_camParams.width + i) + 1] == 0 &&
+//					m_pStencilSeg[3 * (j * s_camParams.width + i) + 2] == 0) {
+//					m_pUnusedStencilImage[j * s_camParams.width + i] = 255;
+//					++notUsedStencilPoints;
+//				}
+//			}
+//		}
+//	}
+//	if (notUsedStencilPoints > 10000) {
+//		std::ostringstream oss;
+//		oss << "***Lots of unused stencil points, total unused: " << notUsedStencilPoints << " instance idx: " << instance_index;
+//		if (collectTracking) {
+//			oss << " seq idx: " << series_index;
+//		}
+//		std::string str = oss.str();
+//		log(str, true);
+//	}
+//	FILE* f = fopen(m_usedPixelFile.c_str(), "a");
+//	std::ostringstream oss;
+//	oss << notUsedStencilPoints << " " << instance_index;
+//	if (collectTracking) {
+//		oss << " " << series_index;
+//	}
+//	std::string str = oss.str();
+//	fprintf(f, str.c_str());
+//	fprintf(f, "\n");
+//	fclose(f);
+//
+//	std::vector<std::uint8_t> ImageBuffer;
+//	lodepng::encode(ImageBuffer, (unsigned char*)m_pStencilSeg, s_camParams.width, s_camParams.height, LCT_RGB, 8);
+//	lodepng::save_file(ImageBuffer, m_segImgFilename);
+//
+//	//Print instance segmented image
+//	cv::Mat tempMat(cv::Size(s_camParams.width, s_camParams.height), CV_32SC1, m_pInstanceSeg);
+//	imwrite(m_instSegFilename, tempMat);
+//	tempMat.release();
+//
+//
+//	//Create and print out instance seg image in colour for visualization
+//	for (int j = 0; j < s_camParams.height; ++j) {
+//		for (int i = 0; i < s_camParams.width; ++i) {
+//			//RGB image is 3 bytes per pixel
+//			int idx = j * s_camParams.width + i;
+//			int segIdx = 3 * idx;
+//			int entityID = m_pInstanceSeg[idx];
+//
+//			int newVal = 47 * entityID; //Just to produce unique but different colours
+//			int red = (newVal + 13 * entityID) % 255;
+//			int green = (newVal / 255) % 255;
+//			int blue = newVal % 255;
+//			uint8_t* p = m_pInstanceSegImg + segIdx;
+//			*p = red;
+//			*(p + 1) = green;
+//			*(p + 2) = blue;
+//		}
+//	}
+//
+//	cv::Mat colorImg(cv::Size(s_camParams.width, s_camParams.height), CV_8UC3, m_pInstanceSegImg);
+//	log("About to print seg image3", true);
+//	imwrite(m_instSegImgFilename, colorImg);
+//	colorImg.release();
+//
+//}
 
 void ObjectDetection::initVehicleLookup() {
     if (!m_vLookupInit) {
@@ -2469,7 +2542,6 @@ void ObjectDetection::exportDetections(FrameObjectInfo fObjInfo, ObjEntity* vPer
 //	}
 //}
 
-// TODO rework to allow sending images over TCP
 std::string ObjectDetection::exportImage(BYTE* data, int imageType) {
 	cv::Mat tempMat(cv::Size(s_camParams.width, s_camParams.height), imageType, data);
 
@@ -2573,6 +2645,8 @@ std::string ObjectDetection::setGroundPlanePoints() {
     std::string str = oss.str().c_str();
 	return str;
 }
+
+
 
 Vector3 ObjectDetection::getVehicleDims(Entity e, Hash model, Vector3 &min, Vector3 &max) {
     GAMEPLAY::GET_MODEL_DIMENSIONS(model, &min, &max);

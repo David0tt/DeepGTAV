@@ -42,7 +42,7 @@ const bool OUTPUT_RAYCAST_POINTS = false;
 const bool USE_RAYCASTING = false;
 
 //Outputs pointcloud with 1:1 ratio of pixels in image < MAX_LIDAR_DIST
-const bool OUTPUT_DM_POINTCLOUD = false;
+const bool OUTPUT_DM_POINTCLOUD = true;
 //If OUTPUT_DM_POINTCLOUD, outputs all points, even those past MAX_LIDAR_DIST (good for testing)
 const bool OUTPUT_FULL_DM_POINTCLOUD = false;
 //Output offset pointclouds (for testing alignment)
@@ -81,10 +81,10 @@ const float GROUND_POINT_MAX_DIST = 0.1;//in metres
 const bool OUTPUT_GROUND_PIXELS = true;
 
 //Outputs separate stencil segmentation images for each stencil value
-const bool OUTPUT_SEPARATE_STENCILS = false;
+const bool OUTPUT_SEPARATE_STENCILS = true;
 
 //Outputs stencil image which shows stencil of some classes (for debugging)
-const bool OUTPUT_STENCIL_IMAGE = false;
+const bool OUTPUT_STENCIL_IMAGE = true;
 
 //Needs OUTPUT_SEPARATE_STENCILS to be true, only outputs log messages for values which are unknown 
 const bool ONLY_OUTPUT_UNKNOWN_STENCILS = false;
