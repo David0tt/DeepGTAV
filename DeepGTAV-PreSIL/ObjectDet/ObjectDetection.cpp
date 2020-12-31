@@ -2236,77 +2236,9 @@ std::string ObjectDetection::printInstanceSegmentationImageColor() {
 
 	return exportImage(m_pInstanceSegImg, CV_8UC3);
 }
-//void ObjectDetection::printSegImage() {
-//	int notUsedStencilPoints = 0;
-//
-//	for (int j = 0; j < s_camParams.height; ++j) {
-//		for (int i = 0; i < s_camParams.width; ++i) {
-//			uint8_t stencilVal = m_pStencil[j * s_camParams.width + i];
-//			if (stencilVal == STENCIL_TYPE_NPC || stencilVal == STENCIL_TYPE_VEHICLE) {
-//				if (m_pStencilSeg[3 * (j * s_camParams.width + i)] == 0 &&
-//					m_pStencilSeg[3 * (j * s_camParams.width + i) + 1] == 0 &&
-//					m_pStencilSeg[3 * (j * s_camParams.width + i) + 2] == 0) {
-//					m_pUnusedStencilImage[j * s_camParams.width + i] = 255;
-//					++notUsedStencilPoints;
-//				}
-//			}
-//		}
-//	}
-//	if (notUsedStencilPoints > 10000) {
-//		std::ostringstream oss;
-//		oss << "***Lots of unused stencil points, total unused: " << notUsedStencilPoints << " instance idx: " << instance_index;
-//		if (collectTracking) {
-//			oss << " seq idx: " << series_index;
-//		}
-//		std::string str = oss.str();
-//		log(str, true);
-//	}
-//	FILE* f = fopen(m_usedPixelFile.c_str(), "a");
-//	std::ostringstream oss;
-//	oss << notUsedStencilPoints << " " << instance_index;
-//	if (collectTracking) {
-//		oss << " " << series_index;
-//	}
-//	std::string str = oss.str();
-//	fprintf(f, str.c_str());
-//	fprintf(f, "\n");
-//	fclose(f);
-//
-//	std::vector<std::uint8_t> ImageBuffer;
-//	lodepng::encode(ImageBuffer, (unsigned char*)m_pStencilSeg, s_camParams.width, s_camParams.height, LCT_RGB, 8);
-//	lodepng::save_file(ImageBuffer, m_segImgFilename);
-//
-//	//Print instance segmented image
-//	cv::Mat tempMat(cv::Size(s_camParams.width, s_camParams.height), CV_32SC1, m_pInstanceSeg);
-//	imwrite(m_instSegFilename, tempMat);
-//	tempMat.release();
-//
-//
-//	//Create and print out instance seg image in colour for visualization
-//	for (int j = 0; j < s_camParams.height; ++j) {
-//		for (int i = 0; i < s_camParams.width; ++i) {
-//			//RGB image is 3 bytes per pixel
-//			int idx = j * s_camParams.width + i;
-//			int segIdx = 3 * idx;
-//			int entityID = m_pInstanceSeg[idx];
-//
-//			int newVal = 47 * entityID; //Just to produce unique but different colours
-//			int red = (newVal + 13 * entityID) % 255;
-//			int green = (newVal / 255) % 255;
-//			int blue = newVal % 255;
-//			uint8_t* p = m_pInstanceSegImg + segIdx;
-//			*p = red;
-//			*(p + 1) = green;
-//			*(p + 2) = blue;
-//		}
-//	}
-//
-//	cv::Mat colorImg(cv::Size(s_camParams.width, s_camParams.height), CV_8UC3, m_pInstanceSegImg);
-//	log("About to print seg image3", true);
-//	imwrite(m_instSegImgFilename, colorImg);
-//	colorImg.release();
-//
-//}
+
+
+
 
 void ObjectDetection::initVehicleLookup() {
     if (!m_vLookupInit) {
