@@ -22,8 +22,9 @@
 #define _POINTCLOUDS_ true
 #define _STATIONARY_SCENE_ false
 #define _COLLECT_TRACKING_ false
-#define _OCCLUSION_IMAGE_ true;
-#define _UNUSED_STENCIL_IMAGE_ true;
-#define _SEGMENTATION_IMAGE_ true;
-#define _INSTANCE_SEGMENTATION_IMAGE_ true;
-#define _INSTANCE_SEGMENTATION_IMAGE_COLOR_ true;
+#define _OCCLUSION_IMAGE_ false;
+
+#define _UNUSED_STENCIL_IMAGE_ false;
+#define _SEGMENTATION_IMAGE_ false;
+#define _INSTANCE_SEGMENTATION_IMAGE_ false;
+#define _INSTANCE_SEGMENTATION_IMAGE_COLOR_ false;

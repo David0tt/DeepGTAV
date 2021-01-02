@@ -75,11 +75,12 @@ if __name__ == '__main__':
             print("count: ", count)
 
             # Only record every 10th frame
-            if count > 50 and count % 10 == 0:
+            # if count > 50 and count % 10 == 0:
+            #     client.sendMessage(StartRecording())
+            # if count > 50 and count % 10 == 1:
+            #     client.sendMessage(StopRecording())
+            if count == 50:
                 client.sendMessage(StartRecording())
-            if count > 50 and count % 10 == 1:
-                client.sendMessage(StopRecording())
-
 
             if count == 2:
                 client.sendMessage(TeleportToLocation(-388, 0, 200))
@@ -173,24 +174,24 @@ if __name__ == '__main__':
                     #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
                     #     cv2.imshow("unusedStencilIPixelmage", img)
                     #     cv2.waitKey(1)
-                    if message["segmentationImage"] != None and message["segmentationImage"] != "":
-                        # print(message["occlusionImage"])
-                        nparr = np.fromstring(base64.b64decode(message["segmentationImage"]), np.uint8)
-                        img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
-                        cv2.imshow("segmentationImage", img)
-                        cv2.waitKey(1)
-                    if message["instanceSegmentationImage"] != None and message["instanceSegmentationImage"] != "":
-                        # print(message["occlusionImage"])
-                        nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImage"]), np.uint8)
-                        img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
-                        cv2.imshow("instanceSegmentationImage", img)
-                        cv2.waitKey(1)
-                    if message["instanceSegmentationImageColor"] != None and message["instanceSegmentationImageColor"] != "":
-                        # print(message["occlusionImage"])
-                        nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImageColor"]), np.uint8)
-                        img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
-                        cv2.imshow("instanceSegmentationImageColor", img)
-                        cv2.waitKey(1)
+                    # if message["segmentationImage"] != None and message["segmentationImage"] != "":
+                    #     # print(message["occlusionImage"])
+                    #     nparr = np.fromstring(base64.b64decode(message["segmentationImage"]), np.uint8)
+                    #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+                    #     cv2.imshow("segmentationImage", img)
+                    #     cv2.waitKey(1)
+                    # if message["instanceSegmentationImage"] != None and message["instanceSegmentationImage"] != "":
+                    #     # print(message["occlusionImage"])
+                    #     nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImage"]), np.uint8)
+                    #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+                    #     cv2.imshow("instanceSegmentationImage", img)
+                    #     cv2.waitKey(1)
+                    # if message["instanceSegmentationImageColor"] != None and message["instanceSegmentationImageColor"] != "":
+                    #     # print(message["occlusionImage"])
+                    #     nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImageColor"]), np.uint8)
+                    #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+                    #     cv2.imshow("instanceSegmentationImageColor", img)
+                    #     cv2.waitKey(1)
 
 
             

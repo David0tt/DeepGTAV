@@ -183,7 +183,7 @@ void DataExport::buildJSONObject() {
 	if (instanceSegmentationImage) d.AddMember("instanceSegmentationImage", a, allocator);
 	if (instanceSegmentationImageColor) d.AddMember("instanceSegmentationImageColor", a, allocator);
 
-
+	
 	screenCapturer = new ScreenCapturer(s_camParams.width, s_camParams.height);
 
 }

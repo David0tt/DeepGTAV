@@ -9,7 +9,7 @@ static const Eigen::Vector3f WORLD_EAST(1.0, 0.0, 0.0);
 
 //Floats per point in the pointcloud (x, y, z, reflectance)
 const int FLOATS_PER_POINT = 4;
-const float MAX_LIDAR_DIST = 0.0f; // 120.0f; //in metres
+const float MAX_LIDAR_DIST = 120.0f; // 120.0f; //in metres
 const int OBJECT_MAX_DIST = 0; // 200; //in metres (label_aug will have objects past this value)
 
 // The max distances Above have been adjusted for only bounding box capturing
@@ -35,11 +35,11 @@ const bool START_SPEC_AREA = true;
 
 //Some settings for testing pointcloud generation
 //This prints the 2D map of where lidar beams hit on the screen (not consistent when moving)
-const bool GENERATE_2D_POINTMAP = false;
+const bool GENERATE_2D_POINTMAP = true;
 //Outputs secondary pointcloud with raycast points
-const bool OUTPUT_RAYCAST_POINTS = false;
+const bool OUTPUT_RAYCAST_POINTS = true;
 //Uses ray casting then transforms 3D point back to 2D plane to use depth buffer value
-const bool USE_RAYCASTING = false;
+const bool USE_RAYCASTING = true;
 
 //Outputs pointcloud with 1:1 ratio of pixels in image < MAX_LIDAR_DIST
 const bool OUTPUT_DM_POINTCLOUD = true;
