@@ -2,8 +2,8 @@ import numpy as np
 import open3d
 
 
-# filename = "E:/Bachelorarbeit/Datasets/Dataset Pregenerated DeepGTAV-PreSIL/velodyne/000002.bin"
-filename = "C:/EXPORTDIR/object/velodyne/000019.bin"
+filename = "E:/Bachelorarbeit/Datasets/Dataset Pregenerated DeepGTAV-PreSIL/velodyne/001171.bin"
+# filename = "C:/EXPORTDIR/object/velodyne/000002.bin"
 
 with open(filename, "r") as file:
     a = np.fromfile(file, dtype = np.float32)

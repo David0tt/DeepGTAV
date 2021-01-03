@@ -562,6 +562,9 @@ Vector3 LiDAR::get3DFromDepthTarget(Vector3 target, Eigen::Vector2f target2D){
 void LiDAR::addToHitEntities(const Eigen::Vector2f &target2D) {
     //Will convert to the nearest pixel
     //Need to do -0.5 as indexing starts at 0
+	// TODO there could be a bug here if x/y < 0, then 
+	//		m_pInstanceSeg[y * s_camParams.width + x]
+	// throws an exception
     int x = int(target2D(0) * s_camParams.width - 0.5);
     int y = int(target2D(1) * s_camParams.height - 0.5);
 
