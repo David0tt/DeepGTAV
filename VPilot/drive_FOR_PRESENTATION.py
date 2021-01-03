@@ -44,7 +44,7 @@ if __name__ == '__main__':
     
 
     # Adjustments for recording from UAV perspective
-    client.sendMessage(SetCameraPositionAndRotation(z = -20, rot_x = -60))
+    client.sendMessage(SetCameraPositionAndRotation(z = -20, rot_x = -30))
 
     count = 0
     bbox2d_old = ""
@@ -75,12 +75,12 @@ if __name__ == '__main__':
             print("count: ", count)
 
             # Only record every 10th frame
-            # if count > 50 and count % 10 == 0:
-            #     client.sendMessage(StartRecording())
-            # if count > 50 and count % 10 == 1:
-            #     client.sendMessage(StopRecording())
-            if count == 60:
+            if count > 50 and count % 10 == 0:
                 client.sendMessage(StartRecording())
+            if count > 50 and count % 10 == 1:
+                client.sendMessage(StopRecording())
+            # if count == 60:
+            #     client.sendMessage(StartRecording())
 
             if count == 2:
                 client.sendMessage(TeleportToLocation(-388, 0, 200))

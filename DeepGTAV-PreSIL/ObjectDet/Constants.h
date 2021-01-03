@@ -76,7 +76,7 @@ const bool PROCESS_PEDS_ON_BIKES = true;
 const bool TESTING_PEDS_ON_BIKES = true;
 
 //Outputs stats on lidar vs depth map conversion (used for testing)
-const bool OUTPUT_DEPTH_STATS = false;
+const bool OUTPUT_DEPTH_STATS = true;
 
 //Maximum distance from ground to be considered ground point:
 const float GROUND_POINT_MAX_DIST = 0.1;//in metres

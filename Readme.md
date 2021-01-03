@@ -194,4 +194,14 @@ A detailed description of the changes is presented in my bachelors thesis.
 
 
 
+## Things to note
+- The LiDAR simulation currently uses the ingame raycasting and the depth map
+  from the graphics. For the purposes of the ingame ray casting low poly objects
+  are used (e.g. tree tops are only balls). The cast rays are then updated with
+  the correct depth from the graphics depth map, if it is available. Of course
+  this depth map is only available for the objects that are in the current
+  frame. Therefore the LiDAR is not exact for objects outside of the current
+  frame image.
+
+
 
