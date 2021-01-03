@@ -8,6 +8,9 @@ static const Eigen::Vector3f WORLD_UP(0.0, 0.0, 1.0);
 static const Eigen::Vector3f WORLD_EAST(1.0, 0.0, 0.0);
 
 //Floats per point in the pointcloud (x, y, z, reflectance)
+// TODO actually I believe that it is (x, y, z, segmentationInstance), to see this examine the line 
+//		*(p + 3) = m_pInstanceSeg[s_camParams.width * j + i];
+// in LiDAR::GenerateSinglePoint
 const int FLOATS_PER_POINT = 4;
 const float MAX_LIDAR_DIST = 120.0f; // 120.0f; //in metres
 const int OBJECT_MAX_DIST = 0; // 200; //in metres (label_aug will have objects past this value)

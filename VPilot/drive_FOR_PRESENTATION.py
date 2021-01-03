@@ -44,7 +44,7 @@ if __name__ == '__main__':
     
 
     # Adjustments for recording from UAV perspective
-    client.sendMessage(SetCameraPositionAndRotation(z = -20, rot_x = -40))
+    client.sendMessage(SetCameraPositionAndRotation(z = -20, rot_x = -60))
 
     count = 0
     bbox2d_old = ""
@@ -79,7 +79,7 @@ if __name__ == '__main__':
             #     client.sendMessage(StartRecording())
             # if count > 50 and count % 10 == 1:
             #     client.sendMessage(StopRecording())
-            if count == 50:
+            if count == 60:
                 client.sendMessage(StartRecording())
 
             if count == 2:
@@ -144,22 +144,22 @@ if __name__ == '__main__':
 
                 if bboxes != bbox2d_old:
                     bbox2d_old = bboxes
-                    try: # Sometimes there are errors with the message, i catch those here
+                    # try: # Sometimes there are errors with the message, i catch those here
 
-                        # save Data
-                        filename = f'{run_count:04}' + '_' + f'{count:010}'
-                        if bboxes != "":
-                            save_image_and_bbox(args.save_dir, filename, frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), bboxes)
-                            save_meta_data(args.save_dir, filename, message["location"], message["HeightAboveGround"], message["CameraPosition"], message["CameraAngle"], message["time"], "CLEAR")
+                    #     # save Data
+                    #     filename = f'{run_count:04}' + '_' + f'{count:010}'
+                    #     if bboxes != "":
+                    #         save_image_and_bbox(args.save_dir, filename, frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), bboxes)
+                    #         save_meta_data(args.save_dir, filename, message["location"], message["HeightAboveGround"], message["CameraPosition"], message["CameraAngle"], message["time"], "CLEAR")
                             
-                        # Show image with bbox                    
-                        img = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormat_to_Image(bboxes))
-                        cv2.imshow("test", img)
-                        cv2.waitKey(1) 
+                    #     # Show image with bbox                    
+                    #     img = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormat_to_Image(bboxes))
+                    #     cv2.imshow("test", img)
+                    #     cv2.waitKey(1) 
                         
-                    except Exception as e:
-                        print(e)
-                        errors.append(e)
+                    # except Exception as e:
+                    #     print(e)
+                    #     errors.append(e)
 
 
                     # if message["occlusionImage"] != None and message["occlusionImage"] != "":

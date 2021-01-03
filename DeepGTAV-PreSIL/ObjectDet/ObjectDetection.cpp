@@ -671,6 +671,7 @@ void ObjectDetection::processSegmentation2D() {
 }
 
 void ObjectDetection::processSegmentation3D() {
+	log("ObjectDetection::processSegmentation3D");
     //Converting vehicle dimensions from vehicle to world coordinates for offset position
     Vector3 worldX; worldX.x = 1; worldX.y = 0; worldX.z = 0;
     Vector3 worldY; worldY.x = 0; worldY.y = 1; worldY.z = 0;
@@ -1070,6 +1071,7 @@ void ObjectDetection::addPointToSegImages(int i, int j, int entityID) {
 
 //process occlusion after all 2D points are segmented
 void ObjectDetection::processOcclusion() {
+	log("ObjectDetection::processOcclusion");
     //Converting vehicle dimensions from vehicle to world coordinates for offset position
     Vector3 worldX; worldX.x = 1; worldX.y = 0; worldX.z = 0;
     Vector3 worldY; worldY.x = 0; worldY.y = 1; worldY.z = 0;
@@ -1175,6 +1177,7 @@ void ObjectDetection::update3DPointsHit(ObjEntity* e) {
 }
 
 void ObjectDetection::update3DPointsHit() {
+	log("ObjectDetection::update3DPointsHit");
     //Update # of 2D and 3D pixels for each entity
     for (auto &entry : m_curFrame.vehicles) {
         update3DPointsHit(&entry.second);
@@ -1652,16 +1655,15 @@ void ObjectDetection::setupLiDAR() {
 }
 
 void ObjectDetection::collectLiDAR() {
+	log("ObjectDetection::collectLiDAR");
     m_entitiesHit.clear();
     lidar.updateCurrentPosition(m_camForwardVector, m_camRightVector, m_camUpVector);
     float * pointCloud = lidar.GetPointClouds(pointCloudSize, &m_entitiesHit, lidar_param, m_pDepth, m_pInstanceSeg, m_vehicle);
-
 	if (!ONLY_COLLECT_IMAGE_AND_BBOXES) {
 		std::ofstream ofile(m_veloFilename, std::ios::binary);
 		ofile.write((char*)pointCloud, FLOATS_PER_POINT * sizeof(float)*pointCloudSize);
 		ofile.close();
 	}
-    
     if (OUTPUT_RAYCAST_POINTS) {
         int pointCloudSize2;
         float* pointCloud2 = lidar.GetRaycastPointcloud(pointCloudSize2);
@@ -1671,7 +1673,6 @@ void ObjectDetection::collectLiDAR() {
         ofile2.write((char*)pointCloud2, FLOATS_PER_POINT * sizeof(float)*pointCloudSize2);
         ofile2.close();
     }
-
     if (GENERATE_2D_POINTMAP) {
         //Used for obtaining the 2D points for sampling depth map to convert to velodyne pointcloud
         int size;
@@ -1708,7 +1709,6 @@ void ObjectDetection::collectLiDAR() {
         fprintf(f, str.c_str());
         fclose(f);
     }
-
     if (OUTPUT_DEPTH_STATS) {
         lidar.printDepthStats();
     }

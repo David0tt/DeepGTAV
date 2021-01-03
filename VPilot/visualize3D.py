@@ -3,7 +3,7 @@ import open3d
 
 
 # filename = "E:/Bachelorarbeit/Datasets/Dataset Pregenerated DeepGTAV-PreSIL/velodyne/000002.bin"
-filename = "C:/EXPORTDIR/object/velodyneRaycast/000000.bin"
+filename = "C:/EXPORTDIR/object/velodyne/000019.bin"
 
 with open(filename, "r") as file:
     a = np.fromfile(file, dtype = np.float32)

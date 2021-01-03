@@ -321,7 +321,7 @@ float * LiDAR::GetPointClouds(int &size, std::unordered_map<int, HitLidarEntity*
         m_max_dist = 0;
         m_min_dist = 5555555555;
 
-        //log("Trying to generate pointcloud");
+        log("Trying to generate pointcloud");
         float phi = m_vertiUnLimit;
         int horizBeamCount = 0;
         for (int k = 0; k < m_vertiSmplNum; k++)
@@ -332,8 +332,8 @@ float * LiDAR::GetPointClouds(int &size, std::unordered_map<int, HitLidarEntity*
                 break;
 
             ++horizBeamCount;
-            GenerateHorizPointClouds(phi, m_pPointClouds);
-        }
+			GenerateHorizPointClouds(phi, m_pPointClouds);
+		}
         std::ostringstream oss;
         oss << "Max distance: " << m_max_dist << " min distance: " << m_min_dist
             << "\nBeamCount: " << horizBeamCount;
@@ -587,6 +587,7 @@ void LiDAR::addToHitEntities(const Eigen::Vector2f &target2D) {
 
 void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
 {
+	//log("LiDAR::GenerateSinglePoint, phi: " + std::to_string(phi) + ", theta: " + std::to_string(theta));
     if (m_pointsHit >= MAX_POINTS) {
         log("WARNING: MAX NUMBER OF POINTS REACHED! INCREASE MAX_POINTS\n", true);
     }
@@ -596,15 +597,12 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
     int raycast_handle;
     Eigen::Vector2f target2D;
     float phi_rad = phi * D2R, theta_rad = theta * D2R;
-
     endCoord.x = -m_maxRange * sin(phi_rad) * sin(theta_rad);	//rightward(east) is positive
     endCoord.y = m_maxRange * sin(phi_rad) * cos(theta_rad);	//forward(north) is positive
     endCoord.z = m_maxRange * cos(phi_rad);						//upward(up) is positive
-
     target.x = m_rotDCM[0] * endCoord.x + m_rotDCM[1] * endCoord.y + m_rotDCM[2] * endCoord.z + s_camParams.pos.x;
     target.y = m_rotDCM[3] * endCoord.x + m_rotDCM[4] * endCoord.y + m_rotDCM[5] * endCoord.z + s_camParams.pos.y;
     target.z = m_rotDCM[6] * endCoord.x + m_rotDCM[7] * endCoord.y + m_rotDCM[8] * endCoord.z + s_camParams.pos.z;
-
     if (USE_RAYCASTING) {
         //options: -1=everything
         //New function is called _START_SHAPE_TEST_RAY
@@ -613,17 +611,14 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
         //New function is called GET_SHAPE_TEST_RESULT
         WORLDPROBE::_GET_RAYCAST_RESULT(raycast_handle, &isHit, &endCoord, &surfaceNorm, &hitEntity);
     }
-
     //The 2D screen coords of the target
     //This is what should be used for sampling depth map as endCoord will not hit same points as depth map
     target2D = get_2d_from_3d(Eigen::Vector3f(target.x, target.y, target.z));
-
     if (GENERATE_2D_POINTMAP) {
         *(m_lidar2DPoints + 2 * m_beamCount) = target2D(0);
         *(m_lidar2DPoints + 2 * m_beamCount + 1) = target2D(1);
         ++m_beamCount;
     }
-
     bool targetOnScreen = isPositionOnScreen(target2D(0), target2D(1));
     if (targetOnScreen) {
         Hit2DDepth hitDepth;
@@ -638,7 +633,6 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
         float rayDist = sqrt(SYSTEM::VDIST2(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, endCoord.x, endCoord.y, endCoord.z));
         hitDepth.rayCastDepth = rayDist;
         m_hitDepthPoints.push_back(hitDepth);
-
         Vector3 vec_cam_coord = get3DFromDepthTarget(target, target2D);
 
         /*std::ostringstream oss2;
@@ -646,7 +640,7 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
         std::string str = oss2.str();
         log(str, true);*/
 
-        float newDistance = sqrt(SYSTEM::VDIST2(0, 0, 0, vec_cam_coord.x, vec_cam_coord.y, vec_cam_coord.z));
+		float newDistance = sqrt(SYSTEM::VDIST2(0, 0, 0, vec_cam_coord.x, vec_cam_coord.y, vec_cam_coord.z));
         if (newDistance <= MAX_LIDAR_DIST) {
             //Note: The y/x axes are changed to conform with KITTI velodyne axes
             *p = vec_cam_coord.y;
@@ -655,14 +649,38 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
             //Need to do -0.5 as indexing starts at 0
             int i = floor(target2D(0) * s_camParams.width - 0.5);
             int j = floor(target2D(1) * s_camParams.height - 0.5);
-            *(p + 3) = m_pInstanceSeg[s_camParams.width * j + i];//We don't have the entityID if we're using the depth map
-            ++m_pointsHit;
-            ++m_depthMapPoints;
 
+			// TODO The line
+			//		*(p + 3) = m_pInstanceSeg[s_camParams.width * j + i];
+			// sometimes produces an exception because s_camParams.width * j + i < 0.
+			// This is due to i / j being < 0, which seems to occur for angles close to the image border.
+			// negative i/j can occur due to target2D(0) or target2D(1) being very small resulting in 
+			// floor(target2D(0) * s_camParams.width - 0.5) being < 0 due to the -0.5
+
+			// In previous iterations this was mitigated by setting MAX_LIDAR_DIST = 0; but of course this was just a fix resulting in no
+			// LiDAR to be captured at all. 
+			
+			// At this point I do not fully understand the intricacies of setting the i/j and target2D respectively, in particular the 
+			// reasoning for the -0.5. I assume it is to correctly match pixel points, but I am not sure. 
+			
+			// At this point I do not deem this problem relevant and implement a simple fix by setting i,j >= 0. 
+			// Another fix could lie in inspecting the isPositionOnScreen(target2D(0), target2D(1)) function. 
+			// (possibly those points with small target2D(0)/target2D(1) are wrongly identified as being on the screen when 
+			// in fact they are not.
+			// If the LiDAR is uses in the future this probably needs to be further inspected. 
+			// Also note that a similar code snippet with the -0.5 is used in a different position, that potentially could result in the 
+			// same exception
+
+			i = std::max(i, 0);
+			j = std::max(j, 0);
+
+            *(p + 3) = m_pInstanceSeg[s_camParams.width * j + i];//We don't have the entityID if we're using the depth map
+
+			++m_pointsHit;
+            ++m_depthMapPoints;
             addToHitEntities(target2D);
         }
     }
-
     if (USE_RAYCASTING && isHit) {
         int entityID = 0;
         if ((ENTITY::IS_ENTITY_A_PED(hitEntity) && PED::GET_PED_TYPE(hitEntity) != 28) //PED_TYPE 28 are animals
@@ -745,7 +763,6 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
             }
         }
     }
-
 #ifdef DEBUG_LOG
     printf("\nDEBUG_LOG: function: %s", __FUNCTION__);
     printf("\ntheta=%f, endcoord:x=%f, y=%f, z=%f", __FUNCTION__, theta, endCoord.x, endCoord.y, endCoord.z);
