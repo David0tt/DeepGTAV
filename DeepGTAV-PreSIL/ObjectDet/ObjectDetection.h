@@ -70,6 +70,8 @@ private:
     std::unordered_map<int, HitLidarEntity*> m_entitiesHit;
     int lidar_param = 7;
 
+	float m_max_lidar_dist;
+
     //Perspective variables
     int m_vPerspective = -1;//Entity ID of perspective vehicle (-1 if self)
 
@@ -145,7 +147,7 @@ private:
     std::unordered_map<int, std::vector<ObjEntity*>> m_overlappingPoints;
 
 public:
-    void initCollection(UINT camWidth, UINT camHeight, bool exportEVE = true, int startIndex = 0);
+    void initCollection(UINT camWidth, UINT camHeight, bool exportEVE = true, int startIndex = 0, float maxLidarDist = 120.0f);
     void setCamParams(float* forwardVec = NULL, float* rightVec = NULL, float* upVec = NULL);
     void setOwnVehicleObject();
 
@@ -158,7 +160,9 @@ public:
 	void refreshBuffers();
 
 	std::string exportDetectionsString(FrameObjectInfo fObjInfo, ObjEntity * vPerspective = NULL);
-	void exportDetections(FrameObjectInfo fObjInfo, ObjEntity* vPerspective = NULL);
+	
+	// TODO remove
+	//void exportDetections(FrameObjectInfo fObjInfo, ObjEntity* vPerspective = NULL);
     std::string exportImage(BYTE* data, int imageType = CV_8UC3);
     void increaseIndex();
     std::string getStandardFilename(std::string subDir, std::string extension);

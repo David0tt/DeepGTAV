@@ -47,7 +47,7 @@ const std::vector<int> KNOWN_STENCIL_TYPES = { STENCIL_TYPE_DEFAULT, STENCIL_TYP
 const int PEDESTRIAN_CLASS_ID = 10;
 const int CAR_CLASS_ID = 0;
 
-void ObjectDetection::initCollection(UINT camWidth, UINT camHeight, bool exportEVE, int startIndex) {
+void ObjectDetection::initCollection(UINT camWidth, UINT camHeight, bool exportEVE, int startIndex, float maxLidarDist) {
     if (m_initialized) {
         return;
     }
@@ -116,6 +116,7 @@ void ObjectDetection::initCollection(UINT camWidth, UINT camHeight, bool exportE
 
     initVehicleLookup();
     //Setup LiDAR before collecting
+	m_max_lidar_dist = maxLidarDist;
     setupLiDAR();
     m_initialized = true;
 }
@@ -1638,7 +1639,7 @@ void ObjectDetection::setupLiDAR() {
         //0.09f azimuth resolution
         //26.8 vertical fov (+2 degrees up to -24.8 degrees down)
         //0.420 vertical resolution
-        lidar.Init3DLiDAR_FOV(MAX_LIDAR_DIST, 90.0f, 0.09f, 26.9f, 0.420f, 2.0f);
+        lidar.Init3DLiDAR_FOV(m_max_lidar_dist, 90.0f, 0.09f, 26.9f, 0.420f, 2.0f);
         lidar.AttachLiDAR2Camera(camera, ped);
         lidar_initialized = true;
         m_pDMPointClouds = (float *)malloc(s_camParams.width * s_camParams.height * FLOATS_PER_POINT * sizeof(float));
@@ -1882,7 +1883,7 @@ void ObjectDetection::setDepthBuffer(bool prevDepth) {
 
                 if (OUTPUT_DM_POINTCLOUD) {
                     float distance = sqrt(SYSTEM::VDIST2(0, 0, 0, relPos.x, relPos.y, relPos.z));
-                    if ((OUTPUT_FULL_DM_POINTCLOUD || distance <= MAX_LIDAR_DIST) && distance >= s_camParams.nearClip) {
+                    if ((OUTPUT_FULL_DM_POINTCLOUD || distance <= m_max_lidar_dist) && distance >= s_camParams.nearClip) {
                         float* p = m_pDMPointClouds + (pointCount * 4);
                         *p = relPos.y;
                         *(p + 1) = -relPos.x;
@@ -2425,55 +2426,55 @@ std::string ObjectDetection::exportDetectionsString(FrameObjectInfo fObjInfo, Ob
 	return str;
 }
 
-void ObjectDetection::exportDetections(FrameObjectInfo fObjInfo, ObjEntity* vPerspective) {
-    if (collectTracking) {
-        //TODO
-    }
-
-	FILE* f;
-	if (!ONLY_COLLECT_IMAGE_AND_BBOXES) {
-		f = fopen(m_labelsFilename.c_str(), "w");
-		std::ostringstream oss;
-
-		exportEntities(fObjInfo.vehicles, oss, false, false, true, OBJECT_MAX_DIST, 1, 1);
-		exportEntities(fObjInfo.peds, oss, false, false, true, OBJECT_MAX_DIST, 1, 1);
-
-		std::string str = oss.str();
-		fprintf(f, str.c_str());
-		fclose(f);
-
-		if (OUTPUT_UNPROCESSED_LABELS) {
-			f = fopen(m_labelsUnprocessedFilename.c_str(), "w");
-			std::ostringstream oss1;
-
-			exportEntities(fObjInfo.vehicles, oss1, true, false, true, OBJECT_MAX_DIST, 1, 1);
-			exportEntities(fObjInfo.peds, oss1, true, false, true, OBJECT_MAX_DIST, 1, 1);
-
-			std::string str1 = oss1.str();
-			fprintf(f, str1.c_str());
-			fclose(f);
-		}
-
-	}
-
-	if (!DONT_COLLECT_IMAGE_AND_BBOXES_TO_FILE) {
-		f = fopen(m_labelsAugFilename.c_str(), "w");
-		std::ostringstream oss2;
-
-		//Augmented files also exports objects at any distance, with no 3D or 2D points
-		exportEntities(fObjInfo.vehicles, oss2, false, true, false);
-		exportEntities(fObjInfo.peds, oss2, false, true, false);
-
-		std::string str2 = oss2.str();
-		fprintf(f, str2.c_str());
-		fclose(f);
-	}
-
-	if (!ONLY_COLLECT_IMAGE_AND_BBOXES) {
-		exportCalib();
-	}
-    
-}
+//void ObjectDetection::exportDetections(FrameObjectInfo fObjInfo, ObjEntity* vPerspective) {
+//    if (collectTracking) {
+//        //TODO
+//    }
+//
+//	FILE* f;
+//	if (!ONLY_COLLECT_IMAGE_AND_BBOXES) {
+//		f = fopen(m_labelsFilename.c_str(), "w");
+//		std::ostringstream oss;
+//
+//		exportEntities(fObjInfo.vehicles, oss, false, false, true, OBJECT_MAX_DIST, 1, 1);
+//		exportEntities(fObjInfo.peds, oss, false, false, true, OBJECT_MAX_DIST, 1, 1);
+//
+//		std::string str = oss.str();
+//		fprintf(f, str.c_str());
+//		fclose(f);
+//
+//		if (OUTPUT_UNPROCESSED_LABELS) {
+//			f = fopen(m_labelsUnprocessedFilename.c_str(), "w");
+//			std::ostringstream oss1;
+//
+//			exportEntities(fObjInfo.vehicles, oss1, true, false, true, OBJECT_MAX_DIST, 1, 1);
+//			exportEntities(fObjInfo.peds, oss1, true, false, true, OBJECT_MAX_DIST, 1, 1);
+//
+//			std::string str1 = oss1.str();
+//			fprintf(f, str1.c_str());
+//			fclose(f);
+//		}
+//
+//	}
+//
+//	if (!DONT_COLLECT_IMAGE_AND_BBOXES_TO_FILE) {
+//		f = fopen(m_labelsAugFilename.c_str(), "w");
+//		std::ostringstream oss2;
+//
+//		//Augmented files also exports objects at any distance, with no 3D or 2D points
+//		exportEntities(fObjInfo.vehicles, oss2, false, true, false);
+//		exportEntities(fObjInfo.peds, oss2, false, true, false);
+//
+//		std::string str2 = oss2.str();
+//		fprintf(f, str2.c_str());
+//		fclose(f);
+//	}
+//
+//	if (!ONLY_COLLECT_IMAGE_AND_BBOXES) {
+//		exportCalib();
+//	}
+//    
+//}
 
 
 //// TODO rework to allow sending images over TCP
@@ -2578,8 +2579,8 @@ std::string ObjectDetection::setGroundPlanePoints() {
 	oss << "ground_points_grid\n";
 
     int pointInterval = 2; //Distance between ground points (approximately in metres - game coordinates)
-    for (int x = -MAX_LIDAR_DIST; x <= MAX_LIDAR_DIST; x += pointInterval) {
-        for (int y = 0; y <= MAX_LIDAR_DIST; y += pointInterval) {
+    for (int x = -m_max_lidar_dist; x <= m_max_lidar_dist; x += pointInterval) {
+        for (int y = 0; y <= m_max_lidar_dist; y += pointInterval) {
             Vector3 point = createVec3(x, y, 0.0f);
             Vector3 relPoint = getGroundPoint(point, yVectorCam, xVectorCam, zVectorCam);
 

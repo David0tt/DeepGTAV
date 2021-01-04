@@ -224,7 +224,7 @@ float* LiDAR::UpdatePointCloud(int &size, float* depthMap) {
         Vector3 vec_cam_coord = get3DFromDepthTarget(m_hitDepthPoints[i].target, m_hitDepthPoints[i].target2D);
 
         float newDistance = sqrt(SYSTEM::VDIST2(0, 0, 0, vec_cam_coord.x, vec_cam_coord.y, vec_cam_coord.z));
-        if (newDistance <= MAX_LIDAR_DIST) {
+        if (newDistance <= m_maxRange) {
             //Note: The y/x axes are changed to conform with KITTI velodyne axes
             float* p = m_updatedPointCloud + (m_updatedPointCount * FLOATS_PER_POINT);
             *p = vec_cam_coord.y;
@@ -269,7 +269,7 @@ void LiDAR::printDepthStats() {
             countAbove100++;
         }
 
-        if (newDistance <= MAX_LIDAR_DIST && ratio < 1.05 && ratio > 0.95) {
+        if (newDistance <= m_maxRange && ratio < 1.05 && ratio > 0.95) {
             if (newDistance <= 10) {
                 ratio10 += ratio;
                 count10++;
@@ -646,7 +646,7 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
         log(str, true);*/
 
 		float newDistance = sqrt(SYSTEM::VDIST2(0, 0, 0, vec_cam_coord.x, vec_cam_coord.y, vec_cam_coord.z));
-        if (newDistance <= MAX_LIDAR_DIST) {
+        if (newDistance <= m_maxRange) {
             //Note: The y/x axes are changed to conform with KITTI velodyne axes
             *p = vec_cam_coord.y;
             *(p + 1) = -vec_cam_coord.x;
@@ -735,7 +735,7 @@ void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
             vec_cam_coord = adjustEndCoord(endCoord, vec_cam_coord);
 
             float distance = sqrt(SYSTEM::VDIST2(0, 0, 0, vec_cam_coord.x, vec_cam_coord.y, vec_cam_coord.z));
-            if (distance <= MAX_LIDAR_DIST) {
+            if (distance <= m_maxRange) {
                 //Note: The y/x axes are changed to conform with KITTI velodyne axes
                 *(p + 4) = vec_cam_coord.y;
                 *(p + 5) = -vec_cam_coord.x;

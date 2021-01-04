@@ -139,6 +139,9 @@ void DataExport::parseDatasetConfig(const Value& dc, bool setDefaults) {
 	else if (setDefaults) exportLiDAR = _EXPORT_LIDAR_;
 	if (!dc["exportLiDARRaycast"].IsNull()) exportLiDARRaycast = dc["exportLiDARRaycast"].GetBool();
 	else if (setDefaults) exportLiDARRaycast = _EXPORT_LIDAR_RAYCAST_;
+	if (!dc["maxLidarDist"].IsNull()) maxLidarDist = dc["maxLidarDist"].GetFloat();
+	else if (setDefaults) maxLidarDist = _MAX_LIDAR_DIST_;
+
 
 
 	buildJSONObject();
@@ -328,11 +331,11 @@ StringBuffer DataExport::generateMessage() {
 
 	if (!m_pObjDet) {
 		m_pObjDet.reset(new ObjectDetection());
-		m_pObjDet->initCollection(s_camParams.width, s_camParams.height, false, instance_index);
+		m_pObjDet->initCollection(s_camParams.width, s_camParams.height, false, instance_index, maxLidarDist);
 	}
 	if (depthSize != -1) {
 		FrameObjectInfo fObjInfo = m_pObjDet->generateMessage(depth_map, m_stencilBuffer);
-		m_pObjDet->exportDetections(fObjInfo);
+		//m_pObjDet->exportDetections(fObjInfo);
 
 		const std::string detections = m_pObjDet->exportDetectionsString(fObjInfo);
 

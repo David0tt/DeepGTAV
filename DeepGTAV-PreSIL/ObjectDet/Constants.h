@@ -12,7 +12,6 @@ static const Eigen::Vector3f WORLD_EAST(1.0, 0.0, 0.0);
 //		*(p + 3) = m_pInstanceSeg[s_camParams.width * j + i];
 // in LiDAR::GenerateSinglePoint
 const int FLOATS_PER_POINT = 4;
-const float MAX_LIDAR_DIST = 50.0f; // 120.0f; //in metres
 const int OBJECT_MAX_DIST = 0; // 200; //in metres (label_aug will have objects past this value)
 
 // The max distances Above have been adjusted for only bounding box capturing
@@ -45,9 +44,9 @@ const bool OUTPUT_RAYCAST_POINTS = true;
 //Uses ray casting then transforms 3D point back to 2D plane to use depth buffer value
 const bool USE_RAYCASTING = false;
 
-//Outputs pointcloud with 1:1 ratio of pixels in image < MAX_LIDAR_DIST
+//Outputs pointcloud with 1:1 ratio of pixels in image < max_lidar_dist
 const bool OUTPUT_DM_POINTCLOUD = false;
-//If OUTPUT_DM_POINTCLOUD, outputs all points, even those past MAX_LIDAR_DIST (good for testing)
+//If OUTPUT_DM_POINTCLOUD, outputs all points, even those past max_lidar_dist (good for testing)
 const bool OUTPUT_FULL_DM_POINTCLOUD = false;
 //Output offset pointclouds (for testing alignment)
 const bool OUTPUT_OFFSET_POINTCLOUDS = false;

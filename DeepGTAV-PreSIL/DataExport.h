@@ -52,6 +52,7 @@ private:
 	bool instanceSegmentationImageColor;
 	bool exportLiDAR;
 	bool exportLiDARRaycast;
+	float maxLidarDist;
 
 	Document d;
 
