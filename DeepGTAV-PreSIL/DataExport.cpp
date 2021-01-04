@@ -135,6 +135,10 @@ void DataExport::parseDatasetConfig(const Value& dc, bool setDefaults) {
 	else if (setDefaults) instanceSegmentationImage = _INSTANCE_SEGMENTATION_IMAGE_;
 	if (!dc["instanceSegmentationImageColor"].IsNull()) instanceSegmentationImageColor = dc["instanceSegmentationImageColor"].GetBool();
 	else if (setDefaults) instanceSegmentationImageColor = _INSTANCE_SEGMENTATION_IMAGE_COLOR_;
+	if (!dc["exportLiDAR"].IsNull()) exportLiDAR = dc["exportLiDAR"].GetBool();
+	else if (setDefaults) exportLiDAR = _EXPORT_LIDAR_;
+	if (!dc["exportLiDARRaycast"].IsNull()) exportLiDARRaycast = dc["exportLiDARRaycast"].GetBool();
+	else if (setDefaults) exportLiDARRaycast = _EXPORT_LIDAR_RAYCAST_;
 
 
 	buildJSONObject();
@@ -182,7 +186,8 @@ void DataExport::buildJSONObject() {
 	if (segmentationImage) d.AddMember("segmentationImage", a, allocator);
 	if (instanceSegmentationImage) d.AddMember("instanceSegmentationImage", a, allocator);
 	if (instanceSegmentationImageColor) d.AddMember("instanceSegmentationImageColor", a, allocator);
-
+	if (exportLiDAR) d.AddMember("LiDAR", a, allocator);
+	if (exportLiDARRaycast) d.AddMember("LiDARRaycast", a, allocator);
 	
 	screenCapturer = new ScreenCapturer(s_camParams.width, s_camParams.height);
 
@@ -242,6 +247,7 @@ void DataExport::setCameraPositionAndRotation(float x, float y, float z, float r
 
 StringBuffer DataExport::generateMessage() {
 	if (DEBUG_MODE) log("DataExport::GenerateMessage");
+	//StringBuffer buffer(0, 131072);
 	StringBuffer buffer;
 	buffer.Clear();
 	Writer<StringBuffer> writer(buffer);
@@ -402,6 +408,20 @@ StringBuffer DataExport::generateMessage() {
 			d["instanceSegmentationImageColor"] = dat;
 
 		}
+		if (exportLiDAR) {
+			const std::string image = m_pObjDet->exportLiDAR();
+			Value dat(kArrayType);
+
+			dat.SetString(StringRef(image.c_str()));
+			d["LiDAR"] = dat;
+		}
+		if (exportLiDARRaycast) {
+			const std::string image = m_pObjDet->exportLiDARRaycast();
+			Value dat(kArrayType);
+			dat.SetString(StringRef(image.c_str()));
+			d["LiDARRaycast"] = dat;
+		}
+
 
 		m_pObjDet->refreshBuffers();
 		m_pObjDet->increaseIndex();
@@ -410,10 +430,13 @@ StringBuffer DataExport::generateMessage() {
 	else {
 		log("ERROR: Depth buffer could not be properly set!!!!!!!!!!!!!!!!!!!!!!", true);
 	}
-	GAMEPLAY::SET_GAME_PAUSED(false);
-	GAMEPLAY::SET_TIME_SCALE(1.0f);
 
 	d.Accept(writer);
+
+	//log(buffer.GetString(), true);
+
+	GAMEPLAY::SET_GAME_PAUSED(false);
+	GAMEPLAY::SET_TIME_SCALE(1.0f);
 
 	return buffer;
 }

@@ -192,6 +192,17 @@ if __name__ == '__main__':
                     #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
                     #     cv2.imshow("instanceSegmentationImageColor", img)
                     #     cv2.waitKey(1)
+                    if message["LiDAR"] != None and message["LiDAR"] != "":
+                        print("LiDAR")
+                        print(message["LiDAR"])
+                        # nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImageColor"]), np.uint8)
+                        # img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+                        # cv2.imshow("instanceSegmentationImageColor", img)
+                        # cv2.waitKey(1)
+
+                    if message["LiDARRaycast"] != None and message["LiDARRaycast"] != "":
+                        print("LiDARRaycast")
+                        print(message["LiDARRaycast"])
 
 
             

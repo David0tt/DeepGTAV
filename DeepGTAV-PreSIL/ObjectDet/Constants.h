@@ -40,9 +40,10 @@ const bool START_SPEC_AREA = true;
 //This prints the 2D map of where lidar beams hit on the screen (not consistent when moving)
 const bool GENERATE_2D_POINTMAP = true;
 //Outputs secondary pointcloud with raycast points
-const bool OUTPUT_RAYCAST_POINTS = false;
+// TODO remove
+const bool OUTPUT_RAYCAST_POINTS = true;
 //Uses ray casting then transforms 3D point back to 2D plane to use depth buffer value
-const bool USE_RAYCASTING = true;
+const bool USE_RAYCASTING = false;
 
 //Outputs pointcloud with 1:1 ratio of pixels in image < MAX_LIDAR_DIST
 const bool OUTPUT_DM_POINTCLOUD = false;
@@ -121,4 +122,4 @@ const bool DONT_COLLECT_IMAGE_AND_BBOXES_TO_FILE = false;
 
 
 // Use this to print Debugging information to logfile at getenv("DEEPGTAV_LOG_FILE")
-const bool DEBUG_MODE = true;
+const bool DEBUG_MODE = false;

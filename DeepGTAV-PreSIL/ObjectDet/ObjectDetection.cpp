@@ -227,7 +227,12 @@ FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStenci
 	processSegmentation3D();
 	processOcclusion();
 
-	if (pointclouds && lidar_initialized) collectLiDAR();
+	lidar.updateCurrentPosition(m_camForwardVector, m_camRightVector, m_camUpVector);
+
+	//if (pointclouds && lidar_initialized) collectLiDAR();
+
+
+
 	update3DPointsHit();
 
  //   // TODO Don't run these?
@@ -1654,25 +1659,33 @@ void ObjectDetection::setupLiDAR() {
     }
 }
 
+
+std::string ObjectDetection::exportLiDAR() {
+	log("ObjectDetection::exportLiDAR");
+	m_entitiesHit.clear();
+	int pointCloudSize;
+	float * pointCloud = lidar.GetPointClouds(pointCloudSize, &m_entitiesHit, lidar_param, m_pDepth, m_pInstanceSeg, m_vehicle);
+	auto *enc_message = reinterpret_cast<unsigned char*>(pointCloud);
+	
+	//log(base64_encode(enc_message, FLOATS_PER_POINT * sizeof(float)*pointCloudSize));
+	return base64_encode(enc_message, FLOATS_PER_POINT * sizeof(float)*pointCloudSize);
+}
+
+
+std::string ObjectDetection::exportLiDARRaycast() {
+	// TODO 
+	// OUTPUT_RAYCAST_POINTS = true;
+
+	log("ObjectDetection::exportLiDARRaycast");
+	int pointCloudSize;
+	float* pointCloud = lidar.GetRaycastPointcloud(pointCloudSize);
+	auto *enc_message = reinterpret_cast<unsigned char*>(pointCloud);
+	//log(base64_encode(enc_message, FLOATS_PER_POINT * sizeof(float)*pointCloudSize));
+	return base64_encode(enc_message, FLOATS_PER_POINT * sizeof(float)*pointCloudSize);
+}
+
 void ObjectDetection::collectLiDAR() {
 	log("ObjectDetection::collectLiDAR");
-    m_entitiesHit.clear();
-    lidar.updateCurrentPosition(m_camForwardVector, m_camRightVector, m_camUpVector);
-    float * pointCloud = lidar.GetPointClouds(pointCloudSize, &m_entitiesHit, lidar_param, m_pDepth, m_pInstanceSeg, m_vehicle);
-	if (!ONLY_COLLECT_IMAGE_AND_BBOXES) {
-		std::ofstream ofile(m_veloFilename, std::ios::binary);
-		ofile.write((char*)pointCloud, FLOATS_PER_POINT * sizeof(float)*pointCloudSize);
-		ofile.close();
-	}
-    if (OUTPUT_RAYCAST_POINTS) {
-        int pointCloudSize2;
-        float* pointCloud2 = lidar.GetRaycastPointcloud(pointCloudSize2);
-
-        std::string filename2 = getStandardFilename("velodyneRaycast", ".bin");
-        std::ofstream ofile2(filename2, std::ios::binary);
-        ofile2.write((char*)pointCloud2, FLOATS_PER_POINT * sizeof(float)*pointCloudSize2);
-        ofile2.close();
-    }
     if (GENERATE_2D_POINTMAP) {
         //Used for obtaining the 2D points for sampling depth map to convert to velodyne pointcloud
         int size;
@@ -1822,6 +1835,7 @@ void ObjectDetection::setDepthBuffer(bool prevDepth) {
 
     std::string depthPCFilename = m_depthPCFilename;
     if (prevDepth) {
+		int pointCloudSize;
         float * pointCloud = lidar.UpdatePointCloud(pointCloudSize, m_pDepth);
         std::ofstream ofile1(m_veloFilenameU, std::ios::binary);
         ofile1.write((char*)pointCloud, FLOATS_PER_POINT * sizeof(float) * pointCloudSize);

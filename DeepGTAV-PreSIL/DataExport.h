@@ -50,6 +50,8 @@ private:
 	bool segmentationImage;
 	bool instanceSegmentationImage;
 	bool instanceSegmentationImageColor;
+	bool exportLiDAR;
+	bool exportLiDARRaycast;
 
 	Document d;
 

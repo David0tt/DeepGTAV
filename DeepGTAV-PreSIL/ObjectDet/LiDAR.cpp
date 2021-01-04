@@ -588,6 +588,8 @@ void LiDAR::addToHitEntities(const Eigen::Vector2f &target2D) {
     }
 }
 
+
+// TODO this function should be split up for Raycast Points/other for optimization and simplicity
 void LiDAR::GenerateSinglePoint(float phi, float theta, float* p)
 {
 	//log("LiDAR::GenerateSinglePoint, phi: " + std::to_string(phi) + ", theta: " + std::to_string(theta));

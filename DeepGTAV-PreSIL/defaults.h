@@ -28,3 +28,5 @@
 #define _SEGMENTATION_IMAGE_ false;
 #define _INSTANCE_SEGMENTATION_IMAGE_ false;
 #define _INSTANCE_SEGMENTATION_IMAGE_COLOR_ false;
+#define _EXPORT_LIDAR_ true;
+#define _EXPORT_LIDAR_RAYCAST_ true;

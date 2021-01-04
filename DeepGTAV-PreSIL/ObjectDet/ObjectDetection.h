@@ -67,7 +67,6 @@ private:
     //LiDAR variables
     LiDAR lidar;
     bool lidar_initialized = false;
-    int pointCloudSize = 0;
     std::unordered_map<int, HitLidarEntity*> m_entitiesHit;
     int lidar_param = 7;
 
@@ -195,8 +194,8 @@ public:
 	std::string ObjectDetection::exportSegmentationImage();
 	std::string ObjectDetection::printInstanceSegmentationImage();
 	std::string ObjectDetection::printInstanceSegmentationImageColor();
-
-
+	std::string ObjectDetection::exportLiDAR();
+	std::string ObjectDetection::exportLiDARRaycast();
 
 private:
     void setVehiclesList();
