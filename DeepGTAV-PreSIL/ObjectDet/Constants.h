@@ -12,7 +12,7 @@ static const Eigen::Vector3f WORLD_EAST(1.0, 0.0, 0.0);
 //		*(p + 3) = m_pInstanceSeg[s_camParams.width * j + i];
 // in LiDAR::GenerateSinglePoint
 const int FLOATS_PER_POINT = 4;
-const float MAX_LIDAR_DIST = 500.0f; // 120.0f; //in metres
+const float MAX_LIDAR_DIST = 50.0f; // 120.0f; //in metres
 const int OBJECT_MAX_DIST = 0; // 200; //in metres (label_aug will have objects past this value)
 
 // The max distances Above have been adjusted for only bounding box capturing
@@ -122,4 +122,4 @@ const bool DONT_COLLECT_IMAGE_AND_BBOXES_TO_FILE = false;
 
 
 // Use this to print Debugging information to logfile at getenv("DEEPGTAV_LOG_FILE")
-const bool DEBUG_MODE = false;
+const bool DEBUG_MODE = true;

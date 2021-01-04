@@ -22,6 +22,10 @@ import numpy as np
 import os
 
 import base64
+import open3d
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
 
 
 if __name__ == '__main__':
@@ -75,9 +79,9 @@ if __name__ == '__main__':
             print("count: ", count)
 
             # Only record every 10th frame
-            if count > 50 and count % 10 == 0:
+            if count > 125 and count % 10 == 0:
                 client.sendMessage(StartRecording())
-            if count > 50 and count % 10 == 1:
+            if count > 125 and count % 10 == 1:
                 client.sendMessage(StopRecording())
             # if count == 60:
             #     client.sendMessage(StartRecording())
@@ -193,17 +197,29 @@ if __name__ == '__main__':
                     #     cv2.imshow("instanceSegmentationImageColor", img)
                     #     cv2.waitKey(1)
                     if message["LiDAR"] != None and message["LiDAR"] != "":
-                        print("LiDAR")
-                        print(message["LiDAR"])
-                        # nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImageColor"]), np.uint8)
-                        # img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
-                        # cv2.imshow("instanceSegmentationImageColor", img)
-                        # cv2.waitKey(1)
+                        # print(message["LiDAR"])
+                        a = np.frombuffer(base64.b64decode(message["LiDAR"]), np.float32)
+                        a = a.reshape((-1, 4))
+                        points3d = np.delete(a, 3, 1)
+
+                        # point_cloud = open3d.geometry.PointCloud()
+                        # point_cloud.points = open3d.utility.Vector3dVector(points3d)
+                        # open3d.visualization.draw_geometries([point_cloud])
+
+                        fig = plt.figure(figsize=(15,15))
+                        ax = fig.add_subplot(111, projection='3d')
+                        ax.view_init(50, - 90 - 90)
+                        ax.scatter(points3d[:,0], points3d[:,1], points3d[:,2], c=points3d[:,2], s=2)
+                        plt.show()
+
 
                     if message["LiDARRaycast"] != None and message["LiDARRaycast"] != "":
                         print("LiDARRaycast")
                         print(message["LiDARRaycast"])
 
+
+                    lid_string = message["LiDAR"]
+                    
 
             
         except KeyboardInterrupt:
@@ -212,4 +228,5 @@ if __name__ == '__main__':
     # We tell DeepGTAV to stop
     client.sendMessage(Stop())
     client.close()
+
 
