@@ -154,7 +154,7 @@ public:
 	// TODO remove
     //FrameObjectInfo setDepthAndStencil(bool prevDepth = false, float* pDepth = NULL, uint8_t* pStencil = NULL);
     //Depth buffer fn/var needs to be accessed by server
-    void setDepthBuffer(bool prevDepth = false);
+    //void setDepthBuffer(bool prevDepth = false);
 
     FrameObjectInfo generateMessage(float* pDepth, uint8_t* pStencil, int entityID = -1);
 	void refreshBuffers();
@@ -208,6 +208,8 @@ public:
 	std::string ObjectDetection::exportStencilBuffer();
 	std::string ObjectDetection::exportStencilImage();
 	std::string ObjectDetection::exportIndividualStencilImages();
+
+	std::string ObjectDetection::exportDepthBuffer();
 
 private:
     void setVehiclesList();

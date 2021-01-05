@@ -208,11 +208,7 @@ FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStenci
     setPosition();
     outputRealSpeed();
 
-	//TODO
-	//setDepthAndStencil();
-	// This is equal to:
 	setFilenames();
-	if (lidar_initialized) setDepthBuffer(false);
 
 
     //Need to set peds list first for integrating peds on bikes
@@ -1820,105 +1816,127 @@ std::string ObjectDetection::exportIndividualStencilImages() {
 
 
 
-
-// TODO send this data 
-void ObjectDetection::setDepthBuffer(bool prevDepth) {
-    int size = s_camParams.width * s_camParams.height;
-    log("About to set depth buffer");
-
-    std::string depthPCFilename = m_depthPCFilename;
-    if (prevDepth) {
-		int pointCloudSize;
-        float * pointCloud = lidar.UpdatePointCloud(pointCloudSize, m_pDepth);
-        std::ofstream ofile1(m_veloFilenameU, std::ios::binary);
-        ofile1.write((char*)pointCloud, FLOATS_PER_POINT * sizeof(float) * pointCloudSize);
-        ofile1.close();
-        depthPCFilename = m_depthPCFilenameU;
-    }
-
-	if (!ONLY_COLLECT_IMAGE_AND_BBOXES) {
-		std::ofstream ofile(m_depthFilename, std::ios::binary);
-		ofile.write((char*)m_pDepth, size * sizeof(float));
-		ofile.close();
-	}
-
-    int nonzero = 0;
-    if (OUTPUT_DM_POINTCLOUD || OUTPUT_GROUND_PIXELS) {
-        int pointCount = 0;
-        float maxDepth = 0;
-        float minDepth = 1;
-        for (int j = 0; j < s_camParams.height; ++j) {
-            for (int i = 0; i < s_camParams.width; ++i) {
-                float ndc = m_pDepth[j * s_camParams.width + i];
-                if (ndc != 0) {
-                    ++nonzero;
-                }
-                Vector3 relPos = depthToCamCoords(ndc, i, j);
-
-                if (OUTPUT_GROUND_PIXELS) {
-                    int s = m_pStencil[j * s_camParams.width + i];
-                    bool groundPoint;
-                    if (s == STENCIL_TYPE_SKY || s == STENCIL_TYPE_NPC || s == STENCIL_TYPE_OWNCAR ||
-                        s == STENCIL_TYPE_VEGETATION || s == STENCIL_TYPE_VEHICLE || s == STENCIL_TYPE_SELF) {
-                        groundPoint = false;
-                    }
-                    else {
-                        Vector3 worldPos = camToWorld(relPos, m_camForwardVector, m_camRightVector, m_camUpVector);
-                        float groundZ;
-                        //Note should always do +2 to ensure it hits the proper ground point
-                        GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(worldPos.x, worldPos.y, worldPos.z + 2, &(groundZ), 0);
-                        groundPoint = (worldPos.z - groundZ) < GROUND_POINT_MAX_DIST;
-                    }
-                    uint8_t pointVal = groundPoint ? 255 : 0;
-                    m_pGroundPointsImage[j * s_camParams.width + i] = pointVal;
-                }
-
-                if (OUTPUT_DM_POINTCLOUD) {
-                    float distance = sqrt(SYSTEM::VDIST2(0, 0, 0, relPos.x, relPos.y, relPos.z));
-                    if ((OUTPUT_FULL_DM_POINTCLOUD || distance <= m_max_lidar_dist) && distance >= s_camParams.nearClip) {
-                        float* p = m_pDMPointClouds + (pointCount * 4);
-                        *p = relPos.y;
-                        *(p + 1) = -relPos.x;
-                        *(p + 2) = relPos.z;
-                        *(p + 3) = 0;
-                        pointCount++;
-                    }
-
-                    uint16_t* p = m_pDMImage + (j * s_camParams.width) + i;
-                    float distClipped = 1 - std::min<float>(1.0f, (distance - s_camParams.nearClip) / (s_camParams.farClip - s_camParams.nearClip));
-                    uint16_t num = (uint16_t)floor(distClipped * 65535);
-                    uint16_t swapped = (num >> 8) | (num << 8);
-                    *p = swapped;
-                }
-            }
-        }
-
-        if (OUTPUT_GROUND_PIXELS) {
-            std::vector<std::uint8_t> ImageBuffer;
-            lodepng::encode(ImageBuffer, (unsigned char*)m_pGroundPointsImage, s_camParams.width, s_camParams.height, LCT_GREY, 8);
-            lodepng::save_file(ImageBuffer, m_groundPointsFilename);
-        }
-        
-        if (OUTPUT_DM_POINTCLOUD) {
-            std::ostringstream oss;
-            oss << "Min depth: " << minDepth << " max: " << maxDepth << " pointCount: " << pointCount <<
-                " height: " << s_camParams.height << " width: " << s_camParams.width << " size: " << size <<
-                "\n Nonzero depth values: " << nonzero;
-            std::string str = oss.str();
-            log(str);
-
-            std::ofstream ofile1(depthPCFilename, std::ios::binary);
-            ofile1.write((char*)m_pDMPointClouds, FLOATS_PER_POINT * sizeof(float) * pointCount);
-            ofile1.close();
-
-            std::vector<std::uint8_t> ImageBuffer;
-            lodepng::encode(ImageBuffer, (unsigned char*)m_pDMImage, s_camParams.width, s_camParams.height, LCT_GREY, 16);
-            lodepng::save_file(ImageBuffer, m_depthImgFilename);
-
-            log("After saving DM pointcloud");
-        }
-    }
+std::string ObjectDetection::exportDepthBuffer() {
+	auto *enc_message = reinterpret_cast<unsigned char*>(m_pDepth);
+	return base64_encode(enc_message, s_camParams.width * s_camParams.height * sizeof(float));
 }
+
+
+
+// TODO 
+//std::string ObjectDetection::exportDMPointcloud() {
+//	return  "TODO";
+//}
+
+//std::string ObjectDetection::exportGround() {
+//	return  "TODO";
+//}
+
+
+//// TODO send this data 
+//// This function exported the Depth Pointcloud, GroundPoint Images and a DMPointcloud 
+//// Currently I can not verify the last two functionalities, so I keep the function in its initial form here.
+//// In principle this function should be split up into three functions:
+//// exportDepthBuffer(), exportDMPointcloud(), exportGround()
+//// The two last of those can be implemented by refactoring the code below
+
+//void ObjectDetection::setDepthBuffer(bool prevDepth) {
+//    int size = s_camParams.width * s_camParams.height;
+//    log("About to set depth buffer");
+//
+//    std::string depthPCFilename = m_depthPCFilename;
+//    if (prevDepth) {
+//		int pointCloudSize;
+//        float * pointCloud = lidar.UpdatePointCloud(pointCloudSize, m_pDepth);
+//        std::ofstream ofile1(m_veloFilenameU, std::ios::binary);
+//        ofile1.write((char*)pointCloud, FLOATS_PER_POINT * sizeof(float) * pointCloudSize);
+//        ofile1.close();
+//        depthPCFilename = m_depthPCFilenameU;
+//    }
+//
+//	if (!ONLY_COLLECT_IMAGE_AND_BBOXES) {
+//		std::ofstream ofile(m_depthFilename, std::ios::binary);
+//		ofile.write((char*)m_pDepth, size * sizeof(float));
+//		ofile.close();
+//	}
+//
+//    int nonzero = 0;
+//    if (OUTPUT_DM_POINTCLOUD || OUTPUT_GROUND_PIXELS) {
+//        int pointCount = 0;
+//        float maxDepth = 0;
+//        float minDepth = 1;
+//        for (int j = 0; j < s_camParams.height; ++j) {
+//            for (int i = 0; i < s_camParams.width; ++i) {
+//                float ndc = m_pDepth[j * s_camParams.width + i];
+//                if (ndc != 0) {
+//                    ++nonzero;
+//                }
+//                Vector3 relPos = depthToCamCoords(ndc, i, j);
+//
+//                if (OUTPUT_GROUND_PIXELS) {
+//                    int s = m_pStencil[j * s_camParams.width + i];
+//                    bool groundPoint;
+//                    if (s == STENCIL_TYPE_SKY || s == STENCIL_TYPE_NPC || s == STENCIL_TYPE_OWNCAR ||
+//                        s == STENCIL_TYPE_VEGETATION || s == STENCIL_TYPE_VEHICLE || s == STENCIL_TYPE_SELF) {
+//                        groundPoint = false;
+//                    }
+//                    else {
+//                        Vector3 worldPos = camToWorld(relPos, m_camForwardVector, m_camRightVector, m_camUpVector);
+//                        float groundZ;
+//                        //Note should always do +2 to ensure it hits the proper ground point
+//                        GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(worldPos.x, worldPos.y, worldPos.z + 2, &(groundZ), 0);
+//                        groundPoint = (worldPos.z - groundZ) < GROUND_POINT_MAX_DIST;
+//                    }
+//                    uint8_t pointVal = groundPoint ? 255 : 0;
+//                    m_pGroundPointsImage[j * s_camParams.width + i] = pointVal;
+//                }
+//
+//                if (OUTPUT_DM_POINTCLOUD) {
+//                    float distance = sqrt(SYSTEM::VDIST2(0, 0, 0, relPos.x, relPos.y, relPos.z));
+//                    if ((OUTPUT_FULL_DM_POINTCLOUD || distance <= m_max_lidar_dist) && distance >= s_camParams.nearClip) {
+//                        float* p = m_pDMPointClouds + (pointCount * 4);
+//                        *p = relPos.y;
+//                        *(p + 1) = -relPos.x;
+//                        *(p + 2) = relPos.z;
+//                        *(p + 3) = 0;
+//                        pointCount++;
+//                    }
+//
+//                    uint16_t* p = m_pDMImage + (j * s_camParams.width) + i;
+//                    float distClipped = 1 - std::min<float>(1.0f, (distance - s_camParams.nearClip) / (s_camParams.farClip - s_camParams.nearClip));
+//                    uint16_t num = (uint16_t)floor(distClipped * 65535);
+//                    uint16_t swapped = (num >> 8) | (num << 8);
+//                    *p = swapped;
+//                }
+//            }
+//        }
+//
+//        if (OUTPUT_GROUND_PIXELS) {
+//            std::vector<std::uint8_t> ImageBuffer;
+//            lodepng::encode(ImageBuffer, (unsigned char*)m_pGroundPointsImage, s_camParams.width, s_camParams.height, LCT_GREY, 8);
+//            lodepng::save_file(ImageBuffer, m_groundPointsFilename);
+//        }
+//        
+//        if (OUTPUT_DM_POINTCLOUD) {
+//            std::ostringstream oss;
+//            oss << "Min depth: " << minDepth << " max: " << maxDepth << " pointCount: " << pointCount <<
+//                " height: " << s_camParams.height << " width: " << s_camParams.width << " size: " << size <<
+//                "\n Nonzero depth values: " << nonzero;
+//            std::string str = oss.str();
+//            log(str);
+//
+//            std::ofstream ofile1(depthPCFilename, std::ios::binary);
+//            ofile1.write((char*)m_pDMPointClouds, FLOATS_PER_POINT * sizeof(float) * pointCount);
+//            ofile1.close();
+//
+//            std::vector<std::uint8_t> ImageBuffer;
+//            lodepng::encode(ImageBuffer, (unsigned char*)m_pDMImage, s_camParams.width, s_camParams.height, LCT_GREY, 16);
+//            lodepng::save_file(ImageBuffer, m_depthImgFilename);
+//
+//            log("After saving DM pointcloud");
+//        }
+//    }
+//}
 
 //ndc is Normalized Device Coordinates which is value received from depth buffer
 Vector3 ObjectDetection::depthToCamCoords(float ndc, float screenX, float screenY) {

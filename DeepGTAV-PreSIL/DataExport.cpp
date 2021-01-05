@@ -466,7 +466,12 @@ StringBuffer DataExport::generateMessage() {
 			dat.SetString(StringRef(str.c_str()));
 			d["IndividualStencilImages"] = dat;
 		}
-
+		if (false) {
+			const std::string str = m_pObjDet->exportDepthBuffer();
+			Value dat(kArrayType);
+			dat.SetString(StringRef(str.c_str()));
+			d["DepthBuffer"] = dat;
+		}
 
 
 
