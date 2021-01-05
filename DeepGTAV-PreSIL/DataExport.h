@@ -32,9 +32,6 @@ private:
 	std::unique_ptr<ObjectDetection> m_pObjDet = NULL;
 	Rewarder* rewarder;
 
-	bool vehicles;
-	bool peds;
-	bool trafficSigns; //TODO
 	bool direction;
 	bool reward;
 	bool throttle;
@@ -42,7 +39,6 @@ private:
 	bool steering;
 	bool speed;
 	bool yawRate;
-	bool drivingMode; //TODO
 	bool location;
 	bool time;
 	bool occlusionImage;

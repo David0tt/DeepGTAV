@@ -113,8 +113,6 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
     else if (setDefaults) offscreen = _OFFSCREEN_;
     if (!dc["showBoxes"].IsNull()) showBoxes = dc["showBoxes"].GetBool();
     else if (setDefaults) showBoxes = _SHOWBOXES_;
-    if (!dc["pointclouds"].IsNull()) pointclouds = dc["pointclouds"].GetBool();
-    else if (setDefaults) pointclouds = _POINTCLOUDS_;
     if (!dc["stationaryScene"].IsNull()) stationaryScene = dc["stationaryScene"].GetBool();
     else if (setDefaults) stationaryScene = _STATIONARY_SCENE_;
     if (!dc["collectTracking"].IsNull()) collectTracking = dc["collectTracking"].GetBool();

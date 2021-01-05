@@ -87,15 +87,6 @@ void DataExport::parseDatasetConfig(const Value& dc, bool setDefaults) {
 	//Need to reset camera params when dataset config is received
 	s_camParams.init = false;
 
-	if (!dc["vehicles"].IsNull()) vehicles = dc["vehicles"].GetBool();
-	else if (setDefaults) vehicles = _VEHICLES_;
-
-	if (!dc["peds"].IsNull()) peds = dc["peds"].GetBool();
-	else if (setDefaults) peds = _PEDS_;
-
-	if (!dc["trafficSigns"].IsNull()) trafficSigns = dc["trafficSigns"].GetBool();
-	else if (setDefaults) trafficSigns = _TRAFFIC_SIGNS_;
-
 	if (dc["reward"].IsArray()) {
 		if (dc["reward"][0].IsFloat() && dc["reward"][1].IsFloat()) {
 			rewarder = new GeneralRewarder((char*)(GetCurrentModulePath() + "paths.xml").c_str(), dc["reward"][0].GetFloat(), dc["reward"][1].GetFloat());
@@ -119,8 +110,6 @@ void DataExport::parseDatasetConfig(const Value& dc, bool setDefaults) {
 	else if (setDefaults) speed = _SPEED_;
 	if (!dc["yawRate"].IsNull()) yawRate = dc["yawRate"].GetBool();
 	else if (setDefaults) yawRate = _YAW_RATE_;
-	if (!dc["drivingMode"].IsNull()) drivingMode = dc["drivingMode"].GetBool();
-	else if (setDefaults) drivingMode = _DRIVING_MODE_;
 	if (!dc["location"].IsNull()) location = dc["location"].GetBool();
 	else if (setDefaults) location = _LOCATION_;
 	if (!dc["time"].IsNull()) time = dc["time"].GetBool();
@@ -174,9 +163,6 @@ void DataExport::buildJSONObject() {
 
 	//TODO rename those settings properly (export_...)
 
-	if (vehicles) d.AddMember("vehicles", a, allocator);
-	if (peds) d.AddMember("peds", a, allocator);
-	if (trafficSigns) d.AddMember("trafficSigns", a, allocator);
 	if (direction) d.AddMember("direction", a, allocator);
 	if (reward) d.AddMember("reward", 0.0, allocator);
 	if (throttle) d.AddMember("throttle", 0.0, allocator);
@@ -184,7 +170,6 @@ void DataExport::buildJSONObject() {
 	if (steering) d.AddMember("steering", 0.0, allocator);
 	if (speed) d.AddMember("speed", 0.0, allocator);
 	if (yawRate) d.AddMember("yawRate", 0.0, allocator);
-	if (drivingMode) d.AddMember("drivingMode", 0, allocator);
 	if (location) d.AddMember("location", a, allocator);
 	if (time) d.AddMember("time", a, allocator);
 
@@ -336,7 +321,6 @@ StringBuffer DataExport::generateMessage() {
 	if (steering) exportSteering();
 	if (speed) exportSpeed();
 	if (yawRate) exportYawRate();
-	if (drivingMode); //TODO
 	if (location) exportLocation();
 	if (time) exportTime();
 	exportHeightAboveGround();

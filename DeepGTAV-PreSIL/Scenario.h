@@ -43,7 +43,6 @@ private:
 
     bool offscreen;
     bool showBoxes;
-    bool pointclouds;
     bool stationaryScene;
 
 	float currentThrottle = 0.0;

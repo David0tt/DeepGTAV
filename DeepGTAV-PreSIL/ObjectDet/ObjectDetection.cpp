@@ -1795,6 +1795,7 @@ std::string ObjectDetection::exportIndividualStencilImages() {
 		}
 		log(oss.str(), true);
 	}
+	return ret;
 }
 
 
