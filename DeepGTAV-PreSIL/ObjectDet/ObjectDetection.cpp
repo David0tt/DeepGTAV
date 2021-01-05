@@ -65,7 +65,6 @@ void ObjectDetection::initCollection(UINT camWidth, UINT camHeight, bool exportE
     instance_string = strComp;
     s_camParams.width = (int)camWidth;
     s_camParams.height = (int)camHeight;
-    //LOG(LL_ERR, "Testing4");
 
     //Need to set camera params
     s_camParams.init = false;
@@ -76,43 +75,43 @@ void ObjectDetection::initCollection(UINT camWidth, UINT camHeight, bool exportE
     collectTracking = false;
 
     //Export directory
-    log("Before getting export dir");
-    baseFolder = std::string(getenv("DEEPGTAV_EXPORT_DIR")) + "\\";
-    CreateDirectory(baseFolder.c_str(), NULL);
-    if (exportEVE) {
-        baseFolder += "eve\\";
-    }
-    if (collectTracking) {
-        baseFolder += "tracking\\";
-    }
-    else {
-        baseFolder += "object\\";
-    }
-    log("After getting export dir");
-    CreateDirectory(baseFolder.c_str(), NULL);
-    m_timeTrackFile = baseFolder + "\\TimeAnalysis.txt";
-    m_usedPixelFile = baseFolder + "\\UsedPixels.txt";
-    log("After getting export dir2");
+    //log("Before getting export dir");
+    //baseFolder = std::string(getenv("DEEPGTAV_EXPORT_DIR")) + "\\";
+    //CreateDirectory(baseFolder.c_str(), NULL);
+    //if (exportEVE) {
+    //    baseFolder += "eve\\";
+    //}
+    //if (collectTracking) {
+    //    baseFolder += "tracking\\";
+    //}
+    //else {
+    //    baseFolder += "object\\";
+    //}
+    //log("After getting export dir");
+    //CreateDirectory(baseFolder.c_str(), NULL);
+    //m_timeTrackFile = baseFolder + "\\TimeAnalysis.txt";
+    //m_usedPixelFile = baseFolder + "\\UsedPixels.txt";
+    //log("After getting export dir2");
 
-    //Overwrite previous time analysis file so it is empty
-    FILE* f = fopen(m_timeTrackFile.c_str(), "w");
-    std::ostringstream oss;
-    oss << "Mean err, var, avg speed, avg dist";
-    oss << "\nResults are in metres. Frames attempted to capture at 10 Hz.";
-    std::string str = oss.str();
-    fprintf(f, str.c_str());
-    fprintf(f, "\n");
-    fclose(f);
+    ////Overwrite previous time analysis file so it is empty
+    //FILE* f = fopen(m_timeTrackFile.c_str(), "w");
+    //std::ostringstream oss;
+    //oss << "Mean err, var, avg speed, avg dist";
+    //oss << "\nResults are in metres. Frames attempted to capture at 10 Hz.";
+    //std::string str = oss.str();
+    //fprintf(f, str.c_str());
+    //fprintf(f, "\n");
+    //fclose(f);
 
-    //Overwrite previous stencil pixel used file so it is empty
-    f = fopen(m_usedPixelFile.c_str(), "w");
-    std::ostringstream oss1;
-    oss1 << "Unused pixels, index, series (if tracking)";
-    std::string str1 = oss1.str();
-    fprintf(f, str1.c_str());
-    fprintf(f, "\n");
-    fclose(f);
-    log("Before initVehicleLookup");
+    ////Overwrite previous stencil pixel used file so it is empty
+    //f = fopen(m_usedPixelFile.c_str(), "w");
+    //std::ostringstream oss1;
+    //oss1 << "Unused pixels, index, series (if tracking)";
+    //std::string str1 = oss1.str();
+    //fprintf(f, str1.c_str());
+    //fprintf(f, "\n");
+    //fclose(f);
+    //log("Before initVehicleLookup");
 
     initVehicleLookup();
     //Setup LiDAR before collecting
@@ -206,12 +205,9 @@ FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStenci
 
     setIndex();
     setPosition();
-    outputRealSpeed();
+    //outputRealSpeed();
 
-	setFilenames();
-
-
-    //Need to set peds list first for integrating peds on bikes
+	//Need to set peds list first for integrating peds on bikes
     setPedsList();
     setVehiclesList();
 
@@ -1594,38 +1590,6 @@ void ObjectDetection::setPedsList() {
     }
 }
 
-void ObjectDetection::setFilenames() {
-    //These are standard files
-    m_imgFilename = getStandardFilename("image_2", ".png");
-    m_veloFilename = getStandardFilename("velodyne", ".bin");
-    m_depthFilename = getStandardFilename("depth", ".bin");
-    m_stencilFilename = getStandardFilename("stencil", ".raw");
-    m_labelsFilename = getStandardFilename("label_2", ".txt");
-    m_labelsAugFilename = getStandardFilename("label_aug_2", ".txt");
-    //m_calibFilename = getStandardFilename("calib", ".txt");
-
-    //TODO - Why are two seg images being printed (there are some minor differences in images it appears)
-    m_segImgFilename = getStandardFilename("segImage", ".png");
-    m_instSegFilename = getStandardFilename("instSeg", ".png");
-    m_instSegImgFilename = getStandardFilename("instSegImage", ".png");
-
-    //The following are for testing, only create filenames/directories if they are set to be on
-    if (OUTPUT_DM_POINTCLOUD) {
-        m_depthPCFilename = getStandardFilename("depthPC", ".bin");
-        m_depthImgFilename = getStandardFilename("depthImage", ".png");
-    }
-    if (OUTPUT_OFFSET_POINTCLOUDS) {
-        m_veloFilenameU = getStandardFilename("velodyneU", ".bin");
-        m_depthPCFilenameU = getStandardFilename("depthPCU", ".bin");
-    }
-    if (OUTPUT_GROUND_PIXELS) {
-        m_groundPointsFilename = getStandardFilename("groundPointsImg", ".png");
-    }
-    if (OUTPUT_UNUSED_PIXELS_IMAGE) m_unusedPixelsFilename = getStandardFilename("unusedPixelsImage", ".png");
-    if (OUTPUT_STENCIL_IMAGE) m_stencilImgFilename = getStandardFilename("stencilImage", ".png");
-    if (OUTPUT_OCCLUSION_IMAGE) m_occImgFilename = getStandardFilename("occlusionImage", ".png");
-    if (OUTPUT_UNPROCESSED_LABELS) m_labelsUnprocessedFilename = getStandardFilename("labelsUnprocessed", ".txt");
-}
 
 void ObjectDetection::setupLiDAR() {
     if (pointclouds && !lidar_initialized) //flag if activate the LiDAR
@@ -2059,69 +2023,69 @@ std::string ObjectDetection::getStandardFilename(std::string subDir, std::string
     return filename;
 }
 
-void ObjectDetection::outputRealSpeed() {
-    //Print to file after every complete series
-    if (m_trackLastSeqIndex != series_index) {
-        m_trackDistErrorTotal /= m_trackDistErrorTotalCount;
-        m_trackDistErrorTotalVar /= m_trackDistErrorTotalCount;
-        m_trackDistErrorTotalVar = sqrt(m_trackDistErrorTotalVar);
-        float avgSpeed = m_trackRealSpeed / m_trackDistErrorTotalCount;
-        float avgDist = m_trackDist / m_trackDistErrorTotalCount;
-
-        FILE* f = fopen(m_timeTrackFile.c_str(), "a");
-        std::ostringstream oss;
-        oss << m_trackDistErrorTotal << " " << m_trackDistErrorTotalVar << " " << avgSpeed << " " << avgDist;
-        std::string str = oss.str();
-        fprintf(f, str.c_str());
-        fprintf(f, "\n");
-        fclose(f);
-
-        //Reset for every sequence
-        m_trackRealSpeed = 0;
-        m_trackDist = 0;
-        m_trackDistErrorTotal = 0;
-        m_trackDistErrorTotalVar = 0;
-        m_trackDistErrorTotalCount = 0;
-        m_trackLastSeqIndex = series_index;
-    }
-
-    //Initialize for every sequence (after printing)
-    if (instance_index == 0) {
-        m_trackLastPos = s_camParams.pos;
-        m_trackLastIndex = instance_index;
-        m_trackLastRealSpeed = ENTITY::GET_ENTITY_SPEED(m_vehicle) / 10;
-        return;
-    }
-
-    //Do not count if we are in the gap between sequences
-    if (m_trackLastIndex == instance_index) {
-        return;
-    }
-
-    //Intermediate results
-    if (instance_index % 10 == 0) {
-        if (instance_index != 0) {
-            std::ostringstream oss;
-            float avgSpeed = m_trackRealSpeed * 10 / m_trackDistErrorTotalCount;
-            float avgDist = m_trackDist * 10 / m_trackDistErrorTotalCount;
-            oss << "Speed: " << avgSpeed << " dist: " << avgDist;
-            std::string str = oss.str();
-            log(str);
-        }
-    }
-
-    //Update values
-    //Average of speed at last frame and current frame
-    m_trackRealSpeed += (ENTITY::GET_ENTITY_SPEED(m_vehicle) / 10 + m_trackLastRealSpeed) / 2;
-    m_trackDist += sqrt(SYSTEM::VDIST2(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, m_trackLastPos.x, m_trackLastPos.y, m_trackLastPos.z));
-    m_trackDistErrorTotal += m_trackDist - m_trackRealSpeed;
-    m_trackDistErrorTotalVar += pow((m_trackDist - m_trackRealSpeed), 2);
-    m_trackDistErrorTotalCount++;
-
-    m_trackLastPos = s_camParams.pos;
-    m_trackLastIndex = instance_index;
-    m_trackLastRealSpeed = ENTITY::GET_ENTITY_SPEED(m_vehicle) / 10;
-}
+//void ObjectDetection::outputRealSpeed() {
+//    //Print to file after every complete series
+//    if (m_trackLastSeqIndex != series_index) {
+//        m_trackDistErrorTotal /= m_trackDistErrorTotalCount;
+//        m_trackDistErrorTotalVar /= m_trackDistErrorTotalCount;
+//        m_trackDistErrorTotalVar = sqrt(m_trackDistErrorTotalVar);
+//        float avgSpeed = m_trackRealSpeed / m_trackDistErrorTotalCount;
+//        float avgDist = m_trackDist / m_trackDistErrorTotalCount;
+//
+//        FILE* f = fopen(m_timeTrackFile.c_str(), "a");
+//        std::ostringstream oss;
+//        oss << m_trackDistErrorTotal << " " << m_trackDistErrorTotalVar << " " << avgSpeed << " " << avgDist;
+//        std::string str = oss.str();
+//        fprintf(f, str.c_str());
+//        fprintf(f, "\n");
+//        fclose(f);
+//
+//        //Reset for every sequence
+//        m_trackRealSpeed = 0;
+//        m_trackDist = 0;
+//        m_trackDistErrorTotal = 0;
+//        m_trackDistErrorTotalVar = 0;
+//        m_trackDistErrorTotalCount = 0;
+//        m_trackLastSeqIndex = series_index;
+//    }
+//
+//    //Initialize for every sequence (after printing)
+//    if (instance_index == 0) {
+//        m_trackLastPos = s_camParams.pos;
+//        m_trackLastIndex = instance_index;
+//        m_trackLastRealSpeed = ENTITY::GET_ENTITY_SPEED(m_vehicle) / 10;
+//        return;
+//    }
+//
+//    //Do not count if we are in the gap between sequences
+//    if (m_trackLastIndex == instance_index) {
+//        return;
+//    }
+//
+//    //Intermediate results
+//    if (instance_index % 10 == 0) {
+//        if (instance_index != 0) {
+//            std::ostringstream oss;
+//            float avgSpeed = m_trackRealSpeed * 10 / m_trackDistErrorTotalCount;
+//            float avgDist = m_trackDist * 10 / m_trackDistErrorTotalCount;
+//            oss << "Speed: " << avgSpeed << " dist: " << avgDist;
+//            std::string str = oss.str();
+//            log(str);
+//        }
+//    }
+//
+//    //Update values
+//    //Average of speed at last frame and current frame
+//    m_trackRealSpeed += (ENTITY::GET_ENTITY_SPEED(m_vehicle) / 10 + m_trackLastRealSpeed) / 2;
+//    m_trackDist += sqrt(SYSTEM::VDIST2(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z, m_trackLastPos.x, m_trackLastPos.y, m_trackLastPos.z));
+//    m_trackDistErrorTotal += m_trackDist - m_trackRealSpeed;
+//    m_trackDistErrorTotalVar += pow((m_trackDist - m_trackRealSpeed), 2);
+//    m_trackDistErrorTotalCount++;
+//
+//    m_trackLastPos = s_camParams.pos;
+//    m_trackLastIndex = instance_index;
+//    m_trackLastRealSpeed = ENTITY::GET_ENTITY_SPEED(m_vehicle) / 10;
+//}
 
 void ObjectDetection::setCamParams(float* forwardVec, float* rightVec, float* upVec) {
     //These values stay the same throughout a collection period

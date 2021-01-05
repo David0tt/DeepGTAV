@@ -94,30 +94,6 @@ private:
 
     cv::Mat m_depthMat = cv::Mat::zeros(cv::Size(s_camParams.width, s_camParams.height), CV_32FC1);
 
-	// TODO remove all of those, check for no tneeded in future
-    std::string m_imgFilename;
-    std::string m_veloFilename;
-    std::string m_depthFilename;
-    std::string m_depthPCFilename;
-    std::string m_depthImgFilename;
-    std::string m_stencilFilename;
-    std::string m_stencilImgFilename;
-    std::string m_segImgFilename;
-    std::string m_occImgFilename;
-    std::string m_unusedPixelsFilename;
-    //std::string m_calibFilename;
-    std::string m_labelsFilename;
-    std::string m_labelsUnprocessedFilename;
-    std::string m_labelsAugFilename;
-    std::string m_groundPointsFilename;
-    std::string m_instSegFilename;
-    std::string m_instSegImgFilename;
-    std::string m_posFilename;
-    //std::string m_egoObjectFilename;
-
-    std::string m_veloFilenameU;
-    std::string m_depthPCFilenameU;
-
 
     //For tracking: first frame in a series that an entity appears
     std::unordered_map<int, int> trackFirstFrame;
@@ -133,7 +109,7 @@ private:
     int m_trackLastIndex = -1;
     int m_trackLastSeqIndex = 0;
     std::string m_timeTrackFile;
-    std::string m_usedPixelFile;
+    //std::string m_usedPixelFile;
 
     //Camera intrinsic parameters
     float intrinsics[3];
@@ -230,8 +206,7 @@ private:
     float observationAngle(Vector3 position);
     void drawVectorFromPosition(Vector3 vector, int blue, int green);
     Vector3 depthToCamCoords(float depth, float screenX, float screenY);
-    void outputRealSpeed();
-    void setFilenames();
+    //void outputRealSpeed();
 
     BBox2D BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector, bool &success, float &truncation);
     bool in3DBox(Vector3 point, Vector3 objPos, Vector3 dim, Vector3 yVector, Vector3 xVector, Vector3 zVector);
