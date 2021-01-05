@@ -1685,47 +1685,48 @@ std::string ObjectDetection::exportLiDARRaycast() {
 	return base64_encode(enc_message, FLOATS_PER_POINT * sizeof(float)*pointCloudSize);
 }
 
-void ObjectDetection::collectLiDAR() {
-	log("ObjectDetection::collectLiDAR");
-    if (GENERATE_2D_POINTMAP) {
-        //Used for obtaining the 2D points for sampling depth map to convert to velodyne pointcloud
-        int size;
-        float * points2D = lidar.Get2DPoints(size);
 
-        std::string filename = getStandardFilename("2dpoints", ".bin");
-        std::ofstream ofile2(filename, std::ios::binary);
-        ofile2.write((char*)points2D, 2 * sizeof(float) * size);
-        ofile2.close();
+std::string ObjectDetection::export2DPointmap() {
+	//Used for obtaining the 2D points for sampling depth map to convert to velodyne pointcloud
+	int size;
+	float * points2D = lidar.Get2DPoints(size);
 
-        //Prints out the real values for a sample of the 
-        filename = getStandardFilename("2dpoints", ".txt");
-        FILE* f = fopen(filename.c_str(), "w");
-        fclose(f);
-        f = fopen(filename.c_str(), "a");
-        int i = 0;
-        std::ostringstream oss;
-        while (i < 100) {
-            oss << "num: " << i << " x: " << points2D[2 * i] << " y: " << points2D[2 * i + 1] << "\n";
-            ++i;
-        }
-        i = (size / 2);
-        int maxPrint = i + 100;
-        while (i < maxPrint) {
-            oss << "num: " << i << " x: " << points2D[2 * i] << " y: " << points2D[2 * i + 1] << "\n";
-            ++i;
-        }
-        i = size - 100;
-        while (i < size) {
-            oss << "num: " << i << " x: " << points2D[2 * i] << " y: " << points2D[2 * i + 1] << "\n";
-            ++i;
-        }
-        std::string str = oss.str();
-        fprintf(f, str.c_str());
-        fclose(f);
-    }
-    if (OUTPUT_DEPTH_STATS) {
-        lidar.printDepthStats();
-    }
+	auto *enc_message = reinterpret_cast<unsigned char*>(points2D);
+	return base64_encode(enc_message, 2 * sizeof(float) * size);
+}
+
+std::string ObjectDetection::exportSome2DPointmapText() {
+	int size;
+	float * points2D = lidar.Get2DPoints(size);
+
+	int i = 0;
+	std::ostringstream oss;
+	while (i < 100) {
+		oss << "num: " << i << " x: " << points2D[2 * i] << " y: " << points2D[2 * i + 1] << "\n";
+		++i;
+	}
+	i = (size / 2);
+	int maxPrint = i + 100;
+	while (i < maxPrint) {
+		oss << "num: " << i << " x: " << points2D[2 * i] << " y: " << points2D[2 * i + 1] << "\n";
+		++i;
+	}
+	i = size - 100;
+	while (i < size) {
+		oss << "num: " << i << " x: " << points2D[2 * i] << " y: " << points2D[2 * i + 1] << "\n";
+		++i;
+	}
+
+	return oss.str();
+}
+
+std::string ObjectDetection::exportLidarDepthStats() {
+	if (OUTPUT_DEPTH_STATS) {
+		return lidar.printDepthStats();
+	}
+	else {
+		return "OUTPUT_DEPTH_STATS is not set in Constants.h";
+	}
 }
 
 

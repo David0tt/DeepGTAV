@@ -91,7 +91,7 @@ public:
     void updateCurrentPosition(Vector3 cameraForwardVec, Vector3 cameraRightVector, Vector3 cameraUpVector);
 
     //Print stats on disparity between depth calculations/raycast distance
-    void printDepthStats();
+    std::string printDepthStats();
 
 private:
 

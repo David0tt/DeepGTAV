@@ -240,7 +240,7 @@ float* LiDAR::UpdatePointCloud(int &size, float* depthMap) {
     return m_updatedPointCloud;
 }
 
-void LiDAR::printDepthStats() {
+std::string LiDAR::printDepthStats() {
     float totalRatio = 0;
     float ratio10 = 0;
     float ratio40 = 0;
@@ -291,7 +291,7 @@ void LiDAR::printDepthStats() {
         "\nUnder 120: " << ratio120/(float)count120 <<
         "\nUnder 40: " << ratio40/(float)count40 <<
         "\nUnder 10: " << ratio10/(float)count10;
-    log(oss.str(), true);
+	return oss.str();
 }
 
 float * LiDAR::GetPointClouds(int &size, std::unordered_map<int, HitLidarEntity*> *entitiesHit, int param, float* depthMap, uint32_t* pInstanceSeg, Entity perspectiveVehicle)

@@ -425,6 +425,26 @@ StringBuffer DataExport::generateMessage() {
 			d["LiDARRaycast"] = dat;
 		}
 
+		// TODO make variables and add fields to d
+		if (false) {
+			const std::string str = m_pObjDet->export2DPointmap();
+			Value dat(kArrayType);
+			dat.SetString(StringRef(str.c_str()));
+			d["2DPointmap"] = dat;
+		}
+		if (false) {
+			const std::string str = m_pObjDet->exportSome2DPointmapText();
+			Value dat(kArrayType);
+			dat.SetString(StringRef(str.c_str()));
+			d["Some2DPointmapText"] = dat;
+		}
+		if (false) {
+			const std::string str = m_pObjDet->exportLidarDepthStats();
+			Value dat(kArrayType);
+			dat.SetString(StringRef(str.c_str()));
+			d["LidarDepthStats"] = dat;
+		}
+
 
 		m_pObjDet->refreshBuffers();
 		m_pObjDet->increaseIndex();

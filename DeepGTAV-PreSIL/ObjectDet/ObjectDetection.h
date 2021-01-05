@@ -201,6 +201,10 @@ public:
 	std::string ObjectDetection::exportLiDAR();
 	std::string ObjectDetection::exportLiDARRaycast();
 
+	std::string ObjectDetection::export2DPointmap();
+	std::string ObjectDetection::exportSome2DPointmapText();
+	std::string ObjectDetection::exportLidarDepthStats();
+
 private:
     void setVehiclesList();
     void setPedsList();
@@ -211,7 +215,6 @@ private:
     // void setTime();
     
 	void setupLiDAR();
-    void collectLiDAR();
     void setIndex();
     void calcCameraIntrinsics();
     void setFocalLength();
