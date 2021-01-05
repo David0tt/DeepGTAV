@@ -141,6 +141,20 @@ void DataExport::parseDatasetConfig(const Value& dc, bool setDefaults) {
 	else if (setDefaults) exportLiDARRaycast = _EXPORT_LIDAR_RAYCAST_;
 	if (!dc["maxLidarDist"].IsNull()) maxLidarDist = dc["maxLidarDist"].GetFloat();
 	else if (setDefaults) maxLidarDist = _MAX_LIDAR_DIST_;
+	if (!dc["export2DPointmap"].IsNull()) export2DPointmap = dc["export2DPointmap"].GetBool();
+	else if (setDefaults) export2DPointmap = _EXPORT_2D_POINTMAP_;
+	if (!dc["exportSome2DPointmapText"].IsNull()) exportSome2DPointmapText = dc["exportSome2DPointmapText"].GetBool();
+	else if (setDefaults) exportSome2DPointmapText = _EXPORT_SOME_2D_POINTMAP_TEXT_;
+	if (!dc["exportLiDARDepthStats"].IsNull()) exportLiDARDepthStats = dc["exportLiDARDepthStats"].GetBool();
+	else if (setDefaults) exportLiDARDepthStats = _EXPORT_LIDAR_DEPTH_STATS_;
+	if (!dc["exportStencliBuffer"].IsNull()) exportStencliBuffer = dc["exportStencliBuffer"].GetBool();
+	else if (setDefaults) exportStencliBuffer = _EXPORT_STENCIL_BUFFER_;
+	if (!dc["exportStencilImage"].IsNull()) exportStencilImage = dc["exportStencilImage"].GetBool();
+	else if (setDefaults) exportStencilImage = _EXPORT_STENCIL_IMAGE_;
+	if (!dc["exportIndividualStencilImages"].IsNull()) exportIndividualStencilImages = dc["exportIndividualStencilImages"].GetBool();
+	else if (setDefaults) exportIndividualStencilImages = _EXPORT_INDIVIDUAL_STENCIL_IMAGE_;
+	if (!dc["exportDepthBuffer"].IsNull()) exportDepthBuffer = dc["exportDepthBuffer"].GetBool();
+	else if (setDefaults) exportDepthBuffer = _EXPORT_DEPTH_BUFFER_;
 
 
 
@@ -191,6 +205,14 @@ void DataExport::buildJSONObject() {
 	if (instanceSegmentationImageColor) d.AddMember("instanceSegmentationImageColor", a, allocator);
 	if (exportLiDAR) d.AddMember("LiDAR", a, allocator);
 	if (exportLiDARRaycast) d.AddMember("LiDARRaycast", a, allocator);
+	if (export2DPointmap) d.AddMember("2DPointmap", a, allocator);
+	if (exportSome2DPointmapText) d.AddMember("Some2DPointmapText", a, allocator);
+	if (exportLiDARDepthStats) d.AddMember("LiDARDepthStats", a, allocator);
+	if (exportStencliBuffer) d.AddMember("StencilBuffer", a, allocator);
+	if (exportStencilImage) d.AddMember("StencilImage", a, allocator);
+	if (exportIndividualStencilImages) d.AddMember("IndividualStencilImage", a, allocator);
+	if (exportDepthBuffer) d.AddMember("DepthBuffer", a, allocator);
+
 	
 	// TODO
 	if (true) d.AddMember("StencilImage", a, allocator);
@@ -429,44 +451,44 @@ StringBuffer DataExport::generateMessage() {
 		}
 
 		// TODO make variables and add fields to d
-		if (false) {
+		if (export2DPointmap) {
 			const std::string str = m_pObjDet->export2DPointmap();
 			Value dat(kArrayType);
 			dat.SetString(StringRef(str.c_str()));
 			d["2DPointmap"] = dat;
 		}
-		if (false) {
+		if (exportSome2DPointmapText) {
 			const std::string str = m_pObjDet->exportSome2DPointmapText();
 			Value dat(kArrayType);
 			dat.SetString(StringRef(str.c_str()));
 			d["Some2DPointmapText"] = dat;
 		}
-		if (false) {
+		if (exportLiDARDepthStats) {
 			const std::string str = m_pObjDet->exportLidarDepthStats();
 			Value dat(kArrayType);
 			dat.SetString(StringRef(str.c_str()));
 			d["LidarDepthStats"] = dat;
 		}
 
-		if (false) {
+		if (exportStencliBuffer) {
 			const std::string str = m_pObjDet->exportStencilBuffer();
 			Value dat(kArrayType);
 			dat.SetString(StringRef(str.c_str()));
 			d["StencilBuffer"] = dat;
 		}
-		if (true) {
+		if (exportStencilImage) {
 			const std::string str = m_pObjDet->exportStencilImage();
 			Value dat(kArrayType);
 			dat.SetString(StringRef(str.c_str()));
 			d["StencilImage"] = dat;
 		}
-		if (false) {
+		if (exportIndividualStencilImages) {
 			const std::string str = m_pObjDet->exportIndividualStencilImages();
 			Value dat(kArrayType);
 			dat.SetString(StringRef(str.c_str()));
 			d["IndividualStencilImages"] = dat;
 		}
-		if (false) {
+		if (exportDepthBuffer) {
 			const std::string str = m_pObjDet->exportDepthBuffer();
 			Value dat(kArrayType);
 			dat.SetString(StringRef(str.c_str()));

@@ -2,16 +2,16 @@
 
 #include "ObjectDetection.h"
 #include "..\ObjectDetIncludes.h"
-#include <Windows.h>
+//#include <Windows.h>
 #include <time.h>
-#include <fstream>
+//#include <fstream>
 #include <string>
-#include <sstream>
+//#include <sstream>
 #include "Functions.h"
 #include "Constants.h"
 #include <Eigen/Core>
-#include <sstream>
-#include "lodepng.h"
+//#include <sstream>
+//#include "lodepng.h"
 
 
 #include "base64.h"
@@ -48,6 +48,7 @@ const int PEDESTRIAN_CLASS_ID = 10;
 const int CAR_CLASS_ID = 0;
 
 void ObjectDetection::initCollection(UINT camWidth, UINT camHeight, bool exportEVE, int startIndex, float maxLidarDist) {
+	log("ObjectDetection::initCollection(): " + std::to_string(time(NULL)));
     if (m_initialized) {
         return;
     }
@@ -189,6 +190,7 @@ void ObjectDetection::setOwnVehicleObject() {
 //}
 
 FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStencil, int entityID) {
+	log("ObjectDetection::generateMessage(): " + std::to_string(time(NULL)));
     //LOG(LL_ERR, "Depth data generate: ", pDepth[0], pDepth[1], pDepth[2], pDepth[3], pDepth[4], pDepth[5], pDepth[6], pDepth[7]);
     m_pDepth = pDepth;
     m_pStencil = pStencil;
@@ -245,6 +247,7 @@ FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStenci
 
 
 void ObjectDetection::refreshBuffers() {
+	log("ObjectDetection::refreshBuffers(): " + std::to_string(time(NULL)));
 	//Clear all maps and seg image arrays
 	memset(m_pStencilSeg, 0, m_stencilSegLength);
 	memset(m_pInstanceSeg, 0, m_instanceSegLength);
@@ -668,8 +671,8 @@ void ObjectDetection::processSegmentation2D() {
 }
 
 void ObjectDetection::processSegmentation3D() {
-	log("ObjectDetection::processSegmentation3D");
-    //Converting vehicle dimensions from vehicle to world coordinates for offset position
+	log("ObjectDetection::processSegmentation3D(): " + std::to_string(time(NULL)));
+	//Converting vehicle dimensions from vehicle to world coordinates for offset position
     Vector3 worldX; worldX.x = 1; worldX.y = 0; worldX.z = 0;
     Vector3 worldY; worldY.x = 0; worldY.y = 1; worldY.z = 0;
     Vector3 worldZ; worldZ.x = 0; worldZ.y = 0; worldZ.z = 1;
@@ -718,6 +721,7 @@ void ObjectDetection::processSegmentation3D() {
 //If filled areas have a unique entityID (other than the overlapping points), entire area gets set to the unique entityID
 //TODO: Step 2: find contour with depth for areas which have more than a single unique entityID
 void ObjectDetection::processOverlappingPoints() {
+	log("ObjectDetection::processOverlappingPoints(): " + std::to_string(time(NULL)));
     //Create mask with only points from overlapping entities
     //Process one set of entity IDs at a time
     while (!m_overlappingPoints.empty()) {
@@ -1068,8 +1072,8 @@ void ObjectDetection::addPointToSegImages(int i, int j, int entityID) {
 
 //process occlusion after all 2D points are segmented
 void ObjectDetection::processOcclusion() {
-	log("ObjectDetection::processOcclusion");
-    //Converting vehicle dimensions from vehicle to world coordinates for offset position
+	log("ObjectDetection::processOcclusion(): " + std::to_string(time(NULL)));
+	//Converting vehicle dimensions from vehicle to world coordinates for offset position
     Vector3 worldX; worldX.x = 1; worldX.y = 0; worldX.z = 0;
     Vector3 worldY; worldY.x = 0; worldY.y = 1; worldY.z = 0;
     Vector3 worldZ; worldZ.x = 0; worldZ.y = 0; worldZ.z = 1;
@@ -1174,8 +1178,8 @@ void ObjectDetection::update3DPointsHit(ObjEntity* e) {
 }
 
 void ObjectDetection::update3DPointsHit() {
-	log("ObjectDetection::update3DPointsHit");
-    //Update # of 2D and 3D pixels for each entity
+	log("ObjectDetection::update3DPointsHit(): " + std::to_string(time(NULL)));
+	//Update # of 2D and 3D pixels for each entity
     for (auto &entry : m_curFrame.vehicles) {
         update3DPointsHit(&entry.second);
     }
@@ -1466,9 +1470,10 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
 }
 
 void ObjectDetection::setVehiclesList() {
-    m_curFrame.vehicles.clear();
-    log("Setting vehicles list.");
-    const int ARR_SIZE = 1024;
+	log("ObjectDetection::setVehiclesList(): " + std::to_string(time(NULL)));
+
+	m_curFrame.vehicles.clear();
+	const int ARR_SIZE = 1024;
     Vehicle vehicles[ARR_SIZE];
 
     Hash model;
@@ -1536,6 +1541,7 @@ void ObjectDetection::setVehiclesList() {
 }
 
 void ObjectDetection::setPedsList() {
+	log("ObjectDetection::setPedsList(): " + std::to_string(time(NULL)));
     m_curFrame.peds.clear();
     log("Setting peds list.");
     const int ARR_SIZE = 1024;
@@ -1592,6 +1598,8 @@ void ObjectDetection::setPedsList() {
 
 
 void ObjectDetection::setupLiDAR() {
+	log("ObjectDetection::setupLiDAR(): " + std::to_string(time(NULL)));
+
     if (pointclouds && !lidar_initialized) //flag if activate the LiDAR
     {
         //Specs on Velodyne HDL-64E
@@ -1621,7 +1629,7 @@ void ObjectDetection::setupLiDAR() {
 
 
 std::string ObjectDetection::exportLiDAR() {
-	log("ObjectDetection::exportLiDAR");
+	log("ObjectDetection::exportLiDAR(): " + std::to_string(time(NULL)));
 	m_entitiesHit.clear();
 	int pointCloudSize;
 	float * pointCloud = lidar.GetPointClouds(pointCloudSize, &m_entitiesHit, lidar_param, m_pDepth, m_pInstanceSeg, m_vehicle);
@@ -1633,10 +1641,11 @@ std::string ObjectDetection::exportLiDAR() {
 
 
 std::string ObjectDetection::exportLiDARRaycast() {
+	log("ObjectDetection::exportLiDARRaycast(): " + std::to_string(time(NULL)));
+
 	// TODO 
 	// OUTPUT_RAYCAST_POINTS = true;
 
-	log("ObjectDetection::exportLiDARRaycast");
 	int pointCloudSize;
 	float* pointCloud = lidar.GetRaycastPointcloud(pointCloudSize);
 	auto *enc_message = reinterpret_cast<unsigned char*>(pointCloud);
@@ -1646,6 +1655,8 @@ std::string ObjectDetection::exportLiDARRaycast() {
 
 
 std::string ObjectDetection::export2DPointmap() {
+	log("ObjectDetection::export2DPointmap(): " + std::to_string(time(NULL)));
+
 	//Used for obtaining the 2D points for sampling depth map to convert to velodyne pointcloud
 	int size;
 	float * points2D = lidar.Get2DPoints(size);
@@ -1655,6 +1666,8 @@ std::string ObjectDetection::export2DPointmap() {
 }
 
 std::string ObjectDetection::exportSome2DPointmapText() {
+	log("ObjectDetection::exportSome2DPointmapText(): " + std::to_string(time(NULL)));
+
 	int size;
 	float * points2D = lidar.Get2DPoints(size);
 
@@ -1680,6 +1693,8 @@ std::string ObjectDetection::exportSome2DPointmapText() {
 }
 
 std::string ObjectDetection::exportLidarDepthStats() {
+	log("ObjectDetection::exportLidarDepthStats(): " + std::to_string(time(NULL)));
+
 	if (OUTPUT_DEPTH_STATS) {
 		return lidar.printDepthStats();
 	}
@@ -1691,6 +1706,8 @@ std::string ObjectDetection::exportLidarDepthStats() {
 
 
 std::string ObjectDetection::exportStencilBuffer() {
+	log("ObjectDetection::exportStencilBuffer(): " + std::to_string(time(NULL)));
+
 	auto *enc_message = reinterpret_cast<unsigned char*>(m_pStencil);
 	return base64_encode(enc_message, s_camParams.width * s_camParams.height);
 }
@@ -1722,6 +1739,8 @@ std::string ObjectDetection::exportStencilImage() {
 // Returns a string with format {StencilVal0:}{data0}{StencilVal1:}{data1}...
 // Where data[i] are the individual stencil images as base64 encoded png images 
 std::string ObjectDetection::exportIndividualStencilImages() {
+	log("ObjectDetection::exportIndividualStencilImages(): " + std::to_string(time(NULL)));
+
 	std::vector<int> stencilValues;
 
 	for (int j = 0; j < s_camParams.height; ++j) {
@@ -1781,6 +1800,8 @@ std::string ObjectDetection::exportIndividualStencilImages() {
 
 
 std::string ObjectDetection::exportDepthBuffer() {
+	log("ObjectDetection::exportDepthBuffer(): " + std::to_string(time(NULL)));
+
 	auto *enc_message = reinterpret_cast<unsigned char*>(m_pDepth);
 	return base64_encode(enc_message, s_camParams.width * s_camParams.height * sizeof(float));
 }
@@ -2161,6 +2182,8 @@ void ObjectDetection::setCamParams(float* forwardVec, float* rightVec, float* up
 
 
 std::string ObjectDetection::exportSegmentationImage() {
+	log("ObjectDetection::exportSegmentationImage(): " + std::to_string(time(NULL)));
+
 	int notUsedStencilPoints = 0;
 
 	for (int j = 0; j < s_camParams.height; ++j) {
@@ -2183,6 +2206,8 @@ std::string ObjectDetection::exportSegmentationImage() {
 }
 
 std::string ObjectDetection::printInstanceSegmentationImage() {
+	log("ObjectDetection::printInstanceSegmentationImage(): " + std::to_string(time(NULL)));
+
 	// TODO see if this can also be done with the exportImage function
 
 	//Print instance segmented image
@@ -2205,6 +2230,8 @@ std::string ObjectDetection::printInstanceSegmentationImage() {
 
 //Create and print out instance seg image in colour for visualization
 std::string ObjectDetection::printInstanceSegmentationImageColor() {
+	log("ObjectDetection::printInstanceSegmentationImageColor(): " + std::to_string(time(NULL)));
+
 	for (int j = 0; j < s_camParams.height; ++j) {
 		for (int i = 0; i < s_camParams.width; ++i) {
 			//RGB image is 3 bytes per pixel
@@ -2266,12 +2293,13 @@ void ObjectDetection::initVehicleLookup() {
 }
 
 
-// TODO refactor (those two functions are almost identical)
 std::string ObjectDetection::outputOcclusion() {
+	log("ObjectDetection::outputOcclusion(): " + std::to_string(time(NULL)));
 	return exportImage(m_pOcclusionImage, CV_8UC1);
 }
 
 std::string ObjectDetection::outputUnusedStencilPixels() {
+	log("ObjectDetection::outputUnusedStencilPixels(): " + std::to_string(time(NULL)));
 	return exportImage(m_pUnusedStencilImage, CV_8UC1);
 }
 
@@ -2387,6 +2415,8 @@ std::string ObjectDetection::exportCalib() {
 
 
 std::string ObjectDetection::exportDetectionsString(FrameObjectInfo fObjInfo, ObjEntity* vPerspective) {
+	log("ObjectDetection::exportDetectionsString(): " + std::to_string(time(NULL)));
+
 	std::ostringstream oss;
 
 	//exportEntities(fObjInfo.vehicles, oss, false, false, true, OBJECT_MAX_DIST, 1, 1);

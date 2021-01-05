@@ -53,6 +53,14 @@ private:
 	bool exportLiDAR;
 	bool exportLiDARRaycast;
 	float maxLidarDist;
+	bool export2DPointmap;
+	bool exportSome2DPointmapText;
+	bool exportLiDARDepthStats;
+	bool exportStencliBuffer;
+	bool exportStencilImage;
+	bool exportIndividualStencilImages;
+	bool exportDepthBuffer;
+
 
 	Document d;
 

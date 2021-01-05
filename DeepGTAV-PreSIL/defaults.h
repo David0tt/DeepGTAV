@@ -31,3 +31,10 @@
 #define _EXPORT_LIDAR_ false;
 #define _EXPORT_LIDAR_RAYCAST_ false;
 #define _MAX_LIDAR_DIST_ 50.0f;
+#define _EXPORT_2D_POINTMAP_ false;
+#define _EXPORT_SOME_2D_POINTMAP_TEXT_ false;
+#define _EXPORT_LIDAR_DEPTH_STATS_ false;
+#define _EXPORT_STENCIL_BUFFER_ false;
+#define _EXPORT_STENCIL_IMAGE_ false;
+#define _EXPORT_INDIVIDUAL_STENCIL_IMAGE_ false;
+#define _EXPORT_DEPTH_BUFFER_ false;
