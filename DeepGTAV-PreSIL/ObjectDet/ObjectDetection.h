@@ -205,6 +205,10 @@ public:
 	std::string ObjectDetection::exportSome2DPointmapText();
 	std::string ObjectDetection::exportLidarDepthStats();
 
+	std::string ObjectDetection::exportStencilBuffer();
+	std::string ObjectDetection::exportStencilImage();
+	std::string ObjectDetection::exportIndividualStencilImages();
+
 private:
     void setVehiclesList();
     void setPedsList();
@@ -225,7 +229,6 @@ private:
     void drawVectorFromPosition(Vector3 vector, int blue, int green);
     Vector3 depthToCamCoords(float depth, float screenX, float screenY);
     void outputRealSpeed();
-    void printStencilImages();
     void setFilenames();
 
     BBox2D BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector, bool &success, float &truncation);

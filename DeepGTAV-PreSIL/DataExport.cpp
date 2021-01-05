@@ -192,6 +192,9 @@ void DataExport::buildJSONObject() {
 	if (exportLiDAR) d.AddMember("LiDAR", a, allocator);
 	if (exportLiDARRaycast) d.AddMember("LiDARRaycast", a, allocator);
 	
+	// TODO
+	if (true) d.AddMember("StencilImage", a, allocator);
+
 	screenCapturer = new ScreenCapturer(s_camParams.width, s_camParams.height);
 
 }
@@ -444,6 +447,27 @@ StringBuffer DataExport::generateMessage() {
 			dat.SetString(StringRef(str.c_str()));
 			d["LidarDepthStats"] = dat;
 		}
+
+		if (false) {
+			const std::string str = m_pObjDet->exportStencilBuffer();
+			Value dat(kArrayType);
+			dat.SetString(StringRef(str.c_str()));
+			d["StencilBuffer"] = dat;
+		}
+		if (true) {
+			const std::string str = m_pObjDet->exportStencilImage();
+			Value dat(kArrayType);
+			dat.SetString(StringRef(str.c_str()));
+			d["StencilImage"] = dat;
+		}
+		if (false) {
+			const std::string str = m_pObjDet->exportIndividualStencilImages();
+			Value dat(kArrayType);
+			dat.SetString(StringRef(str.c_str()));
+			d["IndividualStencilImages"] = dat;
+		}
+
+
 
 
 		m_pObjDet->refreshBuffers();

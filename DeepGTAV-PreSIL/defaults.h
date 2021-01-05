@@ -28,6 +28,6 @@
 #define _SEGMENTATION_IMAGE_ false;
 #define _INSTANCE_SEGMENTATION_IMAGE_ false;
 #define _INSTANCE_SEGMENTATION_IMAGE_COLOR_ false;
-#define _EXPORT_LIDAR_ true;
-#define _EXPORT_LIDAR_RAYCAST_ true;
+#define _EXPORT_LIDAR_ false;
+#define _EXPORT_LIDAR_RAYCAST_ false;
 #define _MAX_LIDAR_DIST_ 50.0f;

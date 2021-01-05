@@ -213,7 +213,6 @@ FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStenci
 	// This is equal to:
 	setFilenames();
 	if (lidar_initialized) setDepthBuffer(false);
-	if (lidar_initialized) printStencilImages();
 
 
     //Need to set peds list first for integrating peds on bikes
@@ -1731,103 +1730,95 @@ std::string ObjectDetection::exportLidarDepthStats() {
 
 
 
-// TODO this function is only needed for debugging, so I don't rework it to send the data via TCP right now
-void ObjectDetection::printStencilImages() {
-    log("About to write stencil buffer");
-    int size = s_camParams.width * s_camParams.height;
-	if (!ONLY_COLLECT_IMAGE_AND_BBOXES) {
-		std::ofstream ofile(m_stencilFilename, std::ios::binary);
-		ofile.write((char*)m_pStencil, size);
-		ofile.close();
+std::string ObjectDetection::exportStencilBuffer() {
+	auto *enc_message = reinterpret_cast<unsigned char*>(m_pStencil);
+	return base64_encode(enc_message, s_camParams.width * s_camParams.height);
+}
+
+// TODO the exportStencilImage and the exportIndividualStencilImages functions are very similar,
+// If both of them were used this could be optimized, but they are only needed for testing, so this is not necessary
+std::string ObjectDetection::exportStencilImage() {
+	for (int j = 0; j < s_camParams.height; ++j) {
+		for (int i = 0; i < s_camParams.width; ++i) {
+			uint8_t val = m_pStencil[j * s_camParams.width + i];
+			uint8_t* p = m_pStencilImage + (j * s_camParams.width) + i;
+
+			if (val == 2) {
+				*p = 255; //Vehicles
+			}
+			else if (val == 1) {
+				*p = 128; //NPCs
+			}
+			else {
+				*p = val;
+			}
+		}
 	}
-	log("After writing stencil buffer");
+
+	return exportImage(m_pStencilImage, CV_8UC1);
+}
 
 
-    std::vector<int> stencilValues;
+// Returns a string with format {StencilVal0:}{data0}{StencilVal1:}{data1}...
+// Where data[i] are the individual stencil images as base64 encoded png images 
+std::string ObjectDetection::exportIndividualStencilImages() {
+	std::vector<int> stencilValues;
 
 	for (int j = 0; j < s_camParams.height; ++j) {
-        for (int i = 0; i < s_camParams.width; ++i) {
-            uint8_t val = m_pStencil[j * s_camParams.width + i];
-            uint8_t* p = m_pStencilImage + (j * s_camParams.width) + i;
+		for (int i = 0; i < s_camParams.width; ++i) {
+			uint8_t val = m_pStencil[j * s_camParams.width + i];
 
-            if (val == 2) {
-                *p = 255; //Vehicles
-            }
-            else if (val == 1) {
-                *p = 128; //NPCs
-            }
-            else {
-                *p = val;
-            }
+			bool newValue = true;
+			if (ONLY_OUTPUT_UNKNOWN_STENCILS && std::find(KNOWN_STENCIL_TYPES.begin(), KNOWN_STENCIL_TYPES.end(), val) != KNOWN_STENCIL_TYPES.end()) {
+				newValue = false;
+			}
+			if (std::find(stencilValues.begin(), stencilValues.end(), val) != stencilValues.end()) {
+				newValue = false;
+			}
+			if (newValue) {
+				stencilValues.push_back(val);
+			}
+		}
+	}
 
-            if (OUTPUT_SEPARATE_STENCILS) {
-                bool newValue = true;
-                if (ONLY_OUTPUT_UNKNOWN_STENCILS && std::find(KNOWN_STENCIL_TYPES.begin(), KNOWN_STENCIL_TYPES.end(), val) != KNOWN_STENCIL_TYPES.end()) {
-                    newValue = false;
-                }
-                if (std::find(stencilValues.begin(), stencilValues.end(), val) != stencilValues.end()) {
-                    newValue = false;
-                }
-                if (newValue) {
-                    stencilValues.push_back(val);
-                }
-            }
-        }
-    }
+	std::string ret;
+	for (int s : stencilValues) {
+		int count = 0;
+		for (int j = 0; j < s_camParams.height; ++j) {
+			for (int i = 0; i < s_camParams.width; ++i) {
+				uint8_t val = m_pStencil[j * s_camParams.width + i];
+				uint8_t* p = m_pStencilImage + (j * s_camParams.width) + i;
+				if (val == s) {
+					*p = 255; //Stencil value
+					++count;
+				}
+				else {
+					*p = 0;
+				}
+			}
+		}
 
-    if (OUTPUT_STENCIL_IMAGE) {
-        log("Before saving stencil image");
-        std::vector<std::uint8_t> ImageBuffer;
-        lodepng::encode(ImageBuffer, (unsigned char*)m_pStencilImage, s_camParams.width, s_camParams.height, LCT_GREY, 8);
-        lodepng::save_file(ImageBuffer, m_stencilImgFilename);
-        log("After saving stencil image");
-    }
+		ret.append("StencilVal" + std::to_string(s) + ":");
+		ret.append(exportImage(m_pStencilImage, CV_8UC1));
 
-    if (OUTPUT_SEPARATE_STENCILS) {
-        for (int s : stencilValues) {
-            int count = 0;
-            for (int j = 0; j < s_camParams.height; ++j) {
-                for (int i = 0; i < s_camParams.width; ++i) {
-                    uint8_t val = m_pStencil[j * s_camParams.width + i];
-                    uint8_t* p = m_pStencilImage + (j * s_camParams.width) + i;
-                    if (val == s) {
-                        *p = 255; //Stencil value
-                        ++count;
-                    }
-                    else {
-                        *p = 0;
-                    }
-                }
-            }
 
-            std::string filename = baseFolder + "stencilImage" + "\\";
-            CreateDirectory(filename.c_str(), NULL);
-            filename.append("\\");
-            filename.append(instance_string);
-            filename.append("-");
-            filename.append(std::to_string(s));
-            filename.append(".png");
-            std::vector<std::uint8_t> ImageBuffer;
-            lodepng::encode(ImageBuffer, (unsigned char*)m_pStencilImage, s_camParams.width, s_camParams.height, LCT_GREY, 8);
-            lodepng::save_file(ImageBuffer, filename);
-
-            if (ONLY_OUTPUT_UNKNOWN_STENCILS) {
-                std::ostringstream oss;
-                oss << "***************************************unknown stencil type: " << s << " at index: " << instance_index << " with count: " << count;
-                log(oss.str(), true);
-            }
-        }
-    }
-
-    if (ONLY_OUTPUT_UNKNOWN_STENCILS) {
-        std::ostringstream oss;
-        oss << "Stencil types: ";
-        for (int s : KNOWN_STENCIL_TYPES) {
-            oss << s << ", ";
-        }
-        log(oss.str(), true);
-    }
+		if (ONLY_OUTPUT_UNKNOWN_STENCILS) {
+			std::ostringstream oss;
+			oss << "***************************************unknown stencil type: " << s << " at index: " << instance_index << " with count: " << count;
+			log(oss.str(), true);
+		}
+	}
+	if (ONLY_OUTPUT_UNKNOWN_STENCILS) {
+		std::ostringstream oss;
+		oss << "Stencil types: ";
+		for (int s : KNOWN_STENCIL_TYPES) {
+			oss << s << ", ";
+		}
+		log(oss.str(), true);
+	}
 }
+
+
 
 
 // TODO send this data 

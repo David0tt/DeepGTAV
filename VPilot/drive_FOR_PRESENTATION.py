@@ -79,9 +79,9 @@ if __name__ == '__main__':
             print("count: ", count)
 
             # Only record every 10th frame
-            if count > 125 and count % 10 == 0:
+            if count > 50 and count % 10 == 0:
                 client.sendMessage(StartRecording())
-            if count > 125 and count % 10 == 1:
+            if count > 50 and count % 10 == 1:
                 client.sendMessage(StopRecording())
             # if count == 60:
             #     client.sendMessage(StartRecording())
@@ -142,84 +142,88 @@ if __name__ == '__main__':
             if message["bbox2d"] != None:
                 try:
                     bboxes = convertBBoxesDeepGTAToYolo(message["bbox2d"])
+
+
+                    if bboxes != bbox2d_old:
+                        bbox2d_old = bboxes
+                        # try: # Sometimes there are errors with the message, i catch those here
+
+                        #     # save Data
+                        #     filename = f'{run_count:04}' + '_' + f'{count:010}'
+                        #     if bboxes != "":
+                        #         save_image_and_bbox(args.save_dir, filename, frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), bboxes)
+                        #         save_meta_data(args.save_dir, filename, message["location"], message["HeightAboveGround"], message["CameraPosition"], message["CameraAngle"], message["time"], "CLEAR")
+                                
+                        #     # Show image with bbox                    
+                        #     img = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormat_to_Image(bboxes))
+                        #     cv2.imshow("test", img)
+                        #     cv2.waitKey(1) 
+                            
+                        # except Exception as e:
+                        #     print(e)
+                        #     errors.append(e)
+
+
+                        # if message["occlusionImage"] != None and message["occlusionImage"] != "":
+                        #     # print(message["occlusionImage"])
+                        #     nparr = np.fromstring(base64.b64decode(message["occlusionImage"]), np.uint8)
+                        #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+                        #     cv2.imshow("occlusionImage", img)
+                        #     cv2.waitKey(1)
+                        # if message["unusedStencilIPixelmage"] != None and message["unusedStencilIPixelmage"] != "":
+                        #     # print(message["occlusionImage"])
+                        #     nparr = np.fromstring(base64.b64decode(message["unusedStencilIPixelmage"]), np.uint8)
+                        #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+                        #     cv2.imshow("unusedStencilIPixelmage", img)
+                        #     cv2.waitKey(1)
+                        # if message["segmentationImage"] != None and message["segmentationImage"] != "":
+                        #     # print(message["occlusionImage"])
+                        #     nparr = np.fromstring(base64.b64decode(message["segmentationImage"]), np.uint8)
+                        #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+                        #     cv2.imshow("segmentationImage", img)
+                        #     cv2.waitKey(1)
+                        # if message["instanceSegmentationImage"] != None and message["instanceSegmentationImage"] != "":
+                        #     # print(message["occlusionImage"])
+                        #     nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImage"]), np.uint8)
+                        #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+                        #     cv2.imshow("instanceSegmentationImage", img)
+                        #     cv2.waitKey(1)
+                        # if message["instanceSegmentationImageColor"] != None and message["instanceSegmentationImageColor"] != "":
+                        #     # print(message["occlusionImage"])
+                        #     nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImageColor"]), np.uint8)
+                        #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+                        #     cv2.imshow("instanceSegmentationImageColor", img)
+                        #     cv2.waitKey(1)
+                        # if message["LiDAR"] != None and message["LiDAR"] != "":
+                        #     # print(message["LiDAR"])
+                        #     a = np.frombuffer(base64.b64decode(message["LiDAR"]), np.float32)
+                        #     a = a.reshape((-1, 4))
+                        #     points3d = np.delete(a, 3, 1)
+
+                        #     # point_cloud = open3d.geometry.PointCloud()
+                        #     # point_cloud.points = open3d.utility.Vector3dVector(points3d)
+                        #     # open3d.visualization.draw_geometries([point_cloud])
+
+                        #     fig = plt.figure(figsize=(15,15))
+                        #     ax = fig.add_subplot(111, projection='3d')
+                        #     ax.view_init(50, - 90 - 90)
+                        #     ax.scatter(points3d[:,0], points3d[:,1], points3d[:,2], c=points3d[:,2], s=2)
+                        #     plt.show()
+
+
+                        # if message["LiDARRaycast"] != None and message["LiDARRaycast"] != "":
+                        #     print("LiDARRaycast")
+                        #     print(message["LiDARRaycast"])
+
+                        if message["StencilImage"] != None and message["StencilImage"] != "":
+                            # print(message["occlusionImage"])
+                            nparr = np.fromstring(base64.b64decode(message["StencilImage"]), np.uint8)
+                            img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+                            cv2.imshow("StencilImage", img)
+                            cv2.waitKey(1)
+                    
                 except Exception as e:
                     errors.append(e)
-
-
-                if bboxes != bbox2d_old:
-                    bbox2d_old = bboxes
-                    # try: # Sometimes there are errors with the message, i catch those here
-
-                    #     # save Data
-                    #     filename = f'{run_count:04}' + '_' + f'{count:010}'
-                    #     if bboxes != "":
-                    #         save_image_and_bbox(args.save_dir, filename, frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), bboxes)
-                    #         save_meta_data(args.save_dir, filename, message["location"], message["HeightAboveGround"], message["CameraPosition"], message["CameraAngle"], message["time"], "CLEAR")
-                            
-                    #     # Show image with bbox                    
-                    #     img = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormat_to_Image(bboxes))
-                    #     cv2.imshow("test", img)
-                    #     cv2.waitKey(1) 
-                        
-                    # except Exception as e:
-                    #     print(e)
-                    #     errors.append(e)
-
-
-                    # if message["occlusionImage"] != None and message["occlusionImage"] != "":
-                    #     # print(message["occlusionImage"])
-                    #     nparr = np.fromstring(base64.b64decode(message["occlusionImage"]), np.uint8)
-                    #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
-                    #     cv2.imshow("occlusionImage", img)
-                    #     cv2.waitKey(1)
-                    # if message["unusedStencilIPixelmage"] != None and message["unusedStencilIPixelmage"] != "":
-                    #     # print(message["occlusionImage"])
-                    #     nparr = np.fromstring(base64.b64decode(message["unusedStencilIPixelmage"]), np.uint8)
-                    #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
-                    #     cv2.imshow("unusedStencilIPixelmage", img)
-                    #     cv2.waitKey(1)
-                    # if message["segmentationImage"] != None and message["segmentationImage"] != "":
-                    #     # print(message["occlusionImage"])
-                    #     nparr = np.fromstring(base64.b64decode(message["segmentationImage"]), np.uint8)
-                    #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
-                    #     cv2.imshow("segmentationImage", img)
-                    #     cv2.waitKey(1)
-                    # if message["instanceSegmentationImage"] != None and message["instanceSegmentationImage"] != "":
-                    #     # print(message["occlusionImage"])
-                    #     nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImage"]), np.uint8)
-                    #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
-                    #     cv2.imshow("instanceSegmentationImage", img)
-                    #     cv2.waitKey(1)
-                    # if message["instanceSegmentationImageColor"] != None and message["instanceSegmentationImageColor"] != "":
-                    #     # print(message["occlusionImage"])
-                    #     nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImageColor"]), np.uint8)
-                    #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
-                    #     cv2.imshow("instanceSegmentationImageColor", img)
-                    #     cv2.waitKey(1)
-                    if message["LiDAR"] != None and message["LiDAR"] != "":
-                        # print(message["LiDAR"])
-                        a = np.frombuffer(base64.b64decode(message["LiDAR"]), np.float32)
-                        a = a.reshape((-1, 4))
-                        points3d = np.delete(a, 3, 1)
-
-                        # point_cloud = open3d.geometry.PointCloud()
-                        # point_cloud.points = open3d.utility.Vector3dVector(points3d)
-                        # open3d.visualization.draw_geometries([point_cloud])
-
-                        fig = plt.figure(figsize=(15,15))
-                        ax = fig.add_subplot(111, projection='3d')
-                        ax.view_init(50, - 90 - 90)
-                        ax.scatter(points3d[:,0], points3d[:,1], points3d[:,2], c=points3d[:,2], s=2)
-                        plt.show()
-
-
-                    if message["LiDARRaycast"] != None and message["LiDARRaycast"] != "":
-                        print("LiDARRaycast")
-                        print(message["LiDARRaycast"])
-
-
-                    lid_string = message["LiDAR"]
-                    
 
             
         except KeyboardInterrupt:
