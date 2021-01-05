@@ -214,9 +214,6 @@ void DataExport::buildJSONObject() {
 	if (exportDepthBuffer) d.AddMember("DepthBuffer", a, allocator);
 
 	
-	// TODO
-	if (true) d.AddMember("StencilImage", a, allocator);
-
 	screenCapturer = new ScreenCapturer(s_camParams.width, s_camParams.height);
 
 }

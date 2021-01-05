@@ -13,37 +13,46 @@ class Scenario:
         self.vehicle = vehicle #string
         self.drivingMode = drivingMode #[drivingMode, setSpeed]
 
+
+# TODO Default settings should be added in the future
 class Dataset:
-    def __init__(self, rate=None, frame=None, vehicles=None, peds=None, trafficSigns=None, direction=None, reward=None, 
-            throttle=None, brake=None, steering=None, speed=None, yawRate=None, drivingMode=None, location=None, time=None,
-            offscreen=None, showBoxes=None, pointclouds=None, stationaryScene=None, vehiclesToCreate=None, pedsToCreate=None,
-            startIndex=None, lidarParam=None, collectTracking=None, recordScenario=None, positionScenario=None):
-        self.rate = rate #Hz
-        self.frame = frame #[width, height]
-        self.vehicles = vehicles #boolean
-        self.peds = peds #boolean
-        self.trafficSigns = trafficSigns #boolean
-        self.direction = direction #[x,y,z]
-        self.reward = reward #[id, p1, p2]
-        self.throttle = throttle #boolean
-        self.brake = brake #boolean
-        self.steering = steering #boolean
-        self.speed = speed #boolean
-        self.yawRate = yawRate #boolean
-        self.drivingMode = drivingMode #boolean
-        self.location = location #boolean
-        self.time = time #boolean
-        self.offscreen = offscreen #boolean
-        self.showBoxes = showBoxes #boolean
-        self.pointclouds = pointclouds #boolean
-        self.stationaryScene = stationaryScene #boolean
-        self.vehiclesToCreate = vehiclesToCreate #array of [model, pos.forward, pos.right, heading, color]
-        self.pedsToCreate = pedsToCreate #array of peds
-        self.startIndex = startIndex #int
-        self.lidarParam = lidarParam #int
-        self.collectTracking = collectTracking #boolean
-        self.recordScenario = recordScenario #boolean (for recording clips)
-        self.positionScenario = positionScenario #boolean (for getting current location)
+    def __init__(self, **kwargs):
+            # rate=None, frame=None, vehicles=None, peds=None, trafficSigns=None, direction=None, reward=None, 
+            # throttle=None, brake=None, steering=None, speed=None, yawRate=None, drivingMode=None, location=None, time=None,
+            # offscreen=None, showBoxes=None, pointclouds=None, stationaryScene=None, vehiclesToCreate=None, pedsToCreate=None,
+            # startIndex=None, lidarParam=None, collectTracking=None, recordScenario=None, positionScenario=None):
+        self.__dict__.update(kwargs)
+
+        # self.rate = rate #Hz
+        # self.frame = frame #[width, height]
+
+
+        # self.vehicles = vehicles #boolean
+        # self.peds = peds #boolean
+        # self.trafficSigns = trafficSigns #boolean
+        # self.direction = direction #[x,y,z]
+        # self.reward = reward #[id, p1, p2]
+        # self.throttle = throttle #boolean
+        # self.brake = brake #boolean
+        # self.steering = steering #boolean
+        # self.speed = speed #boolean
+        # self.yawRate = yawRate #boolean
+        # self.drivingMode = drivingMode #boolean
+        # self.location = location #boolean
+        # self.time = time #boolean
+
+
+        # self.offscreen = offscreen #boolean
+        # self.showBoxes = showBoxes #boolean
+        # self.pointclouds = pointclouds #boolean
+        # self.stationaryScene = stationaryScene #boolean
+        # self.vehiclesToCreate = vehiclesToCreate #array of [model, pos.forward, pos.right, heading, color]
+        # self.pedsToCreate = pedsToCreate #array of peds
+        # self.startIndex = startIndex #int
+        # self.lidarParam = lidarParam #int
+        # self.collectTracking = collectTracking #boolean
+        # self.recordScenario = recordScenario #boolean (for recording clips)
+        # self.positionScenario = positionScenario #boolean (for getting current location)
 
 class Start:
     def __init__(self, scenario=None, dataset=None):
