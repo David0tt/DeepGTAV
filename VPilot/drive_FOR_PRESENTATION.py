@@ -43,7 +43,7 @@ if __name__ == '__main__':
     client = Client(ip=args.host, port=args.port)
     
     scenario = Scenario(drivingMode=786603, vehicle="buzzard", location=[245.23306274414062, -998.244140625, 29.205352783203125]) #automatic driving
-    dataset=Dataset(location=True, time=True)
+    dataset=Dataset(location=True, time=True, instanceSegmentationImageColor=True, exportStencilImage=True)
     client.sendMessage(Start(scenario=scenario, dataset=dataset))
     
 
@@ -123,7 +123,6 @@ if __name__ == '__main__':
             # None message from utf-8 decode error
             if message == None:
                 continue
-            print(message.keys())
 
             # keep the currentTravelHeight under the wanted one
             # Move a little bit in the desired direction but primarily correct the height
@@ -188,12 +187,11 @@ if __name__ == '__main__':
                         #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
                         #     cv2.imshow("instanceSegmentationImage", img)
                         #     cv2.waitKey(1)
-                        # if message["instanceSegmentationImageColor"] != None and message["instanceSegmentationImageColor"] != "":
-                        #     # print(message["occlusionImage"])
-                        #     nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImageColor"]), np.uint8)
-                        #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
-                        #     cv2.imshow("instanceSegmentationImageColor", img)
-                        #     cv2.waitKey(1)
+                        if message["instanceSegmentationImageColor"] != None and message["instanceSegmentationImageColor"] != "":
+                            nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImageColor"]), np.uint8)
+                            img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+                            cv2.imshow("instanceSegmentationImageColor", img)
+                            cv2.waitKey(1)
                         # if message["LiDAR"] != None and message["LiDAR"] != "":
                         #     # print(message["LiDAR"])
                         #     a = np.frombuffer(base64.b64decode(message["LiDAR"]), np.float32)

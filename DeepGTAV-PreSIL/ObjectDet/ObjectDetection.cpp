@@ -189,18 +189,25 @@ void ObjectDetection::setOwnVehicleObject() {
 //    return m_curFrame;
 //}
 
-FrameObjectInfo ObjectDetection::generateMessage(float* pDepth, uint8_t* pStencil, int entityID) {
+
+
+void ObjectDetection::passDepthStencilEntity(float* pDepth, uint8_t* pStencil, int entityID) {
+	m_pDepth = pDepth;
+	m_pStencil = pStencil;
+	m_vPerspective = entityID;
+	if (entityID != -1) {
+		m_vehicle = entityID;
+	}
+	else {
+		m_vehicle = m_ownVehicle;
+	}
+}
+
+
+
+FrameObjectInfo ObjectDetection::generateMessage() {
 	log("ObjectDetection::generateMessage(): " + std::to_string(time(NULL)));
     //LOG(LL_ERR, "Depth data generate: ", pDepth[0], pDepth[1], pDepth[2], pDepth[3], pDepth[4], pDepth[5], pDepth[6], pDepth[7]);
-    m_pDepth = pDepth;
-    m_pStencil = pStencil;
-    m_vPerspective = entityID;
-    if (entityID != -1) {
-        m_vehicle = entityID;
-    }
-    else {
-        m_vehicle = m_ownVehicle;
-    }
 
     //TODO pass this through
     bool depthMap = true;

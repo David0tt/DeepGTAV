@@ -132,7 +132,9 @@ public:
     //Depth buffer fn/var needs to be accessed by server
     //void setDepthBuffer(bool prevDepth = false);
 
-    FrameObjectInfo generateMessage(float* pDepth, uint8_t* pStencil, int entityID = -1);
+	void ObjectDetection::passDepthStencilEntity(float* pDepth, uint8_t* pStencil, int entityID = -1);
+    
+	FrameObjectInfo generateMessage();
 	void refreshBuffers();
 
 	std::string exportDetectionsString(FrameObjectInfo fObjInfo, ObjEntity * vPerspective = NULL);

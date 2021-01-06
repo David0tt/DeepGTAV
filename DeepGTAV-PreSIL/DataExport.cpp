@@ -340,7 +340,8 @@ StringBuffer DataExport::generateMessage() {
 		m_pObjDet->initCollection(s_camParams.width, s_camParams.height, false, instance_index, maxLidarDist);
 	}
 	if (depthSize != -1) {
-		FrameObjectInfo fObjInfo = m_pObjDet->generateMessage(depth_map, m_stencilBuffer);
+		m_pObjDet->passDepthStencilEntity(depth_map, m_stencilBuffer);
+		FrameObjectInfo fObjInfo = m_pObjDet->generateMessage();
 		//m_pObjDet->exportDetections(fObjInfo);
 
 		const std::string detections = m_pObjDet->exportDetectionsString(fObjInfo);
