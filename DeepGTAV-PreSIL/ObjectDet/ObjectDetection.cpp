@@ -59,7 +59,7 @@ const int PEDESTRIAN_CLASS_ID = 10;
 const int CAR_CLASS_ID = 0;
 
 void ObjectDetection::initCollection(UINT camWidth, UINT camHeight, bool exportEVE, int startIndex, float maxLidarDist) {
-	log("ObjectDetection::initCollection(): " + std::to_string(time(NULL)));
+	log("ObjectDetection::initCollection()");
     if (m_initialized) {
         return;
     }
@@ -225,6 +225,7 @@ void ObjectDetection::passEntity(int entityID) {
 
 
 void ObjectDetection::setDepthAndStencil() {
+	log("ObjectDetection::setDepthAndStencil");
 
 
 	//Do not use this function. Causes GTA to crash - need to figure out why
@@ -233,17 +234,26 @@ void ObjectDetection::setDepthAndStencil() {
 	//log("After color buffer", true);
 
 
-	if (DEBUG_MODE) log("DataExport::setDepthBuffer");
 	log("About to get depth buffer");
-	int DepthBufferSize = export_get_depth_buffer((void**)&m_pDepth);
+	int DepthBufferSize = -1;
+	DepthBufferSize = export_get_depth_buffer((void**)&m_pDepth);
 	log("Depth buffer size: " + std::to_string(DepthBufferSize));
 	log("After getting depth buffer");
 
+	if (DepthBufferSize == -1) {
+		log("ERROR: Depth Buffer could not be properly set!!!");
+	}
 
 	log("About to get stencil buffer");
-	int StencilBufferSize = export_get_stencil_buffer((void**)&m_pStencil);
+	int StencilBufferSize = -1;
+	StencilBufferSize = export_get_stencil_buffer((void**)&m_pStencil);
 	log("Stencil buffer size: " + std::to_string(StencilBufferSize));
 	log("After getting stencil buffer");
+
+	if (StencilBufferSize == -1) {
+		log("ERROR: Stencil Buffer could not be properly set!!!");
+	}
+
 
 
 }
@@ -251,7 +261,7 @@ void ObjectDetection::setDepthAndStencil() {
 
 
 FrameObjectInfo ObjectDetection::generateMessage() {
-	log("ObjectDetection::generateMessage(): " + std::to_string(time(NULL)));
+	log("ObjectDetection::generateMessage()");
     //LOG(LL_ERR, "Depth data generate: ", pDepth[0], pDepth[1], pDepth[2], pDepth[3], pDepth[4], pDepth[5], pDepth[6], pDepth[7]);
 
     //TODO pass this through
@@ -299,7 +309,7 @@ FrameObjectInfo ObjectDetection::generateMessage() {
 
 
 void ObjectDetection::refreshBuffers() {
-	log("ObjectDetection::refreshBuffers(): " + std::to_string(time(NULL)));
+	log("ObjectDetection::refreshBuffers()");
 	//Clear all maps and seg image arrays
 	memset(m_pStencilSeg, 0, m_stencilSegLength);
 	memset(m_pInstanceSeg, 0, m_instanceSegLength);
@@ -330,14 +340,13 @@ float ObjectDetection::observationAngle(Vector3 position) {
     float det = x1 * y2*zn + x2 * yn*z1 + xn * y1*z2 - z1 * y2*xn - z2 * yn*x1 - zn * y1*x2;
     float observationAngle = atan2(det, dot);
 
-    if (DEBUG_LOGGING) {
-        std::ostringstream oss;
-        oss << "Forward is: " << x1 << ", " << y1 << ", " << z1 <<
-            "\nNormal is: " << x2 << ", " << y2 << ", " << z2 <<
-            "\nPosition is: " << position.x << ", " << position.y << ", " << position.z << " and angle is: " << observationAngle;
-        std::string str = oss.str();
-        log(str);
-    }
+    //std::ostringstream oss;
+    //oss << "Forward is: " << x1 << ", " << y1 << ", " << z1 <<
+    //    "\nNormal is: " << x2 << ", " << y2 << ", " << z2 <<
+    //    "\nPosition is: " << position.x << ", " << position.y << ", " << position.z << " and angle is: " << observationAngle;
+    //std::string str = oss.str();
+    //log(str);
+
 
     return observationAngle;
 }
@@ -473,10 +482,10 @@ BBox2D ObjectDetection::BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector
                 //This function always returns false, do not worry about return value
                 bool success = GRAPHICS::_WORLD3D_TO_SCREEN2D(pos.x, pos.y, pos.z, &screenX, &screenY);
 
-                std::ostringstream oss2;
-                oss2 << "\nnew ScreenX: " << screenX << " ScreenY: " << screenY;
-                std::string str2 = oss2.str();
-                log(str2);
+                //std::ostringstream oss2;
+                //oss2 << "\nnew ScreenX: " << screenX << " ScreenY: " << screenY;
+                //std::string str2 = oss2.str();
+                //log(str2);
 
                 //Calculate with eigen if off-screen
                 Eigen::Vector3f pt(pos.x, pos.y, pos.z);
@@ -535,11 +544,11 @@ BBox2D ObjectDetection::BBox2DFrom3DObject(Vector3 position, Vector3 dim, Vector
         return bbox2d;
     }
 
-    std::ostringstream oss2;
-    oss2 << "BBox left: " << bbox2d.left << " right: " << bbox2d.right << " top: " << bbox2d.top << " bot: " << bbox2d.bottom << std::endl <<
-        "PosX: " << bbox2d.posX() << " PosY: " << bbox2d.posY() << " Width: " << bbox2d.width() << " Height: " << bbox2d.height();
-    std::string str2 = oss2.str();
-    log(str2);
+    //std::ostringstream oss2;
+    //oss2 << "BBox left: " << bbox2d.left << " right: " << bbox2d.right << " top: " << bbox2d.top << " bot: " << bbox2d.bottom << std::endl <<
+    //    "PosX: " << bbox2d.posX() << " PosY: " << bbox2d.posY() << " Width: " << bbox2d.width() << " Height: " << bbox2d.height();
+    //std::string str2 = oss2.str();
+    //log(str2);
     return bbox2d;
 }
 
@@ -644,14 +653,14 @@ bool ObjectDetection::in3DBox(Vector3 point, Vector3 objPos, Vector3 dim, Vector
     rearBotRight.y = objPos.y - forward.y + right.y - up.y;
     rearBotRight.z = objPos.z - forward.z + right.z - up.z;
 
-    std::ostringstream oss2;
-    oss2 << " rearBotLeft are: " << rearBotLeft.x << ", " << rearBotLeft.y << ", " << rearBotLeft.z;
-    oss2 << "\nfrontBotLeft: " << frontBotLeft.x << ", " << frontBotLeft.y << ", " << frontBotLeft.z;
-    oss2 << "\nrearTopLeft: " << rearTopLeft.x << ", " << rearTopLeft.y << ", " << rearTopLeft.z;
-    oss2 << "\nrearBotRight: " << rearBotRight.x << ", " << rearBotRight.y << ", " << rearBotRight.z;
-    oss2 << "\ndim: " << dim.x << ", " << dim.y << ", " << dim.z;
-    std::string str2 = oss2.str();
-    log(str2);
+    //std::ostringstream oss2;
+    //oss2 << " rearBotLeft are: " << rearBotLeft.x << ", " << rearBotLeft.y << ", " << rearBotLeft.z;
+    //oss2 << "\nfrontBotLeft: " << frontBotLeft.x << ", " << frontBotLeft.y << ", " << frontBotLeft.z;
+    //oss2 << "\nrearTopLeft: " << rearTopLeft.x << ", " << rearTopLeft.y << ", " << rearTopLeft.z;
+    //oss2 << "\nrearBotRight: " << rearBotRight.x << ", " << rearBotRight.y << ", " << rearBotRight.z;
+    //oss2 << "\ndim: " << dim.x << ", " << dim.y << ", " << dim.z;
+    //std::string str2 = oss2.str();
+    //log(str2);
 
     Vector3 u = getUnitVector(subtractVecs(frontBotLeft, rearBotLeft));
     Vector3 v = getUnitVector(subtractVecs(rearTopLeft, rearBotLeft));
@@ -723,7 +732,7 @@ void ObjectDetection::processSegmentation2D() {
 }
 
 void ObjectDetection::processSegmentation3D() {
-	log("ObjectDetection::processSegmentation3D(): " + std::to_string(time(NULL)));
+	log("ObjectDetection::processSegmentation3D()");
 	//Converting vehicle dimensions from vehicle to world coordinates for offset position
     Vector3 worldX; worldX.x = 1; worldX.y = 0; worldX.z = 0;
     Vector3 worldY; worldY.x = 0; worldY.y = 1; worldY.z = 0;
@@ -773,7 +782,7 @@ void ObjectDetection::processSegmentation3D() {
 //If filled areas have a unique entityID (other than the overlapping points), entire area gets set to the unique entityID
 //TODO: Step 2: find contour with depth for areas which have more than a single unique entityID
 void ObjectDetection::processOverlappingPoints() {
-	log("ObjectDetection::processOverlappingPoints(): " + std::to_string(time(NULL)));
+	log("ObjectDetection::processOverlappingPoints()");
     //Create mask with only points from overlapping entities
     //Process one set of entity IDs at a time
     while (!m_overlappingPoints.empty()) {
@@ -905,15 +914,15 @@ void ObjectDetection::processOverlappingPoints() {
             }
         }
 
-        //For testing print out indices which can't separate with flood fill so they can be visually inspected
-        for (int i = 0; i < floodVal; ++i) {
-            if (goodFloods[i] == false) {
-                std::ostringstream oss2;
-                oss2 << "**************Found bad flood at index: " << instance_index << " with floodval: " <<floodVal << " and i: " << i;
-                std::string str = oss2.str();
-                log(str, true);
-            }
-        }
+        ////For testing print out indices which can't separate with flood fill so they can be visually inspected
+        //for (int i = 0; i < floodVal; ++i) {
+        //    if (goodFloods[i] == false) {
+        //        std::ostringstream oss2;
+        //        oss2 << "**************Found bad flood at index: " << instance_index << " with floodval: " <<floodVal << " and i: " << i;
+        //        std::string str = oss2.str();
+        //        log(str, true);
+        //    }
+        //}
 
         //Round 2: If a segment from above has more than two sure entities in it
         //Then try creating contours within this mask from the depth threshold
@@ -937,10 +946,10 @@ void ObjectDetection::processOverlappingPoints() {
         //    cv::imwrite(filename, depthMasked);
         //}
 
-        std::ostringstream oss2;
-        oss2 << "Overlapping points size: " << m_overlappingPoints.size();
-        std::string str = oss2.str();
-        log(str, true);
+        //std::ostringstream oss2;
+        //oss2 << "Overlapping points size: " << m_overlappingPoints.size();
+        //std::string str = oss2.str();
+        //log(str, true);
         
         //If point is still in overlapping points then remove it
         if (m_overlappingPoints.find(ptIdx) != m_overlappingPoints.end()) {
@@ -1060,7 +1069,7 @@ void ObjectDetection::processStencilPixel3D(const uint8_t &stencilVal, const int
                 m_overlappingPoints.insert(std::pair<int, std::vector<ObjEntity*>>(idx, pointEntities));
             }
             else {
-                log("************************This should never be here!!!!!!!!!!!!!!!!!!!", true);
+                log("ERROR: Overlapping Point was found in map, this should never happen!!!", true);
             }
         }
     }
@@ -1124,7 +1133,7 @@ void ObjectDetection::addPointToSegImages(int i, int j, int entityID) {
 
 //process occlusion after all 2D points are segmented
 void ObjectDetection::processOcclusion() {
-	log("ObjectDetection::processOcclusion(): " + std::to_string(time(NULL)));
+	log("ObjectDetection::processOcclusion()");
 	//Converting vehicle dimensions from vehicle to world coordinates for offset position
     Vector3 worldX; worldX.x = 1; worldX.y = 0; worldX.z = 0;
     Vector3 worldY; worldY.x = 0; worldY.y = 1; worldY.z = 0;
@@ -1230,7 +1239,7 @@ void ObjectDetection::update3DPointsHit(ObjEntity* e) {
 }
 
 void ObjectDetection::update3DPointsHit() {
-	log("ObjectDetection::update3DPointsHit(): " + std::to_string(time(NULL)));
+	log("ObjectDetection::update3DPointsHit()");
 	//Update # of 2D and 3D pixels for each entity
     for (auto &entry : m_curFrame.vehicles) {
         update3DPointsHit(&entry.second);
@@ -1241,7 +1250,9 @@ void ObjectDetection::update3DPointsHit() {
 }
 
 bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash model, int classid, std::string type, std::string modelString, bool isPedInV, int vPedIsIn, bool &nearbyVehicle) {
-    bool success = false;
+	log("ObjectDetection::getEntityVector");
+	
+	bool success = false;
 
     Vector3 FUR; //Front Upper Right
     Vector3 BLL; //Back Lower Left
@@ -1304,11 +1315,11 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
                 }
             }
 
-            std::ostringstream oss2;
-            oss2 << "***min: " << min.x << ", " << min.y << ", " << min.z <<
-                "\nmax: " << max.x << ", " << max.y << ", " << max.z;
-            std::string str = oss2.str();
-            log(str);
+            //std::ostringstream oss2;
+            //oss2 << "***min: " << min.x << ", " << min.y << ", " << min.z <<
+            //    "\nmax: " << max.x << ", " << max.y << ", " << max.z;
+            //std::string str = oss2.str();
+            //log(str);
         }
 
         //Calculate size
@@ -1346,15 +1357,15 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
             type = "Person_sitting";
         }
 
-        if (abs(offcenter.y) > 0.5 && classid == 0) {
-            std::ostringstream oss2;
-            oss2 << "Instance Index: " << instance_index << " Dimensions are: " << dim.x << ", " << dim.y << ", " << dim.z;
-            oss2 << "\nMax: " << max.x << ", " << max.y << ", " << max.z;
-            oss2 << "\nMin: " << min.x << ", " << min.y << ", " << min.z;
-            oss2 << "\noffset: " << offcenter.x << ", " << offcenter.y << ", " << offcenter.z;
-            std::string str2 = oss2.str();
-            log(str2);
-        }
+        //if (abs(offcenter.y) > 0.5 && classid == 0) {
+        //    std::ostringstream oss2;
+        //    oss2 << "Instance Index: " << instance_index << " Dimensions are: " << dim.x << ", " << dim.y << ", " << dim.z;
+        //    oss2 << "\nMax: " << max.x << ", " << max.y << ", " << max.z;
+        //    oss2 << "\nMin: " << min.x << ", " << min.y << ", " << min.z;
+        //    oss2 << "\noffset: " << offcenter.x << ", " << offcenter.y << ", " << offcenter.z;
+        //    std::string str2 = oss2.str();
+        //    log(str2);
+        //}
 
         Vector3 relativePos;
         relativePos.x = position.x - s_camParams.pos.x;
@@ -1387,12 +1398,13 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
                 std::vector<Ped> pedsOnV = m_pedsInVehicles[entityID];
 
                 for (auto ped : pedsOnV) {
-                    std::ostringstream oss;
-                    oss << "Found ped on bike at index: " << instance_index;
-                    std::string str = oss.str();
-                    log(str, true);
-                    log("Found ped on bike", true);
-                    foundPedOnBike = true;
+                    //std::ostringstream oss;
+                    //oss << "Found ped on bike at index: " << instance_index;
+                    //std::string str = oss.str();
+                    //log(str, true);
+                    //log("Found ped on bike", true);
+
+					foundPedOnBike = true;
                     //Extend 3D/2D boxes with peds, change id in segmentation image
 
                     if (m_curFrame.peds.find(ped) != m_curFrame.peds.end()) {
@@ -1427,10 +1439,10 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
                         m_curFrame.peds[ped.first].isPedInV = true;
                         m_curFrame.peds[ped.first].vPedIsIn = entityID;
                         foundPedOnBike = true;
-                        std::ostringstream oss;
-                        oss << "****************************Alternate Found ped on bike at index: " << instance_index;
-                        std::string str = oss.str();
-                        log(str, true);
+                        //std::ostringstream oss;
+                        //oss << "****************************Alternate Found ped on bike at index: " << instance_index;
+                        //std::string str = oss.str();
+                        //log(str, true);
                                     
                         //This method assume the pedestrian x/z coordinates are the same as the vehicles (only update relative height position)
                         kittiWidth = kittiWidth > pedO.width ? kittiWidth : pedO.width;
@@ -1522,7 +1534,7 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
 }
 
 void ObjectDetection::setVehiclesList() {
-	log("ObjectDetection::setVehiclesList(): " + std::to_string(time(NULL)));
+	log("ObjectDetection::setVehiclesList()");
 
 	m_curFrame.vehicles.clear();
 	const int ARR_SIZE = 1024;
@@ -1558,10 +1570,10 @@ void ObjectDetection::setVehiclesList() {
             type = search->second;
         }
         else {
-            std::ostringstream oss;
-            oss << "Entity Model/type/hash: " << modelString << ", " << type << ", " << model << ", before: " << before << ", index: " << instance_index;
-            std::string str = oss.str();
-            log(str, true);
+            //std::ostringstream oss;
+            //oss << "Entity Model/type/hash: " << modelString << ", " << type << ", " << model << ", before: " << before << ", index: " << instance_index;
+            //std::string str = oss.str();
+            //log(str, true);
         }
 
         if (type == "Unknown") {
@@ -1593,9 +1605,8 @@ void ObjectDetection::setVehiclesList() {
 }
 
 void ObjectDetection::setPedsList() {
-	log("ObjectDetection::setPedsList(): " + std::to_string(time(NULL)));
+	log("ObjectDetection::setPedsList()");
     m_curFrame.peds.clear();
-    log("Setting peds list.");
     const int ARR_SIZE = 1024;
     Ped peds[ARR_SIZE];
 
@@ -1616,7 +1627,6 @@ void ObjectDetection::setPedsList() {
                 VEHICLE::IS_THIS_MODEL_A_QUADBIKE(vModel)) {
 
                 if (m_pedsInVehicles.find(vPedIsIn) != m_pedsInVehicles.end()) {
-                    log("Putting ped in a vehicle in list.", true);
                     m_pedsInVehicles[vPedIsIn].push_back(peds[i]);
                 }
                 else {
@@ -1650,7 +1660,7 @@ void ObjectDetection::setPedsList() {
 
 
 void ObjectDetection::setupLiDAR() {
-	log("ObjectDetection::setupLiDAR(): " + std::to_string(time(NULL)));
+	log("ObjectDetection::setupLiDAR()");
 
     if (pointclouds && !lidar_initialized) //flag if activate the LiDAR
     {
@@ -1681,7 +1691,7 @@ void ObjectDetection::setupLiDAR() {
 
 
 std::string ObjectDetection::exportLiDAR() {
-	log("ObjectDetection::exportLiDAR(): " + std::to_string(time(NULL)));
+	log("ObjectDetection::exportLiDAR()");
 	m_entitiesHit.clear();
 	int pointCloudSize;
 	float * pointCloud = lidar.GetPointClouds(pointCloudSize, &m_entitiesHit, lidar_param, m_pDepth, m_pInstanceSeg, m_vehicle);
@@ -1693,7 +1703,7 @@ std::string ObjectDetection::exportLiDAR() {
 
 
 std::string ObjectDetection::exportLiDARRaycast() {
-	log("ObjectDetection::exportLiDARRaycast(): " + std::to_string(time(NULL)));
+	log("ObjectDetection::exportLiDARRaycast()");
 
 	// TODO 
 	// OUTPUT_RAYCAST_POINTS = true;
@@ -1707,7 +1717,7 @@ std::string ObjectDetection::exportLiDARRaycast() {
 
 
 std::string ObjectDetection::export2DPointmap() {
-	log("ObjectDetection::export2DPointmap(): " + std::to_string(time(NULL)));
+	log("ObjectDetection::export2DPointmap()");
 
 	//Used for obtaining the 2D points for sampling depth map to convert to velodyne pointcloud
 	int size;
@@ -1718,7 +1728,7 @@ std::string ObjectDetection::export2DPointmap() {
 }
 
 std::string ObjectDetection::exportSome2DPointmapText() {
-	log("ObjectDetection::exportSome2DPointmapText(): " + std::to_string(time(NULL)));
+	log("ObjectDetection::exportSome2DPointmapText()");
 
 	int size;
 	float * points2D = lidar.Get2DPoints(size);
@@ -1745,7 +1755,7 @@ std::string ObjectDetection::exportSome2DPointmapText() {
 }
 
 std::string ObjectDetection::exportLidarDepthStats() {
-	log("ObjectDetection::exportLidarDepthStats(): " + std::to_string(time(NULL)));
+	log("ObjectDetection::exportLidarDepthStats()");
 
 	if (OUTPUT_DEPTH_STATS) {
 		return lidar.printDepthStats();
@@ -1758,7 +1768,7 @@ std::string ObjectDetection::exportLidarDepthStats() {
 
 
 std::string ObjectDetection::exportStencilBuffer() {
-	log("ObjectDetection::exportStencilBuffer(): " + std::to_string(time(NULL)));
+	log("ObjectDetection::exportStencilBuffer()");
 
 	auto *enc_message = reinterpret_cast<unsigned char*>(m_pStencil);
 	return base64_encode(enc_message, s_camParams.width * s_camParams.height);
@@ -1791,7 +1801,7 @@ std::string ObjectDetection::exportStencilImage() {
 // Returns a string with format {StencilVal0:}{data0}{StencilVal1:}{data1}...
 // Where data[i] are the individual stencil images as base64 encoded png images 
 std::string ObjectDetection::exportIndividualStencilImages() {
-	log("ObjectDetection::exportIndividualStencilImages(): " + std::to_string(time(NULL)));
+	log("ObjectDetection::exportIndividualStencilImages()");
 
 	std::vector<int> stencilValues;
 
@@ -1853,7 +1863,7 @@ std::string ObjectDetection::exportIndividualStencilImages() {
 
 
 std::string ObjectDetection::exportDepthBuffer() {
-	log("ObjectDetection::exportDepthBuffer(): " + std::to_string(time(NULL)));
+	log("ObjectDetection::exportDepthBuffer()");
 
 	auto *enc_message = reinterpret_cast<unsigned char*>(m_pDepth);
 	return base64_encode(enc_message, s_camParams.width * s_camParams.height * sizeof(float));
@@ -2051,12 +2061,10 @@ void ObjectDetection::calcCameraIntrinsics() {
     intrinsics[1] = cx;
     intrinsics[2] = cy;
 
-    if (DEBUG_LOGGING) {
-        std::ostringstream oss;
-        oss << "Focal length is: " << f;
-        std::string str = oss.str();
-        log(str);
-    }
+    //std::ostringstream oss;
+    //oss << "Focal length is: " << f;
+    //std::string str = oss.str();
+    //log(str);
 
     m_curFrame.focalLen = f;
 }
@@ -2218,24 +2226,24 @@ void ObjectDetection::setCamParams(float* forwardVec, float* rightVec, float* up
     s_camParams.eigenClipPlaneCenter = s_camParams.eigenPos + s_camParams.nearClip * s_camParams.eigenCamDir;
     s_camParams.eigenCameraCenter = -s_camParams.nearClip * s_camParams.eigenCamDir;
 
-    std::ostringstream oss1;
-    oss1 << "\ns_camParams.pos X: " << s_camParams.pos.x << " Y: " << s_camParams.pos.y << " Z: " << s_camParams.pos.z <<
-        "\nvehicle.pos X: " << currentPos.x << " Y: " << currentPos.y << " Z: " << currentPos.z <<
-        "\npos1 - rendering cam X: " << pos1.x << " Y: " << pos1.y << " Z: " << pos1.z <<
-        "\nfar: " << s_camParams.farClip << " nearClip: " << s_camParams.nearClip << " fov: " << s_camParams.fov <<
-        "\nrotation gameplay: " << s_camParams.theta.x << " Y: " << s_camParams.theta.y << " Z: " << s_camParams.theta.z <<
-        "\nrotation rendering: " << theta.x << " Y: " << theta.y << " Z: " << theta.z <<
-        "\nrotation vehicle: " << rotation.x << " Y: " << rotation.y << " Z: " << rotation.z <<
-        "\n AspectRatio: " << GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false) <<
-        "\nforwardVector: " << vehicleForwardVector.x << " Y: " << vehicleForwardVector.y << " Z: " << vehicleForwardVector.z;
-    std::string str1 = oss1.str();
-    log(str1);
+    //std::ostringstream oss1;
+    //oss1 << "\ns_camParams.pos X: " << s_camParams.pos.x << " Y: " << s_camParams.pos.y << " Z: " << s_camParams.pos.z <<
+    //    "\nvehicle.pos X: " << currentPos.x << " Y: " << currentPos.y << " Z: " << currentPos.z <<
+    //    "\npos1 - rendering cam X: " << pos1.x << " Y: " << pos1.y << " Z: " << pos1.z <<
+    //    "\nfar: " << s_camParams.farClip << " nearClip: " << s_camParams.nearClip << " fov: " << s_camParams.fov <<
+    //    "\nrotation gameplay: " << s_camParams.theta.x << " Y: " << s_camParams.theta.y << " Z: " << s_camParams.theta.z <<
+    //    "\nrotation rendering: " << theta.x << " Y: " << theta.y << " Z: " << theta.z <<
+    //    "\nrotation vehicle: " << rotation.x << " Y: " << rotation.y << " Z: " << rotation.z <<
+    //    "\n AspectRatio: " << GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false) <<
+    //    "\nforwardVector: " << vehicleForwardVector.x << " Y: " << vehicleForwardVector.y << " Z: " << vehicleForwardVector.z;
+    //std::string str1 = oss1.str();
+    //log(str1);
 }
 
 
 
 std::string ObjectDetection::exportSegmentationImage() {
-	log("ObjectDetection::exportSegmentationImage(): " + std::to_string(time(NULL)));
+	log("ObjectDetection::exportSegmentationImage()");
 
 	int notUsedStencilPoints = 0;
 
@@ -2259,7 +2267,7 @@ std::string ObjectDetection::exportSegmentationImage() {
 }
 
 std::string ObjectDetection::printInstanceSegmentationImage() {
-	log("ObjectDetection::printInstanceSegmentationImage(): " + std::to_string(time(NULL)));
+	log("ObjectDetection::printInstanceSegmentationImage()");
 
 	// TODO see if this can also be done with the exportImage function
 
@@ -2283,7 +2291,7 @@ std::string ObjectDetection::printInstanceSegmentationImage() {
 
 //Create and print out instance seg image in colour for visualization
 std::string ObjectDetection::printInstanceSegmentationImageColor() {
-	log("ObjectDetection::printInstanceSegmentationImageColor(): " + std::to_string(time(NULL)));
+	log("ObjectDetection::printInstanceSegmentationImageColor()");
 
 	for (int j = 0; j < s_camParams.height; ++j) {
 		for (int i = 0; i < s_camParams.width; ++i) {
@@ -2347,12 +2355,12 @@ void ObjectDetection::initVehicleLookup() {
 
 
 std::string ObjectDetection::outputOcclusion() {
-	log("ObjectDetection::outputOcclusion(): " + std::to_string(time(NULL)));
+	log("ObjectDetection::outputOcclusion()");
 	return exportImage(m_pOcclusionImage, CV_8UC1);
 }
 
 std::string ObjectDetection::outputUnusedStencilPixels() {
-	log("ObjectDetection::outputUnusedStencilPixels(): " + std::to_string(time(NULL)));
+	log("ObjectDetection::outputUnusedStencilPixels()");
 	return exportImage(m_pUnusedStencilImage, CV_8UC1);
 }
 
@@ -2468,7 +2476,7 @@ std::string ObjectDetection::exportCalib() {
 
 
 std::string ObjectDetection::exportDetectionsString(FrameObjectInfo fObjInfo, ObjEntity* vPerspective) {
-	log("ObjectDetection::exportDetectionsString(): " + std::to_string(time(NULL)));
+	log("ObjectDetection::exportDetectionsString()");
 
 	std::ostringstream oss;
 

@@ -64,7 +64,7 @@ void DataExport::initialize() {
 
 
 void DataExport::parseDatasetConfig(const Value& dc, bool setDefaults) {
-	if (DEBUG_MODE) log("DataExport::parseDatasetConifg");
+	log("DataExport::parseDatasetConifg");
 
 
 	if (!dc["frame"].IsNull()) {
@@ -151,7 +151,7 @@ void DataExport::parseDatasetConfig(const Value& dc, bool setDefaults) {
 
 
 void DataExport::buildJSONObject() {
-	if (DEBUG_MODE) log("DataExport::buildJSONObject");
+	log("DataExport::buildJSONObject");
 	d.SetObject();
 	Document::AllocatorType& allocator = d.GetAllocator();
 	Value a(kArrayType);
@@ -200,7 +200,7 @@ void DataExport::buildJSONObject() {
 
 
 void DataExport::setRenderingCam(Vehicle v, int height, int length) {
-	if (DEBUG_MODE) log("DataExport::setRenderingCam");
+	log("DataExport::setRenderingCam");
 	Vector3 position;
 	Vector3 fVec, rVec, uVec;
 	Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(v, 0);
@@ -228,13 +228,13 @@ void DataExport::setRenderingCam(Vehicle v, int height, int length) {
 	scriptWait(0);
 	GAMEPLAY::SET_GAME_PAUSED(true);
 
-	std::ostringstream oss;
-	oss << "EntityID/rotation/position: " << v << "\n" <<
-		position.x << ", " << position.y << ", " << position.z <<
-		"\n" << rotation.x << ", " << rotation.y << ", " << rotation.z <<
-		"\nOffset: " << offset.x << ", " << offset.y << ", " << offset.z <<
-		"\nOffsetworld: " << offsetWorld.x << ", " << offsetWorld.y << ", " << offsetWorld.z;
-	log(oss.str(), true);
+	//std::ostringstream oss;
+	//oss << "EntityID/rotation/position: " << v << "\n" <<
+	//	position.x << ", " << position.y << ", " << position.z <<
+	//	"\n" << rotation.x << ", " << rotation.y << ", " << rotation.z <<
+	//	"\nOffset: " << offset.x << ", " << offset.y << ", " << offset.z <<
+	//	"\nOffsetworld: " << offsetWorld.x << ", " << offsetWorld.y << ", " << offsetWorld.z;
+	//log(oss.str());
 }
 
 
@@ -251,7 +251,7 @@ void DataExport::setCameraPositionAndRotation(float x, float y, float z, float r
 
 
 StringBuffer DataExport::generateMessage() {
-	if (DEBUG_MODE) log("DataExport::GenerateMessage");
+	log("DataExport::GenerateMessage");
 
 	buildJSONObject();
 
@@ -261,7 +261,6 @@ StringBuffer DataExport::generateMessage() {
 	Writer<StringBuffer> writer(buffer);
 
 
-	log("About to pause game");
 	GAMEPLAY::SET_GAME_PAUSED(true);
 	GAMEPLAY::SET_TIME_SCALE(0.0f);
 
@@ -322,10 +321,7 @@ StringBuffer DataExport::generateMessage() {
 
 
 	if (recording_active) {
-		log("Script cams rendered");
 		capture();
-		log("Screen captured");
-
 
 		setCamParams();
 		//setColorBuffer();
@@ -476,9 +472,6 @@ StringBuffer DataExport::generateMessage() {
 		m_pObjDet->increaseIndex();
 
 	}
-	else {
-		log("ERROR: Depth buffer could not be properly set!!!!!!!!!!!!!!!!!!!!!!", true);
-	}
 
 	d.Accept(writer);
 
@@ -550,7 +543,7 @@ void DataExport::setCamParams() {
 
 
 void DataExport::capture() {
-	if (DEBUG_MODE) log("DataExport::capture");
+	log("DataExport::capture");
 	//Time synchronization seems to be correct with 2 render calls
 	CAM::RENDER_SCRIPT_CAMS(TRUE, FALSE, 0, FALSE, FALSE);
 	scriptWait(0);

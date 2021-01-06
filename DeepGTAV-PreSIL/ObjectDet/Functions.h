@@ -8,13 +8,9 @@
 
 static char* logDir = getenv("DEEPGTAV_LOG_FILE");
 
-//TODO rename/refactor
-static bool LOGGING = DEBUG_MODE;
-static bool DEBUG_LOGGING = DEBUG_MODE;
-
 
 static void log(std::string str, bool override = false) {
-    if ((override || LOGGING) && logDir != NULL) {
+    if ((override || DEBUG_LOGGING) && logDir != NULL) {
         FILE* f = fopen(logDir, "a");
 		if (DEBUG_LOG_WITH_TIME) {
 			time_t rawtime;
