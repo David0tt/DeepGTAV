@@ -285,17 +285,6 @@ StringBuffer DataExport::generateMessage() {
 	log("Screen captured");
 
 
-	int depthSize = -1;
-
-	if (recording_active) {
-		//TODO pass this through
-		bool depthMap = true;
-
-		setCamParams();
-		//setColorBuffer();
-		depthSize = setDepthBuffer();
-		if (depthMap) setStencilBuffer();
-	}
 
 
 	// Setting bufffers for the Server
@@ -339,6 +328,21 @@ StringBuffer DataExport::generateMessage() {
 		m_pObjDet.reset(new ObjectDetection());
 		m_pObjDet->initCollection(s_camParams.width, s_camParams.height, false, instance_index, maxLidarDist);
 	}
+
+
+	int depthSize = -1;
+
+	if (recording_active) {
+		//TODO pass this through
+		bool depthMap = true;
+
+		setCamParams();
+		//setColorBuffer();
+		depthSize = setDepthBuffer();
+		if (depthMap) setStencilBuffer();
+	}
+
+
 	if (depthSize != -1) {
 		m_pObjDet->passDepthStencilEntity(depth_map, m_stencilBuffer);
 		FrameObjectInfo fObjInfo = m_pObjDet->generateMessage();
