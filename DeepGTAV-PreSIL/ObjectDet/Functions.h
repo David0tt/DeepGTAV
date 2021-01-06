@@ -2,20 +2,23 @@
 #include <Eigen/Core>
 #include "Constants.h"
 
-#include <time.h>
+#include <chrono>
 
 #pragma once
 
 static char* logDir = getenv("DEEPGTAV_LOG_FILE");
 
-
+// TODO using such a static variable is not nice, but I don't see an easier solution right now
+static auto lasttime = std::chrono::high_resolution_clock::now();
 static void log(std::string str, bool override = false) {
     if ((override || DEBUG_LOGGING) && logDir != NULL) {
         FILE* f = fopen(logDir, "a");
 		if (DEBUG_LOG_WITH_TIME) {
-			time_t rawtime;
-			time(&rawtime);
-			fprintf(f, "[%.19s] %s", ctime(&rawtime), str.c_str());
+			auto thistime = std::chrono::high_resolution_clock::now();
+			auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(thistime - lasttime);
+			fprintf(f, "[+%s ms] %s", std::to_string(duration.count()), str.c_str());
+			lasttime = thistime;
+
 		}
 		else {
 			fprintf(f, str.c_str());
