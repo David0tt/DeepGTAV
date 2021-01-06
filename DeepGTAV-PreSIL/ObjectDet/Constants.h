@@ -122,3 +122,6 @@ const bool DONT_COLLECT_IMAGE_AND_BBOXES_TO_FILE = false;
 
 // Use this to print Debugging information to logfile at getenv("DEEPGTAV_LOG_FILE")
 const bool DEBUG_MODE = true;
+
+// Print Timestamps in LOG (for time testing)
+const bool DEBUG_LOG_WITH_TIME = true;

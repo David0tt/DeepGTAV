@@ -495,7 +495,7 @@ StringBuffer DataExport::generateMessage() {
 
 
 void DataExport::setCamParams() {
-	if (DEBUG_MODE) log("DataExport::setCamParams");
+	log("DataExport::setCamParams");
 	//These values stay the same throughout a collection period
 	if (!s_camParams.init) {
 		s_camParams.nearClip = CAM::GET_CAM_NEAR_CLIP(camera);

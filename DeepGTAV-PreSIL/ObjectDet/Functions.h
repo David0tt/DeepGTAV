@@ -2,6 +2,8 @@
 #include <Eigen/Core>
 #include "Constants.h"
 
+#include <time.h>
+
 #pragma once
 
 static char* logDir = getenv("DEEPGTAV_LOG_FILE");
@@ -14,7 +16,14 @@ static bool DEBUG_LOGGING = DEBUG_MODE;
 static void log(std::string str, bool override = false) {
     if ((override || LOGGING) && logDir != NULL) {
         FILE* f = fopen(logDir, "a");
-        fprintf(f, str.c_str());
+		if (DEBUG_LOG_WITH_TIME) {
+			time_t rawtime;
+			time(&rawtime);
+			fprintf(f, "[%.19s] %s", ctime(&rawtime), str.c_str());
+		}
+		else {
+			fprintf(f, str.c_str());
+		}
         fprintf(f, "\n");
         fclose(f);
     }
