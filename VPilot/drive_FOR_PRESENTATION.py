@@ -73,6 +73,8 @@ if __name__ == '__main__':
     run_count = getRunCount(args.save_dir)
 
 
+    messages = []
+
     while True:
         try:
             count += 1
@@ -123,6 +125,8 @@ if __name__ == '__main__':
             # None message from utf-8 decode error
             if message == None:
                 continue
+
+            messages.append(message)
 
             # keep the currentTravelHeight under the wanted one
             # Move a little bit in the desired direction but primarily correct the height

@@ -141,6 +141,7 @@ void DataExport::parseDatasetConfig(const Value& dc, bool setDefaults) {
 	else if (setDefaults) exportDepthBuffer = _EXPORT_DEPTH_BUFFER_;
 
 
+	screenCapturer = new ScreenCapturer(s_camParams.width, s_camParams.height);
 
 	buildJSONObject();
 
@@ -194,7 +195,6 @@ void DataExport::buildJSONObject() {
 	if (exportDepthBuffer) d.AddMember("DepthBuffer", a, allocator);
 
 	
-	screenCapturer = new ScreenCapturer(s_camParams.width, s_camParams.height);
 
 }
 
@@ -252,6 +252,9 @@ void DataExport::setCameraPositionAndRotation(float x, float y, float z, float r
 
 StringBuffer DataExport::generateMessage() {
 	if (DEBUG_MODE) log("DataExport::GenerateMessage");
+
+	buildJSONObject();
+
 	//StringBuffer buffer(0, 131072);
 	StringBuffer buffer;
 	buffer.Clear();
@@ -272,14 +275,6 @@ StringBuffer DataExport::generateMessage() {
 	//    "\n camRot2 X: " << camRot2.x << " Y: " << camRot2.y << " Z: " << camRot2.z;
 	//std::string str1 = oss1.str();
 	//log(str1);
-
-
-
-	log("Script cams rendered");
-	capture();
-	log("Screen captured");
-
-
 
 
 	// Setting bufffers for the Server
@@ -327,20 +322,21 @@ StringBuffer DataExport::generateMessage() {
 
 
 	if (recording_active) {
+		log("Script cams rendered");
+		capture();
+		log("Screen captured");
+
+
 		setCamParams();
 		//setColorBuffer();
 		m_pObjDet->setDepthAndStencil();
 
 		// TODO this was for secondary perspective capture, it could be removed
 		m_pObjDet->passEntity();
-	}
 
 
-	if (recording_active) {
-		//m_pObjDet->passDepthStencilEntity(depth_map, m_stencilBuffer);
+
 		FrameObjectInfo fObjInfo = m_pObjDet->generateMessage();
-		//m_pObjDet->exportDetections(fObjInfo);
-
 		const std::string detections = m_pObjDet->exportDetectionsString(fObjInfo);
 
 		// set BBoxes to send as JSON
@@ -486,7 +482,9 @@ StringBuffer DataExport::generateMessage() {
 
 	d.Accept(writer);
 
-	//log(buffer.GetString(), true);
+	//log("Message JSON");
+	//log(buffer.GetString());
+	//log("End Message");
 
 	GAMEPLAY::SET_GAME_PAUSED(false);
 	GAMEPLAY::SET_TIME_SCALE(1.0f);
