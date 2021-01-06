@@ -18,11 +18,6 @@
 
 
 
-extern "C" {
-	__declspec(dllimport) int export_get_depth_buffer(void** buf);
-	__declspec(dllexport) int export_get_color_buffer(void** buf);
-	__declspec(dllexport) int export_get_stencil_buffer(void** buf);
-}
 
 
 const float VERT_CAM_FOV = 59; //In degrees
@@ -327,24 +322,22 @@ StringBuffer DataExport::generateMessage() {
 	if (!m_pObjDet) {
 		m_pObjDet.reset(new ObjectDetection());
 		m_pObjDet->initCollection(s_camParams.width, s_camParams.height, false, instance_index, maxLidarDist);
+		
 	}
 
-
-	int depthSize = -1;
 
 	if (recording_active) {
-		//TODO pass this through
-		bool depthMap = true;
-
 		setCamParams();
 		//setColorBuffer();
-		depthSize = setDepthBuffer();
-		if (depthMap) setStencilBuffer();
+		m_pObjDet->setDepthAndStencil();
+
+		// TODO this was for secondary perspective capture, it could be removed
+		m_pObjDet->passEntity();
 	}
 
 
-	if (depthSize != -1) {
-		m_pObjDet->passDepthStencilEntity(depth_map, m_stencilBuffer);
+	if (recording_active) {
+		//m_pObjDet->passDepthStencilEntity(depth_map, m_stencilBuffer);
 		FrameObjectInfo fObjInfo = m_pObjDet->generateMessage();
 		//m_pObjDet->exportDetections(fObjInfo);
 
@@ -689,30 +682,5 @@ void DataExport::exportCameraAngle() {
 //}
 
 
-void DataExport::setColorBuffer() {
-	if (DEBUG_MODE) log("DataExport::setColorBuffer");
-	log("Before color buffer", true);
-	int size = export_get_color_buffer((void**)&color_buf);
-	log("After color buffer", true);
-}
 
-void DataExport::setStencilBuffer() {
-	if (DEBUG_MODE) log("DataExport::setStencilBuffer");
-	log("About to get stencil buffer");
-	int size = export_get_stencil_buffer((void**)&m_stencilBuffer);
-	log("After getting stencil buffer");
-}
-
-int DataExport::setDepthBuffer(bool prevDepth) {
-	if (DEBUG_MODE) log("DataExport::setDepthBuffer");
-	log("About to get depth buffer");
-	int size = export_get_depth_buffer((void**)&depth_map);
-
-	std::ostringstream oss;
-	oss << "Depth buffer size: " << size;
-	log(oss.str(), true);
-
-	log("After getting depth buffer");
-	return size;
-}
 

@@ -78,6 +78,9 @@ private:
     //Depth Map variables
     float* m_pDepth = NULL;
     uint8_t* m_pStencil = NULL;
+	//unsigned char* m_pColor = NULL;
+
+
     float* m_pDMPointClouds = NULL;
     uint16_t* m_pDMImage = NULL;
     uint8_t* m_pStencilImage = NULL;
@@ -132,8 +135,11 @@ public:
     //Depth buffer fn/var needs to be accessed by server
     //void setDepthBuffer(bool prevDepth = false);
 
-	void ObjectDetection::passDepthStencilEntity(float* pDepth, uint8_t* pStencil, int entityID = -1);
-    
+	//void ObjectDetection::passDepthStencilEntity(float* pDepth, uint8_t* pStencil, int entityID = -1);
+	void ObjectDetection::passEntity(int entityID = -1);
+	void ObjectDetection::setDepthAndStencil();
+
+
 	FrameObjectInfo generateMessage();
 	void refreshBuffers();
 

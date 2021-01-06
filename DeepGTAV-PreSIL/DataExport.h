@@ -81,13 +81,6 @@ private:
 	bool recording_active = false;
 
 
-
-	//Depth Map variables
-	float* depth_map = NULL;
-	uint8_t* m_stencilBuffer = NULL;
-	unsigned char* color_buf = NULL;
-
-
 	Cam camera = NULL;
 
 	// Persistent Camera offsets
@@ -110,11 +103,6 @@ public:
 	//Vector3 * cameraPositionOffset;
 	//Vector3 * cameraRotationOffset;
 	Vehicle * m_ownVehicle;
-
-	int setDepthBuffer(bool prevDepth = false);
-	void setStencilBuffer();
-	//Do not use this function. Causes GTA to crash - need to figure out why
-	void setColorBuffer();
 
 
 	//void generateSecondaryPerspectives();

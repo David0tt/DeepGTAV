@@ -16,6 +16,17 @@
 
 #include "base64.h"
 
+
+
+extern "C" {
+	__declspec(dllimport) int export_get_depth_buffer(void** buf);
+	__declspec(dllexport) int export_get_color_buffer(void** buf);
+	__declspec(dllexport) int export_get_stencil_buffer(void** buf);
+}
+
+
+
+
 ObjectDetection::ObjectDetection()
 {
 }
@@ -191,16 +202,50 @@ void ObjectDetection::setOwnVehicleObject() {
 
 
 
-void ObjectDetection::passDepthStencilEntity(float* pDepth, uint8_t* pStencil, int entityID) {
-	m_pDepth = pDepth;
-	m_pStencil = pStencil;
-	m_vPerspective = entityID;
+//void ObjectDetection::passDepthStencilEntity(float* pDepth, uint8_t* pStencil, int entityID) {
+//	m_pDepth = pDepth;
+//	m_pStencil = pStencil;
+//	m_vPerspective = entityID;
+//	if (entityID != -1) {
+//		m_vehicle = entityID;
+//	}
+//	else {
+//		m_vehicle = m_ownVehicle;
+//	}
+//}
+
+void ObjectDetection::passEntity(int entityID) {
 	if (entityID != -1) {
 		m_vehicle = entityID;
 	}
 	else {
 		m_vehicle = m_ownVehicle;
 	}
+}
+
+
+void ObjectDetection::setDepthAndStencil() {
+
+
+	//Do not use this function. Causes GTA to crash - need to figure out why
+	//log("Before color buffer", true);
+	//int size = export_get_color_buffer((void**)&m_pColor);
+	//log("After color buffer", true);
+
+
+	if (DEBUG_MODE) log("DataExport::setDepthBuffer");
+	log("About to get depth buffer");
+	int DepthBufferSize = export_get_depth_buffer((void**)&m_pDepth);
+	log("Depth buffer size: " + std::to_string(DepthBufferSize));
+	log("After getting depth buffer");
+
+
+	log("About to get stencil buffer");
+	int StencilBufferSize = export_get_stencil_buffer((void**)&m_pStencil);
+	log("Stencil buffer size: " + std::to_string(StencilBufferSize));
+	log("After getting stencil buffer");
+
+
 }
 
 
