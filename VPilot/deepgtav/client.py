@@ -62,6 +62,7 @@ class Client:
             message = self.targets.parse(frame, data.decode('utf-8'))
         except UnicodeDecodeError:
             # TODO this should be managed better than just setting None
+            print("ERROR: UnicodeDecodeError")
             message = None
         return message
 
