@@ -18,6 +18,7 @@
 #define _STATIONARY_SCENE_ false
 #define _COLLECT_TRACKING_ false
 
+#define _EXPORT_BBOX_2D_ false;
 #define _OCCLUSION_IMAGE_ false;
 #define _UNUSED_STENCIL_IMAGE_ false;
 #define _SEGMENTATION_IMAGE_ false;

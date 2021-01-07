@@ -41,6 +41,7 @@ private:
 	bool yawRate;
 	bool location;
 	bool time;
+	bool exportBBox2D;
 	bool occlusionImage;
 	bool unusedStencilIPixelmage;
 	bool segmentationImage;

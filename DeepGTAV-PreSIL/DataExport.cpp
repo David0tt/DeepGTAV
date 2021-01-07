@@ -109,6 +109,10 @@ void DataExport::parseDatasetConfig(const Value& dc, bool setDefaults) {
 	else if (setDefaults) location = _LOCATION_;
 	if (!dc["time"].IsNull()) time = dc["time"].GetBool();
 	else if (setDefaults) time = _TIME_;
+
+
+	if (!dc["exportBBox2D"].IsNull()) exportBBox2D = dc["exportBBox2D"].GetBool();
+	else if (setDefaults) exportBBox2D = _EXPORT_BBOX_2D_;
 	if (!dc["occlusionImage"].IsNull()) occlusionImage = dc["occlusionImage"].GetBool();
 	else if (setDefaults) occlusionImage = _OCCLUSION_IMAGE_;
 	if (!dc["unusedStencilIPixelmage"].IsNull()) unusedStencilIPixelmage = dc["unusedStencilIPixelmage"].GetBool();
@@ -170,15 +174,16 @@ void DataExport::buildJSONObject() {
 	if (time) d.AddMember("time", a, allocator);
 
 	// TODO add setting for those (test for those should also be made below)
+	// TODO remove unnecessary ones
 	d.AddMember("index", 0, allocator);
 	d.AddMember("focalLen", 0.0, allocator);
 	d.AddMember("curPosition", a, allocator);
 	d.AddMember("seriesIndex", a, allocator);
-	d.AddMember("bbox2d", a, allocator);
 	d.AddMember("HeightAboveGround", 0.0, allocator);
 	d.AddMember("CameraAngle", a, allocator);
 	d.AddMember("CameraPosition", a, allocator);
 
+	if (exportBBox2D) d.AddMember("bbox2d", a, allocator);
 	if (occlusionImage) d.AddMember("occlusionImage", a, allocator);
 	if (unusedStencilIPixelmage) d.AddMember("unusedStencilIPixelmage", a, allocator);
 	if (segmentationImage) d.AddMember("segmentationImage", a, allocator);
@@ -332,22 +337,7 @@ StringBuffer DataExport::generateMessage() {
 
 
 
-		FrameObjectInfo fObjInfo = m_pObjDet->generateMessage();
-		const std::string detections = m_pObjDet->exportDetectionsString(fObjInfo);
 
-		// set BBoxes to send as JSON
-		Document::AllocatorType& allocator = d.GetAllocator();
-		Value bbox2d(kArrayType);
-		
-		bbox2d.SetString(StringRef(detections.c_str()));
-		d["bbox2d"] = bbox2d;
-
-
-		// TODO legacy image export, this can be reused, after changing the image export in the Server
-		//BYTE* data = screenCapturer->pixels;
-		//m_pObjDet->exportImage(data);
-
-		d["index"] = fObjInfo.instanceIdx;
 
 
 		////Create vehicles if it is a stationary scenario
@@ -361,16 +351,21 @@ StringBuffer DataExport::generateMessage() {
 		//generateSecondaryPerspective(m_pObjDet->m_ownVehicleObj);
 
 
+		FrameObjectInfo fObjInfo = m_pObjDet->generateMessage();
 
-		//if(segmentationImage) m_pObjDet->printSegImage();
-		//if (segmentationImage) {
-		//	const std::string image = m_pObjDet->printSegImage();
-		//	Value dat(kArrayType);
-		//	dat.SetString(StringRef(image.c_str()));
-		//	d["segmentationImage"] = dat;
-		//}
 
-		//if (occlusionImage) m_pObjDet->outputOcclusion();
+		// TODO remove?
+		d["index"] = fObjInfo.instanceIdx;
+
+
+		if (exportBBox2D) {
+			const std::string detections = m_pObjDet->exportDetectionsString(fObjInfo);
+			Value bbox2d(kArrayType);
+			bbox2d.SetString(StringRef(detections.c_str()));
+			d["bbox2d"] = bbox2d;
+		}
+
+
 		if (occlusionImage) {
 			const std::string image = m_pObjDet->outputOcclusion();
 			Value dat(kArrayType);
