@@ -1250,7 +1250,7 @@ void ObjectDetection::update3DPointsHit() {
 }
 
 bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash model, int classid, std::string type, std::string modelString, bool isPedInV, int vPedIsIn, bool &nearbyVehicle) {
-	log("ObjectDetection::getEntityVector");
+	//log("ObjectDetection::getEntityVector");
 	
 	bool success = false;
 
@@ -1391,7 +1391,7 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
         float beta_kitti = atan2(kittiPos.z, kittiPos.x);
         float alpha_kitti = rot_y + beta_kitti - PI / 2;
 
-        log("After processBBox2D");
+        //log("After processBBox2D");
         bool foundPedOnBike = false;
         if (PROCESS_PEDS_ON_BIKES) {
             if (m_pedsInVehicles.find(entityID) != m_pedsInVehicles.end()) {
@@ -1457,7 +1457,7 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
                 }
             }
         }
-        log("After pedsonbikes");
+        //log("After pedsonbikes");
 
         //Attempts to find bbox on screen
         float truncation = 0;
@@ -1527,7 +1527,7 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
         entity.xVector = xVector;
         entity.yVector = yVector;
         entity.zVector = zVector;
-        log("End of getEntityVector");
+        //log("End of getEntityVector");
     }
 
     return success;
@@ -1777,6 +1777,7 @@ std::string ObjectDetection::exportStencilBuffer() {
 // TODO the exportStencilImage and the exportIndividualStencilImages functions are very similar,
 // If both of them were used this could be optimized, but they are only needed for testing, so this is not necessary
 std::string ObjectDetection::exportStencilImage() {
+	log("ObjectDetection::exportStencilImage");
 	for (int j = 0; j < s_camParams.height; ++j) {
 		for (int i = 0; i < s_camParams.width; ++i) {
 			uint8_t val = m_pStencil[j * s_camParams.width + i];

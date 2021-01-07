@@ -538,6 +538,7 @@ void DataExport::setCamParams() {
 	oss << "LiDAR height: " << s_camParams.pos.z - groundZ;
 	std::string str = oss.str();
 	log(str);*/
+	log("DataExport::setCamParams END");
 }
 
 

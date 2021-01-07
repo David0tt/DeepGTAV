@@ -161,6 +161,7 @@ void Server::checkRecvMessage() {
 }
 
 void Server::checkSendMessage() {
+	log("Server::CheckSendMessage");
 	int error;
 	int r;
 
@@ -241,7 +242,8 @@ void Server::checkSendMessage() {
 			frameSent = false;
 		}
 		lastSentMessage = std::clock();
-	}	
+	}
+	log("Server: Message is sent");
 }
 
 void Server::resetState() {
