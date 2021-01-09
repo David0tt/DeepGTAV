@@ -43,9 +43,10 @@ if __name__ == '__main__':
     client = Client(ip=args.host, port=args.port)
     
     scenario = Scenario(drivingMode=786603, vehicle="buzzard", location=[245.23306274414062, -998.244140625, 29.205352783203125]) #automatic driving
-    dataset=Dataset(location=True, time=True, instanceSegmentationImageColor=True, exportBBox2D=True) #,exportStencilImage=True, exportLiDAR=True, maxLidarDist=50)
+    # dataset=Dataset(location=True, time=True, instanceSegmentationImageColor=True, exportBBox2D=True, occlusionImage=True, segmentationImage=True) #,exportStencilImage=True, exportLiDAR=True, maxLidarDist=50)
+    dataset=Dataset(location=True, time=True, exportBBox2D=True, instanceSegmentationImageColor=True) #exportIndividualStencilImages=True)
     client.sendMessage(Start(scenario=scenario, dataset=dataset))
-    
+
 
     # Adjustments for recording from UAV perspective
     client.sendMessage(SetCameraPositionAndRotation(z = -20, rot_x = -30))
@@ -90,7 +91,7 @@ if __name__ == '__main__':
 
             if count == 2:
                 client.sendMessage(TeleportToLocation(-388, 0, 200))
-                client.sendMessage(GoToLocation(1165, -553, 40))
+                # client.sendMessage(GoToLocation(1165, -553, 40))
 
             if count == 4:
                 client.sendMessage(SetClockTime(12))
@@ -128,19 +129,19 @@ if __name__ == '__main__':
 
             messages.append(message)
 
-            # keep the currentTravelHeight under the wanted one
-            # Move a little bit in the desired direction but primarily correct the height
-            estimated_ground_height = message["location"][2] - message["HeightAboveGround"]
-            if message["HeightAboveGround"] > currentTravelHeight + 3 or message["HeightAboveGround"] < currentTravelHeight - 3:
-                direction = np.array([x_target - message["location"][0], y_target - message["location"][1]])
-                direction = direction / np.linalg.norm(direction)
-                direction = direction * 50
-                x_temporary = message["location"][0] + direction[0]
-                y_temporary = message["location"][1] + direction[1]
-                client.sendMessage(GoToLocation(x_temporary, y_temporary, estimated_ground_height + currentTravelHeight))
-                print("Correcting height")
-            else:
-                client.sendMessage(GoToLocation(x_target, y_target, estimated_ground_height + currentTravelHeight))
+            # # keep the currentTravelHeight under the wanted one
+            # # Move a little bit in the desired direction but primarily correct the height
+            # estimated_ground_height = message["location"][2] - message["HeightAboveGround"]
+            # if message["HeightAboveGround"] > currentTravelHeight + 3 or message["HeightAboveGround"] < currentTravelHeight - 3:
+            #     direction = np.array([x_target - message["location"][0], y_target - message["location"][1]])
+            #     direction = direction / np.linalg.norm(direction)
+            #     direction = direction * 50
+            #     x_temporary = message["location"][0] + direction[0]
+            #     y_temporary = message["location"][1] + direction[1]
+            #     client.sendMessage(GoToLocation(x_temporary, y_temporary, estimated_ground_height + currentTravelHeight))
+            #     print("Correcting height")
+            # else:
+            #     client.sendMessage(GoToLocation(x_target, y_target, estimated_ground_height + currentTravelHeight))
 
             try:
                 # print(message["bbox2d"])
@@ -246,6 +247,7 @@ if __name__ == '__main__':
                     cv2.imshow("CombinedImage", dst)
                     cv2.waitKey(1)
 
+                # pass
 
                 
             except Exception as e:
@@ -258,5 +260,104 @@ if __name__ == '__main__':
     # We tell DeepGTAV to stop
     client.sendMessage(Stop())
     client.close()
+
+
+
+
+# Manual showing of message
+def showmessage(idx):
+    message = messages[idx]
+
+    bboxes = convertBBoxesDeepGTAToYolo(message["bbox2d"])
+    bbox_image = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormat_to_Image(bboxes))
+    
+    nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImageColor"]), np.uint8)
+    segmentationImage = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+    
+    dst = cv2.addWeighted(bbox_image, 0.5, segmentationImage, 0.5, 0.0)
+    # plt.figure(figsize=(15,15))
+    # plt.imshow(cv2.cvtColor(dst, cv2.COLOR_BGR2RGB))
+    # plt.show()
+    cv2.imshow("CombinedImage", dst)
+    cv2.waitKey(1)
+
+def showBBox(idx):
+    message = messages[idx]
+    bboxes = convertBBoxesDeepGTAToYolo(message["bbox2d"])
+    bbox_image = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormat_to_Image(bboxes))
+    cv2.imshow("BBoxImage", bbox_image)
+    cv2.waitKey(1)
+
+def showOcclusionImage(idx):
+    message = messages[idx]
+    if message["occlusionImage"] != None and message["occlusionImage"] != "":
+        # print(message["occlusionImage"])
+        nparr = np.fromstring(base64.b64decode(message["occlusionImage"]), np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+        cv2.imshow("occlusionImage", img)
+        cv2.waitKey(1)
+
+def showStencil1(idx):
+    message = messages[idx]
+    if message["segmentationImage"] != None and message["segmentationImage"] != "":
+        # print(message["occlusionImage"])
+        nparr = np.fromstring(base64.b64decode(message["segmentationImage"]), np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+        cv2.imshow("segmentationImage", img)
+        cv2.waitKey(1)
+
+
+def ShowUsefulMessages():
+    for idx in range(len(messages)):
+        message = messages[idx]
+        if message["bbox2d"] != None:
+            print(idx)
+
+
+
+# For parsing the stencil message with individual stencil values
+# stencilMessage = stencilMessage[8:]
+
+def parseMultipleStencil(stencilMessage):
+    msgs = stencilMessage.split("StencilVal")
+    vals = [msg[:2] for msg in msgs]
+    imgs = [msg[2:] for msg in msgs]
+
+
+    nparr = np.fromstring(base64.b64decode(imgs[1]), np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+    cv2.imshow("img1", img)
+    cv2.waitKey(1)
+
+    nparr = np.fromstring(base64.b64decode(imgs[2]), np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+    cv2.imshow("img2", img)
+    cv2.waitKey(1)
+
+    nparr = np.fromstring(base64.b64decode(imgs[3]), np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+    cv2.imshow("img3", img)
+    cv2.waitKey(3)
+
+    nparr = np.fromstring(base64.b64decode(imgs[4]), np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+    cv2.imshow("img4", img)
+    cv2.waitKey(4)
+
+    nparr = np.fromstring(base64.b64decode(imgs[5]), np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+    cv2.imshow("img5", img)
+    cv2.waitKey(5)
+
+    nparr = np.fromstring(base64.b64decode(imgs[6]), np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+    cv2.imshow("img6", img)
+    cv2.waitKey(6)
+
+
+cv2.destroyAllWindows()
+
+
+
 
 

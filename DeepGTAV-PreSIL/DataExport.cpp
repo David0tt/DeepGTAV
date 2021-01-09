@@ -450,9 +450,12 @@ StringBuffer DataExport::generateMessage() {
 		}
 		if (exportIndividualStencilImages) {
 			const std::string str = m_pObjDet->exportIndividualStencilImages();
-			Value dat(kArrayType);
-			dat.SetString(StringRef(str.c_str()));
-			d["IndividualStencilImages"] = dat;
+			log("IndividualStencils BEGIN");
+			log(str.c_str());
+			log("IndividualStencils END");
+			//Value dat(kArrayType);
+			//dat.SetString(StringRef(str.c_str()));
+			//d["IndividualStencilImages"] = dat;
 		}
 		if (exportDepthBuffer) {
 			const std::string str = m_pObjDet->exportDepthBuffer();
