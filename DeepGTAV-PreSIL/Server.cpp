@@ -5,6 +5,8 @@
 #include "lib/main.h"
 #include "Constants.h"
 
+#include <zmq.hpp>
+
 using namespace rapidjson;
 
 Server::Server(unsigned int port) {
