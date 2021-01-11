@@ -90,7 +90,7 @@
       <PreprocessorDefinitions>_WINSOCKAPI_;WIN32;NDEBUG;_WINDOWS;_USRDLL;NativeSpeedo_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <AdditionalIncludeDirectories>ObjectDet;..\eigen-3.3.7;..\opencv\build\include;..\boost_1_73_0;..\GTAVisionExport-DepthExtractor\native\;..\GTAVisionExport-DepthExtractor\native\build\src;lib;..\cppzmq-4.7.1;..\zeromq-4.3.3\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>ObjectDet;..\eigen-3.3.7;..\opencv\build\include;..\boost_1_73_0;..\GTAVisionExport-DepthExtractor\native\;..\GTAVisionExport-DepthExtractor\native\build\src;lib;..\cppzmq-4.7.1;..\zeromq-4.3.3\include;..\zeromq-4.3.3</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -98,7 +98,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalOptions>lib\ScriptHookV.lib lib\libMinHook-x64-v141-mt.lib %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>E:\Bachelorarbeit\DeepGTAV-PreSIL install\GTAVisionExport-DepthExtractor\native\build\src\Release\GTAVisionNative.lib;%(AdditionalDependencies);E:\Bachelorarbeit\DeepGTAV-PreSIL install\opencv\build\x64\vc15\lib\opencv_world343.lib</AdditionalDependencies>
+      <AdditionalDependencies>..\GTAVisionExport-DepthExtractor\native\build\src\Release\GTAVisionNative.lib;%(AdditionalDependencies);..\opencv\build\x64\vc15\lib\opencv_world343.lib;..\zeromq-4.3.3\build\lib\Debug\libzmq-v141-mt-gd-4_3_3.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(GTAVisionLib);%(AdditionalLibraryDirectories);$(OpenCV_DIR)x64\vc15\lib</AdditionalLibraryDirectories>
       <DelayLoadDLLs>opencv_world343.dll</DelayLoadDLLs>
     </Link>
