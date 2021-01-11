@@ -6,20 +6,21 @@
 
 #include "lib/script.h"
 #include "Server.h"
+#include "Functions.h"
 
 void ScriptMain()
 {
+
+	log("test script");
 	Server server(8000);
 	while (true) {
-		while (!server.clientConnected) {
-			server.checkClient();
-			scriptWait(0);
-		}
-		while (server.clientConnected) {
-			server.checkRecvMessage();
+
+		server.checkRecvMessage();
+		
+		if (server.clientStarted) {
 			server.checkSendMessage();
 			server.scenario.run();
-            scriptWait(0);
 		}
+		scriptWait(0);
 	}
 }
