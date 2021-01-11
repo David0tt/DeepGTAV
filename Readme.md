@@ -119,10 +119,52 @@ circumvent compatability issues.
    3. opencv343 (https://opencv.org/releases/ get the source of version 3.4.3)
    4. boost_1_73_0 (https://www.boost.org/users/history/version_1_73_0.html get
       the source of verions 1.73.0)
+   5. zeroMQ TODO 
+
+   Build GTAVisionExport-DepthExtractor and zeroMQ. Specific build instructions can be found in the individual projects.
+   In principle it suffices to build using cmake and then building them in Visual Studio. A detailed description is as follows:
+
+   4. Run cmake (cmake-gui) from your Windows start menu.
+   5. Hit 'Browse Source' and select your GTAVisionExport/native folder.
+   6. Hit 'Browse Build', create GTAVisionExport/native/build folder and select it.
+   7. Hit 'configure' (first time around it will fail but dont worry).
+   8. Choose project generator 'Visual Studio 15 2017 Win64' and keep the option 'use default native compilers'
+   9. After the fail dialog, modify the EIGEN3_INCLUDE_DIR to point to your Eigen3 folder.
+   10. Run 'configure' followed by 'generate'.
+   11. cmake should now have generated the Visual Studio solution into GTAVisionExport/build.
+   12. Open 'GTANativePlugin.sln' in Visual Studio.
+   13. Select 'release' from the 'Solution Configurations' drop down.
+   14. Edit GTAVisionNative project properties/configuration properties/c/c++/additional include dirs in VS to add the GTAVisionExport/native/src folder (this allows VS to find MinHook.h)
+   15. Edit GTAVisionNative project properties/configuration properties/linker/input/additional dependencies to add : 
+   `"..\..\deps\libMinHook.x64.lib"` 
+   16. Press F6 to build the solution. it should now succeed and the products should be in 'GTAVisionExport\native\build\src\Release'
+   17. Copy GTAVisionNative.asi & GTAVisionNative.lib to your GTAV exe folder.
+
+
+   It is important to mimic this exact file structure, otherwise the realtive
+   "Additional Include Directories" do not fit correctly. If this is the case
+   and for some reason you want to include those directories from different
+   locations, you have to change the "Additional Include Directories" in the
+   following way: 
+   
+   Right click DeepGTAV in the SolutionExplorer in Visual Studio -> Properties
+   -> C/C++ -> Additional Include Directories
+
+   Here the include directories have to match.
+
+   Furthermore in 
+
+   Properties -> Linker -> Input -> Additional Dependencies 
+
+   the correct locations of the libraries have to be set 
+
 3. Build GTAVisionExport-DepthExtractor as described. Copy the files from
    `GTAVisionExport-DepthExtractor\native\build\src\Release` to
    `DeepGTAV-PreSIL\bin\Release` (This is not necessary, if DepthExtractor has
    not been changes).
+
+
+
 4. Set environment variable `GTAV_INSTALL_DIR` to point to the root directory of
    GTAV. This is done so that on building DeepGTAV-PreSIL the newly built files
    are automatically copied into the GTAV install directory.
