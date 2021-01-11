@@ -30,7 +30,7 @@ from mpl_toolkits.mplot3d import Axes3D
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=None)
-    parser.add_argument('-l', '--host', default='localhost', help='The IP where DeepGTAV is running')
+    parser.add_argument('-l', '--host', default='127.0.0.1', help='The IP where DeepGTAV is running')
     parser.add_argument('-p', '--port', default=8000, help='The port where DeepGTAV is running')
     parser.add_argument('-s', '--save_dir', default='E:\\Bachelorarbeit\\DataGeneration_DeepGTAV-PreSIL\\EXPORTDIR\\ExportPresentation', help='The directory the generated data is saved to')
     # args = parser.parse_args()
