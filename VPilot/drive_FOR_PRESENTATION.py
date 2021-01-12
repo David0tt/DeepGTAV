@@ -44,7 +44,10 @@ if __name__ == '__main__':
     
     scenario = Scenario(drivingMode=786603, vehicle="buzzard", location=[245.23306274414062, -998.244140625, 29.205352783203125]) #automatic driving
     # dataset=Dataset(location=True, time=True, instanceSegmentationImageColor=True, exportBBox2D=True, occlusionImage=True, segmentationImage=True) #,exportStencilImage=True, exportLiDAR=True, maxLidarDist=50)
-    dataset=Dataset(location=True, time=True, exportBBox2D=True, instanceSegmentationImageColor=True) #exportIndividualStencilImages=True)
+    # dataset=Dataset(location=True, time=True, exportBBox2D=True, instanceSegmentationImageColor=True) #exportIndividualStencilImages=True)
+    dataset=Dataset(location=True, time=True, exportLiDAR=True, maxLidarDist=200) #exportIndividualStencilImages=True)
+    
+    
     client.sendMessage(Start(scenario=scenario, dataset=dataset))
 
 
@@ -91,7 +94,7 @@ if __name__ == '__main__':
 
             if count == 2:
                 client.sendMessage(TeleportToLocation(-388, 0, 200))
-                # client.sendMessage(GoToLocation(1165, -553, 40))
+                client.sendMessage(GoToLocation(1165, -553, 40))
 
             if count == 4:
                 client.sendMessage(SetClockTime(12))
@@ -129,19 +132,19 @@ if __name__ == '__main__':
 
             messages.append(message)
 
-            # # keep the currentTravelHeight under the wanted one
-            # # Move a little bit in the desired direction but primarily correct the height
-            # estimated_ground_height = message["location"][2] - message["HeightAboveGround"]
-            # if message["HeightAboveGround"] > currentTravelHeight + 3 or message["HeightAboveGround"] < currentTravelHeight - 3:
-            #     direction = np.array([x_target - message["location"][0], y_target - message["location"][1]])
-            #     direction = direction / np.linalg.norm(direction)
-            #     direction = direction * 50
-            #     x_temporary = message["location"][0] + direction[0]
-            #     y_temporary = message["location"][1] + direction[1]
-            #     client.sendMessage(GoToLocation(x_temporary, y_temporary, estimated_ground_height + currentTravelHeight))
-            #     print("Correcting height")
-            # else:
-            #     client.sendMessage(GoToLocation(x_target, y_target, estimated_ground_height + currentTravelHeight))
+            # keep the currentTravelHeight under the wanted one
+            # Move a little bit in the desired direction but primarily correct the height
+            estimated_ground_height = message["location"][2] - message["HeightAboveGround"]
+            if message["HeightAboveGround"] > currentTravelHeight + 3 or message["HeightAboveGround"] < currentTravelHeight - 3:
+                direction = np.array([x_target - message["location"][0], y_target - message["location"][1]])
+                direction = direction / np.linalg.norm(direction)
+                direction = direction * 50
+                x_temporary = message["location"][0] + direction[0]
+                y_temporary = message["location"][1] + direction[1]
+                client.sendMessage(GoToLocation(x_temporary, y_temporary, estimated_ground_height + currentTravelHeight))
+                print("Correcting height")
+            else:
+                client.sendMessage(GoToLocation(x_target, y_target, estimated_ground_height + currentTravelHeight))
 
             try:
                 # print(message["bbox2d"])
@@ -200,21 +203,21 @@ if __name__ == '__main__':
                 #     plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
                 #     plt.show()
 
-                # if message["LiDAR"] != None and message["LiDAR"] != "":
-                #     # print(message["LiDAR"])
-                #     a = np.frombuffer(base64.b64decode(message["LiDAR"]), np.float32)
-                #     a = a.reshape((-1, 4))
-                #     points3d = np.delete(a, 3, 1)
+                if message["LiDAR"] != None and message["LiDAR"] != "":
+                    # print(message["LiDAR"])
+                    a = np.frombuffer(base64.b64decode(message["LiDAR"]), np.float32)
+                    a = a.reshape((-1, 4))
+                    points3d = np.delete(a, 3, 1)
 
-                # #     # point_cloud = open3d.geometry.PointCloud()
-                # #     # point_cloud.points = open3d.utility.Vector3dVector(points3d)
-                # #     # open3d.visualization.draw_geometries([point_cloud])
+                #     # point_cloud = open3d.geometry.PointCloud()
+                #     # point_cloud.points = open3d.utility.Vector3dVector(points3d)
+                #     # open3d.visualization.draw_geometries([point_cloud])
 
-                #     fig = plt.figure(figsize=(15,15))
-                #     ax = fig.add_subplot(111, projection='3d')
-                #     ax.view_init(50, - 90 - 90)
-                #     ax.scatter(points3d[:,0], points3d[:,1], points3d[:,2], c=points3d[:,2], s=2)
-                #     plt.show()
+                    fig = plt.figure(figsize=(15,15))
+                    ax = fig.add_subplot(111, projection='3d')
+                    ax.view_init(50, - 90 - 90)
+                    ax.scatter(points3d[:,0], points3d[:,1], points3d[:,2], c=points3d[:,2], s=2)
+                    plt.show()
 
 
                 # if message["LiDARRaycast"] != None and message["LiDARRaycast"] != "":
@@ -234,18 +237,18 @@ if __name__ == '__main__':
 
 
                 # Plot Segmentation Image and Bounding Box image overlayed for testing 
-                    bboxes = convertBBoxesDeepGTAToYolo(message["bbox2d"])
-                    bbox_image = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormat_to_Image(bboxes))
+                    # bboxes = convertBBoxesDeepGTAToYolo(message["bbox2d"])
+                    # bbox_image = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormat_to_Image(bboxes))
                     
-                    nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImageColor"]), np.uint8)
-                    segmentationImage = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+                    # nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImageColor"]), np.uint8)
+                    # segmentationImage = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
                     
-                    dst = cv2.addWeighted(bbox_image, 0.5, segmentationImage, 0.5, 0.0)
-                    # plt.figure(figsize=(15,15))
-                    # plt.imshow(cv2.cvtColor(dst, cv2.COLOR_BGR2RGB))
-                    # plt.show()
-                    cv2.imshow("CombinedImage", dst)
-                    cv2.waitKey(1)
+                    # dst = cv2.addWeighted(bbox_image, 0.5, segmentationImage, 0.5, 0.0)
+                    # # plt.figure(figsize=(15,15))
+                    # # plt.imshow(cv2.cvtColor(dst, cv2.COLOR_BGR2RGB))
+                    # # plt.show()
+                    # cv2.imshow("CombinedImage", dst)
+                    # cv2.waitKey(1)
 
                 # pass
 

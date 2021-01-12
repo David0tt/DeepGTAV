@@ -1,5 +1,5 @@
 #include "Server.h"
-#include <thread>
+//#include <thread>
 
 #include <string>
 #include "lib/rapidjson/document.h"
@@ -7,6 +7,7 @@
 #include "lib/main.h"
 #include "Functions.h"
 
+//#include <zmqpp.hpp>
 
 #include <zmq.hpp>
 
@@ -25,7 +26,7 @@ Server::Server(unsigned int port) {
 //}
 
 void Server::checkRecvMessage() {
-	log("Server::checkRecvMessage");
+	//log("Server::checkRecvMessage");
 
 	zmq::message_t message;
 
@@ -33,7 +34,7 @@ void Server::checkRecvMessage() {
 		{static_cast<void*>(socket), 0, ZMQ_POLLIN, 0}
 	};
 
-	zmq::poll(&items[0], 1, -1);
+	zmq::poll(&items[0], 1, 1);
 
 	if (items[0].revents & ZMQ_POLLIN) {
 		socket.recv(&message);
@@ -129,25 +130,22 @@ void Server::checkRecvMessage() {
 void Server::checkSendMessage() {
 	log("Server::CheckSendMessage");
 
-
-	if (((float)(std::clock() - lastSentMessageTime) / CLOCKS_PER_SEC) > (1.0 / scenario.rate)) {
 		
-		// TODO  Maybe some speed improvement could be made here by using the buffers more efficiently
+	// TODO  Maybe some speed improvement could be made here by using the buffers more efficiently (zero copy)
 		
-		// Send Image TODO
-		int len = scenario.exporter.screenCapturer->length;
-		UINT8 * pixels = scenario.exporter.screenCapturer->pixels;
-		socket.send(zmq::buffer(pixels, len));
+	// Note that scenario.generateMessage() calls exporter.screenCapturer.capture() so this ordering is relevant
+	StringBuffer messageJSON = scenario.generateMessage();
+	string data = messageJSON.GetString();
 
-		// Send JSON
-		
-		StringBuffer messageJSON = scenario.generateMessage();
-		string data = messageJSON.GetString();
-		socket.send(zmq::buffer(data), zmq::send_flags::none);
+	// Send Image TODO
+	int len = scenario.exporter.screenCapturer->length;
+	UINT8 * pixels = scenario.exporter.screenCapturer->pixels;
+	socket.send(zmq::buffer(pixels, len));
 
-		lastSentMessageTime = std::clock();
+	// Send JSON
+	socket.send(zmq::buffer(data), zmq::send_flags::none);
 
-	}
+	lastSentMessageTime = std::clock();
 
-
+	
 }

@@ -324,9 +324,9 @@ StringBuffer DataExport::generateMessage() {
 		
 	}
 
+	capture();
 
 	if (recording_active) {
-		capture();
 
 		setCamParams();
 		//setColorBuffer();

@@ -1,8 +1,12 @@
 #pragma once
 
 #include "Scenario.h"
-#include <zmq.hpp>
 #include "Functions.h"
+#include <chrono>
+#include <zmq.hpp>
+//#include <zmqpp/zmqpp.hpp>
+//#include <zmqpp.hpp>
+
 
 
 class Server {
@@ -11,13 +15,14 @@ private:
 	zmq::socket_t socket;
 
 
-	std::clock_t lastSentMessageTime = std::clock();
 
 
 public:
 	Scenario scenario;
 	
 	bool clientStarted = false;
+	std::clock_t lastSentMessageTime = std::clock();
+
 
 	Server(unsigned int port);
 	void checkRecvMessage();

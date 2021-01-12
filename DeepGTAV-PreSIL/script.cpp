@@ -11,14 +11,16 @@
 void ScriptMain()
 {
 
-	log("test script");
+	log("ScriptMain Started");
 	Server server(8000);
 	while (true) {
 
 		server.checkRecvMessage();
 		
 		if (server.clientStarted) {
-			server.checkSendMessage();
+			if (((float)(std::clock() - server.lastSentMessageTime) / CLOCKS_PER_SEC) > (1.0 / server.scenario.rate)) {
+				server.checkSendMessage();
+			}
 			server.scenario.run();
 		}
 		scriptWait(0);

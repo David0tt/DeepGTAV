@@ -90,7 +90,7 @@
       <PreprocessorDefinitions>_WINSOCKAPI_;WIN32;NDEBUG;_WINDOWS;_USRDLL;NativeSpeedo_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <AdditionalIncludeDirectories>ObjectDet;..\eigen-3.3.7;..\opencv\build\include;..\boost_1_73_0;..\GTAVisionExport-DepthExtractor\native\;..\GTAVisionExport-DepthExtractor\native\build\src;lib;..\cppzmq-4.7.1;..\zeromq-4.3.3\include;..\zeromq-4.3.3</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>ObjectDet;..\eigen-3.3.7;..\opencv\build\include;..\boost_1_73_0;..\GTAVisionExport-DepthExtractor\native\;..\GTAVisionExport-DepthExtractor\native\build\src;lib;..\zeromq-4.3.3\include;..\cppzmq-4.7.1</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -103,7 +103,8 @@
       <DelayLoadDLLs>opencv_world343.dll</DelayLoadDLLs>
     </Link>
     <PostBuildEvent>
-      <Command>copy "bin\Release\DeepGTAV*" "$(GTAV_INSTALL_DIR)"</Command>
+      <Command>copy /Y "..\zeromq-4.3.3\build\bin\Debug\libzmq-v141-mt-gd-4_3_3.dll" "$(OutDir)"
+copy "bin\Release\DeepGTAV*" "$(GTAV_INSTALL_DIR)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
