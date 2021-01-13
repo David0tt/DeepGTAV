@@ -252,10 +252,6 @@ if __name__ == '__main__':
                     cv2.imshow("CombinedImage", dst)
                     cv2.waitKey(1)
 
-                    if bboxes == "":
-                        print("seemingly empty bboxes received in message: " + str(count))
-                        emptybbox.append(message["bbox2d"])
-
 
                 # pass
 
