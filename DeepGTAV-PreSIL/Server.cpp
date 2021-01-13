@@ -42,7 +42,7 @@ void Server::checkRecvMessage() {
 		Document d;
 		jsonText = message.to_string();
 
-		d.Parse(jsonText.c_str());
+		d.Parse(jsonText);
 
 
 

@@ -194,7 +194,7 @@ if __name__ == '__main__':
                 #     cv2.imshow("instanceSegmentationImage", img)
                 #     cv2.waitKey(1)
                 if message["instanceSegmentationImageColor"] != None and message["instanceSegmentationImageColor"] != "":
-                    print("SegmentationImage found")
+                    # print("SegmentationImage found")
                     nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImageColor"]), np.uint8)
                     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
                     cv2.imshow("instanceSegmentationImageColor", img)

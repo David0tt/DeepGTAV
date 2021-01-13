@@ -2440,7 +2440,7 @@ std::string ObjectDetection::exportPosition() {
         << m_curFrame.rightVec.x << " " << m_curFrame.rightVec.y << " " << m_curFrame.rightVec.z << "\n"
         << m_curFrame.upVec.x << " " << m_curFrame.upVec.y << " " << m_curFrame.upVec.z;
 
-    std::string str = oss.str().c_str();
+	std::string str = oss.str();
 	return str;
 }
 
@@ -2471,7 +2471,7 @@ std::string ObjectDetection::exportCalib() {
         "Tr_velo_to_cam: 0 -1 0 0 0 0 -1 0 1 0 0 0\n" <<
         "Tr_imu_to_velo: 1 0 0 0 0 1 0 0 0 0 1 0";
 
-    std::string str = oss.str().c_str();
+    std::string str = oss.str();
 	return str;
 }
 
@@ -2655,7 +2655,7 @@ std::string ObjectDetection::setGroundPlanePoints() {
         }
     }
 
-    std::string str = oss.str().c_str();
+    std::string str = oss.str();
 	return str;
 }
 
