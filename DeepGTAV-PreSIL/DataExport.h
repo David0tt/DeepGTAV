@@ -5,7 +5,6 @@
 #include "lib/script.h"
 #include "lib/utils.h"
 
-#include "lib/rapidjson/rapidjson.h"
 #include "lib/rapidjson/document.h"
 #include "lib/rapidjson/stringbuffer.h"
 

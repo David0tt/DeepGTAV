@@ -183,21 +183,6 @@ void DataExport::buildJSONObject() {
 	d.AddMember("CameraAngle", a, allocator);
 	d.AddMember("CameraPosition", a, allocator);
 
-	if (exportBBox2D) d.AddMember("bbox2d", a, allocator);
-	if (occlusionImage) d.AddMember("occlusionImage", a, allocator);
-	if (unusedStencilIPixelmage) d.AddMember("unusedStencilIPixelmage", a, allocator);
-	if (segmentationImage) d.AddMember("segmentationImage", a, allocator);
-	if (instanceSegmentationImage) d.AddMember("instanceSegmentationImage", a, allocator);
-	if (instanceSegmentationImageColor) d.AddMember("instanceSegmentationImageColor", a, allocator);
-	if (exportLiDAR) d.AddMember("LiDAR", a, allocator);
-	if (exportLiDARRaycast) d.AddMember("LiDARRaycast", a, allocator);
-	if (export2DPointmap) d.AddMember("2DPointmap", a, allocator);
-	if (exportSome2DPointmapText) d.AddMember("Some2DPointmapText", a, allocator);
-	if (exportLiDARDepthStats) d.AddMember("LiDARDepthStats", a, allocator);
-	if (exportStencliBuffer) d.AddMember("StencilBuffer", a, allocator);
-	if (exportStencilImage) d.AddMember("StencilImage", a, allocator);
-	if (exportIndividualStencilImages) d.AddMember("IndividualStencilImage", a, allocator);
-	if (exportDepthBuffer) d.AddMember("DepthBuffer", a, allocator);
 
 	
 
@@ -357,58 +342,27 @@ StringBuffer DataExport::generateMessage() {
 		// TODO remove?
 		d["index"] = fObjInfo.instanceIdx;
 
+		Document::AllocatorType& allocator = d.GetAllocator();
 
-		if (exportBBox2D) {
-			d["bbox2d"] = StringRef(m_pObjDet->exportDetectionsString(fObjInfo));
-		}
-		if (occlusionImage) {
-			d["occlusionImage"] = StringRef(m_pObjDet->outputOcclusion());
-		}
-		if (unusedStencilIPixelmage) {
-			d["unusedStencilIPixelmage"] = StringRef(m_pObjDet->outputUnusedStencilPixels());
-		}
-
+		if (exportBBox2D) d.AddMember("bbox2d", m_pObjDet->exportDetectionsString(fObjInfo), allocator);
+		if (occlusionImage) d.AddMember("occlusionImage", m_pObjDet->outputOcclusion(), allocator);
+		if (unusedStencilIPixelmage) d.AddMember("unusedStencilIPixelmage", m_pObjDet->outputUnusedStencilPixels(), allocator);
+		
 		// TODO this is not clean right now, make this better later
 		// Export different Segmentation images:
-		if (segmentationImage) {
-			d["segmentationImage"] = StringRef(m_pObjDet->exportSegmentationImage());
-		}
-		if (instanceSegmentationImage) {
-			d["instanceSegmentationImage"] = StringRef(m_pObjDet->printInstanceSegmentationImage());
-		}
-		if (instanceSegmentationImageColor) {
-			d["instanceSegmentationImageColor"] = StringRef(m_pObjDet->printInstanceSegmentationImageColor());
-		}
+		if (segmentationImage) d.AddMember("segmentationImage", m_pObjDet->exportSegmentationImage(), allocator);
+		if (instanceSegmentationImage) d.AddMember("instanceSegmentationImage", m_pObjDet->printInstanceSegmentationImage(), allocator);
+		if (instanceSegmentationImageColor) d.AddMember("instanceSegmentationImageColor", m_pObjDet->printInstanceSegmentationImageColor(), allocator);
+		if (exportLiDAR) d.AddMember("LiDAR", m_pObjDet->exportLiDAR(), allocator);
+		if (exportLiDARRaycast) d.AddMember("LiDARRaycast", m_pObjDet->exportLiDARRaycast(), allocator);
+		if (export2DPointmap) d.AddMember("2DPointmap", m_pObjDet->export2DPointmap(), allocator);
+		if (exportSome2DPointmapText) d.AddMember("Some2DPointmapText", m_pObjDet->exportSome2DPointmapText(), allocator);
+		if (exportLiDARDepthStats) d.AddMember("LiDARDepthStats", m_pObjDet->exportLidarDepthStats(), allocator);
+		if (exportStencliBuffer) d.AddMember("StencilBuffer", m_pObjDet->exportStencilBuffer(), allocator);
+		if (exportStencilImage) d.AddMember("StencilImage", m_pObjDet->exportStencilImage(), allocator);
+		if (exportIndividualStencilImages) d.AddMember("IndividualStencilImage", m_pObjDet->exportIndividualStencilImages(), allocator);
+		if (exportDepthBuffer) d.AddMember("DepthBuffer", m_pObjDet->exportDepthBuffer(), allocator);
 
-		if (exportLiDAR) {
-			d["LiDAR"] = StringRef(m_pObjDet->exportLiDAR());
-		}
-		if (exportLiDARRaycast) {
-			d["LiDARRaycast"] = StringRef(m_pObjDet->exportLiDARRaycast());
-		}
-
-		if (export2DPointmap) {
-			d["2DPointmap"] = StringRef(m_pObjDet->export2DPointmap());
-		}
-		if (exportSome2DPointmapText) {
-			d["Some2DPointmapText"] = StringRef(m_pObjDet->exportSome2DPointmapText());
-		}
-		if (exportLiDARDepthStats) {
-			d["LidarDepthStats"] = StringRef(m_pObjDet->exportLidarDepthStats());
-		}
-
-		if (exportStencliBuffer) {
-			d["StencilBuffer"] = StringRef(m_pObjDet->exportStencilBuffer());
-		}
-		if (exportStencilImage) {
-			d["StencilImage"] = StringRef(m_pObjDet->exportStencilImage());
-		}
-		if (exportIndividualStencilImages) {
-			d["IndividualStencilImages"] = StringRef(m_pObjDet->exportIndividualStencilImages());
-		}
-		if (exportDepthBuffer) {
-			d["DepthBuffer"] = StringRef(m_pObjDet->exportDepthBuffer());
-		}
 
 		m_pObjDet->refreshBuffers();
 		m_pObjDet->increaseIndex();

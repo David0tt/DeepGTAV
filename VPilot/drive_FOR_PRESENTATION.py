@@ -78,6 +78,7 @@ if __name__ == '__main__':
 
 
     messages = []
+    emptybbox = []
 
     while True:
         try:
@@ -181,24 +182,24 @@ if __name__ == '__main__':
                 #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
                 #     cv2.imshow("unusedStencilIPixelmage", img)
                 #     cv2.waitKey(1)
-                if message["segmentationImage"] != None and message["segmentationImage"] != "":
-                    # print(message["occlusionImage"])
-                    nparr = np.fromstring(base64.b64decode(message["segmentationImage"]), np.uint8)
-                    img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
-                    cv2.imshow("segmentationImage", img)
-                    cv2.waitKey(1)
+                # if message["segmentationImage"] != None and message["segmentationImage"] != "":
+                #     # print(message["occlusionImage"])
+                #     nparr = np.fromstring(base64.b64decode(message["segmentationImage"]), np.uint8)
+                #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+                #     cv2.imshow("segmentationImage", img)
+                #     cv2.waitKey(1)
                 # if message["instanceSegmentationImage"] != None and message["instanceSegmentationImage"] != "":
                 #     # print(message["occlusionImage"])
                 #     nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImage"]), np.uint8)
                 #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
                 #     cv2.imshow("instanceSegmentationImage", img)
                 #     cv2.waitKey(1)
-                if message["instanceSegmentationImageColor"] != None and message["instanceSegmentationImageColor"] != "":
-                    # print("SegmentationImage found")
-                    nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImageColor"]), np.uint8)
-                    img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
-                    cv2.imshow("instanceSegmentationImageColor", img)
-                    cv2.waitKey(1)
+                # if message["instanceSegmentationImageColor"] != None and message["instanceSegmentationImageColor"] != "":
+                #     # print("SegmentationImage found")
+                #     nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImageColor"]), np.uint8)
+                #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+                #     cv2.imshow("instanceSegmentationImageColor", img)
+                #     cv2.waitKey(1)
                     # plt.figure(figsize=(15,15))
                     # plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
                     # plt.show()
@@ -237,6 +238,7 @@ if __name__ == '__main__':
 
 
                 # Plot Segmentation Image and Bounding Box image overlayed for testing 
+                if message["instanceSegmentationImageColor"] != None and message["instanceSegmentationImageColor"] != "":
                     bboxes = convertBBoxesDeepGTAToYolo(message["bbox2d"])
                     bbox_image = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormat_to_Image(bboxes))
                     
@@ -249,6 +251,11 @@ if __name__ == '__main__':
                     # plt.show()
                     cv2.imshow("CombinedImage", dst)
                     cv2.waitKey(1)
+
+                    if bboxes == "":
+                        print("seemingly empty bboxes received in message: " + str(count))
+                        emptybbox.append(message["bbox2d"])
+
 
                 # pass
 
