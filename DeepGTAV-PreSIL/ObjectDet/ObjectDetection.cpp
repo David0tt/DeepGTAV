@@ -2487,7 +2487,7 @@ std::string ObjectDetection::exportDetectionsString(FrameObjectInfo fObjInfo, Ob
 	exportEntities(fObjInfo.vehicles, oss, false, true, false);
 	exportEntities(fObjInfo.peds, oss, false, true, false);
 
-	std::string str = oss.str().c_str();
+	std::string str = oss.str();
 	
 	return str;
 }

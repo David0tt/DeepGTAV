@@ -118,8 +118,15 @@ class Client:
 
         frame = self.socket.recv()
         
-        data = self.socket.recv_string()
-
+        data = self.socket.recv()
+        
+        try:
+            data.decode("utf-8")
+        except UnicodeDecodeError as e:
+            print(e)
+            print(data)
+            self.errorData = data
+        # data = self.socket.recv_string()
 
         message = json.loads(data)
         message['frame'] = frame

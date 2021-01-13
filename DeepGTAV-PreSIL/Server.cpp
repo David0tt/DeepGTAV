@@ -2,7 +2,7 @@
 //#include <thread>
 
 #include <string>
-#include "lib/rapidjson/document.h"
+
 #include "lib/rapidjson/stringbuffer.h"
 #include "lib/main.h"
 #include "Functions.h"
@@ -12,7 +12,7 @@
 #include <zmq.hpp>
 
 
-using namespace rapidjson;
+//using namespace rapidjson;
 using namespace std;
 
 Server::Server(unsigned int port) {

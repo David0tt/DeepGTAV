@@ -359,112 +359,56 @@ StringBuffer DataExport::generateMessage() {
 
 
 		if (exportBBox2D) {
-			const std::string detections = m_pObjDet->exportDetectionsString(fObjInfo);
-			Value bbox2d(kArrayType);
-			bbox2d.SetString(StringRef(detections.c_str()));
-			d["bbox2d"] = bbox2d;
+			d["bbox2d"] = StringRef(m_pObjDet->exportDetectionsString(fObjInfo));
 		}
-
-
 		if (occlusionImage) {
-			const std::string image = m_pObjDet->outputOcclusion();
-			Value dat(kArrayType);
-			dat.SetString(StringRef(image.c_str()));
-			d["occlusionImage"] = dat;
+			d["occlusionImage"] = StringRef(m_pObjDet->outputOcclusion());
 		}
-
-
 		if (unusedStencilIPixelmage) {
-			const std::string image = m_pObjDet->outputUnusedStencilPixels();
-			Value dat(kArrayType);
-			dat.SetString(StringRef(image.c_str()));
-			d["unusedStencilIPixelmage"] = dat;
+			d["unusedStencilIPixelmage"] = StringRef(m_pObjDet->outputUnusedStencilPixels());
 		}
 
 		// TODO this is not clean right now, make this better later
 		// Export different Segmentation images:
 		if (segmentationImage) {
-			const std::string image = m_pObjDet->exportSegmentationImage();
-			Value dat(kArrayType);
-			dat.SetString(StringRef(image.c_str()));
-			d["segmentationImage"] = dat;
+			d["segmentationImage"] = StringRef(m_pObjDet->exportSegmentationImage());
 		}
 		if (instanceSegmentationImage) {
-			const std::string image = m_pObjDet->printInstanceSegmentationImage();
-			Value dat(kArrayType);
-			dat.SetString(StringRef(image.c_str()));
-			d["instanceSegmentationImage"] = dat;
+			d["instanceSegmentationImage"] = StringRef(m_pObjDet->printInstanceSegmentationImage());
 		}
 		if (instanceSegmentationImageColor) {
-			const std::string image = m_pObjDet->printInstanceSegmentationImageColor();
-			Value dat(kArrayType);
-			dat.SetString(StringRef(image.c_str()));
-			d["instanceSegmentationImageColor"] = dat;
-
+			d["instanceSegmentationImageColor"] = StringRef(m_pObjDet->printInstanceSegmentationImageColor());
 		}
-		if (exportLiDAR) {
-			const std::string image = m_pObjDet->exportLiDAR();
-			Value dat(kArrayType);
 
-			dat.SetString(StringRef(image.c_str()));
-			d["LiDAR"] = dat;
+		if (exportLiDAR) {
+			d["LiDAR"] = StringRef(m_pObjDet->exportLiDAR());
 		}
 		if (exportLiDARRaycast) {
-			const std::string image = m_pObjDet->exportLiDARRaycast();
-			Value dat(kArrayType);
-			dat.SetString(StringRef(image.c_str()));
-			d["LiDARRaycast"] = dat;
+			d["LiDARRaycast"] = StringRef(m_pObjDet->exportLiDARRaycast());
 		}
 
-		// TODO make variables and add fields to d
 		if (export2DPointmap) {
-			const std::string str = m_pObjDet->export2DPointmap();
-			Value dat(kArrayType);
-			dat.SetString(StringRef(str.c_str()));
-			d["2DPointmap"] = dat;
+			d["2DPointmap"] = StringRef(m_pObjDet->export2DPointmap());
 		}
 		if (exportSome2DPointmapText) {
-			const std::string str = m_pObjDet->exportSome2DPointmapText();
-			Value dat(kArrayType);
-			dat.SetString(StringRef(str.c_str()));
-			d["Some2DPointmapText"] = dat;
+			d["Some2DPointmapText"] = StringRef(m_pObjDet->exportSome2DPointmapText());
 		}
 		if (exportLiDARDepthStats) {
-			const std::string str = m_pObjDet->exportLidarDepthStats();
-			Value dat(kArrayType);
-			dat.SetString(StringRef(str.c_str()));
-			d["LidarDepthStats"] = dat;
+			d["LidarDepthStats"] = StringRef(m_pObjDet->exportLidarDepthStats());
 		}
 
 		if (exportStencliBuffer) {
-			const std::string str = m_pObjDet->exportStencilBuffer();
-			Value dat(kArrayType);
-			dat.SetString(StringRef(str.c_str()));
-			d["StencilBuffer"] = dat;
+			d["StencilBuffer"] = StringRef(m_pObjDet->exportStencilBuffer());
 		}
 		if (exportStencilImage) {
-			const std::string str = m_pObjDet->exportStencilImage();
-			Value dat(kArrayType);
-			dat.SetString(StringRef(str.c_str()));
-			d["StencilImage"] = dat;
+			d["StencilImage"] = StringRef(m_pObjDet->exportStencilImage());
 		}
 		if (exportIndividualStencilImages) {
-			const std::string str = m_pObjDet->exportIndividualStencilImages();
-			log("IndividualStencils BEGIN");
-			log(str.c_str());
-			log("IndividualStencils END");
-			//Value dat(kArrayType);
-			//dat.SetString(StringRef(str.c_str()));
-			//d["IndividualStencilImages"] = dat;
+			d["IndividualStencilImages"] = StringRef(m_pObjDet->exportIndividualStencilImages());
 		}
 		if (exportDepthBuffer) {
-			const std::string str = m_pObjDet->exportDepthBuffer();
-			Value dat(kArrayType);
-			dat.SetString(StringRef(str.c_str()));
-			d["DepthBuffer"] = dat;
+			d["DepthBuffer"] = StringRef(m_pObjDet->exportDepthBuffer());
 		}
-
-
 
 		m_pObjDet->refreshBuffers();
 		m_pObjDet->increaseIndex();
