@@ -44,7 +44,9 @@ if __name__ == '__main__':
     
     scenario = Scenario(drivingMode=786603, vehicle="buzzard", location=[245.23306274414062, -998.244140625, 29.205352783203125]) #automatic driving
     # dataset=Dataset(location=True, time=True, instanceSegmentationImageColor=True, exportBBox2D=True, occlusionImage=True, segmentationImage=True) #,exportStencilImage=True, exportLiDAR=True, maxLidarDist=50)
-    dataset=Dataset(location=True, time=True, exportBBox2D=True, segmentationImage=True, instanceSegmentationImageColor=True) #exportIndividualStencilImages=True)
+    # dataset=Dataset(location=True, time=True, exportBBox2D=True, segmentationImage=True, instanceSegmentationImageColor=True) #exportIndividualStencilImages=True)
+    dataset=Dataset(location=True, time=True, exportBBox2D=True, segmentationImage=True, exportStencilImage=True) # , exportIndividualStencilImages=True) #exportIndividualStencilImages=True)
+    
     # dataset=Dataset(location=True, time=True, exportLiDAR=True, maxLidarDist=120) #exportIndividualStencilImages=True)
     
     
@@ -147,117 +149,128 @@ if __name__ == '__main__':
             else:
                 client.sendMessage(GoToLocation(x_target, y_target, estimated_ground_height + currentTravelHeight))
 
-            try:
-                # print(message["bbox2d"])
-                # if message["bbox2d"] != None and message["bbox2d"] != "":
-                #     print("bbox2d found")
-                #     bboxes = convertBBoxesDeepGTAToYolo(message["bbox2d"])
-                    
-                #     # # save Data
-                #     # filename = f'{run_count:04}' + '_' + f'{count:010}'
-                #     # if bboxes != "":
-                #     #     save_image_and_bbox(args.save_dir, filename, frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), bboxes)
-                #     #     save_meta_data(args.save_dir, filename, message["location"], message["HeightAboveGround"], message["CameraPosition"], message["CameraAngle"], message["time"], "CLEAR")
-                        
-                #     # Show image with bbox                    
-                #     img = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormat_to_Image(bboxes))
-                #     # cv2.imshow("BBoximage", img)
-                #     # cv2.waitKey(1) 
-                #     plt.figure(figsize=(15,15))
-                #     plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-                #     plt.show()
-
-                        
-
-
-                # if message["occlusionImage"] != None and message["occlusionImage"] != "":
-                #     # print(message["occlusionImage"])
-                #     nparr = np.fromstring(base64.b64decode(message["occlusionImage"]), np.uint8)
-                #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
-                #     cv2.imshow("occlusionImage", img)
-                #     cv2.waitKey(1)
-                # if message["unusedStencilIPixelmage"] != None and message["unusedStencilIPixelmage"] != "":
-                #     # print(message["occlusionImage"])
-                #     nparr = np.fromstring(base64.b64decode(message["unusedStencilIPixelmage"]), np.uint8)
-                #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
-                #     cv2.imshow("unusedStencilIPixelmage", img)
-                #     cv2.waitKey(1)
-                # if message["segmentationImage"] != None and message["segmentationImage"] != "":
-                #     # print(message["occlusionImage"])
-                #     nparr = np.fromstring(base64.b64decode(message["segmentationImage"]), np.uint8)
-                #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
-                #     cv2.imshow("segmentationImage", img)
-                #     cv2.waitKey(1)
-                # if message["instanceSegmentationImage"] != None and message["instanceSegmentationImage"] != "":
-                #     # print(message["occlusionImage"])
-                #     nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImage"]), np.uint8)
-                #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
-                #     cv2.imshow("instanceSegmentationImage", img)
-                #     cv2.waitKey(1)
-                # if message["instanceSegmentationImageColor"] != None and message["instanceSegmentationImageColor"] != "":
-                #     # print("SegmentationImage found")
-                #     nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImageColor"]), np.uint8)
-                #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
-                #     cv2.imshow("instanceSegmentationImageColor", img)
-                #     cv2.waitKey(1)
-                    # plt.figure(figsize=(15,15))
-                    # plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-                    # plt.show()
-
-                # if message["LiDAR"] != None and message["LiDAR"] != "":
-                #     # print(message["LiDAR"])
-                #     a = np.frombuffer(base64.b64decode(message["LiDAR"]), np.float32)
-                #     a = a.reshape((-1, 4))
-                #     points3d = np.delete(a, 3, 1)
-
-                # #     # point_cloud = open3d.geometry.PointCloud()
-                # #     # point_cloud.points = open3d.utility.Vector3dVector(points3d)
-                # #     # open3d.visualization.draw_geometries([point_cloud])
-
-                #     fig = plt.figure(figsize=(15,15))
-                #     ax = fig.add_subplot(111, projection='3d')
-                #     ax.view_init(50, - 90 - 90)
-                #     ax.scatter(points3d[:,0], points3d[:,1], points3d[:,2], c=points3d[:,2], s=2)
-                #     plt.show()
-
-
-                # if message["LiDARRaycast"] != None and message["LiDARRaycast"] != "":
-                #     print("LiDARRaycast")
-                #     print(message["LiDARRaycast"])
-
-                # if message["StencilImage"] != None and message["StencilImage"] != "":
-                #     print("StencilImage found")
-                #     # print(message["occlusionImage"])
-                #     nparr = np.fromstring(base64.b64decode(message["StencilImage"]), np.uint8)
-                #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
-                #     # cv2.imshow("StencilImage", img)
-                #     # cv2.waitKey(1)
-                #     plt.figure(figsize=(15,15))
-                #     plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-                #     plt.show()
-
-
-                # Plot Segmentation Image and Bounding Box image overlayed for testing 
-                if message["instanceSegmentationImageColor"] != None and message["instanceSegmentationImageColor"] != "":
-                    bboxes = convertBBoxesDeepGTAToYolo(message["bbox2d"])
-                    bbox_image = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormat_to_Image(bboxes))
-                    
-                    nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImageColor"]), np.uint8)
-                    segmentationImage = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
-                    
-                    dst = cv2.addWeighted(bbox_image, 0.5, segmentationImage, 0.5, 0.0)
-                    # plt.figure(figsize=(15,15))
-                    # plt.imshow(cv2.cvtColor(dst, cv2.COLOR_BGR2RGB))
-                    # plt.show()
-                    cv2.imshow("CombinedImage", dst)
-                    cv2.waitKey(1)
-
-
-                # pass
-
+        # try:
+            # print(message["bbox2d"])
+            # if message["bbox2d"] != None and message["bbox2d"] != "":
+            #     print("bbox2d found")
+            #     bboxes = convertBBoxesDeepGTAToYolo(message["bbox2d"])
                 
-            except Exception as e:
-                errors.append(e)
+            #     # # save Data
+            #     # filename = f'{run_count:04}' + '_' + f'{count:010}'
+            #     # if bboxes != "":
+            #     #     save_image_and_bbox(args.save_dir, filename, frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), bboxes)
+            #     #     save_meta_data(args.save_dir, filename, message["location"], message["HeightAboveGround"], message["CameraPosition"], message["CameraAngle"], message["time"], "CLEAR")
+                    
+            #     # Show image with bbox                    
+            #     img = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormat_to_Image(bboxes))
+            #     # cv2.imshow("BBoximage", img)
+            #     # cv2.waitKey(1) 
+            #     plt.figure(figsize=(15,15))
+            #     plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+            #     plt.show()
+
+                    
+
+
+            # if message["occlusionImage"] != None and message["occlusionImage"] != "":
+            #     # print(message["occlusionImage"])
+            #     nparr = np.fromstring(base64.b64decode(message["occlusionImage"]), np.uint8)
+            #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+            #     cv2.imshow("occlusionImage", img)
+            #     cv2.waitKey(1)
+            # if message["unusedStencilIPixelmage"] != None and message["unusedStencilIPixelmage"] != "":
+            #     # print(message["occlusionImage"])
+            #     nparr = np.fromstring(base64.b64decode(message["unusedStencilIPixelmage"]), np.uint8)
+            #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+            #     cv2.imshow("unusedStencilIPixelmage", img)
+            #     cv2.waitKey(1)
+            # if message["segmentationImage"] != None and message["segmentationImage"] != "":
+            #     # print(message["occlusionImage"])
+            #     nparr = np.fromstring(base64.b64decode(message["segmentationImage"]), np.uint8)
+            #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+            #     cv2.imshow("segmentationImage", img)
+            #     cv2.waitKey(1)
+            # if message["instanceSegmentationImage"] != None and message["instanceSegmentationImage"] != "":
+            #     # print(message["occlusionImage"])
+            #     nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImage"]), np.uint8)
+            #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+            #     cv2.imshow("instanceSegmentationImage", img)
+            #     cv2.waitKey(1)
+            # if message["instanceSegmentationImageColor"] != None and message["instanceSegmentationImageColor"] != "":
+            #     # print("SegmentationImage found")
+            #     nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImageColor"]), np.uint8)
+            #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+            #     cv2.imshow("instanceSegmentationImageColor", img)
+            #     cv2.waitKey(1)
+                # plt.figure(figsize=(15,15))
+                # plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+                # plt.show()
+
+            # if message["LiDAR"] != None and message["LiDAR"] != "":
+            #     # print(message["LiDAR"])
+            #     a = np.frombuffer(base64.b64decode(message["LiDAR"]), np.float32)
+            #     a = a.reshape((-1, 4))
+            #     points3d = np.delete(a, 3, 1)
+
+            # #     # point_cloud = open3d.geometry.PointCloud()
+            # #     # point_cloud.points = open3d.utility.Vector3dVector(points3d)
+            # #     # open3d.visualization.draw_geometries([point_cloud])
+
+            #     fig = plt.figure(figsize=(15,15))
+            #     ax = fig.add_subplot(111, projection='3d')
+            #     ax.view_init(50, - 90 - 90)
+            #     ax.scatter(points3d[:,0], points3d[:,1], points3d[:,2], c=points3d[:,2], s=2)
+            #     plt.show()
+
+
+            # if message["LiDARRaycast"] != None and message["LiDARRaycast"] != "":
+            #     print("LiDARRaycast")
+            #     print(message["LiDARRaycast"])
+
+            if message["StencilImage"] != None and message["StencilImage"] != "":
+                # print("StencilImage found")
+                # print(message["occlusionImage"])
+                nparr = np.fromstring(base64.b64decode(message["StencilImage"]), np.uint8)
+                img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+                # cv2.imshow("StencilImage", img)
+                # cv2.waitKey(1)
+                plt.figure(figsize=(15,15))
+                plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+                plt.show()
+
+
+            # Plot Segmentation Image and Bounding Box image overlayed for testing 
+            if message["segmentationImage"] != None and message["segmentationImage"] != "":
+                bboxes = convertBBoxesDeepGTAToYolo(message["bbox2d"])
+                bbox_image = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormat_to_Image(bboxes))
+                
+                nparr = np.fromstring(base64.b64decode(message["segmentationImage"]), np.uint8)
+                segmentationImage = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+
+                print("SegmentationShape: ",segmentationImage.shape)
+
+                nparr = np.fromstring(base64.b64decode(message["StencilImage"]), np.uint8)
+                stencilImage = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+
+                stencilImageRGB = cv2.cvtColor(stencilImage, cv2.COLOR_GRAY2RGB)
+                print("StencilShape: ",stencilImageRGB.shape)
+
+                dst = cv2.addWeighted(bbox_image, 0.5, segmentationImage, 0.5, 0.0)
+
+                dst = cv2.addWeighted(dst, 0.5, stencilImageRGB, 0.5, 0.0)
+                # plt.figure(figsize=(15,15))
+                # plt.imshow(cv2.cvtColor(dst, cv2.COLOR_BGR2RGB))
+                # plt.show()
+                cv2.imshow("CombinedImage", dst)
+                cv2.waitKey(1)
+
+
+            # pass
+
+            
+        # except Exception as e:
+        #     print(e)
+        #     errors.append(e)
 
             
         except KeyboardInterrupt:

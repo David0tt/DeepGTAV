@@ -184,6 +184,23 @@ void DataExport::buildJSONObject() {
 	d.AddMember("CameraPosition", a, allocator);
 
 
+	// Add empty fields. This is used to have the fields None in the JSON to prevent client errors
+	if (exportBBox2D) d.AddMember("bbox2d", a, allocator);
+	if (occlusionImage) d.AddMember("occlusionImage", a, allocator);
+	if (unusedStencilIPixelmage) d.AddMember("unusedStencilIPixelmage", a, allocator);
+	if (segmentationImage) d.AddMember("segmentationImage", a, allocator);
+	if (instanceSegmentationImage) d.AddMember("instanceSegmentationImage", a, allocator);
+	if (instanceSegmentationImageColor) d.AddMember("instanceSegmentationImageColor", a, allocator);
+	if (exportLiDAR) d.AddMember("LiDAR", a, allocator);
+	if (exportLiDARRaycast) d.AddMember("LiDARRaycast", a, allocator);
+	if (export2DPointmap) d.AddMember("2DPointmap", a, allocator);
+	if (exportSome2DPointmapText) d.AddMember("Some2DPointmapText", a, allocator);
+	if (exportLiDARDepthStats) d.AddMember("LiDARDepthStats", a, allocator);
+	if (exportStencliBuffer) d.AddMember("StencilBuffer", a, allocator);
+	if (exportStencilImage) d.AddMember("StencilImage", a, allocator);
+	if (exportIndividualStencilImages) d.AddMember("IndividualStencilImage", a, allocator);
+	if (exportDepthBuffer) d.AddMember("DepthBuffer", a, allocator);
+
 	
 
 }
