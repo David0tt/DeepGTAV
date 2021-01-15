@@ -88,9 +88,9 @@ if __name__ == '__main__':
             print("count: ", count)
 
             # Only record every 10th frame
-            if count > 50 and count % 10 == 0:
+            if count > 25 and count % 10 == 0:
                 client.sendMessage(StartRecording())
-            if count > 50 and count % 10 == 1:
+            if count > 25 and count % 10 == 1:
                 client.sendMessage(StopRecording())
             # if count == 60:
             #     client.sendMessage(StartRecording())
@@ -257,7 +257,8 @@ if __name__ == '__main__':
 
                 dst = cv2.addWeighted(bbox_image, 0.5, segmentationImage, 0.5, 0.0)
 
-                dst = cv2.addWeighted(dst, 0.5, stencilImageRGB, 0.5, 0.0)
+                # dst = cv2.addWeighted(dst, 0.5, stencilImageRGB, 0.5, 0.0)
+                
                 # plt.figure(figsize=(15,15))
                 # plt.imshow(cv2.cvtColor(dst, cv2.COLOR_BGR2RGB))
                 # plt.show()

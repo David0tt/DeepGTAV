@@ -226,7 +226,7 @@ private:
     //Depth buffer hits vehicle windows whereas stencil buffer does not
     void processSegmentation2D();
     void processSegmentation3D();
-    std::vector<ObjEntity*> pointInside3DEntities(const Vector3 &worldPos, EntityMap* eMap, const bool &checkUpperVehicle, const uint8_t &stencilVal);
+	std::vector<ObjEntity*> ObjectDetection::pointInside3DEntities(const Vector3 &worldPos, std::vector<ObjEntity*> possibleEntities);
     void processOverlappingPoints();
     void setEntityBBoxParameters(ObjEntity *e);
     void processStencilPixel3D(const uint8_t &stencilVal, const int &j, const int &i, const Vector3 &xVectorCam, const Vector3 &yVectorCam, const Vector3 &zVectorCam);
@@ -261,4 +261,9 @@ private:
     //void checkEntity(Vehicle p, WorldObject e, Vector3 pPos, std::ostringstream& oss);
     //SubsetInfo getObjectInfoSubset(Vector3 position, Vector3 forwardVector, Vector3 dim);
     Vector3 getVehicleDims(Entity e, Hash model, Vector3 &min, Vector3 &max);
+
+
+	// Drawing functionality for debugging
+	void ObjectDetection::drawEntityBBox3D(ObjEntity e);
+	void ObjectDetection::draw_line(Vector3 a, Vector3 b);
 };

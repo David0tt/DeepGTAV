@@ -544,61 +544,61 @@ void Scenario::setPosition() {
 }
 
 
-void Scenario::drawBoxes(Vector3 BLL, Vector3 FUR, Vector3 dim, Vector3 upVector, Vector3 rightVector, Vector3 forwardVector, Vector3 position, int colour) {
-    //log("Inside draw boxes");
-    if (showBoxes) {
-        log("Inside show boxes");
-        Vector3 edge1 = BLL;
-        Vector3 edge2;
-        Vector3 edge3;
-        Vector3 edge4;
-        Vector3 edge5 = FUR;
-        Vector3 edge6;
-        Vector3 edge7;
-        Vector3 edge8;
-
-        int green = colour * 255;
-        int blue = abs(colour - 1) * 255;
-
-        edge2.x = edge1.x + 2 * dim.y*rightVector.x;
-        edge2.y = edge1.y + 2 * dim.y*rightVector.y;
-        edge2.z = edge1.z + 2 * dim.y*rightVector.z;
-
-        edge3.x = edge2.x + 2 * dim.z*upVector.x;
-        edge3.y = edge2.y + 2 * dim.z*upVector.y;
-        edge3.z = edge2.z + 2 * dim.z*upVector.z;
-
-        edge4.x = edge1.x + 2 * dim.z*upVector.x;
-        edge4.y = edge1.y + 2 * dim.z*upVector.y;
-        edge4.z = edge1.z + 2 * dim.z*upVector.z;
-
-        edge6.x = edge5.x - 2 * dim.y*rightVector.x;
-        edge6.y = edge5.y - 2 * dim.y*rightVector.y;
-        edge6.z = edge5.z - 2 * dim.y*rightVector.z;
-
-        edge7.x = edge6.x - 2 * dim.z*upVector.x;
-        edge7.y = edge6.y - 2 * dim.z*upVector.y;
-        edge7.z = edge6.z - 2 * dim.z*upVector.z;
-
-        edge8.x = edge5.x - 2 * dim.z*upVector.x;
-        edge8.y = edge5.y - 2 * dim.z*upVector.y;
-        edge8.z = edge5.z - 2 * dim.z*upVector.z;
-
-        GRAPHICS::DRAW_LINE(edge1.x, edge1.y, edge1.z, edge2.x, edge2.y, edge2.z, 0, green, blue, 200);
-        GRAPHICS::DRAW_LINE(edge1.x, edge1.y, edge1.z, edge4.x, edge4.y, edge4.z, 0, green, blue, 200);
-        GRAPHICS::DRAW_LINE(edge2.x, edge2.y, edge2.z, edge3.x, edge3.y, edge3.z, 0, green, blue, 200);
-        GRAPHICS::DRAW_LINE(edge3.x, edge3.y, edge3.z, edge4.x, edge4.y, edge4.z, 0, green, blue, 200);
-
-        GRAPHICS::DRAW_LINE(edge5.x, edge5.y, edge5.z, edge6.x, edge6.y, edge6.z, 0, green, blue, 200);
-        GRAPHICS::DRAW_LINE(edge5.x, edge5.y, edge5.z, edge8.x, edge8.y, edge8.z, 0, green, blue, 200);
-        GRAPHICS::DRAW_LINE(edge6.x, edge6.y, edge6.z, edge7.x, edge7.y, edge7.z, 0, green, blue, 200);
-        GRAPHICS::DRAW_LINE(edge7.x, edge7.y, edge7.z, edge8.x, edge8.y, edge8.z, 0, green, blue, 200);
-
-        GRAPHICS::DRAW_LINE(edge1.x, edge1.y, edge1.z, edge7.x, edge7.y, edge7.z, 0, green, blue, 200);
-        GRAPHICS::DRAW_LINE(edge2.x, edge2.y, edge2.z, edge8.x, edge8.y, edge8.z, 0, green, blue, 200);
-        GRAPHICS::DRAW_LINE(edge3.x, edge3.y, edge3.z, edge5.x, edge5.y, edge5.z, 0, green, blue, 200);
-        GRAPHICS::DRAW_LINE(edge4.x, edge4.y, edge4.z, edge6.x, edge6.y, edge6.z, 0, green, blue, 200);
-        WAIT(0);
-    }
-}
+//void Scenario::drawBoxes(Vector3 BLL, Vector3 FUR, Vector3 dim, Vector3 upVector, Vector3 rightVector, Vector3 forwardVector, Vector3 position, int colour) {
+//    //log("Inside draw boxes");
+//    if (showBoxes) {
+//        log("Inside show boxes");
+//        Vector3 edge1 = BLL;
+//        Vector3 edge2;
+//        Vector3 edge3;
+//        Vector3 edge4;
+//        Vector3 edge5 = FUR;
+//        Vector3 edge6;
+//        Vector3 edge7;
+//        Vector3 edge8;
+//
+//        int green = colour * 255;
+//        int blue = abs(colour - 1) * 255;
+//
+//        edge2.x = edge1.x + 2 * dim.y*rightVector.x;
+//        edge2.y = edge1.y + 2 * dim.y*rightVector.y;
+//        edge2.z = edge1.z + 2 * dim.y*rightVector.z;
+//
+//        edge3.x = edge2.x + 2 * dim.z*upVector.x;
+//        edge3.y = edge2.y + 2 * dim.z*upVector.y;
+//        edge3.z = edge2.z + 2 * dim.z*upVector.z;
+//
+//        edge4.x = edge1.x + 2 * dim.z*upVector.x;
+//        edge4.y = edge1.y + 2 * dim.z*upVector.y;
+//        edge4.z = edge1.z + 2 * dim.z*upVector.z;
+//
+//        edge6.x = edge5.x - 2 * dim.y*rightVector.x;
+//        edge6.y = edge5.y - 2 * dim.y*rightVector.y;
+//        edge6.z = edge5.z - 2 * dim.y*rightVector.z;
+//
+//        edge7.x = edge6.x - 2 * dim.z*upVector.x;
+//        edge7.y = edge6.y - 2 * dim.z*upVector.y;
+//        edge7.z = edge6.z - 2 * dim.z*upVector.z;
+//
+//        edge8.x = edge5.x - 2 * dim.z*upVector.x;
+//        edge8.y = edge5.y - 2 * dim.z*upVector.y;
+//        edge8.z = edge5.z - 2 * dim.z*upVector.z;
+//
+//        GRAPHICS::DRAW_LINE(edge1.x, edge1.y, edge1.z, edge2.x, edge2.y, edge2.z, 0, green, blue, 200);
+//        GRAPHICS::DRAW_LINE(edge1.x, edge1.y, edge1.z, edge4.x, edge4.y, edge4.z, 0, green, blue, 200);
+//        GRAPHICS::DRAW_LINE(edge2.x, edge2.y, edge2.z, edge3.x, edge3.y, edge3.z, 0, green, blue, 200);
+//        GRAPHICS::DRAW_LINE(edge3.x, edge3.y, edge3.z, edge4.x, edge4.y, edge4.z, 0, green, blue, 200);
+//
+//        GRAPHICS::DRAW_LINE(edge5.x, edge5.y, edge5.z, edge6.x, edge6.y, edge6.z, 0, green, blue, 200);
+//        GRAPHICS::DRAW_LINE(edge5.x, edge5.y, edge5.z, edge8.x, edge8.y, edge8.z, 0, green, blue, 200);
+//        GRAPHICS::DRAW_LINE(edge6.x, edge6.y, edge6.z, edge7.x, edge7.y, edge7.z, 0, green, blue, 200);
+//        GRAPHICS::DRAW_LINE(edge7.x, edge7.y, edge7.z, edge8.x, edge8.y, edge8.z, 0, green, blue, 200);
+//
+//        GRAPHICS::DRAW_LINE(edge1.x, edge1.y, edge1.z, edge7.x, edge7.y, edge7.z, 0, green, blue, 200);
+//        GRAPHICS::DRAW_LINE(edge2.x, edge2.y, edge2.z, edge8.x, edge8.y, edge8.z, 0, green, blue, 200);
+//        GRAPHICS::DRAW_LINE(edge3.x, edge3.y, edge3.z, edge5.x, edge5.y, edge5.z, 0, green, blue, 200);
+//        GRAPHICS::DRAW_LINE(edge4.x, edge4.y, edge4.z, edge6.x, edge6.y, edge6.z, 0, green, blue, 200);
+//        WAIT(0);
+//    }
+//}
 

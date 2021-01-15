@@ -283,6 +283,16 @@ FrameObjectInfo ObjectDetection::generateMessage() {
 	processSegmentation3D();
 	processOcclusion();
 
+
+	//// TODO draw all entities Bounding boxes for testing
+	//for (auto e : m_curFrame.vehicles) {
+	//	ObjEntity ent = e.second;
+	//	drawEntityBBox3D(ent);
+	//}
+	//WAIT(10);
+
+
+
 	lidar.updateCurrentPosition(m_camForwardVector, m_camRightVector, m_camUpVector);
 
 	//if (pointclouds && lidar_initialized) collectLiDAR();
@@ -673,6 +683,8 @@ bool ObjectDetection::in3DBox(Vector3 point, Vector3 objPos, Vector3 dim, Vector
     return true;
 }
 
+
+// TODO remove upperHalf in future
 //Takes in an entity and a point (in world coordinates) and returns true if the point resides within the
 //entity's 3D bounding box.
 //Note: Need to set the entity's parameters u,v,w, and rearBotLeft, etc...
@@ -741,15 +753,15 @@ void ObjectDetection::processSegmentation3D() {
     Vector3 yVectorCam = convertCoordinateSystem(worldY, m_camForwardVector, m_camRightVector, m_camUpVector);
     Vector3 zVectorCam = convertCoordinateSystem(worldZ, m_camForwardVector, m_camRightVector, m_camUpVector);
 
-    //Create depth array to use later
-    for (int j = 0; j < s_camParams.height; ++j) {
-        for (int i = 0; i < s_camParams.width; ++i) {
-            float ndc = m_pDepth[j * s_camParams.width + i];
-            Vector3 relPos = depthToCamCoords(ndc, i, j);
-            float distance = sqrt(SYSTEM::VDIST2(0, 0, 0, relPos.x, relPos.y, relPos.z));
-            m_depthMat.at<float>(j, i) = distance;
-        }
-    }
+    ////Create depth array to use later
+    //for (int j = 0; j < s_camParams.height; ++j) {
+    //    for (int i = 0; i < s_camParams.width; ++i) {
+    //        float ndc = m_pDepth[j * s_camParams.width + i];
+    //        Vector3 relPos = depthToCamCoords(ndc, i, j);
+    //        float distance = sqrt(SYSTEM::VDIST2(0, 0, 0, relPos.x, relPos.y, relPos.z));
+    //        m_depthMat.at<float>(j, i) = distance;
+    //    }
+    //}
 
     //Set the bounding box parameters (for reducing # of calculations per pixel)
     for (auto &entry : m_curFrame.vehicles) {
@@ -772,216 +784,223 @@ void ObjectDetection::processSegmentation3D() {
         }
     }
 
-    if (PROCESS_OVERLAPPING_POINTS) {
-        processOverlappingPoints();
-    }
+    //if (PROCESS_OVERLAPPING_POINTS) {
+    //    processOverlappingPoints();
+    //}
 }
 
-//Goes through points which were in multiple 3D boxes (overlapping points)
-//Uses opencv to flood fill all points for sets of entities which have overlapping points
-//If filled areas have a unique entityID (other than the overlapping points), entire area gets set to the unique entityID
-//TODO: Step 2: find contour with depth for areas which have more than a single unique entityID
-void ObjectDetection::processOverlappingPoints() {
-	log("ObjectDetection::processOverlappingPoints()");
-    //Create mask with only points from overlapping entities
-    //Process one set of entity IDs at a time
-    while (!m_overlappingPoints.empty()) {
-        std::vector<ObjEntity*> objEntities = m_overlappingPoints.begin()->second;
-        int ptIdx = m_overlappingPoints.begin()->first;
+////Goes through points which were in multiple 3D boxes (overlapping points)
+////Uses opencv to flood fill all points for sets of entities which have overlapping points
+////If filled areas have a unique entityID (other than the overlapping points), entire area gets set to the unique entityID
+//// TODO: Step 2: find contour with depth for areas which have more than a single unique entityID
+//// TODO this is also not very elegant, I believe it could be refactored.
+//void ObjectDetection::processOverlappingPoints() {
+//	log("ObjectDetection::processOverlappingPoints()");
+//    //Create mask with only points from overlapping entities
+//    //Process one set of entity IDs at a time
+//    while (!m_overlappingPoints.empty()) {
+//        std::vector<ObjEntity*> objEntities = m_overlappingPoints.begin()->second;
+//        int ptIdx = m_overlappingPoints.begin()->first;
+//
+//        int stencilType = STENCIL_TYPE_VEHICLE;
+//        if (objEntities[0]->objType == "Pedestrian") {
+//            stencilType = STENCIL_TYPE_NPC;
+//        }
+//
+//        //Initialize mask
+//        cv::Mat allPointsMask = cv::Mat::zeros(cv::Size(s_camParams.width, s_camParams.height), CV_8U);
+//
+//        //Create mask of all points from overlapping entities
+//        for (int j = 0; j < s_camParams.height; ++j) {
+//            for (int i = 0; i < s_camParams.width; ++i) {
+//                int idx = j * s_camParams.width + i;
+//                uint8_t stencilVal = m_pStencil[idx];
+//
+//                if (stencilVal == stencilType) {
+//                    if (m_overlappingPoints.find(idx) != m_overlappingPoints.end()) {
+//                        //Add to mask
+//                        allPointsMask.at<uchar>(j, i) = 255;
+//                    }
+//                    else {
+//                        for (auto pObjEntity : objEntities) {
+//                            if (m_pInstanceSeg[idx] == pObjEntity->entityID) {
+//                                allPointsMask.at<uchar>(j, i) = 255;
+//                                break;
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//        
+//        //Test by printing out image
+//        /*{
+//            std::string entitiesStr;
+//            for (auto pObjEntity : objEntities) {
+//                entitiesStr.append(std::to_string(pObjEntity->entityID));
+//                entitiesStr.append("-");
+//            }
+//            entitiesStr.append("allPointsMask");
+//            std::string filename = getStandardFilename(entitiesStr, ".png");
+//            cv::imwrite(filename, allPointsMask);
+//        }*/
+//
+//        //Create individual segmented masks
+//        int floodVal = 1;
+//        for (int j = 0; j < s_camParams.height; ++j) {
+//            for (int i = 0; i < s_camParams.width; ++i) {
+//                if (allPointsMask.at<uchar>(j, i) == 255) {
+//                    cv::floodFill(allPointsMask, cv::Point(i,j), cv::Scalar(floodVal));
+//                    ++floodVal;
+//                }
+//            }
+//        }
+//
+//        //Test by printing out image
+//        /*{
+//            std::string entitiesStr;
+//            for (auto pObjEntity : objEntities) {
+//                entitiesStr.append(std::to_string(pObjEntity->entityID));
+//                entitiesStr.append("-");
+//            }
+//            entitiesStr.append("floodFilledMask");
+//            std::string filename = getStandardFilename(entitiesStr, ".png");
+//            cv::imwrite(filename, allPointsMask);
+//        }*/
+//
+//        //Check if each floodFill value only has singular points from one entity
+//        std::vector<int> floodFillEntities(floodVal - 1, 0);
+//        std::vector<bool> goodFloods(floodVal - 1, true);
+//
+//        for (int j = 0; j < s_camParams.height; ++j) {
+//            for (int i = 0; i < s_camParams.width; ++i) {
+//                int curFloodVal = allPointsMask.at<uchar>(j, i);
+//
+//                if (curFloodVal != 0) {
+//                    int idx = j * s_camParams.width + i;
+//                    int entityID = m_pInstanceSeg[idx];
+//                    
+//                    if (entityID != 0) {
+//                        int floodEntityID = floodFillEntities[curFloodVal - 1];
+//
+//                        if (floodEntityID == 0) floodFillEntities[curFloodVal - 1] = entityID;
+//                        else if (entityID == floodEntityID) continue;
+//                        else goodFloods[curFloodVal - 1] = false;
+//                    }
+//                }
+//            }
+//        }
+//
+//        //If yes, set all points in that segment mask to the corresponding entity
+//        for (int j = 0; j < s_camParams.height; ++j) {
+//            for (int i = 0; i < s_camParams.width; ++i) {
+//                int curFloodVal = allPointsMask.at<uchar>(j, i);
+//
+//                if (curFloodVal != 0 && m_pInstanceSeg[j * s_camParams.width + i] == 0) {
+//                    if (goodFloods[curFloodVal - 1]) {
+//                        for (ObjEntity* objEnt : objEntities) {
+//                            if (objEnt->entityID == floodFillEntities[curFloodVal - 1]) {
+//                                addSegmentedPoint3D(i, j, objEnt);
+//                                //Also zero the mask pixel so we don't use it in the future
+//                                allPointsMask.at<uchar>(j, i) = 0;
+//                                break;
+//                            }
+//                        }
+//                    }
+//                    else {
+//                        int idx = j * s_camParams.width + i;
+//                        //Last resort just set the point to be the entity of the nearest 3D point
+//                        float dist = FLT_MAX;
+//                        ObjEntity* closestObj = NULL;
+//                        float ndc = m_pDepth[idx];
+//                        Vector3 relPos = depthToCamCoords(ndc, i, j);
+//                        for (auto pObjEntity : objEntities) {
+//                            float distToObj = sqrt(SYSTEM::VDIST2(pObjEntity->location.x, pObjEntity->location.y, pObjEntity->location.z, relPos.x, relPos.y, relPos.z));
+//                            if (distToObj < dist) {
+//                                dist = distToObj;
+//                                closestObj = pObjEntity;
+//                            }
+//                        }
+//                        addSegmentedPoint3D(i, j, closestObj);
+//                    }
+//                }
+//            }
+//        }
+//
+//        ////For testing print out indices which can't separate with flood fill so they can be visually inspected
+//        //for (int i = 0; i < floodVal; ++i) {
+//        //    if (goodFloods[i] == false) {
+//        //        std::ostringstream oss2;
+//        //        oss2 << "**************Found bad flood at index: " << instance_index << " with floodval: " <<floodVal << " and i: " << i;
+//        //        std::string str = oss2.str();
+//        //        log(str, true);
+//        //    }
+//        //}
+//
+//        //Round 2: If a segment from above has more than two sure entities in it
+//        //Then try creating contours within this mask from the depth threshold
+//        //Separate then check if new segments only have one sure entity in them
+//
+//        //Create an image with the depth values only where the mask is
+//        //Initialize depth mask
+//        //cv::Mat depthMasked;
+//        //m_depthMat.copyTo(depthMasked, allPointsMask);
+//        //depthMasked *= FLT_MAX / s_camParams.farClip;
+//
+//        ////Test by printing out image
+//        //{
+//        //    std::string entitiesStr;
+//        //    for (auto pObjEntity : objEntities) {
+//        //    entitiesStr.append(std::to_string(pObjEntity->entityID));
+//        //    entitiesStr.append("-");
+//        //    }
+//        //    entitiesStr.append("depthMasked");
+//        //    std::string filename = getStandardFilename(entitiesStr, ".png");
+//        //    cv::imwrite(filename, depthMasked);
+//        //}
+//
+//        //std::ostringstream oss2;
+//        //oss2 << "Overlapping points size: " << m_overlappingPoints.size();
+//        //std::string str = oss2.str();
+//        //log(str, true);
+//        
+//        //If point is still in overlapping points then remove it
+//        if (m_overlappingPoints.find(ptIdx) != m_overlappingPoints.end()) {
+//            m_overlappingPoints.erase(ptIdx);
+//        }
+//
+//        allPointsMask.release();
+//    }
+//
+//    //Reset the map once done processing
+//    m_overlappingPoints.clear();
+//}
 
-        int stencilType = STENCIL_TYPE_VEHICLE;
-        if (objEntities[0]->objType == "Pedestrian") {
-            stencilType = STENCIL_TYPE_NPC;
-        }
 
-        //Initialize mask
-        cv::Mat allPointsMask = cv::Mat::zeros(cv::Size(s_camParams.width, s_camParams.height), CV_8U);
+// Return vector of entities for which the point resides in their 3D box
+std::vector<ObjEntity*> ObjectDetection::pointInside3DEntities(const Vector3 &worldPos, std::vector<ObjEntity*> possibleEntities) {
+    std::vector<ObjEntity*> containingEntities;
+	for (ObjEntity* e : possibleEntities) {
+		bool upperHalf;
+		std::ostringstream oss;
+		oss << "Object Bounding Boxes (FBL, RBL, RBR, RTL): (" << e->frontBotLeft.x << " " << e->frontBotLeft.y << " " << e->frontBotLeft.z
+			<< ") (" << e->rearBotLeft.x << " " << e->rearBotLeft.y << " " << e->rearBotLeft.z
+			<< ") (" << e->rearBotRight.x << " " << e->rearBotRight.y << " " << e->rearBotRight.z
+			<< ") (" << e->rearTopLeft.x << " " << e->rearTopLeft.y << " " << e->rearTopLeft.z
+			<< "); ((u, v, w)):  (" << e->u.x << " " << e->u.y << " " << e->u.z << "), ("
+			<< e->v.x << " " << e->v.y << " " << e->v.z << "), ("
+			<< e->w.x << " " << e->w.y << " " << e->w.z << ") "
+			<< "\nWorldPos: " << worldPos.x << " " << worldPos.y << " " << worldPos.z;
+		log(oss.str());
 
-        //Create mask of all points from overlapping entities
-        for (int j = 0; j < s_camParams.height; ++j) {
-            for (int i = 0; i < s_camParams.width; ++i) {
-                int idx = j * s_camParams.width + i;
-                uint8_t stencilVal = m_pStencil[idx];
-
-                if (stencilVal == stencilType) {
-                    if (m_overlappingPoints.find(idx) != m_overlappingPoints.end()) {
-                        //Add to mask
-                        allPointsMask.at<uchar>(j, i) = 255;
-                    }
-                    else {
-                        for (auto pObjEntity : objEntities) {
-                            if (m_pInstanceSeg[idx] == pObjEntity->entityID) {
-                                allPointsMask.at<uchar>(j, i) = 255;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-        //Test by printing out image
-        /*{
-            std::string entitiesStr;
-            for (auto pObjEntity : objEntities) {
-                entitiesStr.append(std::to_string(pObjEntity->entityID));
-                entitiesStr.append("-");
-            }
-            entitiesStr.append("allPointsMask");
-            std::string filename = getStandardFilename(entitiesStr, ".png");
-            cv::imwrite(filename, allPointsMask);
-        }*/
-
-        //Create individual segmented masks
-        int floodVal = 1;
-        for (int j = 0; j < s_camParams.height; ++j) {
-            for (int i = 0; i < s_camParams.width; ++i) {
-                if (allPointsMask.at<uchar>(j, i) == 255) {
-                    cv::floodFill(allPointsMask, cv::Point(i,j), cv::Scalar(floodVal));
-                    ++floodVal;
-                }
-            }
-        }
-
-        //Test by printing out image
-        /*{
-            std::string entitiesStr;
-            for (auto pObjEntity : objEntities) {
-                entitiesStr.append(std::to_string(pObjEntity->entityID));
-                entitiesStr.append("-");
-            }
-            entitiesStr.append("floodFilledMask");
-            std::string filename = getStandardFilename(entitiesStr, ".png");
-            cv::imwrite(filename, allPointsMask);
-        }*/
-
-        //Check if each floodFill value only has singular points from one entity
-        std::vector<int> floodFillEntities(floodVal - 1, 0);
-        std::vector<bool> goodFloods(floodVal - 1, true);
-
-        for (int j = 0; j < s_camParams.height; ++j) {
-            for (int i = 0; i < s_camParams.width; ++i) {
-                int curFloodVal = allPointsMask.at<uchar>(j, i);
-
-                if (curFloodVal != 0) {
-                    int idx = j * s_camParams.width + i;
-                    int entityID = m_pInstanceSeg[idx];
-                    
-                    if (entityID != 0) {
-                        int floodEntityID = floodFillEntities[curFloodVal - 1];
-
-                        if (floodEntityID == 0) floodFillEntities[curFloodVal - 1] = entityID;
-                        else if (entityID == floodEntityID) continue;
-                        else goodFloods[curFloodVal - 1] = false;
-                    }
-                }
-            }
-        }
-
-        //If yes, set all points in that segment mask to the corresponding entity
-        for (int j = 0; j < s_camParams.height; ++j) {
-            for (int i = 0; i < s_camParams.width; ++i) {
-                int curFloodVal = allPointsMask.at<uchar>(j, i);
-
-                if (curFloodVal != 0 && m_pInstanceSeg[j * s_camParams.width + i] == 0) {
-                    if (goodFloods[curFloodVal - 1]) {
-                        for (ObjEntity* objEnt : objEntities) {
-                            if (objEnt->entityID == floodFillEntities[curFloodVal - 1]) {
-                                addSegmentedPoint3D(i, j, objEnt);
-                                //Also zero the mask pixel so we don't use it in the future
-                                allPointsMask.at<uchar>(j, i) = 0;
-                                break;
-                            }
-                        }
-                    }
-                    else {
-                        int idx = j * s_camParams.width + i;
-                        //Last resort just set the point to be the entity of the nearest 3D point
-                        float dist = FLT_MAX;
-                        ObjEntity* closestObj = NULL;
-                        float ndc = m_pDepth[idx];
-                        Vector3 relPos = depthToCamCoords(ndc, i, j);
-                        for (auto pObjEntity : objEntities) {
-                            float distToObj = sqrt(SYSTEM::VDIST2(pObjEntity->location.x, pObjEntity->location.y, pObjEntity->location.z, relPos.x, relPos.y, relPos.z));
-                            if (distToObj < dist) {
-                                dist = distToObj;
-                                closestObj = pObjEntity;
-                            }
-                        }
-                        addSegmentedPoint3D(i, j, closestObj);
-                    }
-                }
-            }
-        }
-
-        ////For testing print out indices which can't separate with flood fill so they can be visually inspected
-        //for (int i = 0; i < floodVal; ++i) {
-        //    if (goodFloods[i] == false) {
-        //        std::ostringstream oss2;
-        //        oss2 << "**************Found bad flood at index: " << instance_index << " with floodval: " <<floodVal << " and i: " << i;
-        //        std::string str = oss2.str();
-        //        log(str, true);
-        //    }
-        //}
-
-        //Round 2: If a segment from above has more than two sure entities in it
-        //Then try creating contours within this mask from the depth threshold
-        //Separate then check if new segments only have one sure entity in them
-
-        //Create an image with the depth values only where the mask is
-        //Initialize depth mask
-        //cv::Mat depthMasked;
-        //m_depthMat.copyTo(depthMasked, allPointsMask);
-        //depthMasked *= FLT_MAX / s_camParams.farClip;
-
-        ////Test by printing out image
-        //{
-        //    std::string entitiesStr;
-        //    for (auto pObjEntity : objEntities) {
-        //    entitiesStr.append(std::to_string(pObjEntity->entityID));
-        //    entitiesStr.append("-");
-        //    }
-        //    entitiesStr.append("depthMasked");
-        //    std::string filename = getStandardFilename(entitiesStr, ".png");
-        //    cv::imwrite(filename, depthMasked);
-        //}
-
-        //std::ostringstream oss2;
-        //oss2 << "Overlapping points size: " << m_overlappingPoints.size();
-        //std::string str = oss2.str();
-        //log(str, true);
-        
-        //If point is still in overlapping points then remove it
-        if (m_overlappingPoints.find(ptIdx) != m_overlappingPoints.end()) {
-            m_overlappingPoints.erase(ptIdx);
-        }
-
-        allPointsMask.release();
-    }
-
-    //Reset the map once done processing
-    m_overlappingPoints.clear();
-}
-
-std::vector<ObjEntity*> ObjectDetection::pointInside3DEntities(const Vector3 &worldPos, EntityMap* eMap, const bool &checkUpperVehicle, const uint8_t &stencilVal) {
-    //Get vector of entities which point resides in their 3D box
-    std::vector<ObjEntity*> pointEntities;
-    for (auto &entry : *eMap) {
-        ObjEntity* e = &(entry.second);
-        bool upperHalf;
-        bool isIn3DBox = in3DBox(e, worldPos, upperHalf);
-        if (isIn3DBox) {
-            //Add only pedestrian stencil types to pedestrian 3D bboxes
-            //Add any points which are vehicle stencil type or
-            //are in the upper half of the vehicle's 3D bounding box
-            //This allows window points to be added for vehicles
-            if (!checkUpperVehicle || stencilVal == STENCIL_TYPE_VEHICLE || upperHalf) {
-                pointEntities.push_back(e);
-            }
-        }
-    }
-
-    return pointEntities;
+		if (in3DBox(worldPos, e->worldPos, e->dim, e->xVector, e->yVector, e->zVector)) {
+			log("WARNING: is in 3D BBox");
+		}
+		if (in3DBox(e, worldPos, upperHalf)) {
+			containingEntities.push_back(e);
+		}
+	}
+    return containingEntities;
 }
 
 //j is y coordinate (top=0), i is x coordinate (left = 0)
@@ -1011,69 +1030,122 @@ void ObjectDetection::processStencilPixel3D(const uint8_t &stencilVal, const int
     //Stencil goes through vehicle windows but depth buffer does not
     std::vector<ObjEntity*> pointEntities2D;
     if (stencilVal == STENCIL_TYPE_NPC || stencilVal == STENCIL_TYPE_VEHICLE) {
+
+
+		// To find out to which entity a pixel belongs different approaches can be taken:
+		// 1. Check if the pixel is only contained in one 2D entity bounding box (always correct)
+		// 2. Check if the pixel is only contained in one 3D entity bounding box (always correct)
+		//    TODO this is not done right now, because the 3D calculations are not right
+		//         those would first need to be refactored!
+		// 3. Find the edges from the Depth-Map and flood fill OR flood fill (first is better) 
+		//    (mostly correct except for very rare edge cases)
+
+
         for (auto &entry : *eMap) {
             ObjEntity* e = &(entry.second);
             if (in2DBoxUnprocessed(i, j, e)) {
                 pointEntities2D.push_back(e);
             }
         }
-        //If point only lies in one 2D bounding box then accept this entity as the true entity
-        if (pointEntities2D.size() == 1) {
+		if (pointEntities2D.size() == 0) {
+			log("WARNING: no 2D entity bounding boxes include point");
+			// This should never occur
+		}
+		//If point only lies in one 2D bounding box then accept this entity as the true entity
+        else if (pointEntities2D.size() == 1) {
             addSegmentedPoint3D(i, j, pointEntities2D[0]);
             return;
-        }
-    }
+		}
+		// There are multiple overlapping entities
+		else {
+			//If the overlapping entities are all peds in the same vehicle
+			//simply add it as it will just be set to the vehicle
+			if (stencilVal == STENCIL_TYPE_NPC && pointEntities2D[0]->isPedInV) {
+				int vEntityID = pointEntities2D[0]->vPedIsIn;
+				bool allSameV = true;
+				for (int i = 1; i < pointEntities2D.size(); ++i) {
+					if (!pointEntities2D[i]->isPedInV || pointEntities2D[i]->vPedIsIn != pointEntities2D[0]->vPedIsIn) {
+						allSameV = false;
+						break;
+					}
+				}
+				if (allSameV) {
+					addSegmentedPoint3D(i, j, pointEntities2D[0]);
+					log("WARNING: got NPC in vehicle overlapping");
+					return;
+				}
+			}
+			
 
-    std::vector<ObjEntity*> pointEntities = pointInside3DEntities(worldPos, eMap, checkUpperVehicle, stencilVal);
+			//// find all entities that contain the point in their 3D BBox
+			//// TODO The pointInside3DEntities function always returns an empty vector right now
+			//std::vector<ObjEntity*> pointEntities3D = pointInside3DEntities(worldPos, pointEntities2D);
 
-    //All vehicle points should fall within a vehicle 3D bounding box
-    //Pedestrians in vehicles may not since the windows are what the depth model hits
-    //Try setting the pedestrian stencil type to a vehicle and checking again if this is the case
-    if (pointEntities.empty() && stencilVal == STENCIL_TYPE_NPC) {
-        eMap = &m_curFrame.vehicles;
-        checkUpperVehicle = true;
-        pointEntities = pointInside3DEntities(worldPos, eMap, checkUpperVehicle, STENCIL_TYPE_VEHICLE);
-    }
+			//if (pointEntities3D.size() == 0) {
+			//	log("WARNING: Containing 3D entities are empty");
+			//	// This should never happen
+			//}
+			//else if (pointEntities3D.size() == 1) {
+			//	addSegmentedPoint3D(i, j, pointEntities3D[0]);
+			//	return;
+			//	log("Added Entity from single 3D bounding box");
+			//}
+			//// More than one containing entity
+			//else {
+			//	//If the overlapping entities are all peds in the same vehicle
+			//	//simply add it as it will just be set to the vehicle
+			//	if (stencilVal == STENCIL_TYPE_NPC && pointEntities3D[0]->isPedInV) {
+			//		int vEntityID = pointEntities3D[0]->vPedIsIn;
+			//		bool allSameV = true;
+			//		for (int i = 1; i < pointEntities3D.size(); ++i) {
+			//			if (!pointEntities3D[i]->isPedInV || pointEntities3D[i]->vPedIsIn != pointEntities3D[0]->vPedIsIn) {
+			//				allSameV = false;
+			//				break;
+			//			}
+			//		}
+			//		if (allSameV) {
+			//			addSegmentedPoint3D(i, j, pointEntities3D[0]);
+			//			log("WARNING: got NPC in vehicle overlapping (after 3D)");
+			//			return;
+			//		}
+			//	}
+			//}
 
-    //3 choices, no, single, or multiple 3D box matches
-    if (pointEntities.empty()) {
-        //Should never hit here, point will not get added for outlier cases
-    }
-    else if (pointEntities.size() == 1) {
-        addSegmentedPoint3D(i, j, pointEntities[0]);
-    }
-    else {
-        //If the overlapping entities are all peds in the same vehicle
-        //simply add it as it will just be set to the vehicle
-        if (stencilVal == STENCIL_TYPE_NPC && pointEntities[0]->isPedInV) {
-            int vEntityID = pointEntities[0]->vPedIsIn;
-            bool allSameV = true;
-            for (int i = 1; i < pointEntities.size(); ++i) {
-                if (!pointEntities[i]->isPedInV || pointEntities[i]->vPedIsIn != pointEntities[0]->vPedIsIn) {
-                    allSameV = false;
-                    break;
-                }
-            }
-            if (allSameV) {
-                addSegmentedPoint3D(i, j, pointEntities[0]);
-                return;
-            }
-        }
 
-        //Index of point
-        int idx = j * s_camParams.width + i;
+			// Now we need to find the edges from the Depth Map and Flood fill
+						
 
-        //Map should only hit each idx once, so no need for alternative if idx is found
-        if (PROCESS_OVERLAPPING_POINTS) {
-            if (m_overlappingPoints.find(idx) == m_overlappingPoints.end()) {
-                m_overlappingPoints.insert(std::pair<int, std::vector<ObjEntity*>>(idx, pointEntities));
-            }
-            else {
-                log("ERROR: Overlapping Point was found in map, this should never happen!!!", true);
-            }
-        }
-    }
+
+			// As a final resort use the closest entity
+			// Find the entity closest to the camera and assign the points to it. 
+			// TODO This is not fully correct, in some edge cases this could be wrong. 
+			// The function processOverlappingPoints() tried to find a solution for some of those cases by implementing a flood fill
+			// beginning from a segmentation area that is known to be part of a specific entity.
+			// I believe that those cases only occur rarely, so I think the overhead of using the flood fill is not worth it. 
+			// I also believe that using the closest entity is sufficient for almost every case.
+
+
+			// In 2D this does not suffice. 
+			// using the 3D bbox would mitigate some problems
+
+			std::vector<ObjEntity*> pointEntities3D = pointEntities2D;
+
+			float dist = FLT_MAX;
+			ObjEntity* closestObj = NULL;
+			for (int k = 0; k < pointEntities3D.size(); k++) {
+				float distToObj = sqrt(SYSTEM::VDIST2(pointEntities3D[k]->location.x, pointEntities3D[k]->location.y, pointEntities3D[k]->location.z, relPos.x, relPos.y, relPos.z));
+				if (distToObj < dist) {
+					dist = distToObj;
+					closestObj = pointEntities3D[k];
+				}
+			}
+			addSegmentedPoint3D(i, j, closestObj);
+			log("WARNING: Added segmentation point by closest entity");
+
+		}
+	}
 }
+
 
 //Add 2D point to an entity
 void ObjectDetection::addSegmentedPoint3D(int i, int j, ObjEntity *e) {
@@ -1249,6 +1321,8 @@ void ObjectDetection::update3DPointsHit() {
     }
 }
 
+
+// TODO this function is too long, it should be refactored!
 bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash model, int classid, std::string type, std::string modelString, bool isPedInV, int vPedIsIn, bool &nearbyVehicle) {
 	//log("ObjectDetection::getEntityVector");
 	
@@ -1326,6 +1400,18 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
         dim.x = 0.5*(max.x - min.x);
         dim.y = 0.5*(max.y - min.y);
         dim.z = 0.5*(max.z - min.z);
+
+
+
+
+
+		// TODO added for showing bboxes:
+		drawBoxes(position, dim, forwardVector, rightVector, upVector, 100);
+
+
+
+
+
 
         //TODO Remove these calculations and put x/y/zVector and m_camRight/Forward/UpVector in s_camParams
         //Converting vehicle dimensions from vehicle to world coordinates for offset position
@@ -2728,3 +2814,74 @@ Vector3 ObjectDetection::getVehicleDims(Entity e, Hash model, Vector3 &min, Vect
 //
 //    return s;
 //}
+
+
+void ObjectDetection::drawEntityBBox3D(ObjEntity e) {
+	
+	//// Variables that would refer to the entities position
+	//e.dim;
+	//e.frontBotLeft;
+	//e.location;
+	//e.offcenter;
+	//e.rearBotLeft;
+	//e.rearBotRight;
+	//e.rearTopLeft;
+	//e.u;
+	//e.v;
+	//e.w;
+
+	//e.height;
+	//e.width;
+	//e.length;
+
+	//e.worldPos;
+
+	//e.xVector;
+	//e.yVector;
+	//e.zVector;
+
+
+	//// Those here are not correct, just get strange lines
+	//Vector3 FBL = e.frontBotLeft;
+	//Vector3 RBL = e.rearBotLeft;
+	//Vector3 RBR = e.rearBotRight;
+	//Vector3 RTL = e.rearTopLeft;
+
+	//Vector3 FTL = addVector(RTL, subtractVector(FBL, RBL));
+	//Vector3 FBR = addVector(RBR, subtractVector(FBL, RBL));
+	//Vector3 RTR = addVector(RBR, subtractVector(RTL, RBL));
+	//Vector3 FTR = addVector(RTR, subtractVector(FBL, RBL));
+
+	//draw_line(FBL, FBR);
+	//draw_line(RBL, RBR);
+	//draw_line(FTL, FTR);
+	//draw_line(RTL, RTR);
+	//draw_line(FBL, RBR);
+	//draw_line(FBR, RBR);
+	//draw_line(FTL, RTL);
+	//draw_line(FTR, RTR);
+
+
+	//// Also not it:
+	//Vector3 locoff = e.location;
+	//locoff.x = locoff.x + 20;
+	//locoff.y = locoff.y + 20;
+	//locoff.z = locoff.z + 20;
+	//draw_line(e.location, locoff);
+
+	//Vector3 locoff = e.worldPos;
+	//locoff.x = locoff.x + 20;
+	//locoff.y = locoff.y + 20;
+	//locoff.z = locoff.z + 20;
+	//draw_line(e.worldPos, locoff);
+
+	draw_line(e.worldPos, addVector(e.worldPos, e.xVector));
+	draw_line(e.worldPos, addVector(e.worldPos, e.yVector));
+	draw_line(e.worldPos, addVector(e.worldPos, e.zVector));
+
+
+}
+
+void ObjectDetection::draw_line(Vector3 a, Vector3 b) {
+	GRAPHICS::DRAW_LINE(a.x, a.y, a.z, b.x, b.x, b.z, 0, 200, 200, 200);
+}
