@@ -252,6 +252,13 @@ static Vector3 camToWorld(Vector3 relPos, Vector3 camForward, Vector3 camRight, 
 }
 
 
+static void drawPoint(Vector3 worldPos, float size) {
+	GRAPHICS::DRAW_LINE(worldPos.x - size, worldPos.y, worldPos.z, worldPos.x + size, worldPos.y, worldPos.z, 200, 40, 40, 200);
+	GRAPHICS::DRAW_LINE(worldPos.x, worldPos.y - size, worldPos.z, worldPos.x, worldPos.y + size, worldPos.z, 200, 40, 40, 200);
+	GRAPHICS::DRAW_LINE(worldPos.x, worldPos.y, worldPos.z - size, worldPos.x, worldPos.y, worldPos.z + size, 200, 40, 40, 200);
+}
+
+
 static void drawBoxes(Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector, int colour) {
     //log("Inside draw boxes");
     log("Inside show boxes");
@@ -267,7 +274,6 @@ static void drawBoxes(Vector3 position, Vector3 dim, Vector3 forwardVector, Vect
 	BLL.y = position.y - dim.y*forwardVector.y - dim.x*rightVector.y - dim.z*upVector.y;
 	BLL.z = position.z - dim.y*forwardVector.z - dim.x*rightVector.z - dim.z*upVector.z;
 	//GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(BLL.x, BLL.y, 1000.0, &(BLL.z), 0);
-	
 	
 	
 	Vector3 edge1 = BLL;
@@ -306,19 +312,45 @@ static void drawBoxes(Vector3 position, Vector3 dim, Vector3 forwardVector, Vect
     edge8.y = edge5.y - 2 * dim.z*upVector.y;
     edge8.z = edge5.z - 2 * dim.z*upVector.z;
 
-    GRAPHICS::DRAW_LINE(edge1.x, edge1.y, edge1.z, edge2.x, edge2.y, edge2.z, 0, green, blue, 200);
-    GRAPHICS::DRAW_LINE(edge1.x, edge1.y, edge1.z, edge4.x, edge4.y, edge4.z, 0, green, blue, 200);
-    GRAPHICS::DRAW_LINE(edge2.x, edge2.y, edge2.z, edge3.x, edge3.y, edge3.z, 0, green, blue, 200);
-    GRAPHICS::DRAW_LINE(edge3.x, edge3.y, edge3.z, edge4.x, edge4.y, edge4.z, 0, green, blue, 200);
 
-    GRAPHICS::DRAW_LINE(edge5.x, edge5.y, edge5.z, edge6.x, edge6.y, edge6.z, 0, green, blue, 200);
-    GRAPHICS::DRAW_LINE(edge5.x, edge5.y, edge5.z, edge8.x, edge8.y, edge8.z, 0, green, blue, 200);
-    GRAPHICS::DRAW_LINE(edge6.x, edge6.y, edge6.z, edge7.x, edge7.y, edge7.z, 0, green, blue, 200);
-    GRAPHICS::DRAW_LINE(edge7.x, edge7.y, edge7.z, edge8.x, edge8.y, edge8.z, 0, green, blue, 200);
+	GRAPHICS::DRAW_LINE(edge1.x, edge1.y, edge1.z, edge2.x, edge2.y, edge2.z, 0, green, blue, 200);
+	GRAPHICS::DRAW_LINE(edge1.x, edge1.y, edge1.z, edge4.x, edge4.y, edge4.z, 0, green, blue, 200);
+	GRAPHICS::DRAW_LINE(edge2.x, edge2.y, edge2.z, edge3.x, edge3.y, edge3.z, 0, green, blue, 200);
+	GRAPHICS::DRAW_LINE(edge3.x, edge3.y, edge3.z, edge4.x, edge4.y, edge4.z, 0, green, blue, 200);
 
-    GRAPHICS::DRAW_LINE(edge1.x, edge1.y, edge1.z, edge7.x, edge7.y, edge7.z, 0, green, blue, 200);
-    GRAPHICS::DRAW_LINE(edge2.x, edge2.y, edge2.z, edge8.x, edge8.y, edge8.z, 0, green, blue, 200);
-    GRAPHICS::DRAW_LINE(edge3.x, edge3.y, edge3.z, edge5.x, edge5.y, edge5.z, 0, green, blue, 200);
-    GRAPHICS::DRAW_LINE(edge4.x, edge4.y, edge4.z, edge6.x, edge6.y, edge6.z, 0, green, blue, 200);
-    WAIT(0);
+	GRAPHICS::DRAW_LINE(edge5.x, edge5.y, edge5.z, edge6.x, edge6.y, edge6.z, 0, green, blue, 200);
+	GRAPHICS::DRAW_LINE(edge5.x, edge5.y, edge5.z, edge8.x, edge8.y, edge8.z, 0, green, blue, 200);
+	GRAPHICS::DRAW_LINE(edge6.x, edge6.y, edge6.z, edge7.x, edge7.y, edge7.z, 0, green, blue, 200);
+	GRAPHICS::DRAW_LINE(edge7.x, edge7.y, edge7.z, edge8.x, edge8.y, edge8.z, 0, green, blue, 200);
+
+	GRAPHICS::DRAW_LINE(edge1.x, edge1.y, edge1.z, edge7.x, edge7.y, edge7.z, 0, green, blue, 200);
+	GRAPHICS::DRAW_LINE(edge2.x, edge2.y, edge2.z, edge8.x, edge8.y, edge8.z, 0, green, blue, 200);
+	GRAPHICS::DRAW_LINE(edge3.x, edge3.y, edge3.z, edge5.x, edge5.y, edge5.z, 0, green, blue, 200);
+	GRAPHICS::DRAW_LINE(edge4.x, edge4.y, edge4.z, edge6.x, edge6.y, edge6.z, 0, green, blue, 200);
 }
+
+
+
+
+static void getVehicleVectorsFromTransform(Vector3 xVector, Vector3 yVector, Vector3 zVector, Vector3 &forwardVector, Vector3 &rightVector, Vector3 &upVector) {
+	// TODO this relies on having
+	//Vector3 worldX; worldX.x = 1; worldX.y = 0; worldX.z = 0;
+	//Vector3 worldY; worldY.x = 0; worldY.y = 1; worldY.z = 0;
+	//Vector3 worldZ; worldZ.x = 0; worldZ.y = 0; worldZ.z = 1;
+	
+	// In general this could/should be replaced with basis transformations
+	// In a sense this is the inversion of the call to convertCoordinateSystem()
+	
+	forwardVector.x = xVector.y;
+	forwardVector.y = yVector.y; 
+	forwardVector.z = zVector.y; 
+
+	rightVector.x = xVector.x;
+	rightVector.y = yVector.x;
+	rightVector.z = zVector.x;
+
+	upVector.x = xVector.z;
+	upVector.y = yVector.z;
+	upVector.z = zVector.z;
+}
+

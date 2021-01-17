@@ -289,7 +289,6 @@ FrameObjectInfo ObjectDetection::generateMessage() {
 	//	ObjEntity ent = e.second;
 	//	drawEntityBBox3D(ent);
 	//}
-	//WAIT(10);
 
 
 
@@ -993,6 +992,12 @@ std::vector<ObjEntity*> ObjectDetection::pointInside3DEntities(const Vector3 &wo
 			<< "\nWorldPos: " << worldPos.x << " " << worldPos.y << " " << worldPos.z;
 		log(oss.str());
 
+		for (int i = 0; i < 20; i++) {
+			drawEntityBBox3D(*e);
+			drawPoint(worldPos, 5);
+			WAIT(0);
+		}
+
 		if (in3DBox(worldPos, e->worldPos, e->dim, e->xVector, e->yVector, e->zVector)) {
 			log("WARNING: is in 3D BBox");
 		}
@@ -1077,8 +1082,8 @@ void ObjectDetection::processStencilPixel3D(const uint8_t &stencilVal, const int
 			}
 			
 
-			//// find all entities that contain the point in their 3D BBox
-			//// TODO The pointInside3DEntities function always returns an empty vector right now
+			// find all entities that contain the point in their 3D BBox
+			// TODO The pointInside3DEntities function always returns an empty vector right now
 			//std::vector<ObjEntity*> pointEntities3D = pointInside3DEntities(worldPos, pointEntities2D);
 
 			//if (pointEntities3D.size() == 0) {
@@ -1406,7 +1411,7 @@ bool ObjectDetection::getEntityVector(ObjEntity &entity, int entityID, Hash mode
 
 
 		// TODO added for showing bboxes:
-		drawBoxes(position, dim, forwardVector, rightVector, upVector, 100);
+		//drawBoxes(position, dim, forwardVector, rightVector, upVector, 100);
 
 
 
@@ -2817,69 +2822,11 @@ Vector3 ObjectDetection::getVehicleDims(Entity e, Hash model, Vector3 &min, Vect
 
 
 void ObjectDetection::drawEntityBBox3D(ObjEntity e) {
-	
-	//// Variables that would refer to the entities position
-	//e.dim;
-	//e.frontBotLeft;
-	//e.location;
-	//e.offcenter;
-	//e.rearBotLeft;
-	//e.rearBotRight;
-	//e.rearTopLeft;
-	//e.u;
-	//e.v;
-	//e.w;
+	// TODO refactor / reorder
+	Vector3 forwardVector, rightVector, upVector;
+	getVehicleVectorsFromTransform(e.xVector, e.yVector, e.zVector, forwardVector, rightVector, upVector);
 
-	//e.height;
-	//e.width;
-	//e.length;
-
-	//e.worldPos;
-
-	//e.xVector;
-	//e.yVector;
-	//e.zVector;
-
-
-	//// Those here are not correct, just get strange lines
-	//Vector3 FBL = e.frontBotLeft;
-	//Vector3 RBL = e.rearBotLeft;
-	//Vector3 RBR = e.rearBotRight;
-	//Vector3 RTL = e.rearTopLeft;
-
-	//Vector3 FTL = addVector(RTL, subtractVector(FBL, RBL));
-	//Vector3 FBR = addVector(RBR, subtractVector(FBL, RBL));
-	//Vector3 RTR = addVector(RBR, subtractVector(RTL, RBL));
-	//Vector3 FTR = addVector(RTR, subtractVector(FBL, RBL));
-
-	//draw_line(FBL, FBR);
-	//draw_line(RBL, RBR);
-	//draw_line(FTL, FTR);
-	//draw_line(RTL, RTR);
-	//draw_line(FBL, RBR);
-	//draw_line(FBR, RBR);
-	//draw_line(FTL, RTL);
-	//draw_line(FTR, RTR);
-
-
-	//// Also not it:
-	//Vector3 locoff = e.location;
-	//locoff.x = locoff.x + 20;
-	//locoff.y = locoff.y + 20;
-	//locoff.z = locoff.z + 20;
-	//draw_line(e.location, locoff);
-
-	//Vector3 locoff = e.worldPos;
-	//locoff.x = locoff.x + 20;
-	//locoff.y = locoff.y + 20;
-	//locoff.z = locoff.z + 20;
-	//draw_line(e.worldPos, locoff);
-
-	draw_line(e.worldPos, addVector(e.worldPos, e.xVector));
-	draw_line(e.worldPos, addVector(e.worldPos, e.yVector));
-	draw_line(e.worldPos, addVector(e.worldPos, e.zVector));
-
-
+	drawBoxes(e.worldPos, e.dim, forwardVector, rightVector, upVector, 100);
 }
 
 void ObjectDetection::draw_line(Vector3 a, Vector3 b) {
