@@ -5,7 +5,7 @@ from utils.Constants import IMG_WIDTH, IMG_HEIGHT
 
 
 from deepgtav.messages import Start, Stop, Scenario, Dataset, Commands, frame2numpy, GoToLocation, TeleportToLocation, SetCameraPositionAndRotation
-from deepgtav.messages import StartRecording, StopRecording, SetClockTime, SetWeather
+from deepgtav.messages import StartRecording, StopRecording, SetClockTime, SetWeather, CreatePed
 from deepgtav.client import Client
 
 from utils.BoundingBoxes import add_bboxes, parseBBox2d, convertBBoxesDeepGTAToYolo, parseBBox_YoloFormat_to_Image
@@ -94,6 +94,9 @@ if __name__ == '__main__':
                 client.sendMessage(StopRecording())
             # if count == 60:
             #     client.sendMessage(StartRecording())
+
+            if count % 10 == 0:
+                client.sendMessage(CreatePed(0, 30, 0, 0, 0))
 
             if count == 2:
                 client.sendMessage(TeleportToLocation(-388, 0, 200))

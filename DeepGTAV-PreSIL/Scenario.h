@@ -50,11 +50,6 @@ private:
 	float currentSteering = 0.0;
 
 
-    Vector3 currentPos;
-    Vector3 currentForwardVector;
-    Vector3 currentUpVector;
-    Vector3 currentRightVector;
-
 	std::clock_t lastSafetyCheck;
 	int _drivingMode;
 	float _setSpeed;

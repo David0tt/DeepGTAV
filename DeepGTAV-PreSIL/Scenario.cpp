@@ -412,6 +412,9 @@ void Scenario::setCameraPositionAndRotation(float x, float y, float z, float rot
 
 
 void Scenario::createVehicle(const char* model, float relativeForward, float relativeRight, float heading, int color, int color2) {
+	Vector3 currentForwardVector, currentRightVector, currentUpVector, currentPos;
+	ENTITY::GET_ENTITY_MATRIX(m_ownVehicle, &currentForwardVector, &currentRightVector, &currentUpVector, &currentPos);
+
     Hash vehicleHash = GAMEPLAY::GET_HASH_KEY(const_cast<char*>(model));
     Vector3 pos;
     pos.x = currentPos.x + currentForwardVector.x * relativeForward + currentRightVector.x * relativeRight;
@@ -445,18 +448,39 @@ void Scenario::createVehicle(const char* model, float relativeForward, float rel
 }
 
 void Scenario::createPed(int model, float relativeForward, float relativeRight, float heading, int task) {
-    //Ped hashes found at: https://www.se7ensins.com/forums/threads/request-pc-ped-hashes.1317848/
-    Hash hash = 0x505603B9;// GAMEPLAY::GET_HASH_KEY(const_cast<char*>(model));
+	log("Scenario::createPed");
+	// TODO make function argument
+	bool placeOnGround = true;
+
+
+	Vector3 currentForwardVector, currentRightVector, currentUpVector, currentPos;
+	ENTITY::GET_ENTITY_MATRIX(m_ownVehicle, &currentForwardVector, &currentRightVector, &currentUpVector, &currentPos);
+
     Vector3 pos;
     pos.x = currentPos.x + currentForwardVector.x * relativeForward + currentRightVector.x * relativeRight;
     pos.y = currentPos.y + currentForwardVector.y * relativeForward + currentRightVector.y * relativeRight;
     pos.z = currentPos.z + currentForwardVector.z * relativeForward + currentRightVector.z * relativeRight;
-    STREAMING::REQUEST_MODEL(hash);
-    while (!STREAMING::HAS_MODEL_LOADED(hash)) WAIT(0);
-    Ped temp = PED::CREATE_PED(4, hash, pos.x, pos.y, pos.z, heading, FALSE, FALSE);
-    WAIT(0);
-    AI::TASK_WANDER_STANDARD(ped, 10.0f, 10);
-    ENTITY::SET_ENTITY_AS_NO_LONGER_NEEDED(&temp);
+
+	////Ped hashes found at: https://www.se7ensins.com/forums/threads/request-pc-ped-hashes.1317848/
+	//Hash hash = 0x505603B9;// GAMEPLAY::GET_HASH_KEY(const_cast<char*>(model));
+
+ //   STREAMING::REQUEST_MODEL(hash);
+ //   while (!STREAMING::HAS_MODEL_LOADED(hash)) WAIT(0);
+ //   Ped temp = PED::CREATE_PED(4, hash, pos.x, pos.y, pos.z, heading, FALSE, FALSE);
+ //   WAIT(0);
+ //   AI::TASK_WANDER_STANDARD(ped, 10.0f, 10);
+ //   ENTITY::SET_ENTITY_AS_NO_LONGER_NEEDED(&temp);
+
+	// or do:
+	if (placeOnGround) {
+		float groundZ;
+		GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(pos.x, pos.y, pos.z, &groundZ, false);
+		pos.z = groundZ;
+	}
+
+	Ped ped = PED::CREATE_RANDOM_PED(pos.x, pos.y, pos.z); 
+	WAIT(0); 
+	ENTITY::SET_PED_AS_NO_LONGER_NEEDED(&ped);
 }
 
 //void Scenario::createVehicles() {
