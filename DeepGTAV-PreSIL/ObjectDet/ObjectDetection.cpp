@@ -406,124 +406,26 @@ void ObjectDetection::setPosition() {
 		//ENTITY::GET_ENTITY_MATRIX(m_vehicle, &m_camForwardVector, &m_camRightVector, &m_camUpVector, &currentPos);
 		// I can not use the same vectors as the vehicle, because the camera rotation is offset
 		// The camera roation is made to be the same as the vehicle + an offset (seen in DataExport::setRenderingCam
-		// the scaling of the vectors is somehow important for the future calculations, so this does not suffice:
 
 
-		log("EntityVectors: ("
-			+ std::to_string(vehicleForwardVector.x) + "," + std::to_string(vehicleForwardVector.y) + "," + std::to_string(vehicleForwardVector.z)
-			+ ") (" + std::to_string(vehicleRightVector.x) + "," + std::to_string(vehicleRightVector.y) + "," + std::to_string(vehicleRightVector.z)
-			+ ") (" + std::to_string(vehicleUpVector.x) + "," + std::to_string(vehicleUpVector.y) + "," + std::to_string(vehicleUpVector.z)
-			+ ") (" + std::to_string(currentPos.x) + "," + std::to_string(currentPos.y) + "," + std::to_string(currentPos.z));
-
-
+		// Testing shows that rotations are applied in the order rot_z, rot_y, rot_x
 
 		m_camForwardVector = vehicleForwardVector;
 		m_camRightVector = vehicleRightVector;
 		m_camUpVector = vehicleUpVector;
-		
-		log("CameraVectors: ("
-			+ std::to_string(m_camForwardVector.x) + "," + std::to_string(m_camForwardVector.y) + "," + std::to_string(m_camForwardVector.z)
-			+ ") (" + std::to_string(m_camRightVector.x) + "," + std::to_string(m_camRightVector.y) + "," + std::to_string(m_camRightVector.z)
-			+ ") (" + std::to_string(m_camUpVector.x) + "," + std::to_string(m_camUpVector.y) + "," + std::to_string(m_camUpVector.z));
-
-
-		m_camForwardVector = rotateVectorAroundAxis(m_camForwardVector, m_camRightVector, s_camParams.cameraRotationOffset.x);
-		m_camUpVector = rotateVectorAroundAxis(m_camUpVector, m_camRightVector, s_camParams.cameraRotationOffset.x);
-
-		log("CameraVectors: ("
-			+ std::to_string(m_camForwardVector.x) + "," + std::to_string(m_camForwardVector.y) + "," + std::to_string(m_camForwardVector.z)
-			+ ") (" + std::to_string(m_camRightVector.x) + "," + std::to_string(m_camRightVector.y) + "," + std::to_string(m_camRightVector.z)
-			+ ") (" + std::to_string(m_camUpVector.x) + "," + std::to_string(m_camUpVector.y) + "," + std::to_string(m_camUpVector.z));
-
-
-
-		m_camRightVector = rotateVectorAroundAxis(m_camRightVector, m_camForwardVector, s_camParams.cameraRotationOffset.y);
-		m_camUpVector = rotateVectorAroundAxis(m_camUpVector, m_camForwardVector, s_camParams.cameraRotationOffset.y);
-
 
 
 		m_camForwardVector = rotateVectorAroundAxis(m_camForwardVector, m_camUpVector, s_camParams.cameraRotationOffset.z);
 		m_camRightVector = rotateVectorAroundAxis(m_camRightVector, m_camUpVector, s_camParams.cameraRotationOffset.z);
 
-		log("CameraVectors: ("
-			+ std::to_string(m_camForwardVector.x) + "," + std::to_string(m_camForwardVector.y) + "," + std::to_string(m_camForwardVector.z)
-			+ ") (" + std::to_string(m_camRightVector.x) + "," + std::to_string(m_camRightVector.y) + "," + std::to_string(m_camRightVector.z)
-			+ ") (" + std::to_string(m_camUpVector.x) + "," + std::to_string(m_camUpVector.y) + "," + std::to_string(m_camUpVector.z));
-
-		//m_camForwardVector = rotationAroundX(m_camForwardVector, s_camParams.cameraRotationOffset);
-		//m_camRightVector = rotationAroundX(m_camRightVector, s_camParams.cameraRotationOffset);
-		//m_camUpVector = rotationAroundX(m_camUpVector, s_camParams.cameraRotationOffset);
+		m_camRightVector = rotateVectorAroundAxis(m_camRightVector, m_camForwardVector, s_camParams.cameraRotationOffset.y);
+		m_camUpVector = rotateVectorAroundAxis(m_camUpVector, m_camForwardVector, s_camParams.cameraRotationOffset.y);
 
 
-		//log("EntityVectors: ("
-		//	+ std::to_string(vehicleForwardVector.x) + "," + std::to_string(vehicleForwardVector.y) + "," + std::to_string(vehicleForwardVector.z)
-		//	+ ") (" + std::to_string(vehicleRightVector.x) + "," + std::to_string(vehicleRightVector.y) + "," + std::to_string(vehicleRightVector.z)
-		//	+ ") (" + std::to_string(vehicleUpVector.x) + "," + std::to_string(vehicleUpVector.y) + "," + std::to_string(vehicleUpVector.z)
-		//	+ ") (" + std::to_string(currentPos.x) + "," + std::to_string(currentPos.y) + "," + std::to_string(currentPos.z));
-		//log("CameraVectors: ("
-		//	+ std::to_string(m_camForwardVector.x) + "," + std::to_string(m_camForwardVector.y) + "," + std::to_string(m_camForwardVector.z)
-		//	+ ") (" + std::to_string(m_camRightVector.x) + "," + std::to_string(m_camRightVector.y) + "," + std::to_string(m_camRightVector.z)
-		//	+ ") (" + std::to_string(m_camUpVector.x) + "," + std::to_string(m_camUpVector.y) + "," + std::to_string(m_camUpVector.z)
-		//	+ ") (" + std::to_string(camPosUnused.x) + "," + std::to_string(camPosUnused.y) + "," + std::to_string(camPosUnused.z));
-
-		// So we use the ones from the vehicle and rotate them
-		//m_camForwardVector = rotationAroundAngles(vehicleForwardVector, s_camParams.cameraRotationOffset);
-		//m_camRightVector = rotationAroundAngles(vehicleRightVector, s_camParams.cameraRotationOffset);
-		//m_camUpVector = rotationAroundAngles(vehicleUpVector, s_camParams.cameraRotationOffset);
-
-		//log("CameraVectors: ("
-		//	+ std::to_string(m_camForwardVector.x) + "," + std::to_string(m_camForwardVector.y) + "," + std::to_string(m_camForwardVector.z)
-		//	+ ") (" + std::to_string(m_camRightVector.x) + "," + std::to_string(m_camRightVector.y) + "," + std::to_string(m_camRightVector.z)
-		//	+ ") (" + std::to_string(m_camUpVector.x) + "," + std::to_string(m_camUpVector.y) + "," + std::to_string(m_camUpVector.z));
-
-		//Vector3 cameraRotation = CAM::GET_CAM_ROT(camera, 0);
-		//Vector3 worldX; worldX.x = 1; worldX.y = 0; worldX.z = 0;
-		//Vector3 worldY; worldY.x = 0; worldY.y = 1; worldY.z = 0;
-		//Vector3 worldZ; worldZ.x = 0; worldZ.y = 0; worldZ.z = 1;
-		//m_camForwardVector = rotationAroundAngles(worldX, s_camParams.cameraRotationOffset);
-		//m_camRightVector = rotationAroundAngles(worldY, s_camParams.cameraRotationOffset);
-		//m_camUpVector = rotationAroundAngles(worldZ, s_camParams.cameraRotationOffset);
-
-		//m_camForwardVector = convertCoordinateSystem(m_camForwardVector, vehicleForwardVector, vehicleRightVector, vehicleUpVector);
-		//m_camRightVector = convertCoordinateSystem(m_camRightVector, vehicleForwardVector, vehicleRightVector, vehicleUpVector);
-		//m_camUpVector = convertCoordinateSystem(m_camUpVector, vehicleForwardVector, vehicleRightVector, vehicleUpVector);
-
-		//log("CameraVectors: ("
-		//	+ std::to_string(m_camForwardVector.x) + "," + std::to_string(m_camForwardVector.y) + "," + std::to_string(m_camForwardVector.z)
-		//	+ ") (" + std::to_string(m_camRightVector.x) + "," + std::to_string(m_camRightVector.y) + "," + std::to_string(m_camRightVector.z)
-		//	+ ") (" + std::to_string(m_camUpVector.x) + "," + std::to_string(m_camUpVector.y) + "," + std::to_string(m_camUpVector.z));
+		m_camForwardVector = rotateVectorAroundAxis(m_camForwardVector, m_camRightVector, s_camParams.cameraRotationOffset.x);
+		m_camUpVector = rotateVectorAroundAxis(m_camUpVector, m_camRightVector, s_camParams.cameraRotationOffset.x);
 
 
-		//Vector3 cameraRotation = CAM::GET_CAM_ROT(camera, 0);
-		//Vector3 worldX; worldX.x = 1; worldX.y = 0; worldX.z = 0;
-		//Vector3 worldY; worldY.x = 0; worldY.y = 1; worldY.z = 0;
-		//Vector3 worldZ; worldZ.x = 0; worldZ.y = 0; worldZ.z = 1;
-
-		// Those should be the same -> Yes they are 
-		//m_camForwardVector = rotationAroundAngles(worldX, s_camParams.cameraRotationOffset);
-		//m_camRightVector = rotationAroundAngles(worldY, s_camParams.cameraRotationOffset);
-		//m_camUpVector = rotationAroundAngles(worldZ, s_camParams.cameraRotationOffset);
-
-		//m_camForwardVector = rotationAroundX(worldX, s_camParams.cameraRotationOffset);
-		//m_camRightVector = rotationAroundX(worldY, s_camParams.cameraRotationOffset);
-		//m_camUpVector = rotationAroundX(worldZ, s_camParams.cameraRotationOffset);
-
-
-		//m_camForwardVector = convertCoordinateSystem2(m_camForwardVector, vehicleForwardVector, vehicleRightVector, vehicleUpVector);
-		//m_camRightVector = convertCoordinateSystem2(m_camRightVector, vehicleForwardVector, vehicleRightVector, vehicleUpVector);
-		//m_camUpVector = convertCoordinateSystem2(m_camUpVector, vehicleForwardVector, vehicleRightVector, vehicleUpVector);
-
-		log("CameraVectors: ("
-			+ std::to_string(m_camForwardVector.x) + "," + std::to_string(m_camForwardVector.y) + "," + std::to_string(m_camForwardVector.z)
-			+ ") (" + std::to_string(m_camRightVector.x) + "," + std::to_string(m_camRightVector.y) + "," + std::to_string(m_camRightVector.z)
-			+ ") (" + std::to_string(m_camUpVector.x) + "," + std::to_string(m_camUpVector.y) + "," + std::to_string(m_camUpVector.z));
-
-
-		//log("CameraVectors: ("
-		//	+ std::to_string(m_camForwardVector.x) + "," + std::to_string(m_camForwardVector.y) + "," + std::to_string(m_camForwardVector.z)
-		//	+ ") (" + std::to_string(m_camRightVector.x) + "," + std::to_string(m_camRightVector.y) + "," + std::to_string(m_camRightVector.z)
-		//	+ ") (" + std::to_string(m_camUpVector.x) + "," + std::to_string(m_camUpVector.y) + "," + std::to_string(m_camUpVector.z)
-		//	+ ") (" + std::to_string(camPosUnused.x) + "," + std::to_string(camPosUnused.y) + "," + std::to_string(camPosUnused.z));
 
 
 

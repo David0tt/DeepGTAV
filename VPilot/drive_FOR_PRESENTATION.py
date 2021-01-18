@@ -54,7 +54,7 @@ if __name__ == '__main__':
 
 
     # Adjustments for recording from UAV perspective
-    client.sendMessage(SetCameraPositionAndRotation(z = -20, rot_x = -30))
+    client.sendMessage(SetCameraPositionAndRotation(z = -20, rot_x = -50, rot_y = 0, rot_z = -90))
 
     count = 0
     bbox2d_old = ""
