@@ -127,7 +127,7 @@ private:
 
 public:
     void initCollection(UINT camWidth, UINT camHeight, bool exportEVE = true, int startIndex = 0, float maxLidarDist = 120.0f);
-    void setCamParams(float* forwardVec = NULL, float* rightVec = NULL, float* upVec = NULL);
+    //void setCamParams(float* forwardVec = NULL, float* rightVec = NULL, float* upVec = NULL);
     void setOwnVehicleObject();
 
 	// TODO remove

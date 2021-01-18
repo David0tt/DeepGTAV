@@ -401,8 +401,132 @@ void ObjectDetection::setPosition() {
     }
     else {
         //If not eve, the camera and vehicle are aligned by pausing and flushing the buffers
-        ENTITY::GET_ENTITY_MATRIX(m_vehicle, &m_camForwardVector, &m_camRightVector, &m_camUpVector, &currentPos);
-        ENTITY::GET_ENTITY_MATRIX(m_vehicle, &vehicleForwardVector, &vehicleRightVector, &vehicleUpVector, &currentPos); //Blue or red pill
+		ENTITY::GET_ENTITY_MATRIX(m_vehicle, &vehicleForwardVector, &vehicleRightVector, &vehicleUpVector, &currentPos); //Blue or red pill
+
+		//ENTITY::GET_ENTITY_MATRIX(m_vehicle, &m_camForwardVector, &m_camRightVector, &m_camUpVector, &currentPos);
+		// I can not use the same vectors as the vehicle, because the camera rotation is offset
+		// The camera roation is made to be the same as the vehicle + an offset (seen in DataExport::setRenderingCam
+		// the scaling of the vectors is somehow important for the future calculations, so this does not suffice:
+
+
+		log("EntityVectors: ("
+			+ std::to_string(vehicleForwardVector.x) + "," + std::to_string(vehicleForwardVector.y) + "," + std::to_string(vehicleForwardVector.z)
+			+ ") (" + std::to_string(vehicleRightVector.x) + "," + std::to_string(vehicleRightVector.y) + "," + std::to_string(vehicleRightVector.z)
+			+ ") (" + std::to_string(vehicleUpVector.x) + "," + std::to_string(vehicleUpVector.y) + "," + std::to_string(vehicleUpVector.z)
+			+ ") (" + std::to_string(currentPos.x) + "," + std::to_string(currentPos.y) + "," + std::to_string(currentPos.z));
+
+
+
+		m_camForwardVector = vehicleForwardVector;
+		m_camRightVector = vehicleRightVector;
+		m_camUpVector = vehicleUpVector;
+		
+		log("CameraVectors: ("
+			+ std::to_string(m_camForwardVector.x) + "," + std::to_string(m_camForwardVector.y) + "," + std::to_string(m_camForwardVector.z)
+			+ ") (" + std::to_string(m_camRightVector.x) + "," + std::to_string(m_camRightVector.y) + "," + std::to_string(m_camRightVector.z)
+			+ ") (" + std::to_string(m_camUpVector.x) + "," + std::to_string(m_camUpVector.y) + "," + std::to_string(m_camUpVector.z));
+
+
+		m_camForwardVector = rotateVectorAroundAxis(m_camForwardVector, m_camRightVector, s_camParams.cameraRotationOffset.x);
+		m_camUpVector = rotateVectorAroundAxis(m_camUpVector, m_camRightVector, s_camParams.cameraRotationOffset.x);
+
+		log("CameraVectors: ("
+			+ std::to_string(m_camForwardVector.x) + "," + std::to_string(m_camForwardVector.y) + "," + std::to_string(m_camForwardVector.z)
+			+ ") (" + std::to_string(m_camRightVector.x) + "," + std::to_string(m_camRightVector.y) + "," + std::to_string(m_camRightVector.z)
+			+ ") (" + std::to_string(m_camUpVector.x) + "," + std::to_string(m_camUpVector.y) + "," + std::to_string(m_camUpVector.z));
+
+
+
+		m_camRightVector = rotateVectorAroundAxis(m_camRightVector, m_camForwardVector, s_camParams.cameraRotationOffset.y);
+		m_camUpVector = rotateVectorAroundAxis(m_camUpVector, m_camForwardVector, s_camParams.cameraRotationOffset.y);
+
+
+
+		m_camForwardVector = rotateVectorAroundAxis(m_camForwardVector, m_camUpVector, s_camParams.cameraRotationOffset.z);
+		m_camRightVector = rotateVectorAroundAxis(m_camRightVector, m_camUpVector, s_camParams.cameraRotationOffset.z);
+
+		log("CameraVectors: ("
+			+ std::to_string(m_camForwardVector.x) + "," + std::to_string(m_camForwardVector.y) + "," + std::to_string(m_camForwardVector.z)
+			+ ") (" + std::to_string(m_camRightVector.x) + "," + std::to_string(m_camRightVector.y) + "," + std::to_string(m_camRightVector.z)
+			+ ") (" + std::to_string(m_camUpVector.x) + "," + std::to_string(m_camUpVector.y) + "," + std::to_string(m_camUpVector.z));
+
+		//m_camForwardVector = rotationAroundX(m_camForwardVector, s_camParams.cameraRotationOffset);
+		//m_camRightVector = rotationAroundX(m_camRightVector, s_camParams.cameraRotationOffset);
+		//m_camUpVector = rotationAroundX(m_camUpVector, s_camParams.cameraRotationOffset);
+
+
+		//log("EntityVectors: ("
+		//	+ std::to_string(vehicleForwardVector.x) + "," + std::to_string(vehicleForwardVector.y) + "," + std::to_string(vehicleForwardVector.z)
+		//	+ ") (" + std::to_string(vehicleRightVector.x) + "," + std::to_string(vehicleRightVector.y) + "," + std::to_string(vehicleRightVector.z)
+		//	+ ") (" + std::to_string(vehicleUpVector.x) + "," + std::to_string(vehicleUpVector.y) + "," + std::to_string(vehicleUpVector.z)
+		//	+ ") (" + std::to_string(currentPos.x) + "," + std::to_string(currentPos.y) + "," + std::to_string(currentPos.z));
+		//log("CameraVectors: ("
+		//	+ std::to_string(m_camForwardVector.x) + "," + std::to_string(m_camForwardVector.y) + "," + std::to_string(m_camForwardVector.z)
+		//	+ ") (" + std::to_string(m_camRightVector.x) + "," + std::to_string(m_camRightVector.y) + "," + std::to_string(m_camRightVector.z)
+		//	+ ") (" + std::to_string(m_camUpVector.x) + "," + std::to_string(m_camUpVector.y) + "," + std::to_string(m_camUpVector.z)
+		//	+ ") (" + std::to_string(camPosUnused.x) + "," + std::to_string(camPosUnused.y) + "," + std::to_string(camPosUnused.z));
+
+		// So we use the ones from the vehicle and rotate them
+		//m_camForwardVector = rotationAroundAngles(vehicleForwardVector, s_camParams.cameraRotationOffset);
+		//m_camRightVector = rotationAroundAngles(vehicleRightVector, s_camParams.cameraRotationOffset);
+		//m_camUpVector = rotationAroundAngles(vehicleUpVector, s_camParams.cameraRotationOffset);
+
+		//log("CameraVectors: ("
+		//	+ std::to_string(m_camForwardVector.x) + "," + std::to_string(m_camForwardVector.y) + "," + std::to_string(m_camForwardVector.z)
+		//	+ ") (" + std::to_string(m_camRightVector.x) + "," + std::to_string(m_camRightVector.y) + "," + std::to_string(m_camRightVector.z)
+		//	+ ") (" + std::to_string(m_camUpVector.x) + "," + std::to_string(m_camUpVector.y) + "," + std::to_string(m_camUpVector.z));
+
+		//Vector3 cameraRotation = CAM::GET_CAM_ROT(camera, 0);
+		//Vector3 worldX; worldX.x = 1; worldX.y = 0; worldX.z = 0;
+		//Vector3 worldY; worldY.x = 0; worldY.y = 1; worldY.z = 0;
+		//Vector3 worldZ; worldZ.x = 0; worldZ.y = 0; worldZ.z = 1;
+		//m_camForwardVector = rotationAroundAngles(worldX, s_camParams.cameraRotationOffset);
+		//m_camRightVector = rotationAroundAngles(worldY, s_camParams.cameraRotationOffset);
+		//m_camUpVector = rotationAroundAngles(worldZ, s_camParams.cameraRotationOffset);
+
+		//m_camForwardVector = convertCoordinateSystem(m_camForwardVector, vehicleForwardVector, vehicleRightVector, vehicleUpVector);
+		//m_camRightVector = convertCoordinateSystem(m_camRightVector, vehicleForwardVector, vehicleRightVector, vehicleUpVector);
+		//m_camUpVector = convertCoordinateSystem(m_camUpVector, vehicleForwardVector, vehicleRightVector, vehicleUpVector);
+
+		//log("CameraVectors: ("
+		//	+ std::to_string(m_camForwardVector.x) + "," + std::to_string(m_camForwardVector.y) + "," + std::to_string(m_camForwardVector.z)
+		//	+ ") (" + std::to_string(m_camRightVector.x) + "," + std::to_string(m_camRightVector.y) + "," + std::to_string(m_camRightVector.z)
+		//	+ ") (" + std::to_string(m_camUpVector.x) + "," + std::to_string(m_camUpVector.y) + "," + std::to_string(m_camUpVector.z));
+
+
+		//Vector3 cameraRotation = CAM::GET_CAM_ROT(camera, 0);
+		//Vector3 worldX; worldX.x = 1; worldX.y = 0; worldX.z = 0;
+		//Vector3 worldY; worldY.x = 0; worldY.y = 1; worldY.z = 0;
+		//Vector3 worldZ; worldZ.x = 0; worldZ.y = 0; worldZ.z = 1;
+
+		// Those should be the same -> Yes they are 
+		//m_camForwardVector = rotationAroundAngles(worldX, s_camParams.cameraRotationOffset);
+		//m_camRightVector = rotationAroundAngles(worldY, s_camParams.cameraRotationOffset);
+		//m_camUpVector = rotationAroundAngles(worldZ, s_camParams.cameraRotationOffset);
+
+		//m_camForwardVector = rotationAroundX(worldX, s_camParams.cameraRotationOffset);
+		//m_camRightVector = rotationAroundX(worldY, s_camParams.cameraRotationOffset);
+		//m_camUpVector = rotationAroundX(worldZ, s_camParams.cameraRotationOffset);
+
+
+		//m_camForwardVector = convertCoordinateSystem2(m_camForwardVector, vehicleForwardVector, vehicleRightVector, vehicleUpVector);
+		//m_camRightVector = convertCoordinateSystem2(m_camRightVector, vehicleForwardVector, vehicleRightVector, vehicleUpVector);
+		//m_camUpVector = convertCoordinateSystem2(m_camUpVector, vehicleForwardVector, vehicleRightVector, vehicleUpVector);
+
+		log("CameraVectors: ("
+			+ std::to_string(m_camForwardVector.x) + "," + std::to_string(m_camForwardVector.y) + "," + std::to_string(m_camForwardVector.z)
+			+ ") (" + std::to_string(m_camRightVector.x) + "," + std::to_string(m_camRightVector.y) + "," + std::to_string(m_camRightVector.z)
+			+ ") (" + std::to_string(m_camUpVector.x) + "," + std::to_string(m_camUpVector.y) + "," + std::to_string(m_camUpVector.z));
+
+
+		//log("CameraVectors: ("
+		//	+ std::to_string(m_camForwardVector.x) + "," + std::to_string(m_camForwardVector.y) + "," + std::to_string(m_camForwardVector.z)
+		//	+ ") (" + std::to_string(m_camRightVector.x) + "," + std::to_string(m_camRightVector.y) + "," + std::to_string(m_camRightVector.z)
+		//	+ ") (" + std::to_string(m_camUpVector.x) + "," + std::to_string(m_camUpVector.y) + "," + std::to_string(m_camUpVector.z)
+		//	+ ") (" + std::to_string(camPosUnused.x) + "," + std::to_string(camPosUnused.y) + "," + std::to_string(camPosUnused.z));
+
+
+
     }
 
 
@@ -992,7 +1116,7 @@ std::vector<ObjEntity*> ObjectDetection::pointInside3DEntities(const Vector3 &wo
 			<< "\nWorldPos: " << worldPos.x << " " << worldPos.y << " " << worldPos.z;
 		log(oss.str());
 
-		for (int i = 0; i < 20; i++) {
+		for (int i = 0; i < 5; i++) {
 			drawEntityBBox3D(*e);
 			drawPoint(worldPos, 5);
 			WAIT(0);
@@ -1011,12 +1135,6 @@ std::vector<ObjEntity*> ObjectDetection::pointInside3DEntities(const Vector3 &wo
 //j is y coordinate (top=0), i is x coordinate (left = 0)
 void ObjectDetection::processStencilPixel3D(const uint8_t &stencilVal, const int &j, const int &i,
                                           const Vector3 &xVectorCam, const Vector3 &yVectorCam, const Vector3 &zVectorCam) {
-    float ndc = m_pDepth[j * s_camParams.width + i];
-    Vector3 relPos = depthToCamCoords(ndc, i, j);
-    Vector3 worldPos = convertCoordinateSystem(relPos, yVectorCam, xVectorCam, zVectorCam);
-    worldPos.x += s_camParams.pos.x;
-    worldPos.y += s_camParams.pos.y;
-    worldPos.z += s_camParams.pos.z;
 
     //Obtain proper map for stencil type
     //Need to check all points for vehicles since depth map hits windows but
@@ -1084,37 +1202,50 @@ void ObjectDetection::processStencilPixel3D(const uint8_t &stencilVal, const int
 
 			// find all entities that contain the point in their 3D BBox
 			// TODO The pointInside3DEntities function always returns an empty vector right now
-			//std::vector<ObjEntity*> pointEntities3D = pointInside3DEntities(worldPos, pointEntities2D);
 
-			//if (pointEntities3D.size() == 0) {
-			//	log("WARNING: Containing 3D entities are empty");
-			//	// This should never happen
-			//}
-			//else if (pointEntities3D.size() == 1) {
-			//	addSegmentedPoint3D(i, j, pointEntities3D[0]);
-			//	return;
-			//	log("Added Entity from single 3D bounding box");
-			//}
-			//// More than one containing entity
-			//else {
-			//	//If the overlapping entities are all peds in the same vehicle
-			//	//simply add it as it will just be set to the vehicle
-			//	if (stencilVal == STENCIL_TYPE_NPC && pointEntities3D[0]->isPedInV) {
-			//		int vEntityID = pointEntities3D[0]->vPedIsIn;
-			//		bool allSameV = true;
-			//		for (int i = 1; i < pointEntities3D.size(); ++i) {
-			//			if (!pointEntities3D[i]->isPedInV || pointEntities3D[i]->vPedIsIn != pointEntities3D[0]->vPedIsIn) {
-			//				allSameV = false;
-			//				break;
-			//			}
-			//		}
-			//		if (allSameV) {
-			//			addSegmentedPoint3D(i, j, pointEntities3D[0]);
-			//			log("WARNING: got NPC in vehicle overlapping (after 3D)");
-			//			return;
-			//		}
-			//	}
-			//}
+			float ndc = m_pDepth[j * s_camParams.width + i];
+			Vector3 relPos = depthToCamCoords(ndc, i, j);
+
+			Vector3 worldPos = convertCoordinateSystem(relPos, yVectorCam, xVectorCam, zVectorCam);
+			worldPos.x += s_camParams.pos.x;
+			worldPos.y += s_camParams.pos.y;
+			worldPos.z += s_camParams.pos.z;
+
+			// TODO now rotate worldPos around the camera position and the camera vectors by s_camParams.cameraRotationOffset
+
+
+
+			std::vector<ObjEntity*> pointEntities3D = pointInside3DEntities(worldPos, pointEntities2D);
+
+			if (pointEntities3D.size() == 0) {
+				log("WARNING: Containing 3D entities are empty");
+				// This should never happen
+			}
+			else if (pointEntities3D.size() == 1) {
+				addSegmentedPoint3D(i, j, pointEntities3D[0]);
+				return;
+				log("Added Entity from single 3D bounding box");
+			}
+			// More than one containing entity
+			else {
+				//If the overlapping entities are all peds in the same vehicle
+				//simply add it as it will just be set to the vehicle
+				if (stencilVal == STENCIL_TYPE_NPC && pointEntities3D[0]->isPedInV) {
+					int vEntityID = pointEntities3D[0]->vPedIsIn;
+					bool allSameV = true;
+					for (int i = 1; i < pointEntities3D.size(); ++i) {
+						if (!pointEntities3D[i]->isPedInV || pointEntities3D[i]->vPedIsIn != pointEntities3D[0]->vPedIsIn) {
+							allSameV = false;
+							break;
+						}
+					}
+					if (allSameV) {
+						addSegmentedPoint3D(i, j, pointEntities3D[0]);
+						log("WARNING: got NPC in vehicle overlapping (after 3D)");
+						return;
+					}
+				}
+			}
 
 
 			// Now we need to find the edges from the Depth Map and Flood fill
@@ -1133,19 +1264,19 @@ void ObjectDetection::processStencilPixel3D(const uint8_t &stencilVal, const int
 			// In 2D this does not suffice. 
 			// using the 3D bbox would mitigate some problems
 
-			std::vector<ObjEntity*> pointEntities3D = pointEntities2D;
+			//std::vector<ObjEntity*> pointEntities3D = pointEntities2D;
 
-			float dist = FLT_MAX;
-			ObjEntity* closestObj = NULL;
-			for (int k = 0; k < pointEntities3D.size(); k++) {
-				float distToObj = sqrt(SYSTEM::VDIST2(pointEntities3D[k]->location.x, pointEntities3D[k]->location.y, pointEntities3D[k]->location.z, relPos.x, relPos.y, relPos.z));
-				if (distToObj < dist) {
-					dist = distToObj;
-					closestObj = pointEntities3D[k];
-				}
-			}
-			addSegmentedPoint3D(i, j, closestObj);
-			log("WARNING: Added segmentation point by closest entity");
+			//float dist = FLT_MAX;
+			//ObjEntity* closestObj = NULL;
+			//for (int k = 0; k < pointEntities3D.size(); k++) {
+			//	float distToObj = sqrt(SYSTEM::VDIST2(pointEntities3D[k]->location.x, pointEntities3D[k]->location.y, pointEntities3D[k]->location.z, relPos.x, relPos.y, relPos.z));
+			//	if (distToObj < dist) {
+			//		dist = distToObj;
+			//		closestObj = pointEntities3D[k];
+			//	}
+			//}
+			//addSegmentedPoint3D(i, j, closestObj);
+			//log("WARNING: Added segmentation point by closest entity");
 
 		}
 	}
@@ -2261,76 +2392,80 @@ std::string ObjectDetection::getStandardFilename(std::string subDir, std::string
 //    m_trackLastRealSpeed = ENTITY::GET_ENTITY_SPEED(m_vehicle) / 10;
 //}
 
-void ObjectDetection::setCamParams(float* forwardVec, float* rightVec, float* upVec) {
-    //These values stay the same throughout a collection period
-    if (!s_camParams.init) {
-        s_camParams.nearClip = 0.15;// CAM::_0xD0082607100D7193(); //CAM::GET_CAM_NEAR_CLIP(camera);
-        s_camParams.farClip = 10001.5;// 800;// CAM::_0xDFC8CBC606FDB0FC(); //CAM::GET_CAM_FAR_CLIP(camera);
-        s_camParams.fov = 59;// CAM::GET_GAMEPLAY_CAM_FOV();//CAM::GET_CAM_FOV(camera);
-        s_camParams.ncHeight = 2 * s_camParams.nearClip * tan(s_camParams.fov / 2. * (PI / 180.)); // field of view is returned vertically
-        s_camParams.ncWidth = s_camParams.ncHeight * GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false);
-        s_camParams.init = true;
-    }
-
-    ENTITY::GET_ENTITY_MATRIX(m_vehicle, &m_camForwardVector, &m_camRightVector, &m_camUpVector, &s_camParams.pos);
-
-    if (forwardVec) {
-        m_camForwardVector.x = forwardVec[0];
-        m_camForwardVector.y = forwardVec[1];
-        m_camForwardVector.z = forwardVec[2];
-
-        if (rightVec && upVec) {
-            m_camRightVector.x = rightVec[0];
-            m_camRightVector.y = rightVec[1];
-            m_camRightVector.z = rightVec[2];
-            m_camUpVector.x = upVec[0];
-            m_camUpVector.y = upVec[1];
-            m_camUpVector.z = upVec[2];
-        }
-    }
-    else {
-        ENTITY::GET_ENTITY_MATRIX(m_vehicle, &m_camForwardVector, &m_camRightVector, &m_camUpVector, &currentPos);
-    }
-
-    //These values change frame to frame
-    //Camera functions do not work in eve. Need to use vehicle and offsets.
-    //Recordings need to always have the camera aligned with the vehicle for export to be aligned properly.
-    if (!m_eve) {
-        s_camParams.theta = ENTITY::GET_ENTITY_ROTATION(m_vehicle, 0); //CAM::GET_GAMEPLAY_CAM_ROT(0); //CAM::GET_CAM_ROT(camera, 0);
-    }
-    //s_camParams.pos = currentPos;// CAM::GET_GAMEPLAY_CAM_COORD();// CAM::GET_CAM_COORD(camera);
-    //Use vehicleForwardVector since it corresponds to vehicle forwardVector
-    s_camParams.pos.x = s_camParams.pos.x + CAM_OFFSET_FORWARD * vehicleForwardVector.x + CAM_OFFSET_UP * vehicleUpVector.x;
-    s_camParams.pos.y = s_camParams.pos.y + CAM_OFFSET_FORWARD * vehicleForwardVector.y + CAM_OFFSET_UP * vehicleUpVector.y;
-    s_camParams.pos.z = s_camParams.pos.z + CAM_OFFSET_FORWARD * vehicleForwardVector.z + CAM_OFFSET_UP * vehicleUpVector.z;
-
-    Vector3 theta = CAM::GET_CAM_ROT(camera, 0);
-    Vector3 pos1 = CAM::GET_CAM_COORD(camera);
-    Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(m_vehicle, 0);
-
-    //For optimizing 3d to 2d and unit vector to 2d calculations
-    s_camParams.eigenPos = Eigen::Vector3f(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z);
-    s_camParams.eigenRot = Eigen::Vector3f(s_camParams.theta.x, s_camParams.theta.y, s_camParams.theta.z);
-    s_camParams.eigenTheta = (PI / 180.0) * s_camParams.eigenRot;
-    s_camParams.eigenCamDir = rotate(WORLD_NORTH, s_camParams.eigenTheta);
-    s_camParams.eigenCamUp = rotate(WORLD_UP, s_camParams.eigenTheta);
-    s_camParams.eigenCamEast = rotate(WORLD_EAST, s_camParams.eigenTheta);
-    s_camParams.eigenClipPlaneCenter = s_camParams.eigenPos + s_camParams.nearClip * s_camParams.eigenCamDir;
-    s_camParams.eigenCameraCenter = -s_camParams.nearClip * s_camParams.eigenCamDir;
-
-    //std::ostringstream oss1;
-    //oss1 << "\ns_camParams.pos X: " << s_camParams.pos.x << " Y: " << s_camParams.pos.y << " Z: " << s_camParams.pos.z <<
-    //    "\nvehicle.pos X: " << currentPos.x << " Y: " << currentPos.y << " Z: " << currentPos.z <<
-    //    "\npos1 - rendering cam X: " << pos1.x << " Y: " << pos1.y << " Z: " << pos1.z <<
-    //    "\nfar: " << s_camParams.farClip << " nearClip: " << s_camParams.nearClip << " fov: " << s_camParams.fov <<
-    //    "\nrotation gameplay: " << s_camParams.theta.x << " Y: " << s_camParams.theta.y << " Z: " << s_camParams.theta.z <<
-    //    "\nrotation rendering: " << theta.x << " Y: " << theta.y << " Z: " << theta.z <<
-    //    "\nrotation vehicle: " << rotation.x << " Y: " << rotation.y << " Z: " << rotation.z <<
-    //    "\n AspectRatio: " << GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false) <<
-    //    "\nforwardVector: " << vehicleForwardVector.x << " Y: " << vehicleForwardVector.y << " Z: " << vehicleForwardVector.z;
-    //std::string str1 = oss1.str();
-    //log(str1);
-}
+//void ObjectDetection::setCamParams(float* forwardVec, float* rightVec, float* upVec) {
+//    //These values stay the same throughout a collection period
+//    if (!s_camParams.init) {
+//        s_camParams.nearClip = 0.15;// CAM::_0xD0082607100D7193(); //CAM::GET_CAM_NEAR_CLIP(camera);
+//        s_camParams.farClip = 10001.5;// 800;// CAM::_0xDFC8CBC606FDB0FC(); //CAM::GET_CAM_FAR_CLIP(camera);
+//        s_camParams.fov = 59;// CAM::GET_GAMEPLAY_CAM_FOV();//CAM::GET_CAM_FOV(camera);
+//        s_camParams.ncHeight = 2 * s_camParams.nearClip * tan(s_camParams.fov / 2. * (PI / 180.)); // field of view is returned vertically
+//        s_camParams.ncWidth = s_camParams.ncHeight * GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false);
+//        s_camParams.init = true;
+//    }
+//
+//    ENTITY::GET_ENTITY_MATRIX(m_vehicle, &m_camForwardVector, &m_camRightVector, &m_camUpVector, &s_camParams.pos);
+//
+//    if (forwardVec) {
+//        m_camForwardVector.x = forwardVec[0];
+//        m_camForwardVector.y = forwardVec[1];
+//        m_camForwardVector.z = forwardVec[2];
+//
+//        if (rightVec && upVec) {
+//            m_camRightVector.x = rightVec[0];
+//            m_camRightVector.y = rightVec[1];
+//            m_camRightVector.z = rightVec[2];
+//            m_camUpVector.x = upVec[0];
+//            m_camUpVector.y = upVec[1];
+//            m_camUpVector.z = upVec[2];
+//        }
+//    }
+//    else {
+//        ENTITY::GET_ENTITY_MATRIX(m_vehicle, &m_camForwardVector, &m_camRightVector, &m_camUpVector, &currentPos);
+//    }
+//
+//    //These values change frame to frame
+//    //Camera functions do not work in eve. Need to use vehicle and offsets.
+//    //Recordings need to always have the camera aligned with the vehicle for export to be aligned properly.
+//    if (!m_eve) {
+//        s_camParams.theta = ENTITY::GET_ENTITY_ROTATION(m_vehicle, 0); //CAM::GET_GAMEPLAY_CAM_ROT(0); //CAM::GET_CAM_ROT(camera, 0);
+//    }
+//    //s_camParams.pos = currentPos;// CAM::GET_GAMEPLAY_CAM_COORD();// CAM::GET_CAM_COORD(camera);
+//    //Use vehicleForwardVector since it corresponds to vehicle forwardVector
+//    //s_camParams.pos.x = s_camParams.pos.x + CAM_OFFSET_FORWARD * vehicleForwardVector.x + CAM_OFFSET_UP * vehicleUpVector.x;
+//    //s_camParams.pos.y = s_camParams.pos.y + CAM_OFFSET_FORWARD * vehicleForwardVector.y + CAM_OFFSET_UP * vehicleUpVector.y;
+//    //s_camParams.pos.z = s_camParams.pos.z + CAM_OFFSET_FORWARD * vehicleForwardVector.z + CAM_OFFSET_UP * vehicleUpVector.z;
+//
+//	// TODO changed
+//	s_camParams.pos = CAM::GET_CAM_COORD(camera);
+//	
+//
+//    Vector3 theta = CAM::GET_CAM_ROT(camera, 0);
+//
+//	Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(m_vehicle, 0);
+//
+//    //For optimizing 3d to 2d and unit vector to 2d calculations
+//    s_camParams.eigenPos = Eigen::Vector3f(s_camParams.pos.x, s_camParams.pos.y, s_camParams.pos.z);
+//    s_camParams.eigenRot = Eigen::Vector3f(s_camParams.theta.x, s_camParams.theta.y, s_camParams.theta.z);
+//    s_camParams.eigenTheta = (PI / 180.0) * s_camParams.eigenRot;
+//    s_camParams.eigenCamDir = rotate(WORLD_NORTH, s_camParams.eigenTheta);
+//    s_camParams.eigenCamUp = rotate(WORLD_UP, s_camParams.eigenTheta);
+//    s_camParams.eigenCamEast = rotate(WORLD_EAST, s_camParams.eigenTheta);
+//    s_camParams.eigenClipPlaneCenter = s_camParams.eigenPos + s_camParams.nearClip * s_camParams.eigenCamDir;
+//    s_camParams.eigenCameraCenter = -s_camParams.nearClip * s_camParams.eigenCamDir;
+//
+//    //std::ostringstream oss1;
+//    //oss1 << "\ns_camParams.pos X: " << s_camParams.pos.x << " Y: " << s_camParams.pos.y << " Z: " << s_camParams.pos.z <<
+//    //    "\nvehicle.pos X: " << currentPos.x << " Y: " << currentPos.y << " Z: " << currentPos.z <<
+//    //    "\npos1 - rendering cam X: " << pos1.x << " Y: " << pos1.y << " Z: " << pos1.z <<
+//    //    "\nfar: " << s_camParams.farClip << " nearClip: " << s_camParams.nearClip << " fov: " << s_camParams.fov <<
+//    //    "\nrotation gameplay: " << s_camParams.theta.x << " Y: " << s_camParams.theta.y << " Z: " << s_camParams.theta.z <<
+//    //    "\nrotation rendering: " << theta.x << " Y: " << theta.y << " Z: " << theta.z <<
+//    //    "\nrotation vehicle: " << rotation.x << " Y: " << rotation.y << " Z: " << rotation.z <<
+//    //    "\n AspectRatio: " << GRAPHICS::_GET_SCREEN_ASPECT_RATIO(false) <<
+//    //    "\nforwardVector: " << vehicleForwardVector.x << " Y: " << vehicleForwardVector.y << " Z: " << vehicleForwardVector.z;
+//    //std::string str1 = oss1.str();
+//    //log(str1);
+//}
 
 
 

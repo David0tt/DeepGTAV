@@ -230,6 +230,9 @@ void DataExport::setRenderingCam(Vehicle v, int height, int length) {
 	//TODO fix pointer billiard, after making DataExport the owner of the camera
 	CAM::SET_CAM_COORD(camera, position.x + offsetWorld.x + cameraPositionOffset.x, position.y + offsetWorld.y + cameraPositionOffset.y, position.z + offsetWorld.z + cameraPositionOffset.z);
 	CAM::SET_CAM_ROT(camera, rotation.x + cameraRotationOffset.x, rotation.y + cameraRotationOffset.y, rotation.z + cameraRotationOffset.z, 0);
+	
+	// TODO this was added for simplicity, its ownership should be restrucutred.
+	s_camParams.cameraRotationOffset = cameraRotationOffset;
 
 
 	scriptWait(0);

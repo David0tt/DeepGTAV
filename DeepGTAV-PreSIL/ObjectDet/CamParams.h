@@ -28,6 +28,11 @@ struct CamParams {
     Eigen::Vector3f eigenCamEast;
     Eigen::Vector3f eigenClipPlaneCenter;
     Eigen::Vector3f eigenCameraCenter;
+
+
+	// TODO this was added for simplicity, its ownership should be restrucutred.
+	Vector3 cameraRotationOffset;
+
 };
 
 //Global variable to be used by scenario and LiDAR

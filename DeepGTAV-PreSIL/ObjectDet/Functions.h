@@ -1,8 +1,12 @@
 #include "..\ObjectDetIncludes.h"
 #include <Eigen/Core>
+#include <Eigen/Geometry> 
+
 #include "Constants.h"
 
 #include <chrono>
+
+#include <math.h>
 
 #pragma once
 
@@ -37,6 +41,20 @@ static Vector3 convertCoordinateSystem(Vector3 vec, Vector3 forwardVector, Vecto
     newVec.z = vec.x*upVector.x + vec.y*upVector.y + vec.z*upVector.z;
 
     return newVec;
+}
+
+
+static Vector3 convertCoordinateSystem2(Vector3 vec, Vector3 b1, Vector3 b2, Vector3 b3) {
+	// (b1, b2, b3) * vec should be the correct transformation, where
+	// (b1, b2, b3) is a matrix with b_i as column vectors
+
+	Vector3 ret;
+
+	ret.x = vec.x * b1.x + vec.y * b2.x + vec.z * b3.x;
+	ret.y = vec.x * b1.y + vec.y * b2.y + vec.z * b3.y;
+	ret.z = vec.x * b1.z + vec.y * b2.z + vec.z * b3.z;
+	
+	return ret;
 }
 
 struct BBox2D {
@@ -260,8 +278,6 @@ static void drawPoint(Vector3 worldPos, float size) {
 
 
 static void drawBoxes(Vector3 position, Vector3 dim, Vector3 forwardVector, Vector3 rightVector, Vector3 upVector, int colour) {
-    //log("Inside draw boxes");
-    log("Inside show boxes");
     
 	Vector3 FUR, BLL;
 	FUR.x = position.x + dim.y*forwardVector.x + dim.x*rightVector.x + dim.z*upVector.x;
@@ -354,3 +370,69 @@ static void getVehicleVectorsFromTransform(Vector3 xVector, Vector3 yVector, Vec
 	upVector.z = zVector.z;
 }
 
+
+static Vector3 rotationAroundAngles(Vector3 vec, Vector3 rotation) {
+	// TODO there is an error in here, don't use this function
+
+	// This implements a rotation of a vector by the x,y,z axis around the angles specified by rotation. 
+	// TODO In principle this implements a rotation matrix, in the future it should be done with a rotation matrix
+	// General roation given by https://www.symbolab.com/solver/step-by-step/%5Cbegin%7Bpmatrix%7D1%260%260%5C%5C%200%26cos%5Cleft(a%5Cright)%26-sin%5Cleft(a%5Cright)%5C%5C%200%26sin%5Cleft(a%5Cright)%26cos%5Cleft(a%5Cright)%5Cend%7Bpmatrix%7D%5Cbegin%7Bpmatrix%7Dcos%5Cleft(b%5Cright)%260%26sin%5Cleft(b%5Cright)%5C%5C%200%261%260%5C%5C%20-sin%5Cleft(b%5Cright)%260%26cos%5Cleft(b%5Cright)%5Cend%7Bpmatrix%7D%5Cbegin%7Bpmatrix%7Dcos%5Cleft(c%5Cright)%26-sin%5Cleft(c%5Cright)%260%5C%5C%20sin%5Cleft(c%5Cright)%26cos%5Cleft(c%5Cright)%260%5C%5C%200%260%261%5Cend%7Bpmatrix%7D
+
+	Vector3 ret;
+
+	float a = rotation.x * D2R;
+	float b = rotation.y * D2R;
+	float c = rotation.z * D2R;
+
+	ret.x = cos(b) * cos(c) * vec.x + -cos(b) * sin(c) * vec.y + sin(b) * vec.z;
+	ret.y = (sin(a) * sin(b) * cos(c) + cos(a) * sin(c)) * vec.x + (cos(a) * cos(c) - sin(a) * sin(b) * sin(c)) * vec.y + (-sin(a) * cos(b)) * vec.z;
+	ret.z = (sin(a) * sin(c) - cos(a) * sin(b) * cos(c)) * vec.x + (cos(a) * sin(b) * sin(c) + sin(a) * cos(c)) * vec.y + cos(a) * cos(b) * vec.z;
+
+	log("rotationAroundAngles");
+	log("a,b,c (Deg): " + std::to_string(rotation.x) + ", " + std::to_string(rotation.y) + ", " + std::to_string(rotation.z));
+	log("a,b,c: " + std::to_string(a) + ", " + std::to_string(b) + ", " + std::to_string(c));
+	log("vec: " + std::to_string(vec.x) + ", " + std::to_string(vec.y) + ", " + std::to_string(vec.z));
+	log("ret: " + std::to_string(ret.x) + ", " + std::to_string(ret.y) + ", " + std::to_string(ret.z));
+
+
+	return ret;
+
+}
+
+static Vector3 rotationAroundX(Vector3 vec, Vector3 rotation) {
+	float a = rotation.x * D2R;
+
+	Vector3 ret;
+	ret.x = vec.x;
+	ret.y = cos(a) * vec.y - sin(a) * vec.z;
+	ret.z = sin(a) * vec.y + cos(a) * vec.z;
+
+	log("rotationAroundX");
+	log("a: " + std::to_string(rotation.x));
+	log("sin(a): " + std::to_string(sin(a)));
+	log("cos(a): " + std::to_string(cos(a)));
+	log("vec: " + std::to_string(vec.x) + ", " + std::to_string(vec.y) + ", " + std::to_string(vec.z));
+	log("ret: " + std::to_string(ret.x) + ", " + std::to_string(ret.y) + ", " + std::to_string(ret.z));
+
+	return ret;
+}
+
+
+
+static Vector3 rotateVectorAroundAxis(Vector3 vec, Vector3 axis, float degree) {
+	Eigen::Vector3f v(vec.x, vec.y, vec.z);
+	Eigen::Vector3f a(axis.x, axis.y, axis.z);
+	a.normalize();
+
+	float d = degree * D2R;
+
+	//Eigen::Quaternion<float> q(w, x, y, z);
+	Eigen::Matrix3f m;
+	m = Eigen::AngleAxisf(d, a);
+	
+	Eigen::Vector3f rotated = m * v;
+
+
+	Vector3 ret; ret.x = rotated.x(); ret.y = rotated.y(); ret.z = rotated.z();
+	return ret;
+}
