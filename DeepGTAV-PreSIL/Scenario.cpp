@@ -119,15 +119,6 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
     else if (setDefaults) collectTracking = _COLLECT_TRACKING_;
 
 	
-	if (DRIVE_SPEC_AREA && !stationaryScene) {
-        int startArea = 0;
-        dir.x = s_locationBounds[0][0][startArea];
-        dir.y = s_locationBounds[0][1][startArea];
-        dir.z = 0.f;
-        x = s_locationBounds[0][0][startArea];//1,2,3,4,5,6,7,8 are all good
-        y = s_locationBounds[0][1][startArea];//1-0 was last one used for 'good' data
-    }
-
     if (stationaryScene || TRUPERCEPT_SCENARIO) {
         vehiclesToCreate.clear();
         log("About to get vehicles");
@@ -244,30 +235,10 @@ void Scenario::buildScenario() {
 
 	AI::CLEAR_PED_TASKS(ped);
 	if (_drivingMode >= 0 && !stationaryScene) {
-        if (DRIVE_SPEC_AREA && !START_SPEC_AREA) {
-            AI::TASK_VEHICLE_DRIVE_TO_COORD(ped, m_ownVehicle, dir.x, dir.y, dir.z, _setSpeed, Any(1.f), vehicleHash, _drivingMode, 50.f, true);
-        }
-        else {
-            AI::TASK_VEHICLE_DRIVE_WANDER(ped, m_ownVehicle, _setSpeed, _drivingMode);
-        }
-        
+		AI::TASK_VEHICLE_DRIVE_WANDER(ped, m_ownVehicle, _setSpeed, _drivingMode);
     }
 
-    //while (!CAM::IS_GAMEPLAY_CAM_RENDERING()) {
-    //    camera = CAM::GET_RENDERING_CAM();// CAM::CREATE_CAM("DEFAULT_SCRIPTED_CAMERA", TRUE);
-    //    if (strcmp(_vehicle, "packer") == 0) CAM::ATTACH_CAM_TO_ENTITY(camera, vehicle, 0, 2.35, 1.7, TRUE);
-    //    else CAM::ATTACH_CAM_TO_ENTITY(camera, vehicle, 0, CAM_OFFSET_FORWARD, CAM_OFFSET_UP, TRUE);
-    //    CAM::SET_CAM_FOV(camera, VERT_CAM_FOV);
-    //    CAM::SET_CAM_ACTIVE(camera, TRUE);
-    //    //CAM::SET_CAM_ROT(camera, rotation.x, rotation.y, rotation.z, 0);
-    //    CAM::SET_CAM_INHERIT_ROLL_VEHICLE(camera, TRUE);
-    //    CAM::SET_GAMEPLAY_CAM_RELATIVE_HEADING(0);
-    //    CAM::SET_GAMEPLAY_CAM_RELATIVE_PITCH(0, 0x3F800000);//Constant taken from nativedb
-    //}
 
-    //if (m_recordScenario) {
-    //    UNK1::_SET_RECORDING_MODE(1);
-    //}
 }
 
 void Scenario::start(const Value& sc, const Value& dc) {
@@ -307,29 +278,6 @@ void Scenario::run() {
 
         if (SAME_TIME_OF_DAY) {
             TIME::SET_CLOCK_TIME(hour, minute, 0);
-        }
-
-        if (DRIVE_SPEC_AREA && !START_SPEC_AREA) {
-            if (pow(currentPos.x - dir.x, 2) + pow(currentPos.y - dir.y, 2) < pow(50, 2))
-            {
-                std::vector<std::pair<float, float>> new_points = generate_n_random_points(
-                    m_startArea, m_polyGrid, 1, 100, { { currentPos.x , currentPos.y } });
-                dir.x = new_points[0].first;
-                dir.y = new_points[0].second;
-
-                AI::TASK_VEHICLE_DRIVE_TO_COORD(ped, m_ownVehicle, dir.x, dir.y, dir.z, _setSpeed, Any(1.f),
-                    GAMEPLAY::GET_HASH_KEY((char*)_vehicle), _drivingMode, 1.f, true);
-            }
-            else if (!in_bounds(currentPos.x, currentPos.y, m_startArea, m_polyGrid))
-            {
-                std::vector<std::pair<float, float>> new_points = generate_n_random_points(
-                    m_startArea, m_polyGrid, 1, 100, { { currentPos.x , currentPos.y } });
-                dir.x = new_points[0].first;
-                dir.y = new_points[0].second;
-
-                AI::TASK_VEHICLE_DRIVE_TO_COORD(ped, m_ownVehicle, dir.x, dir.y, dir.z, _setSpeed, Any(1.f),
-                    GAMEPLAY::GET_HASH_KEY((char*)_vehicle), _drivingMode, 1.f, true);
-            }
         }
 
 		if (_drivingMode < 0) {
@@ -511,22 +459,22 @@ void Scenario::createPed(int model, float relativeForward, float relativeRight, 
     ENTITY::SET_ENTITY_AS_NO_LONGER_NEEDED(&temp);
 }
 
-void Scenario::createVehicles() {
-    setPosition();
-    if ((stationaryScene || TRUPERCEPT_SCENARIO) && !vehicles_created) {
-        log("Creating peds");
-        for (int i = 0; i < pedsToCreate.size(); i++) {
-            PedToCreate p = pedsToCreate[i];
-            createPed(p.model, p.forward, p.right, p.heading, i);
-        }
-        log("Creating vehicles");
-        for (int i = 0; i < vehiclesToCreate.size(); i++) {
-            VehicleToCreate v = vehiclesToCreate[i];
-            createVehicle(v.model.c_str(), v.forward, v.right, v.heading, v.color, v.color2);
-        }
-        vehicles_created = true;
-    }
-}
+//void Scenario::createVehicles() {
+//    setPosition();
+//    if ((stationaryScene || TRUPERCEPT_SCENARIO) && !vehicles_created) {
+//        log("Creating peds");
+//        for (int i = 0; i < pedsToCreate.size(); i++) {
+//            PedToCreate p = pedsToCreate[i];
+//            createPed(p.model, p.forward, p.right, p.heading, i);
+//        }
+//        log("Creating vehicles");
+//        for (int i = 0; i < vehiclesToCreate.size(); i++) {
+//            VehicleToCreate v = vehiclesToCreate[i];
+//            createVehicle(v.model.c_str(), v.forward, v.right, v.heading, v.color, v.color2);
+//        }
+//        vehicles_created = true;
+//    }
+//}
 
 
 void Scenario::setWeather(const char* weather) {
@@ -537,11 +485,11 @@ void Scenario::setClockTime(int hour, int minute, int second) {
 	TIME::SET_CLOCK_TIME(hour, minute, second);
 }
 
-//Saves the position and vectors of the capture vehicle
-void Scenario::setPosition() {
-    //NOTE: The forward and right vectors are swapped (compared to native function labels) to keep consistency with coordinate system
-    ENTITY::GET_ENTITY_MATRIX(m_ownVehicle, &currentForwardVector, &currentRightVector, &currentUpVector, &currentPos); //Blue or red pill
-}
+////Saves the position and vectors of the capture vehicle
+//void Scenario::setPosition() {
+//    //NOTE: The forward and right vectors are swapped (compared to native function labels) to keep consistency with coordinate system
+//    ENTITY::GET_ENTITY_MATRIX(m_ownVehicle, &currentForwardVector, &currentRightVector, &currentUpVector, &currentPos); //Blue or red pill
+//}
 
 
 //void Scenario::drawBoxes(Vector3 BLL, Vector3 FUR, Vector3 dim, Vector3 upVector, Vector3 rightVector, Vector3 forwardVector, Vector3 position, int colour) {

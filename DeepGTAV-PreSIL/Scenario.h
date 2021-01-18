@@ -115,6 +115,6 @@ private:
 
     void drawBoxes(Vector3 BLL, Vector3 FUR, Vector3 dim, Vector3 upVector, Vector3 rightVector, Vector3 forwardVector, Vector3 position, int colour);
     void createVehicles();
-    void setPosition();
+    //void setPosition();
 
 };

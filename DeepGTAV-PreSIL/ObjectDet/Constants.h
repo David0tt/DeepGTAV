@@ -31,9 +31,6 @@ const float BBOX_ADJUSTMENT_FACTOR = 1.1f;
 
 //Use the same time of day throughout the collection process
 const bool SAME_TIME_OF_DAY = false;
-//Drive in specified area or wander entire map
-const bool DRIVE_SPEC_AREA = true;
-const bool START_SPEC_AREA = true;
 
 //Some settings for testing pointcloud generation
 //This prints the 2D map of where lidar beams hit on the screen (not consistent when moving)
