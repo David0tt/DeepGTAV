@@ -1007,28 +1007,31 @@ std::vector<ObjEntity*> ObjectDetection::pointInside3DEntities(const Vector3 &wo
     std::vector<ObjEntity*> containingEntities;
 	for (ObjEntity* e : possibleEntities) {
 		bool upperHalf;
-		std::ostringstream oss;
-		oss << "Object Bounding Boxes (FBL, RBL, RBR, RTL): (" << e->frontBotLeft.x << " " << e->frontBotLeft.y << " " << e->frontBotLeft.z
-			<< ") (" << e->rearBotLeft.x << " " << e->rearBotLeft.y << " " << e->rearBotLeft.z
-			<< ") (" << e->rearBotRight.x << " " << e->rearBotRight.y << " " << e->rearBotRight.z
-			<< ") (" << e->rearTopLeft.x << " " << e->rearTopLeft.y << " " << e->rearTopLeft.z
-			<< "); ((u, v, w)):  (" << e->u.x << " " << e->u.y << " " << e->u.z << "), ("
-			<< e->v.x << " " << e->v.y << " " << e->v.z << "), ("
-			<< e->w.x << " " << e->w.y << " " << e->w.z << ") "
-			<< "\nWorldPos: " << worldPos.x << " " << worldPos.y << " " << worldPos.z;
-		log(oss.str());
+		//std::ostringstream oss;
+		//oss << "Object Bounding Boxes (FBL, RBL, RBR, RTL): (" << e->frontBotLeft.x << " " << e->frontBotLeft.y << " " << e->frontBotLeft.z
+		//	<< ") (" << e->rearBotLeft.x << " " << e->rearBotLeft.y << " " << e->rearBotLeft.z
+		//	<< ") (" << e->rearBotRight.x << " " << e->rearBotRight.y << " " << e->rearBotRight.z
+		//	<< ") (" << e->rearTopLeft.x << " " << e->rearTopLeft.y << " " << e->rearTopLeft.z
+		//	<< "); ((u, v, w)):  (" << e->u.x << " " << e->u.y << " " << e->u.z << "), ("
+		//	<< e->v.x << " " << e->v.y << " " << e->v.z << "), ("
+		//	<< e->w.x << " " << e->w.y << " " << e->w.z << ") "
+		//	<< "\nWorldPos: " << worldPos.x << " " << worldPos.y << " " << worldPos.z;
+		//log(oss.str());
 
-		for (int i = 0; i < 5; i++) {
-			drawEntityBBox3D(*e);
-			drawPoint(worldPos, 5);
-			WAIT(0);
-		}
+		// show bounding box and Point for debugging 
+		//for (int i = 0; i < 1; i++) {
+		//	drawEntityBBox3D(*e);
+		//	drawPoint(worldPos, 5);
+		//	WAIT(0);
+		//}
 
-		if (in3DBox(worldPos, e->worldPos, e->dim, e->xVector, e->yVector, e->zVector)) {
-			log("WARNING: is in 3D BBox");
-		}
+		// Other in3DBox function, those two are not identitcal
+		//if (in3DBox(worldPos, e->worldPos, e->dim, e->xVector, e->yVector, e->zVector)) {
+		//	log("WARNING: is in 3D BBox");
+		//}
 		if (in3DBox(e, worldPos, upperHalf)) {
 			containingEntities.push_back(e);
+			//log("WARNING: is also in 3D BBox with different function");
 		}
 	}
     return containingEntities;
@@ -1073,7 +1076,7 @@ void ObjectDetection::processStencilPixel3D(const uint8_t &stencilVal, const int
             }
         }
 		if (pointEntities2D.size() == 0) {
-			log("WARNING: no 2D entity bounding boxes include point");
+			//log("WARNING: no 2D entity bounding boxes include point");
 			// This should never occur
 		}
 		//If point only lies in one 2D bounding box then accept this entity as the true entity
@@ -1096,7 +1099,7 @@ void ObjectDetection::processStencilPixel3D(const uint8_t &stencilVal, const int
 				}
 				if (allSameV) {
 					addSegmentedPoint3D(i, j, pointEntities2D[0]);
-					log("WARNING: got NPC in vehicle overlapping");
+					//log("WARNING: got NPC in vehicle overlapping");
 					return;
 				}
 			}
@@ -1120,13 +1123,13 @@ void ObjectDetection::processStencilPixel3D(const uint8_t &stencilVal, const int
 			std::vector<ObjEntity*> pointEntities3D = pointInside3DEntities(worldPos, pointEntities2D);
 
 			if (pointEntities3D.size() == 0) {
-				log("WARNING: Containing 3D entities are empty");
+				//log("WARNING: Containing 3D entities are empty");
 				// This should never happen
 			}
 			else if (pointEntities3D.size() == 1) {
 				addSegmentedPoint3D(i, j, pointEntities3D[0]);
 				return;
-				log("Added Entity from single 3D bounding box");
+				//log("Added Entity from single 3D bounding box");
 			}
 			// More than one containing entity
 			else {
@@ -1143,31 +1146,19 @@ void ObjectDetection::processStencilPixel3D(const uint8_t &stencilVal, const int
 					}
 					if (allSameV) {
 						addSegmentedPoint3D(i, j, pointEntities3D[0]);
-						log("WARNING: got NPC in vehicle overlapping (after 3D)");
+						//log("WARNING: got NPC in vehicle overlapping (after 3D)");
 						return;
 					}
 				}
 			}
 
 
-			// Now we need to find the edges from the Depth Map and Flood fill
+			// TODO Now we need to find the edges from the Depth Map and Flood fill
+			// From some testing is can be seen that this is not really needed, we almost never get here
 						
 
 
-			// As a final resort use the closest entity
-			// Find the entity closest to the camera and assign the points to it. 
-			// TODO This is not fully correct, in some edge cases this could be wrong. 
-			// The function processOverlappingPoints() tried to find a solution for some of those cases by implementing a flood fill
-			// beginning from a segmentation area that is known to be part of a specific entity.
-			// I believe that those cases only occur rarely, so I think the overhead of using the flood fill is not worth it. 
-			// I also believe that using the closest entity is sufficient for almost every case.
-
-
-			// In 2D this does not suffice. 
-			// using the 3D bbox would mitigate some problems
-
-			//std::vector<ObjEntity*> pointEntities3D = pointEntities2D;
-
+			//// As a final resort use the closest entity
 			//float dist = FLT_MAX;
 			//ObjEntity* closestObj = NULL;
 			//for (int k = 0; k < pointEntities3D.size(); k++) {
@@ -1178,7 +1169,7 @@ void ObjectDetection::processStencilPixel3D(const uint8_t &stencilVal, const int
 			//	}
 			//}
 			//addSegmentedPoint3D(i, j, closestObj);
-			//log("WARNING: Added segmentation point by closest entity");
+			////log("WARNING: Added segmentation point by closest entity");
 
 		}
 	}

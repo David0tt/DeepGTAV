@@ -54,7 +54,7 @@ if __name__ == '__main__':
 
 
     # Adjustments for recording from UAV perspective
-    client.sendMessage(SetCameraPositionAndRotation(z = -20, rot_x = -50, rot_y = 0, rot_z = -90))
+    client.sendMessage(SetCameraPositionAndRotation(z = -20, rot_x = -30, rot_y = 0, rot_z = 0))
 
     count = 0
     bbox2d_old = ""
@@ -249,11 +249,11 @@ if __name__ == '__main__':
 
                 print("SegmentationShape: ",segmentationImage.shape)
 
-                nparr = np.fromstring(base64.b64decode(message["StencilImage"]), np.uint8)
-                stencilImage = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+                # nparr = np.fromstring(base64.b64decode(message["StencilImage"]), np.uint8)
+                # stencilImage = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
 
-                stencilImageRGB = cv2.cvtColor(stencilImage, cv2.COLOR_GRAY2RGB)
-                print("StencilShape: ",stencilImageRGB.shape)
+                # stencilImageRGB = cv2.cvtColor(stencilImage, cv2.COLOR_GRAY2RGB)
+                # print("StencilShape: ",stencilImageRGB.shape)
 
                 dst = cv2.addWeighted(bbox_image, 0.5, segmentationImage, 0.5, 0.0)
 
