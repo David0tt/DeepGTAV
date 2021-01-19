@@ -447,16 +447,16 @@ void Scenario::createVehicle(const char* model, float relativeForward, float rel
     ENTITY::SET_ENTITY_AS_NO_LONGER_NEEDED(&tempV);
 }
 
-void Scenario::createPed(int model, float relativeForward, float relativeRight, float heading, int task, bool placeOnGround) {
+void Scenario::createPed(int model, float relativeForward, float relativeRight, float relativeUp, float heading, int task, bool placeOnGround) {
 	log("Scenario::createPed");
 
 	Vector3 currentForwardVector, currentRightVector, currentUpVector, currentPos;
 	ENTITY::GET_ENTITY_MATRIX(m_ownVehicle, &currentForwardVector, &currentRightVector, &currentUpVector, &currentPos);
 
     Vector3 pos;
-    pos.x = currentPos.x + currentForwardVector.x * relativeForward + currentRightVector.x * relativeRight;
-    pos.y = currentPos.y + currentForwardVector.y * relativeForward + currentRightVector.y * relativeRight;
-    pos.z = currentPos.z + currentForwardVector.z * relativeForward + currentRightVector.z * relativeRight;
+    pos.x = currentPos.x + currentForwardVector.x * relativeForward + currentRightVector.x * relativeRight + currentUpVector.x * relativeUp;
+    pos.y = currentPos.y + currentForwardVector.y * relativeForward + currentRightVector.y * relativeRight + currentUpVector.y * relativeUp;
+    pos.z = currentPos.z + currentForwardVector.z * relativeForward + currentRightVector.z * relativeRight + currentUpVector.z * relativeUp;
 
 	////Ped hashes found at: https://www.se7ensins.com/forums/threads/request-pc-ped-hashes.1317848/
 	//Hash hash = 0x505603B9;// GAMEPLAY::GET_HASH_KEY(const_cast<char*>(model));

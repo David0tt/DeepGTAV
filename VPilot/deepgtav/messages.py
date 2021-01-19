@@ -165,10 +165,11 @@ class SetCameraPositionAndRotation:
 # Creates a Pedestrian relative to the player vehicle.
 # support for some of the settings (model, task) is not given in deepGTAV
 class CreatePed:
-    def __init__(self, model, relativeForward, relativeRight, heading, task, placeOnGround = True):
+    def __init__(self, relativeForward = 0, relativeRight = 0, relativeUp = 0, model = 0, heading = 0, task = 0, placeOnGround = True):
         self.model = model
         self.relativeForward = relativeForward
         self. relativeRight = relativeRight
+        self.relativeUp = relativeUp
         self.heading = heading
         self.task = task
         self.placeOnGround = placeOnGround

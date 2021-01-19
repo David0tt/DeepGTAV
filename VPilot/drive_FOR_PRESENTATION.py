@@ -32,7 +32,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=None)
     parser.add_argument('-l', '--host', default='127.0.0.1', help='The IP where DeepGTAV is running')
     parser.add_argument('-p', '--port', default=8000, help='The port where DeepGTAV is running')
-    parser.add_argument('-s', '--save_dir', default='E:\\Bachelorarbeit\\DataGeneration_DeepGTAV-PreSIL\\EXPORTDIR\\ExportPresentation', help='The directory the generated data is saved to')
+    parser.add_argument('-s', '--save_dir', default='E:\\Bachelorarbeit\\DataGeneration_DeepGTAV-PreSIL\\EXPORTDIR\\ExportWater', help='The directory the generated data is saved to')
     # args = parser.parse_args()
 
     # TODO for running in VSCode
@@ -55,7 +55,7 @@ if __name__ == '__main__':
 
 
     # Adjustments for recording from UAV perspective
-    client.sendMessage(SetCameraPositionAndRotation(z = -20, rot_x = -30, rot_y = 0, rot_z = 0))
+    client.sendMessage(SetCameraPositionAndRotation(z = -20, rot_x = -90, rot_y = 0, rot_z = 0))
 
     count = 0
     bbox2d_old = ""
@@ -75,6 +75,13 @@ if __name__ == '__main__':
         os.makedirs(os.path.join(args.save_dir, 'labels'))
     if not os.path.exists(os.path.join(args.save_dir, 'meta_data')):
         os.makedirs(os.path.join(args.save_dir, 'meta_data'))
+
+    if not os.path.exists(os.path.join(args.save_dir, 'image')):
+        os.makedirs(os.path.join(args.save_dir, 'image'))
+    if not os.path.exists(os.path.join(args.save_dir, 'SegmentationAndBBox')):
+        os.makedirs(os.path.join(args.save_dir, 'SegmentationAndBBox'))
+    
+    
         
 
     run_count = getRunCount(args.save_dir)
@@ -89,19 +96,23 @@ if __name__ == '__main__':
             print("count: ", count)
 
             # Only record every 10th frame
-            if count > 50 and count % 10 == 0:
-                client.sendMessage(StartRecording())
-            if count > 50 and count % 10 == 1:
-                client.sendMessage(StopRecording())
-            # if count == 60:
+            # if count > 50 and count % 10 == 0:
             #     client.sendMessage(StartRecording())
+            # if count > 50 and count % 10 == 1:
+            #     client.sendMessage(StopRecording())
+            if count == 60:
+                client.sendMessage(StartRecording())
 
-            if count % 10 == 0:
-                client.sendMessage(CreatePed(0, 50, 0, 0, 0, False))
+            # create some Pedestrians in a grid
+            if count == 40:
+                for i in range(-30, 30, 5):
+                    for j in range(-30, 30, 5):
+                        client.sendMessage(CreatePed(i, j, -30, placeOnGround=False))
+
 
             if count == 2:
                 client.sendMessage(TeleportToLocation(-2200, -2200, 200))
-                # client.sendMessage(GoToLocation(-2200, -1000, 40))
+                client.sendMessage(GoToLocation(-2200, -2200, 60))
 
             if count == 4:
                 client.sendMessage(SetClockTime(12))
@@ -113,21 +124,31 @@ if __name__ == '__main__':
                 client.sendMessage(SetClockTime(19))
 
 
+            if count == 100:
+                client.sendMessage(GoToLocation(-2200, -2200, 50))
+            if count == 150:
+                client.sendMessage(GoToLocation(-2200, -2200, 40))
+            if count == 200:
+                client.sendMessage(GoToLocation(-2200, -2200, 30))
             if count == 250:
-                currentTravelHeight = 25
+                client.sendMessage(GoToLocation(-2200, -2200, 20))
+            
 
-            if count == 300:
-                currentTravelHeight = 100
+            # if count == 250:
+            #     currentTravelHeight = 25
 
-            if count == 380:
-                currentTravelHeight = 40
+            # if count == 300:
+            #     currentTravelHeight = 100
+
+            # if count == 380:
+            #     currentTravelHeight = 40
 
 
-            if count == 400:
-                client.sendMessage(SetCameraPositionAndRotation(z = -20, rot_x = -90))
+            # if count == 400:
+            #     client.sendMessage(SetCameraPositionAndRotation(z = -20, rot_x = -90))
 
-            if count == 450:
-                client.sendMessage(SetCameraPositionAndRotation(z = -20, rot_x = -20))
+            # if count == 450:
+            #     client.sendMessage(SetCameraPositionAndRotation(z = -20, rot_x = -20))
 
 
 
@@ -268,6 +289,10 @@ if __name__ == '__main__':
                 # plt.show()
                 cv2.imshow("CombinedImage", dst)
                 cv2.waitKey(1)
+
+                filename = f'{run_count:04}' + '_' + f'{count:010}' + ".png"
+                cv2.imwrite(os.path.join(args.save_dir, "image", filename), bbox_image)
+                cv2.imwrite(os.path.join(args.save_dir, "SegmentationAndBBox", filename), dst)
 
 
             # pass
