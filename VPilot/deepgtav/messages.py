@@ -162,14 +162,16 @@ class SetCameraPositionAndRotation:
     def to_json(self):
         return json.dumps({'SetCameraPositionAndRotation':self.__dict__})
 
+# Creates a Pedestrian relative to the player vehicle.
 # support for some of the settings (model, task) is not given in deepGTAV
 class CreatePed:
-    def __init__(self, model, relativeForward, relativeRight, heading, task):
+    def __init__(self, model, relativeForward, relativeRight, heading, task, placeOnGround = True):
         self.model = model
         self.relativeForward = relativeForward
         self. relativeRight = relativeRight
         self.heading = heading
         self.task = task
+        self.placeOnGround = placeOnGround
     
     def to_json(self):
         return json.dumps({'CreatePed':self.__dict__})

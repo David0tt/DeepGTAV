@@ -42,7 +42,8 @@ if __name__ == '__main__':
 
     client = Client(ip=args.host, port=args.port)
     
-    scenario = Scenario(drivingMode=786603, vehicle="buzzard", location=[245.23306274414062, -998.244140625, 29.205352783203125]) #automatic driving
+    # scenario = Scenario(drivingMode=786603, vehicle="buzzard", location=[245.23306274414062, -998.244140625, 29.205352783203125]) #automatic driving
+    scenario = Scenario(drivingMode=0, vehicle="buzzard", location=[245.23306274414062, -998.244140625, 29.205352783203125]) #automatic driving
     # dataset=Dataset(location=True, time=True, instanceSegmentationImageColor=True, exportBBox2D=True, occlusionImage=True, segmentationImage=True) #,exportStencilImage=True, exportLiDAR=True, maxLidarDist=50)
     # dataset=Dataset(location=True, time=True, exportBBox2D=True, segmentationImage=True, instanceSegmentationImageColor=True) #exportIndividualStencilImages=True)
     dataset=Dataset(location=True, time=True, exportBBox2D=True, segmentationImage=True, exportStencilImage=True) # , exportIndividualStencilImages=True) #exportIndividualStencilImages=True)
@@ -96,11 +97,11 @@ if __name__ == '__main__':
             #     client.sendMessage(StartRecording())
 
             if count % 10 == 0:
-                client.sendMessage(CreatePed(0, 30, 0, 0, 0))
+                client.sendMessage(CreatePed(0, 50, 0, 0, 0, False))
 
             if count == 2:
-                client.sendMessage(TeleportToLocation(-388, 0, 200))
-                client.sendMessage(GoToLocation(1165, -553, 40))
+                client.sendMessage(TeleportToLocation(-2200, -2200, 200))
+                # client.sendMessage(GoToLocation(-2200, -1000, 40))
 
             if count == 4:
                 client.sendMessage(SetClockTime(12))
@@ -140,17 +141,17 @@ if __name__ == '__main__':
 
             # keep the currentTravelHeight under the wanted one
             # Move a little bit in the desired direction but primarily correct the height
-            estimated_ground_height = message["location"][2] - message["HeightAboveGround"]
-            if message["HeightAboveGround"] > currentTravelHeight + 3 or message["HeightAboveGround"] < currentTravelHeight - 3:
-                direction = np.array([x_target - message["location"][0], y_target - message["location"][1]])
-                direction = direction / np.linalg.norm(direction)
-                direction = direction * 50
-                x_temporary = message["location"][0] + direction[0]
-                y_temporary = message["location"][1] + direction[1]
-                client.sendMessage(GoToLocation(x_temporary, y_temporary, estimated_ground_height + currentTravelHeight))
-                print("Correcting height")
-            else:
-                client.sendMessage(GoToLocation(x_target, y_target, estimated_ground_height + currentTravelHeight))
+            # estimated_ground_height = message["location"][2] - message["HeightAboveGround"]
+            # if message["HeightAboveGround"] > currentTravelHeight + 3 or message["HeightAboveGround"] < currentTravelHeight - 3:
+            #     direction = np.array([x_target - message["location"][0], y_target - message["location"][1]])
+            #     direction = direction / np.linalg.norm(direction)
+            #     direction = direction * 50
+            #     x_temporary = message["location"][0] + direction[0]
+            #     y_temporary = message["location"][1] + direction[1]
+            #     client.sendMessage(GoToLocation(x_temporary, y_temporary, estimated_ground_height + currentTravelHeight))
+            #     print("Correcting height")
+            # else:
+            #     client.sendMessage(GoToLocation(x_target, y_target, estimated_ground_height + currentTravelHeight))
 
         # try:
             # print(message["bbox2d"])

@@ -447,11 +447,8 @@ void Scenario::createVehicle(const char* model, float relativeForward, float rel
     ENTITY::SET_ENTITY_AS_NO_LONGER_NEEDED(&tempV);
 }
 
-void Scenario::createPed(int model, float relativeForward, float relativeRight, float heading, int task) {
+void Scenario::createPed(int model, float relativeForward, float relativeRight, float heading, int task, bool placeOnGround) {
 	log("Scenario::createPed");
-	// TODO make function argument
-	bool placeOnGround = true;
-
 
 	Vector3 currentForwardVector, currentRightVector, currentUpVector, currentPos;
 	ENTITY::GET_ENTITY_MATRIX(m_ownVehicle, &currentForwardVector, &currentRightVector, &currentUpVector, &currentPos);
