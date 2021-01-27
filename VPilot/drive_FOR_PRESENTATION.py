@@ -46,7 +46,7 @@ if __name__ == '__main__':
     scenario = Scenario(drivingMode=0, vehicle="buzzard", location=[245.23306274414062, -998.244140625, 29.205352783203125]) #automatic driving
     # dataset=Dataset(location=True, time=True, instanceSegmentationImageColor=True, exportBBox2D=True, occlusionImage=True, segmentationImage=True) #,exportStencilImage=True, exportLiDAR=True, maxLidarDist=50)
     # dataset=Dataset(location=True, time=True, exportBBox2D=True, segmentationImage=True, instanceSegmentationImageColor=True) #exportIndividualStencilImages=True)
-    dataset=Dataset(location=True, time=True, exportBBox2D=True, segmentationImage=True, exportStencilImage=True) # , exportIndividualStencilImages=True) #exportIndividualStencilImages=True)
+    dataset=Dataset(location=True, time=True, exportBBox2D=True, exportBBox2DUnprocessed=True, segmentationImage=True, exportStencilImage=True) # , exportIndividualStencilImages=True) #exportIndividualStencilImages=True)
     
     # dataset=Dataset(location=True, time=True, exportLiDAR=True, maxLidarDist=120) #exportIndividualStencilImages=True)
     
@@ -100,7 +100,7 @@ if __name__ == '__main__':
             #     client.sendMessage(StartRecording())
             # if count > 50 and count % 10 == 1:
             #     client.sendMessage(StopRecording())
-            if count == 60:
+            if count == 200:
                 client.sendMessage(StartRecording())
 
             # create some Pedestrians in a grid
@@ -158,7 +158,7 @@ if __name__ == '__main__':
             if message == None:
                 continue
 
-            messages.append(message)
+            # messages.append(message)
 
             # keep the currentTravelHeight under the wanted one
             # Move a little bit in the desired direction but primarily correct the height
@@ -266,7 +266,8 @@ if __name__ == '__main__':
 
             # Plot Segmentation Image and Bounding Box image overlayed for testing 
             if message["segmentationImage"] != None and message["segmentationImage"] != "":
-                bboxes = convertBBoxesDeepGTAToYolo(message["bbox2d"])
+                # bboxes = convertBBoxesDeepGTAToYolo(message["bbox2d"])
+                bboxes = convertBBoxesDeepGTAToYolo(message["bbox2dUnprocessed"])
                 bbox_image = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormat_to_Image(bboxes))
                 
                 nparr = np.fromstring(base64.b64decode(message["segmentationImage"]), np.uint8)

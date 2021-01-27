@@ -20,12 +20,23 @@ const float CAM_OFFSET_FORWARD = 0;// .5;
 const float CAM_OFFSET_UP = 1.065;
 const float CAR_CENTER_OFFSET_UP = 0.665;//Distance to ground is ~1.73m (as per kitti specs for lidar)
 
+//const bool SET_PED_BOXES = true;
+//const float PED_BOX_WIDTH = 1.2f;
+//const float PED_BOX_LENGTH = 1.0f;
+//const float PED_BOX_WALKING_LEN = 1.44f;
+//
+//const float BBOX_ADJUSTMENT_FACTOR = 1.1f;
+
+
+// TODO settings when using the unprocessed bounding boxes as output bounding boxes 
 const bool SET_PED_BOXES = true;
 const float PED_BOX_WIDTH = 1.2f;
 const float PED_BOX_LENGTH = 1.0f;
 const float PED_BOX_WALKING_LEN = 1.44f;
 
-const float BBOX_ADJUSTMENT_FACTOR = 1.1f;
+const float BBOX_ADJUSTMENT_FACTOR = 1.0f;
+
+
 
 //TODO: These should be moved to a settings file so don't need to rebuild when only changing settings
 

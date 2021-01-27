@@ -113,6 +113,8 @@ void DataExport::parseDatasetConfig(const Value& dc, bool setDefaults) {
 
 	if (!dc["exportBBox2D"].IsNull()) exportBBox2D = dc["exportBBox2D"].GetBool();
 	else if (setDefaults) exportBBox2D = _EXPORT_BBOX_2D_;
+	if (!dc["exportBBox2DUnprocessed"].IsNull()) exportBBox2DUnprocessed = dc["exportBBox2DUnprocessed"].GetBool();
+	else if (setDefaults) exportBBox2DUnprocessed = _EXPORT_BBOX_2D_UNPROCESSED_;
 	if (!dc["occlusionImage"].IsNull()) occlusionImage = dc["occlusionImage"].GetBool();
 	else if (setDefaults) occlusionImage = _OCCLUSION_IMAGE_;
 	if (!dc["unusedStencilIPixelmage"].IsNull()) unusedStencilIPixelmage = dc["unusedStencilIPixelmage"].GetBool();
@@ -143,6 +145,7 @@ void DataExport::parseDatasetConfig(const Value& dc, bool setDefaults) {
 	else if (setDefaults) exportIndividualStencilImages = _EXPORT_INDIVIDUAL_STENCIL_IMAGE_;
 	if (!dc["exportDepthBuffer"].IsNull()) exportDepthBuffer = dc["exportDepthBuffer"].GetBool();
 	else if (setDefaults) exportDepthBuffer = _EXPORT_DEPTH_BUFFER_;
+
 
 
 	screenCapturer = new ScreenCapturer(s_camParams.width, s_camParams.height);
@@ -186,6 +189,7 @@ void DataExport::buildJSONObject() {
 
 	// Add empty fields. This is used to have the fields None in the JSON to prevent client errors
 	if (exportBBox2D) d.AddMember("bbox2d", a, allocator);
+	if (exportBBox2DUnprocessed) d.AddMember("bbox2dUnprocessed", a, allocator);
 	if (occlusionImage) d.AddMember("occlusionImage", a, allocator);
 	if (unusedStencilIPixelmage) d.AddMember("unusedStencilIPixelmage", a, allocator);
 	if (segmentationImage) d.AddMember("segmentationImage", a, allocator);
@@ -365,6 +369,7 @@ StringBuffer DataExport::generateMessage() {
 		Document::AllocatorType& allocator = d.GetAllocator();
 
 		if (exportBBox2D) d.AddMember("bbox2d", m_pObjDet->exportDetectionsString(fObjInfo), allocator);
+		if (exportBBox2DUnprocessed) d.AddMember("bbox2dUnprocessed", m_pObjDet->exportDetectionsStringUnprocessed(fObjInfo), allocator);
 		if (occlusionImage) d.AddMember("occlusionImage", m_pObjDet->outputOcclusion(), allocator);
 		if (unusedStencilIPixelmage) d.AddMember("unusedStencilIPixelmage", m_pObjDet->outputUnusedStencilPixels(), allocator);
 		

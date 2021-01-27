@@ -144,7 +144,8 @@ public:
 	void refreshBuffers();
 
 	std::string exportDetectionsString(FrameObjectInfo fObjInfo, ObjEntity * vPerspective = NULL);
-	
+	std::string exportDetectionsStringUnprocessed(FrameObjectInfo fObjInfo, ObjEntity * vPerspective = NULL);
+
 	// TODO remove
 	//void exportDetections(FrameObjectInfo fObjInfo, ObjEntity* vPerspective = NULL);
     std::string exportImage(BYTE* data, int imageType = CV_8UC3);

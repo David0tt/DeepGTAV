@@ -160,7 +160,7 @@ def add_bboxes(image, bboxes):
         x2 = bbox['right']
         y2 = bbox['bottom']
         label = bbox['label']
-        cv2.putText(image, label, (x1, y1+25), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 0), thickness = 2, lineType=cv2.LINE_AA) 
+        #cv2.putText(image, label, (x1, y1+25), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 0), thickness = 2, lineType=cv2.LINE_AA) 
         cv2.rectangle(image, (x1, y1), (x2, y2), (255, 255, 0), 2)
 
     return image

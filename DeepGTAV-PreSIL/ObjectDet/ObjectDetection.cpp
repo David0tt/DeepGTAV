@@ -2611,6 +2611,25 @@ std::string ObjectDetection::exportDetectionsString(FrameObjectInfo fObjInfo, Ob
 	return str;
 }
 
+
+std::string ObjectDetection::exportDetectionsStringUnprocessed(FrameObjectInfo fObjInfo, ObjEntity* vPerspective) {
+	log("ObjectDetection::exportDetectionsStringUnprocessed()");
+
+	std::ostringstream oss;
+
+	//exportEntities(fObjInfo.vehicles, oss, false, false, true, OBJECT_MAX_DIST, 1, 1);
+	//exportEntities(fObjInfo.peds, oss, false, false, true, OBJECT_MAX_DIST, 1, 1);
+
+	exportEntities(fObjInfo.vehicles, oss, true, true, false);
+	exportEntities(fObjInfo.peds, oss, true, true, false);
+
+	std::string str(oss.str());
+
+	return str;
+}
+
+
+
 //void ObjectDetection::exportDetections(FrameObjectInfo fObjInfo, ObjEntity* vPerspective) {
 //    if (collectTracking) {
 //        //TODO

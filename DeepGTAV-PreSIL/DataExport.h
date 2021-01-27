@@ -45,6 +45,7 @@ private:
 	bool location;
 	bool time;
 	bool exportBBox2D;
+	bool exportBBox2DUnprocessed;
 	bool occlusionImage;
 	bool unusedStencilIPixelmage;
 	bool segmentationImage;
