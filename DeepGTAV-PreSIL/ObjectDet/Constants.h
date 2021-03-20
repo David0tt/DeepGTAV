@@ -14,11 +14,6 @@ static const Eigen::Vector3f WORLD_EAST(1.0, 0.0, 0.0);
 const int FLOATS_PER_POINT = 4;
 const int OBJECT_MAX_DIST = 0; // 200; //in metres (label_aug will have objects past this value)
 
-// The max distances Above have been adjusted for only bounding box capturing
-
-const float CAM_OFFSET_FORWARD = 0;// .5;
-const float CAM_OFFSET_UP = 1.065;
-const float CAR_CENTER_OFFSET_UP = 0.665;//Distance to ground is ~1.73m (as per kitti specs for lidar)
 
 //const bool SET_PED_BOXES = true;
 //const float PED_BOX_WIDTH = 1.2f;

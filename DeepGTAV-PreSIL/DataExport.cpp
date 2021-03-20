@@ -210,18 +210,14 @@ void DataExport::buildJSONObject() {
 }
 
 
-void DataExport::setRenderingCam(Vehicle v, int height, int length) {
+void DataExport::setRenderingCam(Vehicle v) {
 	log("DataExport::setRenderingCam");
 	Vector3 position;
 	Vector3 fVec, rVec, uVec;
 	Vector3 rotation = ENTITY::GET_ENTITY_ROTATION(v, 0);
 	ENTITY::GET_ENTITY_MATRIX(v, &fVec, &rVec, &uVec, &position);
 
-	Vector3 offset;
-	offset.x = 0;
-	offset.y = length / 2;
-	offset.z = height;
-	Vector3 offsetWorld = camToWorld(offset, fVec, rVec, uVec);
+	Vector3 offsetWorld = camToWorld(cameraPositionOffset, fVec, rVec, uVec);
 	//Since it's offset need to subtract the cam position
 	offsetWorld.x -= s_camParams.pos.x;
 	offsetWorld.y -= s_camParams.pos.y;
@@ -232,7 +228,7 @@ void DataExport::setRenderingCam(Vehicle v, int height, int length) {
 	GAMEPLAY::SET_TIME_SCALE(0.0f);
 
 	//TODO fix pointer billiard, after making DataExport the owner of the camera
-	CAM::SET_CAM_COORD(camera, position.x + offsetWorld.x + cameraPositionOffset.x, position.y + offsetWorld.y + cameraPositionOffset.y, position.z + offsetWorld.z + cameraPositionOffset.z);
+	CAM::SET_CAM_COORD(camera, position.x + offsetWorld.x, position.y + offsetWorld.y, position.z + offsetWorld.z);
 	CAM::SET_CAM_ROT(camera, rotation.x + cameraRotationOffset.x, rotation.y + cameraRotationOffset.y, rotation.z + cameraRotationOffset.z, 0);
 	
 	// TODO this was added for simplicity, its ownership should be restrucutred.
@@ -278,7 +274,7 @@ StringBuffer DataExport::generateMessage() {
 	GAMEPLAY::SET_GAME_PAUSED(true);
 	GAMEPLAY::SET_TIME_SCALE(0.0f);
 
-	setRenderingCam((*m_ownVehicle), CAM_OFFSET_UP, CAM_OFFSET_FORWARD);
+	setRenderingCam((*m_ownVehicle));
 
 	////Can check whether camera and vehicle are aligned
 	//Vector3 camRot2 = CAM::GET_CAM_ROT(camera, 0);

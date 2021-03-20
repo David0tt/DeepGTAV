@@ -79,7 +79,7 @@ private:
 	void exportHeightAboveGround();
 
 
-	void setRenderingCam(Vehicle v, int height, int length);
+	void setRenderingCam(Vehicle v);
 	void capture();
 
 
