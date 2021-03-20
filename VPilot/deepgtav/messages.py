@@ -179,13 +179,14 @@ class CreatePed:
 
 
 class CreateVehicle:
-    def __init__(self, model, relativeForward, relativeRight, heading, color, color2):
+    def __init__(self, model="Blista", relativeForward=0, relativeRight=0, heading=0, color=0, color2=0, placeOnGround=True):
         self.model = model
         self.relativeForward = relativeForward
         self.relativeRight = relativeRight
         self.heading = heading
         self.color = color
         self.color2 = color2
+        self.placeOnGround = placeOnGround
 
     def to_json(self):
         return json.dumps({'CreateVehicle':self.__dict__})

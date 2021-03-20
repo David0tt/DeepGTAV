@@ -411,15 +411,30 @@ void Scenario::setCameraPositionAndRotation(float x, float y, float z, float rot
 }
 
 
-void Scenario::createVehicle(const char* model, float relativeForward, float relativeRight, float heading, int color, int color2) {
+void Scenario::createVehicle(const char* model, float relativeForward, float relativeRight, float heading, int color, int color2, bool placeOnGround) {
+	log("Scenario::CreateVehicle");
+	log("Model: ");
+	log(model);
 	Vector3 currentForwardVector, currentRightVector, currentUpVector, currentPos;
 	ENTITY::GET_ENTITY_MATRIX(m_ownVehicle, &currentForwardVector, &currentRightVector, &currentUpVector, &currentPos);
 
     Hash vehicleHash = GAMEPLAY::GET_HASH_KEY(const_cast<char*>(model));
+
     Vector3 pos;
     pos.x = currentPos.x + currentForwardVector.x * relativeForward + currentRightVector.x * relativeRight;
     pos.y = currentPos.y + currentForwardVector.y * relativeForward + currentRightVector.y * relativeRight;
     pos.z = currentPos.z + currentForwardVector.z * relativeForward + currentRightVector.z * relativeRight;
+
+	if (placeOnGround) {
+		float groundZ;
+		GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(pos.x, pos.y, pos.z, &groundZ, false);
+		float waterZ;
+		WATER::GET_WATER_HEIGHT(pos.x, pos.y, pos.z, &waterZ);
+		float heightZ = std::max(groundZ, waterZ);
+		pos.z = heightZ;
+	}
+
+
     STREAMING::REQUEST_MODEL(vehicleHash);
     while (!STREAMING::HAS_MODEL_LOADED(vehicleHash)) WAIT(0);
     Vehicle tempV = VEHICLE::CREATE_VEHICLE(vehicleHash, pos.x, pos.y, pos.z, heading, FALSE, FALSE);
@@ -427,7 +442,15 @@ void Scenario::createVehicle(const char* model, float relativeForward, float rel
     if (color != -1) {
         VEHICLE::SET_VEHICLE_COLOURS(tempV, color, color2);
     }
-    VEHICLE::SET_VEHICLE_ON_GROUND_PROPERLY(tempV);
+
+	if (placeOnGround) {
+		VEHICLE::SET_VEHICLE_ON_GROUND_PROPERLY(tempV);
+	}
+	
+	Ped tempPed = PED::CREATE_RANDOM_PED(pos.x, pos.y, pos.z);
+	PED::SET_PED_INTO_VEHICLE(tempPed, tempV, -1);
+	AI::TASK_VEHICLE_DRIVE_WANDER(tempPed, tempV, 2.0f, 16777216);
+
 
     //if (VEHICLE::IS_THIS_MODEL_A_BICYCLE(vehicleHash) || VEHICLE::IS_THIS_MODEL_A_BIKE(vehicleHash)) {
     //    log("Trying to set ped on bike", true);
@@ -445,6 +468,7 @@ void Scenario::createVehicle(const char* model, float relativeForward, float rel
     //}
 
     ENTITY::SET_ENTITY_AS_NO_LONGER_NEEDED(&tempV);
+	ENTITY::SET_PED_AS_NO_LONGER_NEEDED(&tempPed);
 }
 
 void Scenario::createPed(int model, float relativeForward, float relativeRight, float relativeUp, float heading, int task, bool placeOnGround) {
@@ -472,13 +496,20 @@ void Scenario::createPed(int model, float relativeForward, float relativeRight, 
 	if (placeOnGround) {
 		float groundZ;
 		GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(pos.x, pos.y, pos.z, &groundZ, false);
-		pos.z = groundZ;
+		float waterZ;
+		WATER::GET_WATER_HEIGHT(pos.x, pos.y, pos.z, &waterZ);
+		float heightZ = std::max(groundZ, waterZ);
+
+		pos.z = heightZ;
 	}
 
-	Ped ped = PED::CREATE_RANDOM_PED(pos.x, pos.y, pos.z); 
-	WAIT(0); 
-	ENTITY::SET_PED_AS_NO_LONGER_NEEDED(&ped);
+	Ped tempPed = PED::CREATE_RANDOM_PED(pos.x, pos.y, pos.z); 
+	//WAIT(0); 
+	AI::TASK_WANDER_STANDARD(tempPed, 10.0f, 10);
+	//AI::TASK_WANDER_STANDARD(tempPed, 0, 0);
+	ENTITY::SET_PED_AS_NO_LONGER_NEEDED(&tempPed);
 }
+
 
 //void Scenario::createVehicles() {
 //    setPosition();

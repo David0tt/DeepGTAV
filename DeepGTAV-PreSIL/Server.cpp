@@ -104,7 +104,7 @@ void Server::checkRecvMessage() {
 		}
 		else if (d.HasMember("CreateVehicle")) {
 			const Value& vd = d["CreateVehicle"];
-			scenario.createVehicle(vd["model"].GetString(), vd["relativeForward"].GetFloat(), vd["relativeRight"].GetFloat(), vd["heading"].GetFloat(), vd["color"].GetInt(), vd["color2"].GetInt());
+			scenario.createVehicle(vd["model"].GetString(), vd["relativeForward"].GetFloat(), vd["relativeRight"].GetFloat(), vd["heading"].GetFloat(), vd["color"].GetInt(), vd["color2"].GetInt(), vd["placeOnGround"].GetBool());
 		}
 		else if (d.HasMember("SetWeather")) {
 			const Value& wd = d["SetWeather"];
