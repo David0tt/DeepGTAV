@@ -6,6 +6,7 @@ import numpy as np
 import os
 
 from utils.Constants import IMG_WIDTH, IMG_HEIGHT
+from math import sqrt
 
 # There are some rounding Errors when converting from Yolo to Visdrone Format and Back (because of converting from relative image coordinates to Pixel values and vice versa)
 
@@ -123,7 +124,7 @@ def show_image_with_bboxes(image, bboxes):
 
 
 
-def add_bboxes(image, bboxes):
+def add_bboxes(image, bboxes, show_labels=True):
     """Add bounding boxes to an image
 
     bboxes as list of dicts, e.g.
@@ -160,8 +161,12 @@ def add_bboxes(image, bboxes):
         x2 = bbox['right']
         y2 = bbox['bottom']
         label = bbox['label']
-        #cv2.putText(image, label, (x1, y1+25), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 0), thickness = 2, lineType=cv2.LINE_AA) 
-        cv2.rectangle(image, (x1, y1), (x2, y2), (255, 255, 0), 2)
+        if show_labels:
+            color = (255, 255, 0)
+            # if x2 - x1 <= 10 or y2 - y1 <= 10:
+            #     color = (0,255,255)
+            cv2.putText(image, label, (x1, y1+25), cv2.FONT_HERSHEY_SIMPLEX, 1.0, color, thickness = 2, lineType=cv2.LINE_AA) 
+        cv2.rectangle(image, (x1, y1), (x2, y2), color, 2)
 
     return image
 
@@ -351,7 +356,7 @@ assert getLabelFromObjectName('Camper') == 'van'
 # parse the bbboxes from label_aug format to VisDrone format. This also catches some wrong class labels by looking at the models, e.g. SUVs as  truck
 # TODO improve
 # see file "Decision on the classes"
-def parseBBoxLabel_augToVisDrone(bboxes, include_boats=False):
+def parseBBoxLabel_augToVisDrone(bboxes, include_boats=False, max_distance_peds=None):
     items = bboxes.split("\n")
     ret = []
     for item in items[:-1]:
@@ -365,8 +370,10 @@ def parseBBoxLabel_augToVisDrone(bboxes, include_boats=False):
 
         object_name = data[21]
 
-        
+
         ignore_this_bbox = False
+
+
         # Convert Label to VisDrone Label
 
         # if object_name in {'firetruk',
@@ -441,6 +448,18 @@ def parseBBoxLabel_augToVisDrone(bboxes, include_boats=False):
                 not_found_file.write(object_name + "\n") # + "\n From Labels: \n" + bboxes)
             ignore_this_bbox = True
 
+
+        if label=="pedestrian" or label=="people":
+            if max_distance_peds != None:
+                x=float(data[11])
+                y=float(data[12])
+                z=float(data[13])
+                dist = sqrt(x*x + y*y + z*z)
+                if dist > max_distance_peds:
+                    ignore_this_bbox=True
+
+
+
         # ignore 1920 1080 0 0 boxes
         if not (left > right or top > bottom) and not ignore_this_bbox:
             ret.append({"label": label,"left": left,"top": top,"right": right,"bottom": bottom})
@@ -499,8 +518,8 @@ assert bbox_test2 == revertConvertBBoxVisDroneToYolo(convertBBoxVisDroneToYolo(b
 
 
 # fully converts bounding boxes from label_aug format to format as required by ultralytics yolo training
-def convertBBoxesDeepGTAToYolo(bboxes, include_boats=False):
-    bboxes = parseBBoxLabel_augToVisDrone(bboxes, include_boats=include_boats)
+def convertBBoxesDeepGTAToYolo(bboxes, include_boats=False, max_distance_peds=None):
+    bboxes = parseBBoxLabel_augToVisDrone(bboxes, include_boats=include_boats, max_distance_peds=max_distance_peds)
     bboxes = convertBBoxVisDroneToYolo(bboxes, include_boats=include_boats)
     bboxes = convertBBoxesYolo_relative(bboxes, IMG_WIDTH, IMG_HEIGHT)
     bboxes = ["{:d} {:1.6f} {:1.6f} {:1.6f} {:1.6f}".format(*bbox) for bbox in bboxes]
@@ -523,6 +542,11 @@ assert parseBBox_to_List(bbox_test) == [[5, 0.474632, 0.828758, 0.104412, 0.1006
                                         [4, 0.511029, 0.614379, 0.097794, 0.075817]]
 
 
+def revertParseBBox_to_List(bboxes):
+    bboxes = ["{:d} {:1.6f} {:1.6f} {:1.6f} {:1.6f}".format(*bbox) for bbox in bboxes]
+    bboxes = "\n".join(bboxes)
+    return bboxes
+
 def parseBBox_YoloFormat_to_Image(bboxes, img_width=IMG_WIDTH, img_height=IMG_HEIGHT, include_boats=False):
     bboxes = parseBBox_to_List(bboxes)
     bboxes = revertConvertBBoxesYolo_relative(bboxes, img_width, img_height)
@@ -534,3 +558,40 @@ def parseBBox_YoloFormat_to_Number(bboxes, img_width=IMG_WIDTH, img_height=IMG_H
     bboxes = revertConvertBBoxesYolo_relative(bboxes, img_width, img_height)
     bboxes = revertConvertBBoxVisDroneToYolo_ONLY_NUMBER(bboxes)
     return bboxes
+
+
+
+
+def combineBBoxesProcessedUnprocessed(bbox_processed, bbox_unprocessed, include_boats=False):
+    bboxes_unprocessed = convertBBoxesDeepGTAToYolo(bbox_unprocessed, include_boats=True, max_distance_peds=200)
+    bboxes_processed = convertBBoxesDeepGTAToYolo(bbox_processed, include_boats=True)
+    bboxes_unprocessed = parseBBox_to_List(bboxes_unprocessed)
+    bboxes_processed = parseBBox_to_List(bboxes_processed)
+    bboxes_unprocessed = [b for b in bboxes_unprocessed if b[0] == 0 or b[0] == 1]
+    bboxes_processed = [b for b in bboxes_processed if b[0] != 0 and b[0] != 1]
+
+    bboxes = bboxes_unprocessed + bboxes_processed
+
+    bboxes = revertParseBBox_to_List(bboxes)
+    return bboxes
+
+    # return ""
+
+# bbox_unprocessed = "5 200 0.9 0.1 0.1\n0 0.5 0.8 0.1 0.8\n4 0.4 0.7 0.1 0.1\n1 0.5 0.7 0.0 0.1"
+# bbox_processed = "5 0.474632 0.828758 0.104412 0.100654\n0 0.485662 0.751634 0.108824 0.079739\n4 0.484559 0.686275 0.113235 0.078431\n1 0.511029 0.614379 0.097794 0.075817"
+
+bbox_processed = "Boat 0 0.477728 -2.31636 314 132 441 160 2.18275 2.7 10.8941 -42.7242 -27.6157 70.1074 -2.86367 15362 2087 0 2.18372 -0.445665 -0.181757 speeder 0\n"
+bbox_processed += "Boat 0 0.485109 3.08328 867 167 1019 212 3.20079 2.57548 10.8283 -1.18703 -22.3365 66.2866 3.06537 15874 2576 0 1.81099 -0.552645 -0.00045231 jetmax 0\n"
+bbox_processed += "Pedestrian 0 0.976604 3.30417 669 574 692 587 2.12 1.2 1 -8.49492 2.50572 28.629 3.01572 10498 101 0 0.473502 -0.556221 -0.410395 Pedestrian 0\n"
+bbox_processed += "Pedestrian 0 0.967146 3.18036 902 713 930 733 2.15849 1.2 1 -1.09266 5.71969 23.3511 3.1336 10754 194 0 0.186969 -0.556393 -0.240545 Pedestrian 0"
+
+
+bbox_unprocessed = "Boat 0 0.477728 -2.31636 300 100 400 200 2.18275 2.7 10.8941 -42.7242 -27.6157 70.1074 -2.86367 15362 2087 0 2.18372 -0.445665 -0.181757 speeder 0\n"
+bbox_unprocessed += "Boat 0 0.485109 3.08328 800 100 1000 200 3.20079 2.57548 10.8283 -1.18703 -22.3365 66.2866 3.06537 15874 2576 0 1.81099 -0.552645 -0.00045231 jetmax 0\n"
+bbox_unprocessed += "Pedestrian 0 0.976604 3.30417 600 500 700 600 2.12 1.2 1 -8.49492 2.50572 28.629 3.01572 10498 101 0 0.473502 -0.556221 -0.410395 Pedestrian 0\n"
+bbox_unprocessed += "Pedestrian 0 0.967146 3.18036 900 700 700 800 2.15849 1.2 1 -1.09266 5.71969 23.3511 3.1336 10754 194 0 0.186969 -0.556393 -0.240545 Pedestrian 0"
+
+# convertBBoxesDeepGTAToYolo(bbox_unprocessed, include_boats=True)
+# convertBBoxesDeepGTAToYolo(bbox_processed, include_boats=True)
+assert combineBBoxesProcessedUnprocessed(bbox_processed, bbox_unprocessed, include_boats=True) == '0 0.338542 0.509259 0.052083 0.092593\n10 0.196615 0.135185 0.066146 0.025926\n10 0.491146 0.175463 0.079167 0.041667'
+
