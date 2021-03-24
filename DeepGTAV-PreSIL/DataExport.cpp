@@ -552,7 +552,13 @@ void DataExport::exportTime() {
 }
 
 void DataExport::exportHeightAboveGround() {
-	d["HeightAboveGround"] = ENTITY::GET_ENTITY_HEIGHT_ABOVE_GROUND(*m_ownVehicle);
+	Vector3 pos = ENTITY::GET_ENTITY_COORDS(*m_ownVehicle, false);
+	float waterZ;
+	WATER::GET_WATER_HEIGHT(pos.x, pos.y, pos.z, &waterZ);
+	float heightAboveWater = pos.z - waterZ;
+	float height = std::min(heightAboveWater, ENTITY::GET_ENTITY_HEIGHT_ABOVE_GROUND(*m_ownVehicle));
+
+	d["HeightAboveGround"] = height;
 }
 
 //void DataExport::setDirection() {
