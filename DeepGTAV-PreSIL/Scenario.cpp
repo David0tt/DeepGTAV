@@ -17,12 +17,6 @@
 
 // #include "base64.h"
 
-// TODO remove
-const float VERT_CAM_FOV = 59; //In degrees
-//Need to input the vertical FOV with GTA functions.
-//90 degrees horizontal (KITTI) corresponds to 59 degrees vertical (https://www.gtaall.com/info/fov-calculator.html).
-const float HOR_CAM_FOV = 90; //In degrees
-
 const int PEDESTRIAN_CLASS_ID = 10;
 
 char* Scenario::weatherList[14] = { "CLEAR", "EXTRASUNNY", "CLOUDS", "OVERCAST", "RAIN", "CLEARING", "THUNDER", "SMOG", "FOGGY", "XMAS", "SNOWLIGHT", "BLIZZARD", "NEUTRAL", "SNOW" };

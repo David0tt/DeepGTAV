@@ -38,7 +38,7 @@ ObjectDetection::~ObjectDetection()
 //Global variable for storing camera parameters
 CamParams s_camParams;
 
-const float VERT_CAM_FOV = 59; //In degrees
+//const float VERT_CAM_FOV = 59; //In degrees
                                //Need to input the vertical FOV with GTA functions.
                                //90 degrees horizontal (KITTI) corresponds to 59 degrees vertical (https://www.gtaall.com/info/fov-calculator.html).
 const float HOR_CAM_FOV = 90; //In degrees
@@ -1156,21 +1156,6 @@ void ObjectDetection::processStencilPixel3D(const uint8_t &stencilVal, const int
 			// TODO Now we need to find the edges from the Depth Map and Flood fill
 			// From some testing is can be seen that this is not really needed, we almost never get here
 						
-
-
-			//// As a final resort use the closest entity
-			//float dist = FLT_MAX;
-			//ObjEntity* closestObj = NULL;
-			//for (int k = 0; k < pointEntities3D.size(); k++) {
-			//	float distToObj = sqrt(SYSTEM::VDIST2(pointEntities3D[k]->location.x, pointEntities3D[k]->location.y, pointEntities3D[k]->location.z, relPos.x, relPos.y, relPos.z));
-			//	if (distToObj < dist) {
-			//		dist = distToObj;
-			//		closestObj = pointEntities3D[k];
-			//	}
-			//}
-			//addSegmentedPoint3D(i, j, closestObj);
-			////log("WARNING: Added segmentation point by closest entity");
-
 		}
 	}
 }
@@ -2681,17 +2666,6 @@ std::string ObjectDetection::exportDetectionsStringUnprocessed(FrameObjectInfo f
 //}
 
 
-//// TODO rework to allow sending images over TCP
-//void ObjectDetection::exportImage(BYTE* data, std::string filename) {
-//	if (!DONT_COLLECT_IMAGE_AND_BBOXES_TO_FILE) {
-//		cv::Mat tempMat(cv::Size(s_camParams.width, s_camParams.height), CV_8UC3, data);
-//		if (filename.empty()) {
-//			filename = m_imgFilename;
-//		}
-//		cv::imwrite(filename, tempMat);
-//		tempMat.release();
-//	}
-//}
 
 std::string ObjectDetection::exportImage(BYTE* data, int imageType) {
 	cv::Mat tempMat(cv::Size(s_camParams.width, s_camParams.height), imageType, data);
