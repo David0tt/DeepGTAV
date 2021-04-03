@@ -89,14 +89,14 @@ void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
 
 	if (!dc["frame"].IsNull()) {
 		if (!dc["frame"][0].IsNull()) s_camParams.width = dc["frame"][0].GetInt();
-		else if (setDefaults) s_camParams.width = _WIDTH_;
+		else if (setDefaults) s_camParams.width = _DEFAULT_CAMERA_WIDTH_;
 
 		if (!dc["frame"][1].IsNull()) s_camParams.height = dc["frame"][1].GetInt();
-		else if (setDefaults) s_camParams.height = _HEIGHT_;
+		else if (setDefaults) s_camParams.height = _DEFAULT_CAMERA_HEIGHT_;
 	}
 	else if (setDefaults) {
-		s_camParams.width = _WIDTH_;
-		s_camParams.height = _HEIGHT_;
+		s_camParams.width = _DEFAULT_CAMERA_WIDTH_;
+		s_camParams.height = _DEFAULT_CAMERA_HEIGHT_;
 	}
 
     //Need to reset camera params when dataset config is received
@@ -235,6 +235,8 @@ void Scenario::buildScenario() {
 
 }
 
+
+// TODO Scenario::start and Scenario::config are very similar!
 void Scenario::start(const Value& sc, const Value& dc) {
 	if (running) return;
 

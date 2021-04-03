@@ -2,8 +2,10 @@
 
 // TODO go over those settings
 #define _RATE_ 10
-#define _WIDTH_ 1920
-#define _HEIGHT_ 1080
+#define _DEFAULT_CAMERA_WIDTH_ 1920
+#define _DEFAULT_CAMERA_HEIGHT_ 1080
+#define _DEFAULT_SCREEN_WIDHT_ 1920
+#define _DEFAULT_SCREEN_HEIGHT_ 1080
 #define _DIRECTION_ false
 #define _REWARD_ false
 #define _THROTTLE_ false

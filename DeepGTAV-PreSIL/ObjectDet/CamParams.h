@@ -6,6 +6,8 @@ struct CamParams {
     bool init; //initialized
     int width;
     int height;
+	int screenWidth;
+	int screenHeight;
     float nearClip;
     float farClip;
     float fov;

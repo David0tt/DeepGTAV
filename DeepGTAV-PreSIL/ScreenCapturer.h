@@ -14,8 +14,6 @@ private:
 	HBITMAP hCaptureBitmap;
 	BITMAPINFOHEADER info;
 public:
-	int imageWidth;
-	int imageHeight;
 	int length;
 
 	UINT8* pixels;

@@ -69,14 +69,26 @@ void DataExport::parseDatasetConfig(const Value& dc, bool setDefaults) {
 
 	if (!dc["frame"].IsNull()) {
 		if (!dc["frame"][0].IsNull()) s_camParams.width = dc["frame"][0].GetInt();
-		else if (setDefaults) s_camParams.width = _WIDTH_;
+		else if (setDefaults) s_camParams.width = _DEFAULT_CAMERA_WIDTH_;
 
 		if (!dc["frame"][1].IsNull()) s_camParams.height = dc["frame"][1].GetInt();
-		else if (setDefaults) s_camParams.height = _HEIGHT_;
+		else if (setDefaults) s_camParams.height = _DEFAULT_CAMERA_HEIGHT_;
 	}
 	else if (setDefaults) {
-		s_camParams.width = _WIDTH_;
-		s_camParams.height = _HEIGHT_;
+		s_camParams.width = _DEFAULT_CAMERA_WIDTH_;
+		s_camParams.height = _DEFAULT_CAMERA_HEIGHT_;
+	}
+
+	if (!dc["screenResolution"].IsNull()) {
+		if (!dc["screenResolution"][0].IsNull()) s_camParams.screenWidth = dc["screenResolution"][0].GetInt();
+		else if (setDefaults) s_camParams.screenWidth = _DEFAULT_SCREEN_WIDHT_;
+
+		if (!dc["screenResolution"][1].IsNull()) s_camParams.screenHeight = dc["screenResolution"][1].GetInt();
+		else if (setDefaults) s_camParams.screenHeight = _DEFAULT_SCREEN_HEIGHT_;
+	}
+	else if (setDefaults){
+		s_camParams.screenWidth = _DEFAULT_SCREEN_WIDHT_;
+		s_camParams.screenHeight = _DEFAULT_SCREEN_HEIGHT_;
 	}
 
 	//Need to reset camera params when dataset config is received
@@ -147,8 +159,7 @@ void DataExport::parseDatasetConfig(const Value& dc, bool setDefaults) {
 	else if (setDefaults) exportDepthBuffer = _EXPORT_DEPTH_BUFFER_;
 
 
-
-	screenCapturer = new ScreenCapturer(s_camParams.width, s_camParams.height);
+	screenCapturer = new ScreenCapturer(s_camParams.screenWidth, s_camParams.screenHeight);
 
 	buildJSONObject();
 
@@ -329,9 +340,9 @@ StringBuffer DataExport::generateMessage() {
 		
 	}
 
-	capture();
 
 	if (recording_active) {
+		capture();
 
 		setCamParams();
 		//setColorBuffer();

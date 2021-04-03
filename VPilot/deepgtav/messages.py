@@ -17,7 +17,7 @@ class Scenario:
 # TODO Default settings should be added in the future
 class Dataset:
     def __init__(self, **kwargs):
-            # rate=None, frame=None, vehicles=None, peds=None, trafficSigns=None, direction=None, reward=None, 
+            # rate=None, frame=None, screenResolution=None, vehicles=None, peds=None, trafficSigns=None, direction=None, reward=None, 
             # throttle=None, brake=None, steering=None, speed=None, yawRate=None, drivingMode=None, location=None, time=None,
             # offscreen=None, showBoxes=None, pointclouds=None, stationaryScene=None, vehiclesToCreate=None, pedsToCreate=None,
             # startIndex=None, lidarParam=None, collectTracking=None, recordScenario=None, positionScenario=None):
@@ -25,6 +25,7 @@ class Dataset:
 
         # self.rate = rate #Hz
         # self.frame = frame #[width, height]
+        # self.screenResolution = screenResolution # [width, height]
 
 
         # self.vehicles = vehicles #boolean
