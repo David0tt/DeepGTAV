@@ -32,6 +32,7 @@ static ComPtr<ID3D11Buffer> constantBuf;
 static vector<unsigned char> depthBuf;
 static vector<unsigned char> colorBuf;
 static vector<unsigned char> stencilBuf;
+static vector<unsigned char> waterBuf;
 static bool requestPrevBuffers = false;
 static bool prevBufferReadyToExtract = false;
 static rage_matrices constants;
@@ -44,7 +45,7 @@ static time_point<high_resolution_clock> last_color_time;
 static time_point<high_resolution_clock> last_constant_time;
 
 static char* logDir = getenv("GTAV_LOG_FILE");
-static bool LOGGING = false;
+static bool LOGGING = true;
 static void log(std::string str) {
     if (LOGGING && logDir != NULL) {
         FILE* f = fopen(logDir, "a");
@@ -54,7 +55,7 @@ static void log(std::string str) {
     }
 }
 
-static void unpack_depth(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Resource* src, vector<unsigned char>& dst, vector<unsigned char>& stencil)
+static void unpack_depth(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Resource* src, vector<unsigned char>& dst, vector<unsigned char>& stencil, vector<unsigned char>& water)
 {
 	HRESULT hr = S_OK;
 	int screenResX;
@@ -72,7 +73,7 @@ static void unpack_depth(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Reso
 	if (hr != S_OK) throw std::system_error(hr, std::system_category());
 	if (dst.size() != src_desc.Height * src_desc.Width * 4) dst = vector<unsigned char>(src_desc.Height * src_desc.Width * 4);
 	if (stencil.size() != src_desc.Height * src_desc.Width) stencil = vector<unsigned char>(src_desc.Height * src_desc.Width);
-	
+	if (water.size() != src_desc.Height * src_desc.Width) water = vector<unsigned char>(src_desc.Height + src_desc.Width);
 	if (screenResX >= src_desc.Width)
 	{
 		for (int x = 0; x < src_desc.Width; ++x)
@@ -82,8 +83,17 @@ static void unpack_depth(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Reso
 				const float* src_f = (const float*)((const char*)src_map.pData + src_map.RowPitch*y + (x * 8));
 				unsigned char* dst_p = &dst[src_desc.Width * 4 * y + (x * 4)];
 				unsigned char* stencil_p = &stencil[src_desc.Width * y + x];
+				unsigned char* water_p = &water[src_desc.Width * y + x];
+
 				memmove(dst_p, src_f, 4);
 				memmove(stencil_p, src_f + 1, 1);
+				//memmove(water_p, src_f + 2, 1);
+
+				// TODO could try to insert
+				//memmove(water_p, src_f + x, 1); 
+				// here (where we increase x by 1 until we find the correct buffer)
+				// TODO also do below!
+
 			}
 		}
 	}
@@ -105,6 +115,7 @@ static void unpack_depth(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Reso
 				unsigned char* stencil_p = &stencil[screenResX * y + x];
 				memmove(dst_p, src_f, 4);
 				memmove(stencil_p, src_f + 1, 1);
+
 			}
 		}
 	}
@@ -211,7 +222,7 @@ void CopyIfRequested()
 	unique_lock<mutex> lk(copy_mtx);
 	if(request_copy)
 	{
-		unpack_depth(lastDev.Get(), lastCtx.Get(), depthRes.Get(), depthBuf, stencilBuf);
+		unpack_depth(lastDev.Get(), lastCtx.Get(), depthRes.Get(), depthBuf, stencilBuf, waterBuf);
 		copyTexToVector(lastDev.Get(), lastCtx.Get(), colorRes.Get(), colorBuf);
 		request_copy = false;
 		lk.unlock(); //unlock the mutex so that and woken threads don't immediately block on it
@@ -269,7 +280,7 @@ extern "C" {
             requestPrevBuffers = true;
         }
 		if (lastDev == nullptr || lastCtx == nullptr || depthRes == nullptr) return -1;
-		unpack_depth(lastDev.Get(), lastCtx.Get(), depthRes.Get(), depthBuf, stencilBuf);
+		unpack_depth(lastDev.Get(), lastCtx.Get(), depthRes.Get(), depthBuf, stencilBuf, waterBuf);
 		*buf = &depthBuf[0];
 		return depthBuf.size();
 	}
@@ -283,9 +294,16 @@ extern "C" {
 	__declspec(dllexport) int export_get_stencil_buffer(void** buf)
 	{
 		if (lastDev == nullptr || lastCtx == nullptr || depthRes == nullptr) return -1;
-		unpack_depth(lastDev.Get(), lastCtx.Get(), depthRes.Get(), depthBuf, stencilBuf);
+		unpack_depth(lastDev.Get(), lastCtx.Get(), depthRes.Get(), depthBuf, stencilBuf, waterBuf);
 		*buf = &stencilBuf[0];
 		return stencilBuf.size();
+	}
+	__declspec(dllexport) int export_get_water_buffer(void** buf)
+	{
+		if (lastDev == nullptr || lastCtx == nullptr || depthRes == nullptr) return -1;
+		unpack_depth(lastDev.Get(), lastCtx.Get(), depthRes.Get(), depthBuf, stencilBuf, waterBuf);
+		*buf = &waterBuf[0];
+		return waterBuf.size();
 	}
 	__declspec(dllexport) int export_get_constant_buffer(rage_matrices* buf) {
 		if (constantBuf == nullptr) return -1;
@@ -317,7 +335,7 @@ extern "C" {
         }
         log("Exporting previous buffers");
         if (lastDev == nullptr || lastCtx == nullptr || depthRes == nullptr) return -1;
-        unpack_depth(lastDev.Get(), lastCtx.Get(), depthRes.Get(), depthBuf, stencilBuf);
+        unpack_depth(lastDev.Get(), lastCtx.Get(), depthRes.Get(), depthBuf, stencilBuf, waterBuf);
         *dBuf = &depthBuf[0];
         *sBuf = &stencilBuf[0];
         stencilSize = stencilBuf.size();

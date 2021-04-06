@@ -78,6 +78,7 @@ private:
     //Depth Map variables
     float* m_pDepth = NULL;
     uint8_t* m_pStencil = NULL;
+	uint8_t* m_pWater = NULL;
 	//unsigned char* m_pColor = NULL;
 
 
@@ -191,6 +192,7 @@ public:
 	std::string ObjectDetection::exportLidarDepthStats();
 
 	std::string ObjectDetection::exportStencilBuffer();
+	std::string ObjectDetection::exportWaterBuffer();
 	std::string ObjectDetection::exportStencilImage();
 	std::string ObjectDetection::exportIndividualStencilImages();
 

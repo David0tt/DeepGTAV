@@ -22,6 +22,7 @@ extern "C" {
 	__declspec(dllimport) int export_get_depth_buffer(void** buf);
 	__declspec(dllexport) int export_get_color_buffer(void** buf);
 	__declspec(dllexport) int export_get_stencil_buffer(void** buf);
+	__declspec(dllexport) int export_get_water_buffer(void** buf);
 }
 
 
@@ -254,6 +255,15 @@ void ObjectDetection::setDepthAndStencil() {
 		log("ERROR: Stencil Buffer could not be properly set!!!");
 	}
 
+	log("About to get water buffer");
+	int WaterBufferSize = -1;
+	WaterBufferSize = export_get_water_buffer((void**)&m_pWater);
+	log("Water buffer size: " + std::to_string(WaterBufferSize));
+	log("After getting stencil water");
+
+	if (WaterBufferSize == -1) {
+		log("ERROR: Water Buffer could not be properly set!!!");
+	}
 
 
 }
@@ -1873,6 +1883,14 @@ std::string ObjectDetection::exportStencilBuffer() {
 	auto *enc_message = reinterpret_cast<unsigned char*>(m_pStencil);
 	return base64_encode(enc_message, s_camParams.width * s_camParams.height);
 }
+
+std::string ObjectDetection::exportWaterBuffer() {
+	log("ObjectDetection::exportWaterBuffer()");
+
+	auto *enc_message = reinterpret_cast<unsigned char*>(m_pWater);
+	return base64_encode(enc_message, s_camParams.width * s_camParams.height);
+}
+
 
 // TODO the exportStencilImage and the exportIndividualStencilImages functions are very similar,
 // If both of them were used this could be optimized, but they are only needed for testing, so this is not necessary

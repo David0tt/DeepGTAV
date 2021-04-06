@@ -149,8 +149,10 @@ void DataExport::parseDatasetConfig(const Value& dc, bool setDefaults) {
 	else if (setDefaults) exportSome2DPointmapText = _EXPORT_SOME_2D_POINTMAP_TEXT_;
 	if (!dc["exportLiDARDepthStats"].IsNull()) exportLiDARDepthStats = dc["exportLiDARDepthStats"].GetBool();
 	else if (setDefaults) exportLiDARDepthStats = _EXPORT_LIDAR_DEPTH_STATS_;
-	if (!dc["exportStencliBuffer"].IsNull()) exportStencliBuffer = dc["exportStencliBuffer"].GetBool();
-	else if (setDefaults) exportStencliBuffer = _EXPORT_STENCIL_BUFFER_;
+	if (!dc["exportStencilBuffer"].IsNull()) exportStencilBuffer = dc["exportStencilBuffer"].GetBool();
+	else if (setDefaults) exportStencilBuffer = _EXPORT_STENCIL_BUFFER_;
+	if (!dc["exportWaterBuffer"].IsNull()) exportWaterBuffer = dc["exportWaterBuffer"].GetBool();
+	else if (setDefaults) exportWaterBuffer = _EXPORT_WATER_BUFFER_;
 	if (!dc["exportStencilImage"].IsNull()) exportStencilImage = dc["exportStencilImage"].GetBool();
 	else if (setDefaults) exportStencilImage = _EXPORT_STENCIL_IMAGE_;
 	if (!dc["exportIndividualStencilImages"].IsNull()) exportIndividualStencilImages = dc["exportIndividualStencilImages"].GetBool();
@@ -211,7 +213,8 @@ void DataExport::buildJSONObject() {
 	if (export2DPointmap) d.AddMember("2DPointmap", a, allocator);
 	if (exportSome2DPointmapText) d.AddMember("Some2DPointmapText", a, allocator);
 	if (exportLiDARDepthStats) d.AddMember("LiDARDepthStats", a, allocator);
-	if (exportStencliBuffer) d.AddMember("StencilBuffer", a, allocator);
+	if (exportStencilBuffer) d.AddMember("StencilBuffer", a, allocator);
+	if (exportWaterBuffer) d.AddMember("WaterBuffer", a, allocator);
 	if (exportStencilImage) d.AddMember("StencilImage", a, allocator);
 	if (exportIndividualStencilImages) d.AddMember("IndividualStencilImage", a, allocator);
 	if (exportDepthBuffer) d.AddMember("DepthBuffer", a, allocator);
@@ -390,7 +393,8 @@ StringBuffer DataExport::generateMessage() {
 		if (export2DPointmap) d.AddMember("2DPointmap", m_pObjDet->export2DPointmap(), allocator);
 		if (exportSome2DPointmapText) d.AddMember("Some2DPointmapText", m_pObjDet->exportSome2DPointmapText(), allocator);
 		if (exportLiDARDepthStats) d.AddMember("LiDARDepthStats", m_pObjDet->exportLidarDepthStats(), allocator);
-		if (exportStencliBuffer) d.AddMember("StencilBuffer", m_pObjDet->exportStencilBuffer(), allocator);
+		if (exportStencilBuffer) d.AddMember("StencilBuffer", m_pObjDet->exportStencilBuffer(), allocator);
+		if (exportWaterBuffer) d.AddMember("WaterBuffer", m_pObjDet->exportWaterBuffer(), allocator);
 		if (exportStencilImage) d.AddMember("StencilImage", m_pObjDet->exportStencilImage(), allocator);
 		if (exportIndividualStencilImages) d.AddMember("IndividualStencilImage", m_pObjDet->exportIndividualStencilImages(), allocator);
 		if (exportDepthBuffer) d.AddMember("DepthBuffer", m_pObjDet->exportDepthBuffer(), allocator);

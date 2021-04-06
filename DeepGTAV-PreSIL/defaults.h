@@ -34,6 +34,7 @@
 #define _EXPORT_SOME_2D_POINTMAP_TEXT_ false;
 #define _EXPORT_LIDAR_DEPTH_STATS_ false;
 #define _EXPORT_STENCIL_BUFFER_ false;
+#define _EXPORT_WATER_BUFFER_ false;
 #define _EXPORT_STENCIL_IMAGE_ false;
 #define _EXPORT_INDIVIDUAL_STENCIL_IMAGE_ false;
 #define _EXPORT_DEPTH_BUFFER_ false;

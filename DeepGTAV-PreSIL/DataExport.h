@@ -57,7 +57,8 @@ private:
 	bool export2DPointmap;
 	bool exportSome2DPointmapText;
 	bool exportLiDARDepthStats;
-	bool exportStencliBuffer;
+	bool exportStencilBuffer;
+	bool exportWaterBuffer;
 	bool exportStencilImage;
 	bool exportIndividualStencilImages;
 	bool exportDepthBuffer;
