@@ -196,14 +196,24 @@ combined: https://github.com/bradenhurl/DeepGTAV-PreSIL
 
 Primarily this repository contains changes that were made to allow the capturing
 of data from UAV perspective. Additionally some quality of life changes have
-been made:
+been made, a comprehensive list of the improvements is given in the following:
 
-- The capturing speed has been increased by not writing to disk and only
-  exporting the data through the TCP connection with VPilot.
-- Many commands have been added to VPilot to allow a more intuitive control of
-  DeepGTAV
-
-A detailed description of the changes is presented in my bachelors thesis. 
+- The TCP server functionality has been replaced with ZeroMQ for more stability
+  and speed.
+- All data export functionality by writing to disk has been replaced by sending
+  this data over the TCP socket to Python. This increased capturing speeds and
+  usability.
+- Multiple commands have been added to VPilot to allow fine grained control of
+  what data is being captured and of the game world (e.g. spawning pedestrians,
+  moving to ingame locations, changing the camera perspective).
+- The code quality has been improved, some bugs were fixed and some functions
+  have been refactored for more efficiency. 
+- The total capturing speed has been improved by a factor of 3-4, resulting in
+  almost no overhead to running the game natively.
+- Different skripts are provided to capture data in vastly different scenarios. 
+- Compatability with the newest game version has been tested.
+- The installation of DeepGTAV to the game files has been simplified
+<!-- A detailed description of the changes is presented in my bachelors thesis.  -->
 
 
 
