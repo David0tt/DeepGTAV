@@ -95,7 +95,7 @@ public:
 
 
 	void createVehicle(const char* model, float relativeForward, float relativeRight, float heading, int color, int color2, bool placeOnGround);
-	void createPed(int model, float relativeForward, float relativeRight, float relativeUp, float heading, int task, bool placeOnGround);
+	void createPed(const char* model, float relativeForward, float relativeRight, float relativeUp, float heading, int task, bool placeOnGround);
 	
 	void setWeather(const char * weather);
 	void setClockTime(int hour, int minute, int second);

@@ -19,7 +19,7 @@ def show_dataset_online_format(images_path, include_boats=False):
 
 # show_dataset_online_format("Z:\\DeepGTAV-EXPORTDIR-TEST\\Generation3_With_Meta_data\\images")
 # show_dataset_online_format("E:\\Bachelorarbeit\\Datasets\\VisDrone\\VisDrone_YOLO_FORMAT_CLEANED\\train\\images")
-show_dataset_online_format("G:\\EXPORTDIR\\ExportWater\\images", include_boats=True)
+show_dataset_online_format("G:\\EXPORTDIR\\ExportWater_4k_6\\images", include_boats=True)
 
 
 

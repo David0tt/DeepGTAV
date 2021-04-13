@@ -467,8 +467,20 @@ void Scenario::createVehicle(const char* model, float relativeForward, float rel
 	ENTITY::SET_PED_AS_NO_LONGER_NEEDED(&tempPed);
 }
 
-void Scenario::createPed(int model, float relativeForward, float relativeRight, float relativeUp, float heading, int task, bool placeOnGround) {
+void Scenario::createPed(const char* model, float relativeForward, float relativeRight, float relativeUp, float heading, int task, bool placeOnGround) {
 	log("Scenario::createPed");
+	std::string s = model;
+	log("Model Str: " + s);
+
+	unsigned int modelInt;
+	std::stringstream ss;
+	ss << std::hex << model;
+	ss >> modelInt;
+	Hash modelHash = (Hash)modelInt;
+
+	log("modelHash: " + std::to_string(modelHash));
+
+
 
 	Vector3 currentForwardVector, currentRightVector, currentUpVector, currentPos;
 	ENTITY::GET_ENTITY_MATRIX(m_ownVehicle, &currentForwardVector, &currentRightVector, &currentUpVector, &currentPos);
@@ -480,7 +492,7 @@ void Scenario::createPed(int model, float relativeForward, float relativeRight, 
 
 	////Ped hashes found at: https://www.se7ensins.com/forums/threads/request-pc-ped-hashes.1317848/
 	//Hash hash = 0x505603B9;// GAMEPLAY::GET_HASH_KEY(const_cast<char*>(model));
-
+	
  //   STREAMING::REQUEST_MODEL(hash);
  //   while (!STREAMING::HAS_MODEL_LOADED(hash)) WAIT(0);
  //   Ped temp = PED::CREATE_PED(4, hash, pos.x, pos.y, pos.z, heading, FALSE, FALSE);
@@ -499,7 +511,14 @@ void Scenario::createPed(int model, float relativeForward, float relativeRight, 
 		pos.z = heightZ;
 	}
 
-	Ped tempPed = PED::CREATE_RANDOM_PED(pos.x, pos.y, pos.z); 
+	//Ped tempPed = PED::CREATE_RANDOM_PED(pos.x, pos.y, pos.z); 
+
+
+	STREAMING::REQUEST_MODEL(modelHash);
+	while (!STREAMING::HAS_MODEL_LOADED(modelHash)) WAIT(0);
+	Ped tempPed = PED::CREATE_PED(4, modelHash, pos.x, pos.y, pos.z, heading, FALSE, FALSE);
+
+
 	//WAIT(0); 
 	AI::TASK_WANDER_STANDARD(tempPed, 10.0f, 10);
 	//AI::TASK_WANDER_STANDARD(tempPed, 0, 0);

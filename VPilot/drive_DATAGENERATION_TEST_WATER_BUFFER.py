@@ -36,7 +36,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=None)
     parser.add_argument('-l', '--host', default='127.0.0.1', help='The IP where DeepGTAV is running')
     parser.add_argument('-p', '--port', default=8000, help='The port where DeepGTAV is running')
-    parser.add_argument('-s', '--save_dir', default='G:\\EXPORTDIR\\ExportWater_4k_5', help='The directory the generated data is saved to')
+    parser.add_argument('-s', '--save_dir', default='G:\\EXPORTDIR\\ExportWater_4k_7', help='The directory the generated data is saved to')
     # args = parser.parse_args()
 
     # TODO for running in VSCode
@@ -123,7 +123,7 @@ if __name__ == '__main__':
                 for i in range (-40, 40, 10):
                     rand_x = uniform(-10,10)
                     rand_y = uniform(-10,10)
-                    client.sendMessage(CreatePed(150+rand_x, i+rand_y, heading=uniform(-180,180)))
+                    client.sendMessage(CreatePed(150+rand_x, i+rand_y, heading=uniform(-180,180), model='a_f_m_beach_01'))
             if count % 30 == 4:
                 for i in [-30, 0, 30]:
                     rand_x = uniform(-10,10)

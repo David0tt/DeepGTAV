@@ -5,6 +5,9 @@ import json
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
 
+import utils.PedNamesAndHashes as PedNamesAndHashes
+# from utils import PedNamesAndHashes
+
 class Scenario:
     def __init__(self, location=None, time=None, weather=None, vehicle=None, drivingMode=None):
         self.location = location #[x,y,z,heading] (heading optional)
@@ -166,7 +169,14 @@ class SetCameraPositionAndRotation:
 # Creates a Pedestrian relative to the player vehicle.
 # support for some of the settings (model, task) is not given in deepGTAV
 class CreatePed:
-    def __init__(self, relativeForward = 0, relativeRight = 0, relativeUp = 0, model = 0, heading = 0, task = 0, placeOnGround = True):
+    def __init__(self, relativeForward = 0, relativeRight = 0, relativeUp = 0, model = None, heading = 0, task = 0, placeOnGround = True):
+        
+        if model == None:
+            model = PedNamesAndHashes.getRandomPed()
+
+        if isinstance(model, str):
+            model = PedNamesAndHashes.convertModelNameToHash(model) 
+        
         self.model = model
         self.relativeForward = relativeForward
         self. relativeRight = relativeRight

@@ -100,7 +100,7 @@ void Server::checkRecvMessage() {
 		}
 		else if (d.HasMember("CreatePed")) {
 			const Value& pd = d["CreatePed"];
-			scenario.createPed(pd["model"].GetFloat(), pd["relativeForward"].GetFloat(), pd["relativeRight"].GetFloat(), pd["relativeUp"].GetFloat(), pd["heading"].GetFloat(), pd["task"].GetInt(), pd["placeOnGround"].GetBool());
+			scenario.createPed(pd["model"].GetString(), pd["relativeForward"].GetFloat(), pd["relativeRight"].GetFloat(), pd["relativeUp"].GetFloat(), pd["heading"].GetFloat(), pd["task"].GetInt(), pd["placeOnGround"].GetBool());
 		}
 		else if (d.HasMember("CreateVehicle")) {
 			const Value& vd = d["CreateVehicle"];
