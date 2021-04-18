@@ -407,19 +407,19 @@ void Scenario::setCameraPositionAndRotation(float x, float y, float z, float rot
 }
 
 
-void Scenario::createVehicle(const char* model, float relativeForward, float relativeRight, float heading, int color, int color2, bool placeOnGround) {
+void Scenario::createVehicle(const char* model, float relativeForward, float relativeRight, float heading, int color, int color2, bool placeOnGround, bool withLifeJacketPed) {
 	log("Scenario::CreateVehicle");
 	log("Model: ");
 	log(model);
 	Vector3 currentForwardVector, currentRightVector, currentUpVector, currentPos;
 	ENTITY::GET_ENTITY_MATRIX(m_ownVehicle, &currentForwardVector, &currentRightVector, &currentUpVector, &currentPos);
 
-    Hash vehicleHash = GAMEPLAY::GET_HASH_KEY(const_cast<char*>(model));
+	Hash vehicleHash = GAMEPLAY::GET_HASH_KEY(const_cast<char*>(model));
 
-    Vector3 pos;
-    pos.x = currentPos.x + currentForwardVector.x * relativeForward + currentRightVector.x * relativeRight;
-    pos.y = currentPos.y + currentForwardVector.y * relativeForward + currentRightVector.y * relativeRight;
-    pos.z = currentPos.z + currentForwardVector.z * relativeForward + currentRightVector.z * relativeRight;
+	Vector3 pos;
+	pos.x = currentPos.x + currentForwardVector.x * relativeForward + currentRightVector.x * relativeRight;
+	pos.y = currentPos.y + currentForwardVector.y * relativeForward + currentRightVector.y * relativeRight;
+	pos.z = currentPos.z + currentForwardVector.z * relativeForward + currentRightVector.z * relativeRight;
 
 	if (placeOnGround) {
 		float groundZ;
@@ -431,19 +431,29 @@ void Scenario::createVehicle(const char* model, float relativeForward, float rel
 	}
 
 
-    STREAMING::REQUEST_MODEL(vehicleHash);
-    while (!STREAMING::HAS_MODEL_LOADED(vehicleHash)) WAIT(0);
-    Vehicle tempV = VEHICLE::CREATE_VEHICLE(vehicleHash, pos.x, pos.y, pos.z, heading, FALSE, FALSE);
-    WAIT(0);
-    if (color != -1) {
-        VEHICLE::SET_VEHICLE_COLOURS(tempV, color, color2);
-    }
+	STREAMING::REQUEST_MODEL(vehicleHash);
+	while (!STREAMING::HAS_MODEL_LOADED(vehicleHash)) WAIT(0);
+	Vehicle tempV = VEHICLE::CREATE_VEHICLE(vehicleHash, pos.x, pos.y, pos.z, heading, FALSE, FALSE);
+	WAIT(0);
+	if (color != -1) {
+		VEHICLE::SET_VEHICLE_COLOURS(tempV, color, color2);
+	}
 
 	if (placeOnGround) {
 		VEHICLE::SET_VEHICLE_ON_GROUND_PROPERLY(tempV);
 	}
-	
-	Ped tempPed = PED::CREATE_RANDOM_PED(pos.x, pos.y, pos.z);
+
+	Ped tempPed;
+	if (withLifeJacketPed) {
+		Hash modelHash = 0x0b4a6862;
+		STREAMING::REQUEST_MODEL(modelHash);
+		while (!STREAMING::HAS_MODEL_LOADED(modelHash)) WAIT(0);
+		tempPed = PED::CREATE_PED(4, modelHash, pos.x, pos.y, pos.z, heading, FALSE, FALSE);
+		PED::SET_PED_COMPONENT_VARIATION(tempPed, 9, 1, 0, 2);
+	}
+	else {
+		tempPed = PED::CREATE_RANDOM_PED(pos.x, pos.y, pos.z);
+	}
 	PED::SET_PED_INTO_VEHICLE(tempPed, tempV, -1);
 	AI::TASK_VEHICLE_DRIVE_WANDER(tempPed, tempV, 2.0f, 16777216);
 
@@ -517,6 +527,11 @@ void Scenario::createPed(const char* model, float relativeForward, float relativ
 	STREAMING::REQUEST_MODEL(modelHash);
 	while (!STREAMING::HAS_MODEL_LOADED(modelHash)) WAIT(0);
 	Ped tempPed = PED::CREATE_PED(4, modelHash, pos.x, pos.y, pos.z, heading, FALSE, FALSE);
+
+	// TODO this is a dirty fix, to only spawn lifeguards with LifeJackets
+	if (modelHash == 0x0b4a6862) {
+		PED::SET_PED_COMPONENT_VARIATION(tempPed, 9, 1, 0, 2);
+	}
 
 
 	//WAIT(0); 

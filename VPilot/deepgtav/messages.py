@@ -190,7 +190,7 @@ class CreatePed:
 
 
 class CreateVehicle:
-    def __init__(self, model="Blista", relativeForward=0, relativeRight=0, heading=0, color=0, color2=0, placeOnGround=True):
+    def __init__(self, model="Blista", relativeForward=0, relativeRight=0, heading=0, color=0, color2=0, placeOnGround=True, withLifeJacketPed=False):
         self.model = model
         self.relativeForward = relativeForward
         self.relativeRight = relativeRight

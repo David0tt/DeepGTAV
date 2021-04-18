@@ -9,6 +9,7 @@ from deepgtav.messages import StartRecording, StopRecording, SetClockTime, SetWe
 from deepgtav.client import Client
 
 from utils.BoundingBoxes import add_bboxes, parseBBox2d, convertBBoxesDeepGTAToYolo, parseBBox_YoloFormat_to_Image, parseBBox_to_List, revertParseBBox_to_List, combineBBoxesProcessedUnprocessed
+from utils.BoundingBoxes import parseBBoxesSeadroneSeaStyle
 from utils.utils import save_image_and_bbox, save_meta_data, getRunCount, generateNewTargetLocation
 from utils.colors import pickRandomColor
 
@@ -36,7 +37,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=None)
     parser.add_argument('-l', '--host', default='127.0.0.1', help='The IP where DeepGTAV is running')
     parser.add_argument('-p', '--port', default=8000, help='The port where DeepGTAV is running')
-    parser.add_argument('-s', '--save_dir', default='G:\\EXPORTDIR\\ExportWater_4k_7', help='The directory the generated data is saved to')
+    parser.add_argument('-s', '--save_dir', default='G:\\EXPORTDIR\\ExportWater_4k_8', help='The directory the generated data is saved to')
     # args = parser.parse_args()
 
     # TODO for running in VSCode
@@ -123,12 +124,18 @@ if __name__ == '__main__':
                 for i in range (-40, 40, 10):
                     rand_x = uniform(-10,10)
                     rand_y = uniform(-10,10)
-                    client.sendMessage(CreatePed(150+rand_x, i+rand_y, heading=uniform(-180,180), model='a_f_m_beach_01'))
+                    # client.sendMessage(CreatePed(150+rand_x, i+rand_y, heading=uniform(-180,180), model='a_c_cow'))
+                    withLifeJacketPed = random.choice([True, False])
+                    if withLifeJacketPed:
+                        client.sendMessage(CreatePed(150+rand_x, i+rand_y, heading=uniform(-180,180), model='s_m_y_baywatch_01'))
+                    else:
+                        client.sendMessage(CreatePed(150+rand_x, i+rand_y, heading=uniform(-180,180), model="a_f_y_hipster_01"))
             if count % 30 == 4:
                 for i in [-30, 0, 30]:
                     rand_x = uniform(-10,10)
                     rand_y = uniform(-10,10)
-                    client.sendMessage(CreateVehicle(random.choice(BOATS), relativeForward=190+rand_x, relativeRight=i+rand_y, color=pickRandomColor(), color2=pickRandomColor(), heading=uniform(-180,180)))
+                    withLifeJacketPed = random.choice([True, False])
+                    client.sendMessage(CreateVehicle(random.choice(BOATS), relativeForward=190+rand_x, relativeRight=i+rand_y, color=pickRandomColor(), color2=pickRandomColor(), heading=uniform(-180,180), withLifeJacketPed=withLifeJacketPed))
 
 
             if count == 2:
@@ -204,7 +211,7 @@ if __name__ == '__main__':
                     # print(message["bbox2dUnprocessed"])
 
                     # bboxes = combineBBoxesProcessedUnprocessed(message["bbox2d"], message["bbox2dUnprocessed"])
-                    bboxes =  convertBBoxesDeepGTAToYolo(message["bbox2d"], include_boats=True)
+                    bboxes =  parseBBoxesSeadroneSeaStyle(message["bbox2d"])
 
                     if bboxes != "":
                         save_image_and_bbox(args.save_dir, filename, frame2numpy(message['frame'], screenResolution), bboxes)

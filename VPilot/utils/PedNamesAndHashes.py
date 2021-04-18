@@ -18,8 +18,12 @@ def convertHashToModelName(hash):
         hash = "{0:#0{1}x}".format(hash,10)
     else:
         raise ValueError("hash has to be given in type str or int")
-    return hashesToPeds[hash]
-
+    
+    try:
+        modelName = hashesToPeds[hash]
+    except KeyError:
+        modelName = "UNKNOWN"
+    return modelName
 
 def convertModelNameToHash(modelName):
     return pedsToHashes[modelName][2:]

@@ -8,6 +8,8 @@ import os
 from utils.Constants import IMG_WIDTH, IMG_HEIGHT
 from math import sqrt
 
+from utils.PedNamesAndHashes import convertHashToModelName
+
 # There are some rounding Errors when converting from Yolo to Visdrone Format and Back (because of converting from relative image coordinates to Pixel values and vice versa)
 
 
@@ -376,30 +378,6 @@ def parseBBoxLabel_augToVisDrone(bboxes, include_boats=False, max_distance_peds=
 
         # Convert Label to VisDrone Label
 
-        # if object_name in {'firetruk',
-        #                     'dominato',
-        #                     'fork',
-        #                     'issi',
-        #                     'ambulan',
-        #                     'carboniz',
-        #                     'feltzer',
-        #                     'buccanee',
-        #                     'landstal',
-        #                     'furore',
-        #                     'utiltruc',
-        #                     'bfinject',
-        #                     'rancherx',
-        #                     'roosevelt',
-        #                     'cavcade',
-        #                     'washingt',
-        #                     'rentbus',
-        #                     'dilettan',
-        #                     'sandkin',
-        #                     'schafter',
-        #                     'roosevelt'}:
-        #     label = object_name
-
-
         try:
             if label == 'Airplane':
                 ignore_this_bbox = True
@@ -464,6 +442,65 @@ def parseBBoxLabel_augToVisDrone(bboxes, include_boats=False, max_distance_peds=
         if not (left > right or top > bottom) and not ignore_this_bbox:
             ret.append({"label": label,"left": left,"top": top,"right": right,"bottom": bottom})
     return ret
+
+
+
+def parseBBox_LabelAugToSeaDroneSea(bboxes):
+    items = bboxes.split("\n")
+    ret = []
+    for item in items[:-1]:
+        data = item.split(" ")
+        # Indices can be found in /DeepGTAV-PreSIL/dataformat-augmented.txt
+        label = data[0]
+        left = int(data[4])
+        top = int(data[5])
+        right = int(data[6])
+        bottom = int(data[7])
+
+        object_name = data[21]
+        ignore_this_bbox = True
+
+        if label == 'Boat':
+            label='boat'
+            ignore_this_bbox=False
+        elif label == 'Pedestrian':
+            label = 'people'
+            ignore_this_bbox=False
+        elif label == 'Person_sitting':
+            label = 'people'
+            ignore_this_bbox=False
+
+        if label=="people":
+            # Check if it is in a vehicle (on a boat)
+            # and check if it has a swimming west
+            if data[22] == "0": # Not in a vehicle
+                if convertHashToModelName(int(object_name)) == "s_m_y_baywatch_01":
+                    label="peopleWithSwimwest"
+                else:
+                    label="people"
+            else:
+                if convertHashToModelName(int(object_name)) == "s_m_y_baywatch_01":
+                    label="peopleOnBoatWithSwimwest"
+                else:
+                    label="peopleOnBoat"
+
+
+
+        # ignore 1920 1080 0 0 boxes
+        if not (left > right or top > bottom) and not ignore_this_bbox:
+            ret.append({"label": label,"left": left,"top": top,"right": right,"bottom": bottom})
+    return ret
+
+def convertBBoxSeaDroneSeaToNumber(bboxes):
+    OBJECT_CATEGORY_TO_NUMBER = {"people": 0, "peopleWithSwimwest": 1, "peopleOnBoat": 2, "peopleOnBoatWithSwimwest": 3, "boat":4}
+    bboxes_new =  [[OBJECT_CATEGORY_TO_NUMBER[b['label']], (b['left'] + b['right']) / 2, (b['top'] + b['bottom']) / 2, b['right'] - b['left'], b['bottom'] - b['top']] for b in bboxes]
+    # bboxes_new =  [[OBJECT_CATEGORY_TO_DEEPGTAV_NUMBER[b['label']], b['left'] + b['right'] / 2, b['top'] + b['bottom'] / 2, b['right'] - b['left'], b['bottom'] - b['top']] for b in bboxes if b[0] in OBJECT_CATEGORY_TO_DEEPGTAV_NUMBER]
+    return bboxes_new
+
+
+
+def parseBBox_LabelAugToCow(bboxes):
+    pass
 
 
 def convertBBoxVisDroneToYolo(bboxes, include_boats=False):
@@ -595,3 +632,27 @@ bbox_unprocessed += "Pedestrian 0 0.967146 3.18036 900 700 700 800 2.15849 1.2 1
 # convertBBoxesDeepGTAToYolo(bbox_processed, include_boats=True)
 assert combineBBoxesProcessedUnprocessed(bbox_processed, bbox_unprocessed, include_boats=True) == '0 0.338542 0.509259 0.052083 0.092593\n10 0.196615 0.135185 0.066146 0.025926\n10 0.491146 0.175463 0.079167 0.041667'
 
+
+
+def parseBBoxesVisdroneStyle():
+    # TODO
+    pass
+
+
+# Parse the bbox2d string returned from DeepGTAV for the following conventions:
+# People: 0
+# People with Life Jackets: 1
+# People On Boats: 2
+# People On Boats with Life Jackets: 3
+# Boats: 4
+def parseBBoxesSeadroneSeaStyle(bboxes):
+    bboxes = parseBBox_LabelAugToSeaDroneSea(bboxes)
+    bboxes = convertBBoxSeaDroneSeaToNumber(bboxes)
+    bboxes = convertBBoxesYolo_relative(bboxes, IMG_WIDTH, IMG_HEIGHT)
+    bboxes = ["{:d} {:1.6f} {:1.6f} {:1.6f} {:1.6f}".format(*bbox) for bbox in bboxes]
+    bboxes = "\n".join(bboxes)
+    return bboxes
+
+def parseBBoxesCowStyle():
+    # TODO
+    pass

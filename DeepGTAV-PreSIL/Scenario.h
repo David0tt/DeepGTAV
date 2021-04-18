@@ -94,7 +94,7 @@ public:
     bool trSeriesGap = false;
 
 
-	void createVehicle(const char* model, float relativeForward, float relativeRight, float heading, int color, int color2, bool placeOnGround);
+	void createVehicle(const char* model, float relativeForward, float relativeRight, float heading, int color, int color2, bool placeOnGround, bool withLifeJacketPed);
 	void createPed(const char* model, float relativeForward, float relativeRight, float relativeUp, float heading, int task, bool placeOnGround);
 	
 	void setWeather(const char * weather);

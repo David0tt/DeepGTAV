@@ -29,7 +29,7 @@ const float PED_BOX_WIDTH = 1.2f;
 const float PED_BOX_LENGTH = 1.0f;
 const float PED_BOX_WALKING_LEN = 1.44f;
 
-const float BBOX_ADJUSTMENT_FACTOR = 1.0f;
+const float BBOX_ADJUSTMENT_FACTOR = 1.1f;
 
 
 
