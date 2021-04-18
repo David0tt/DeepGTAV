@@ -78,6 +78,9 @@ const double DEPTH_NOISE_MEAN = 0.0;
 const bool PROCESS_PEDS_ON_BIKES = true;
 const bool TESTING_PEDS_ON_BIKES = true;
 
+// Whether to add peds in vehicles to their vehicles or seperate them from the vehicles
+const bool DISTINGUISH_PEDS_IN_VEHICLES = true;
+
 //Outputs stats on lidar vs depth map conversion (used for testing)
 const bool OUTPUT_DEPTH_STATS = true;
 

@@ -1,0 +1,57 @@
+[1mdiff --git a/DeepGTAV-PreSIL/bin/Release/DeepGTAV.asi b/DeepGTAV-PreSIL/bin/Release/DeepGTAV.asi[m
+[1mdeleted file mode 100644[m
+[1mindex c6add99..0000000[m
+Binary files a/DeepGTAV-PreSIL/bin/Release/DeepGTAV.asi and /dev/null differ
+[1mdiff --git a/DeepGTAV-PreSIL/bin/Release/DeepGTAV.iobj b/DeepGTAV-PreSIL/bin/Release/DeepGTAV.iobj[m
+[1mdeleted file mode 100644[m
+[1mindex 0ed14a4..0000000[m
+Binary files a/DeepGTAV-PreSIL/bin/Release/DeepGTAV.iobj and /dev/null differ
+[1mdiff --git a/DeepGTAV-PreSIL/bin/Release/DeepGTAV.ipdb b/DeepGTAV-PreSIL/bin/Release/DeepGTAV.ipdb[m
+[1mdeleted file mode 100644[m
+[1mindex 9a67b19..0000000[m
+Binary files a/DeepGTAV-PreSIL/bin/Release/DeepGTAV.ipdb and /dev/null differ
+[1mdiff --git a/VPilot/drive_DATAGENERATION_TEST_WATER_BUFFER.py b/VPilot/drive_DATAGENERATION_TEST_WATER_BUFFER.py[m
+[1mindex df58fdd..ba1c6e8 100644[m
+[1m--- a/VPilot/drive_DATAGENERATION_TEST_WATER_BUFFER.py[m
+[1m+++ b/VPilot/drive_DATAGENERATION_TEST_WATER_BUFFER.py[m
+[36m@@ -37,7 +37,7 @@[m [mif __name__ == '__main__':[m
+     parser = argparse.ArgumentParser(description=None)[m
+     parser.add_argument('-l', '--host', default='127.0.0.1', help='The IP where DeepGTAV is running')[m
+     parser.add_argument('-p', '--port', default=8000, help='The port where DeepGTAV is running')[m
+[31m-    parser.add_argument('-s', '--save_dir', default='G:\\EXPORTDIR\\ExportWater_4k_8', help='The directory the generated data is saved to')[m
+[32m+[m[32m    parser.add_argument('-s', '--save_dir', default='G:\\EXPORTDIR\\ExportWater_4k_10', help='The directory the generated data is saved to')[m
+     # args = parser.parse_args()[m
+ [m
+     # TODO for running in VSCode[m
+[36m@@ -274,7 +274,7 @@[m [mdef showmessage(idx):[m
+     bboxes = convertBBoxesDeepGTAToYolo(message["bbox2d"])[m
+     bbox_image = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormat_to_Image(bboxes))[m
+     [m
+[31m-    nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImageColor"]), np.uint8)[m
+[32m+[m[32m    nparr = np.fromstring(base64.b64decode(message["segmentationImage"]), np.uint8)[m
+     segmentationImage = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)[m
+     [m
+     dst = cv2.addWeighted(bbox_image, 0.5, segmentationImage, 0.5, 0.0)[m
+[1mdiff --git a/VPilot/visualizeGeneratedExportDir.py b/VPilot/visualizeGeneratedExportDir.py[m
+[1mindex a5268c7..44a52cd 100644[m
+[1m--- a/VPilot/visualizeGeneratedExportDir.py[m
+[1m+++ b/VPilot/visualizeGeneratedExportDir.py[m
+[36m@@ -19,7 +19,7 @@[m [mdef show_dataset_online_format(images_path, include_boats=False):[m
+ [m
+ # show_dataset_online_format("Z:\\DeepGTAV-EXPORTDIR-TEST\\Generation3_With_Meta_data\\images")[m
+ # show_dataset_online_format("E:\\Bachelorarbeit\\Datasets\\VisDrone\\VisDrone_YOLO_FORMAT_CLEANED\\train\\images")[m
+[31m-# show_dataset_online_format("G:\\EXPORTDIR\\ExportWater_4k_8\\images", include_boats=True)[m
+[32m+[m[32m# show_dataset_online_format("G:\\EXPORTDIR\\ExportWater_4k_4\\images", include_boats=True)[m
+ [m
+ [m
+ [m
+[36m@@ -40,7 +40,7 @@[m [mdef show_dataset_online_format_NUMBERS_ONLY(images_path):[m
+ # show_dataset_online_format_NUMBERS_ONLY("E:\\Bachelorarbeit\\Datasets\\VisDrone\\VisDrone_YOLO_FORMAT_CLEANED\\train\\images")[m
+ # show_dataset_online_format_NUMBERS_ONLY("Z:\\visdrone-dataset\\VisDrone_YOLO_FORMAT\\train\\images")[m
+ # show_dataset_online_format_NUMBERS_ONLY("Z:\\DeepGTAV-EXPORTDIR-TEST\\Generation1\\images")[m
+[31m-show_dataset_online_format_NUMBERS_ONLY("G:\\EXPORTDIR\\ExportWater_4k_8\\images")[m
+[32m+[m[32mshow_dataset_online_format_NUMBERS_ONLY("G:\\EXPORTDIR\\ExportWater_4k_10\\images")[m
+ [m
+ if __name__ == '__main__':[m
+     pass[m
+\ No newline at end of file[m

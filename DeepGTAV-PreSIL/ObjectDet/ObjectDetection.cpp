@@ -1146,7 +1146,7 @@ void ObjectDetection::processStencilPixel3D(const uint8_t &stencilVal, const int
 					}
 					if (allSameV) {
 						addSegmentedPoint3D(i, j, pointEntities3D[0]);
-						//log("WARNING: got NPC in vehicle overlapping (after 3D)");
+						log("WARNING: got NPC in vehicle overlapping (after 3D)");
 						return;
 					}
 				}
@@ -1164,14 +1164,17 @@ void ObjectDetection::processStencilPixel3D(const uint8_t &stencilVal, const int
 //Add 2D point to an entity
 void ObjectDetection::addSegmentedPoint3D(int i, int j, ObjEntity *e) {
 
-    if (e->isPedInV) {
-        for (auto &entry : m_curFrame.vehicles) {
-            ObjEntity* entity = &(entry.second);
-            if (entity->entityID == e->vPedIsIn) {
-                e = entity;
-            }
-        }
-    }
+	if (!DISTINGUISH_PEDS_IN_VEHICLES) {
+		// Set the entity as the containing vehicle entitity, if we add peds in vehicles to their vehicles
+		if (e->isPedInV) {
+			for (auto &entry : m_curFrame.vehicles) {
+				ObjEntity* entity = &(entry.second);
+				if (entity->entityID == e->vPedIsIn) {
+					e = entity;
+				}
+			}
+		}
+	}
 
     if (i < e->bbox2d.left) e->bbox2d.left = i;
     if (i > e->bbox2d.right) e->bbox2d.right = i;

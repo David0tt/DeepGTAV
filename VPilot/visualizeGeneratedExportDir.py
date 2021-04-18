@@ -19,7 +19,7 @@ def show_dataset_online_format(images_path, include_boats=False):
 
 # show_dataset_online_format("Z:\\DeepGTAV-EXPORTDIR-TEST\\Generation3_With_Meta_data\\images")
 # show_dataset_online_format("E:\\Bachelorarbeit\\Datasets\\VisDrone\\VisDrone_YOLO_FORMAT_CLEANED\\train\\images")
-# show_dataset_online_format("G:\\EXPORTDIR\\ExportWater_4k_8\\images", include_boats=True)
+# show_dataset_online_format("G:\\EXPORTDIR\\ExportWater_4k_4\\images", include_boats=True)
 
 
 
@@ -40,7 +40,7 @@ def show_dataset_online_format_NUMBERS_ONLY(images_path):
 # show_dataset_online_format_NUMBERS_ONLY("E:\\Bachelorarbeit\\Datasets\\VisDrone\\VisDrone_YOLO_FORMAT_CLEANED\\train\\images")
 # show_dataset_online_format_NUMBERS_ONLY("Z:\\visdrone-dataset\\VisDrone_YOLO_FORMAT\\train\\images")
 # show_dataset_online_format_NUMBERS_ONLY("Z:\\DeepGTAV-EXPORTDIR-TEST\\Generation1\\images")
-show_dataset_online_format_NUMBERS_ONLY("G:\\EXPORTDIR\\ExportWater_4k_8\\images")
+show_dataset_online_format_NUMBERS_ONLY("G:\\EXPORTDIR\\ExportWater_4k_10\\images")
 
 if __name__ == '__main__':
     pass
