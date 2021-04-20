@@ -13,7 +13,8 @@ hashesToPeds = {h: n for n, h in pedsToHashes_ls}
 
 def convertHashToModelName(hash):
     if isinstance(hash, str):
-        pass
+        if hash[:2] != "0x":
+            hash = "0x" + hash
     elif isinstance(hash, int):
         hash = "{0:#0{1}x}".format(hash,10)
     else:
@@ -30,3 +31,6 @@ def convertModelNameToHash(modelName):
 
 def getRandomPed():
     return random.sample(pedsToHashes.keys(), 1)[0]
+
+
+

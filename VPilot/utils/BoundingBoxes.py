@@ -114,7 +114,7 @@ GTAV_CATEGORY_TO_VISDRONE_CATEGORY = {'Boats': 'UNRECOGNIZED_CATEGORY', # 'boat'
 
                                       
 
-def show_image_with_bboxes(image, bboxes):
+def show_image_with_bboxes(image, bboxes): 
     # image = np.array(image)
     # image = image[...,::-1]
     image = np.array(image)
@@ -298,62 +298,6 @@ def getLabelFromObjectName(obj_name):
     return obj_category
 
 
-assert getLabelFromObjectName('blista') == 'car'
-assert getLabelFromObjectName('dinghy') == 'UNRECOGNIZED_CATEGORY'
-assert getLabelFromObjectName('Dinghy') == 'UNRECOGNIZED_CATEGORY'
-assert getLabelFromObjectName('Biff') == 'truck'
-assert getLabelFromObjectName('Pounder') == 'truck'
-assert getLabelFromObjectName('Issi2') == 'car'
-assert getLabelFromObjectName('Sentinel2') == 'car'
-assert getLabelFromObjectName('Bmx') == 'bicycle'
-assert getLabelFromObjectName('cruiser') == 'bicycle'
-assert getLabelFromObjectName('Ambulance') == 'truck'
-assert getLabelFromObjectName('Pranger') == 'van'
-assert getLabelFromObjectName('Frogger2') == 'UNRECOGNIZED_CATEGORY'
-assert getLabelFromObjectName('Flatbed') == 'truck'
-assert getLabelFromObjectName('Barracks3') == 'truck'
-assert getLabelFromObjectName('Akuma') == 'motor'
-assert getLabelFromObjectName('Daemon') == 'motor'
-assert getLabelFromObjectName('Blade') == 'car'
-assert getLabelFromObjectName('RatLoader2') == 'van'
-assert getLabelFromObjectName('Insurgent') == 'van'
-assert getLabelFromObjectName('Blazer2') == 'UNRECOGNIZED_CATEGORY'
-assert getLabelFromObjectName('Besra') == 'UNRECOGNIZED_CATEGORY'
-assert getLabelFromObjectName('Luxor') == 'UNRECOGNIZED_CATEGORY'
-assert getLabelFromObjectName('BJXL') == 'van'
-assert getLabelFromObjectName('Dubsta2') == 'van'
-assert getLabelFromObjectName('Fugitive') == 'car'
-assert getLabelFromObjectName('Stanier') == 'car'
-assert getLabelFromObjectName('Airbus') == 'bus'
-assert getLabelFromObjectName('Coach') == 'bus'
-assert getLabelFromObjectName('Trash') == 'truck'
-assert getLabelFromObjectName('Elegy') == 'car'
-assert getLabelFromObjectName('Ninef2') == 'car'
-assert getLabelFromObjectName('Peyote') == 'car'
-assert getLabelFromObjectName('Tornado5') == 'car'
-assert getLabelFromObjectName('GP1') == 'car'
-assert getLabelFromObjectName('Turismo2') == 'car'
-assert getLabelFromObjectName('ArmyTrailer2') == 'UNRECOGNIZED_CATEGORY'
-assert getLabelFromObjectName('Trailers') == 'UNRECOGNIZED_CATEGORY'
-assert getLabelFromObjectName('Freight') == 'UNRECOGNIZED_CATEGORY'
-assert getLabelFromObjectName('TankerCar') == 'UNRECOGNIZED_CATEGORY'
-assert getLabelFromObjectName('Airtug') == 'UNRECOGNIZED_CATEGORY'
-assert getLabelFromObjectName('Ripley') == 'truck'
-assert getLabelFromObjectName('Bison2') == 'van'
-assert getLabelFromObjectName('Camper') == 'van'
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 # parse the bbboxes from label_aug format to VisDrone format. This also catches some wrong class labels by looking at the models, e.g. SUVs as  truck
 # TODO improve
@@ -531,28 +475,6 @@ def revertConvertBBoxesYolo_relative(bboxes, img_width, img_height):
     bboxes_new = [[b[0], int(b[1] * img_width), int(b[2] * img_height), int(b[3] * img_width), int(b[4] * img_height)] for b in bboxes]
     return bboxes_new
 
-bbox_test = [[5, 0.474632, 0.828758, 0.104412, 0.100654],
-            [5, 0.485662, 0.751634, 0.108824, 0.079739],
-            [4, 0.484559, 0.686275, 0.113235, 0.078431],
-            [4, 0.511029, 0.614379, 0.097794, 0.075817],
-            [4, 0.267279, 0.660131, 0.100000, 0.073203],
-            [4, 0.334926, 0.594118, 0.100735, 0.074510],
-            [6, 0.309926, 0.481699, 0.134559, 0.116340],
-            [4, 0.418382, 0.419608, 0.082353, 0.062745]
-            ]
-assert np.isclose(bbox_test, convertBBoxesYolo_relative(revertConvertBBoxesYolo_relative(bbox_test, IMG_WIDTH, IMG_HEIGHT), IMG_WIDTH, IMG_HEIGHT), atol=1.e-3).all()
-assert np.isclose(bbox_test, convertBBoxesYolo_relative(convertBBoxVisDroneToYolo(revertConvertBBoxVisDroneToYolo(revertConvertBBoxesYolo_relative(bbox_test, IMG_WIDTH, IMG_HEIGHT))), IMG_WIDTH, IMG_HEIGHT), atol=1.e-2).all()
-
-
-bbox_test2 = [{'label': 'truck', 'left': 240, 'right': 260, 'top': 450, 'bottom': 550},
-            {'label': 'truck', 'left': 440, 'right': 460, 'top': 550, 'bottom': 650},
-            {'label': 'truck', 'left': 540, 'right': 560, 'top': 450, 'bottom': 550},
-            {'label': 'truck', 'left': 240, 'right': 260, 'top': 150, 'bottom': 250}]
-assert bbox_test2 == revertConvertBBoxVisDroneToYolo(convertBBoxVisDroneToYolo(bbox_test2))
-
-
-
-
 
 # fully converts bounding boxes from label_aug format to format as required by ultralytics yolo training
 def convertBBoxesDeepGTAToYolo(bboxes, include_boats=False, max_distance_peds=None):
@@ -571,12 +493,6 @@ def parseBBox_to_List(bboxes):
     bboxes = [bbox.split(" ") for bbox in bboxes.split("\n")]
     bboxes = [[int(b[0]), float(b[1]), float(b[2]), float(b[3]), float(b[4])] for b in bboxes]
     return bboxes
-
-bbox_test = "5 0.474632 0.828758 0.104412 0.100654\n5 0.485662 0.751634 0.108824 0.079739\n4 0.484559 0.686275 0.113235 0.078431\n4 0.511029 0.614379 0.097794 0.075817"
-assert parseBBox_to_List(bbox_test) == [[5, 0.474632, 0.828758, 0.104412, 0.100654],
-                                        [5, 0.485662, 0.751634, 0.108824, 0.079739],
-                                        [4, 0.484559, 0.686275, 0.113235, 0.078431],
-                                        [4, 0.511029, 0.614379, 0.097794, 0.075817]]
 
 
 def revertParseBBox_to_List(bboxes):
@@ -611,27 +527,6 @@ def combineBBoxesProcessedUnprocessed(bbox_processed, bbox_unprocessed, include_
 
     bboxes = revertParseBBox_to_List(bboxes)
     return bboxes
-
-    # return ""
-
-# bbox_unprocessed = "5 200 0.9 0.1 0.1\n0 0.5 0.8 0.1 0.8\n4 0.4 0.7 0.1 0.1\n1 0.5 0.7 0.0 0.1"
-# bbox_processed = "5 0.474632 0.828758 0.104412 0.100654\n0 0.485662 0.751634 0.108824 0.079739\n4 0.484559 0.686275 0.113235 0.078431\n1 0.511029 0.614379 0.097794 0.075817"
-
-bbox_processed = "Boat 0 0.477728 -2.31636 314 132 441 160 2.18275 2.7 10.8941 -42.7242 -27.6157 70.1074 -2.86367 15362 2087 0 2.18372 -0.445665 -0.181757 speeder 0\n"
-bbox_processed += "Boat 0 0.485109 3.08328 867 167 1019 212 3.20079 2.57548 10.8283 -1.18703 -22.3365 66.2866 3.06537 15874 2576 0 1.81099 -0.552645 -0.00045231 jetmax 0\n"
-bbox_processed += "Pedestrian 0 0.976604 3.30417 669 574 692 587 2.12 1.2 1 -8.49492 2.50572 28.629 3.01572 10498 101 0 0.473502 -0.556221 -0.410395 Pedestrian 0\n"
-bbox_processed += "Pedestrian 0 0.967146 3.18036 902 713 930 733 2.15849 1.2 1 -1.09266 5.71969 23.3511 3.1336 10754 194 0 0.186969 -0.556393 -0.240545 Pedestrian 0"
-
-
-bbox_unprocessed = "Boat 0 0.477728 -2.31636 300 100 400 200 2.18275 2.7 10.8941 -42.7242 -27.6157 70.1074 -2.86367 15362 2087 0 2.18372 -0.445665 -0.181757 speeder 0\n"
-bbox_unprocessed += "Boat 0 0.485109 3.08328 800 100 1000 200 3.20079 2.57548 10.8283 -1.18703 -22.3365 66.2866 3.06537 15874 2576 0 1.81099 -0.552645 -0.00045231 jetmax 0\n"
-bbox_unprocessed += "Pedestrian 0 0.976604 3.30417 600 500 700 600 2.12 1.2 1 -8.49492 2.50572 28.629 3.01572 10498 101 0 0.473502 -0.556221 -0.410395 Pedestrian 0\n"
-bbox_unprocessed += "Pedestrian 0 0.967146 3.18036 900 700 700 800 2.15849 1.2 1 -1.09266 5.71969 23.3511 3.1336 10754 194 0 0.186969 -0.556393 -0.240545 Pedestrian 0"
-
-# convertBBoxesDeepGTAToYolo(bbox_unprocessed, include_boats=True)
-# convertBBoxesDeepGTAToYolo(bbox_processed, include_boats=True)
-assert combineBBoxesProcessedUnprocessed(bbox_processed, bbox_unprocessed, include_boats=True) == '0 0.338542 0.509259 0.052083 0.092593\n10 0.196615 0.135185 0.066146 0.025926\n10 0.491146 0.175463 0.079167 0.041667'
-
 
 
 def parseBBoxesVisdroneStyle():

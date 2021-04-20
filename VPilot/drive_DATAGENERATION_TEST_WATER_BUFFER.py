@@ -37,7 +37,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=None)
     parser.add_argument('-l', '--host', default='127.0.0.1', help='The IP where DeepGTAV is running')
     parser.add_argument('-p', '--port', default=8000, help='The port where DeepGTAV is running')
-    parser.add_argument('-s', '--save_dir', default='G:\\EXPORTDIR\\ExportWater_4k_10', help='The directory the generated data is saved to')
+    parser.add_argument('-s', '--save_dir', default='G:\\EXPORTDIR\\ExportWater_4k_11', help='The directory the generated data is saved to')
     # args = parser.parse_args()
 
     # TODO for running in VSCode
@@ -56,7 +56,7 @@ if __name__ == '__main__':
     IMG_WIDTH, IMG_HEIGHT = (1920, 1080)
     # screenResolution = (1920, 1080)
     screenResolution = (3840, 2160)
-    dataset=Dataset(frame=[IMG_WIDTH, IMG_HEIGHT], screenResolution = screenResolution, exportStencliBuffer=True, location=True, time=True, exportBBox2D=True, exportBBox2DUnprocessed=True, segmentationImage=True, exportStencilImage=True, instanceSegmentationImageColor=True) # , exportIndividualStencilImages=True) #exportIndividualStencilImages=True)
+    dataset=Dataset(frame=[IMG_WIDTH, IMG_HEIGHT], screenResolution = screenResolution, exportStencliBuffer=True, location=True, time=True, exportBBox2D=True, exportBBox2DUnprocessed=True, segmentationImage=True, exportStencilImage=True)# , instanceSegmentationImageColor=True) # , exportIndividualStencilImages=True) #exportIndividualStencilImages=True)
     # dataset=Dataset(location=True, time=True, exportLiDAR=True, maxLidarDist=120) #exportIndividualStencilImages=True)
     
     
@@ -283,6 +283,14 @@ def showmessage(idx):
     # plt.show()
     cv2.imshow("CombinedImage", dst)
     cv2.waitKey(1)
+
+def showSegmentationImage(idx):
+    message = messages[idx]
+    nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImageColor"]), np.uint8)
+    segmentationImage = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+    cv2.imshow("SegmentationImage", segmentationImage)
+    cv2.waitKey(1)
+
 
 def showBBox(idx):
     message = messages[idx]
