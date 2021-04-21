@@ -129,7 +129,7 @@ if __name__ == '__main__':
                     if withLifeJacketPed:
                         client.sendMessage(CreatePed(150+rand_x, i+rand_y, heading=uniform(-180,180), model='s_m_y_baywatch_01'))
                     else:
-                        client.sendMessage(CreatePed(150+rand_x, i+rand_y, heading=uniform(-180,180), model="a_f_y_hipster_01"))
+                        client.sendMessage(CreatePed(150+rand_x, i+rand_y, heading=uniform(-180,180), model=None))
             if count % 30 == 4:
                 for i in [-30, 0, 30]:
                     rand_x = uniform(-10,10)

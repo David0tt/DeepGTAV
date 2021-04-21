@@ -518,7 +518,7 @@ void Scenario::createPed(const char* model, float relativeForward, float relativ
 		WATER::GET_WATER_HEIGHT(pos.x, pos.y, pos.z, &waterZ);
 		float heightZ = std::max(groundZ, waterZ);
 
-		pos.z = heightZ;
+		pos.z = heightZ-0.5;
 	}
 
 	//Ped tempPed = PED::CREATE_RANDOM_PED(pos.x, pos.y, pos.z); 
@@ -527,7 +527,10 @@ void Scenario::createPed(const char* model, float relativeForward, float relativ
 	STREAMING::REQUEST_MODEL(modelHash);
 	while (!STREAMING::HAS_MODEL_LOADED(modelHash)) WAIT(0);
 	Ped tempPed = PED::CREATE_PED(4, modelHash, pos.x, pos.y, pos.z, heading, FALSE, FALSE);
-
+	if (placeOnGround) {
+		OBJECT::PLACE_OBJECT_ON_GROUND_PROPERLY(tempPed);
+	}
+	
 	// TODO this is a dirty fix, to only spawn lifeguards with LifeJackets
 	if (modelHash == 0x0b4a6862) {
 		PED::SET_PED_COMPONENT_VARIATION(tempPed, 9, 1, 0, 2);

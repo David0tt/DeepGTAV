@@ -10,6 +10,8 @@ pedsToHashes_ls = [d.split("=") for d in pedsToHashes_ls]
 pedsToHashes = {n: h for n, h in pedsToHashes_ls}
 hashesToPeds = {h: n for n, h in pedsToHashes_ls}
 
+spawnablePeds_ls = [k for k in pedsToHashes.keys() if k[-2:] != "_p"]
+
 
 def convertHashToModelName(hash):
     if isinstance(hash, str):
@@ -30,7 +32,7 @@ def convertModelNameToHash(modelName):
     return pedsToHashes[modelName][2:]
 
 def getRandomPed():
-    return random.sample(pedsToHashes.keys(), 1)[0]
+    return random.sample(spawnablePeds_ls, 1)[0]
 
 
 
