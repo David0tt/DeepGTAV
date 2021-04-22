@@ -302,7 +302,7 @@ def getLabelFromObjectName(obj_name):
 # parse the bbboxes from label_aug format to VisDrone format. This also catches some wrong class labels by looking at the models, e.g. SUVs as  truck
 # TODO improve
 # see file "Decision on the classes"
-def parseBBoxLabel_augToVisDrone(bboxes, include_boats=False, max_distance_peds=None):
+def parseBBoxLabel_augToVisDrone(bboxes):
     items = bboxes.split("\n")
     ret = []
     for item in items[:-1]:
@@ -328,10 +328,7 @@ def parseBBoxLabel_augToVisDrone(bboxes, include_boats=False, max_distance_peds=
             elif label == 'Animal':
                 ignore_this_bbox = True
             elif label == 'Boat':
-                if include_boats:
-                    label='Boat'
-                else:
-                    ignore_this_bbox = True
+                ignore_this_bbox = True
             elif label == 'Bus':
                 label = getLabelFromObjectName(object_name)        
             elif label == 'Car':
@@ -369,17 +366,6 @@ def parseBBoxLabel_augToVisDrone(bboxes, include_boats=False, max_distance_peds=
             with open("NotFoundObjectNames.txt", "a") as not_found_file:
                 not_found_file.write(object_name + "\n") # + "\n From Labels: \n" + bboxes)
             ignore_this_bbox = True
-
-
-        if label=="pedestrian" or label=="people":
-            if max_distance_peds != None:
-                x=float(data[11])
-                y=float(data[12])
-                z=float(data[13])
-                dist = sqrt(x*x + y*y + z*z)
-                if dist > max_distance_peds:
-                    ignore_this_bbox=True
-
 
 
         # ignore 1920 1080 0 0 boxes
@@ -447,11 +433,8 @@ def parseBBox_LabelAugToCow(bboxes):
     pass
 
 
-def convertBBoxVisDroneToYolo(bboxes, include_boats=False):
+def convertBBoxVisDroneToYolo(bboxes):
     # convert from {'left' 'top' 'right' 'bottom'} in px to {x_center, y_center, width, height} 
-    if include_boats:
-        OBJECT_CATEGORY_TO_NUMBER.update({"Boat": 10})
-
     bboxes_new =  [[OBJECT_CATEGORY_TO_NUMBER[b['label']], (b['left'] + b['right']) / 2, (b['top'] + b['bottom']) / 2, b['right'] - b['left'], b['bottom'] - b['top']] for b in bboxes]
     # bboxes_new =  [[OBJECT_CATEGORY_TO_DEEPGTAV_NUMBER[b['label']], b['left'] + b['right'] / 2, b['top'] + b['bottom'] / 2, b['right'] - b['left'], b['bottom'] - b['top']] for b in bboxes if b[0] in OBJECT_CATEGORY_TO_DEEPGTAV_NUMBER]
     return bboxes_new
@@ -460,9 +443,7 @@ def convertBBoxesYolo_relative(bboxes_yolo, img_width, img_height):
     bboxes_new = [[b[0], b[1] / img_width, b[2] / img_height, b[3] / img_width, b[4] / img_height] for b in bboxes_yolo]
     return bboxes_new
 
-def revertConvertBBoxVisDroneToYolo(bboxes, include_boats=False):
-    if include_boats:
-        NUMBER_TO_OBJECT_CATEGORY.update({10: "boat"})
+def revertConvertBBoxVisDroneToYolo(bboxes):
     bboxes_new = [{'label': NUMBER_TO_OBJECT_CATEGORY[b[0]], 'left': int(b[1] - b[3]/2), 'right': int(b[1] + b[3]/2), 'top': int(b[2] - b[4]/2), 'bottom': int(b[2] + b[4]/2)} for b in bboxes]
     return bboxes_new
 
@@ -477,9 +458,9 @@ def revertConvertBBoxesYolo_relative(bboxes, img_width, img_height):
 
 
 # fully converts bounding boxes from label_aug format to format as required by ultralytics yolo training
-def convertBBoxesDeepGTAToYolo(bboxes, include_boats=False, max_distance_peds=None):
-    bboxes = parseBBoxLabel_augToVisDrone(bboxes, include_boats=include_boats, max_distance_peds=max_distance_peds)
-    bboxes = convertBBoxVisDroneToYolo(bboxes, include_boats=include_boats)
+def convertBBoxesDeepGTAToYolo(bboxes):
+    bboxes = parseBBoxLabel_augToVisDrone(bboxes)
+    bboxes = convertBBoxVisDroneToYolo(bboxes)
     bboxes = convertBBoxesYolo_relative(bboxes, IMG_WIDTH, IMG_HEIGHT)
     bboxes = ["{:d} {:1.6f} {:1.6f} {:1.6f} {:1.6f}".format(*bbox) for bbox in bboxes]
     bboxes = "\n".join(bboxes)
@@ -500,10 +481,10 @@ def revertParseBBox_to_List(bboxes):
     bboxes = "\n".join(bboxes)
     return bboxes
 
-def parseBBox_YoloFormat_to_Image(bboxes, img_width=IMG_WIDTH, img_height=IMG_HEIGHT, include_boats=False):
+def parseBBox_YoloFormat_to_Image(bboxes, img_width=IMG_WIDTH, img_height=IMG_HEIGHT):
     bboxes = parseBBox_to_List(bboxes)
     bboxes = revertConvertBBoxesYolo_relative(bboxes, img_width, img_height)
-    bboxes = revertConvertBBoxVisDroneToYolo(bboxes, include_boats=include_boats)
+    bboxes = revertConvertBBoxVisDroneToYolo(bboxes)
     return bboxes
 
 def parseBBox_YoloFormat_to_Number(bboxes, img_width=IMG_WIDTH, img_height=IMG_HEIGHT):
@@ -513,20 +494,6 @@ def parseBBox_YoloFormat_to_Number(bboxes, img_width=IMG_WIDTH, img_height=IMG_H
     return bboxes
 
 
-
-
-def combineBBoxesProcessedUnprocessed(bbox_processed, bbox_unprocessed, include_boats=False):
-    bboxes_unprocessed = convertBBoxesDeepGTAToYolo(bbox_unprocessed, include_boats=True, max_distance_peds=200)
-    bboxes_processed = convertBBoxesDeepGTAToYolo(bbox_processed, include_boats=True)
-    bboxes_unprocessed = parseBBox_to_List(bboxes_unprocessed)
-    bboxes_processed = parseBBox_to_List(bboxes_processed)
-    bboxes_unprocessed = [b for b in bboxes_unprocessed if b[0] == 0 or b[0] == 1]
-    bboxes_processed = [b for b in bboxes_processed if b[0] != 0 and b[0] != 1]
-
-    bboxes = bboxes_unprocessed + bboxes_processed
-
-    bboxes = revertParseBBox_to_List(bboxes)
-    return bboxes
 
 
 def parseBBoxesVisdroneStyle():
