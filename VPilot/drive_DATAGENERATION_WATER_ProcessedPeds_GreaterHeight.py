@@ -8,7 +8,7 @@ from deepgtav.messages import Start, Stop, Scenario, Dataset, Commands, frame2nu
 from deepgtav.messages import StartRecording, StopRecording, SetClockTime, SetWeather, CreatePed, CreateVehicle
 from deepgtav.client import Client
 
-from utils.BoundingBoxes import add_bboxes, parseBBox2d, convertBBoxesDeepGTAToYolo, parseBBox_YoloFormat_to_Image, parseBBox_to_List, revertParseBBox_to_List, combineBBoxesProcessedUnprocessed
+from utils.BoundingBoxes import add_bboxes, parseBBox2d_LikePreSIL, parseBBoxesVisDroneStyle, parseBBox_YoloFormatStringToImage, parseYoloBBoxStringToList, parseListToYoloBBoxString
 from utils.utils import save_image_and_bbox, save_meta_data, getRunCount, generateNewTargetLocation
 from utils.colors import pickRandomColor
 
@@ -203,7 +203,7 @@ if __name__ == '__main__':
                     # print(message["bbox2dUnprocessed"])
 
                     # bboxes = combineBBoxesProcessedUnprocessed(message["bbox2d"], message["bbox2dUnprocessed"])
-                    bboxes =  convertBBoxesDeepGTAToYolo(message["bbox2d"], include_boats=True)
+                    bboxes =  parseBBoxesVisDroneStyle(message["bbox2d"])
 
                     if bboxes != "":
                         save_image_and_bbox(args.save_dir, filename, frame2numpy(message['frame'], screenResolution), bboxes)
@@ -236,8 +236,8 @@ if __name__ == '__main__':
 def showmessage(idx):
     message = messages[idx]
 
-    bboxes = convertBBoxesDeepGTAToYolo(message["bbox2d"])
-    bbox_image = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormat_to_Image(bboxes))
+    bboxes = parseBBoxesVisDroneStyle(message["bbox2d"])
+    bbox_image = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormatStringToImage(bboxes))
     
     nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImageColor"]), np.uint8)
     segmentationImage = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
@@ -251,8 +251,8 @@ def showmessage(idx):
 
 def showBBox(idx):
     message = messages[idx]
-    bboxes = convertBBoxesDeepGTAToYolo(message["bbox2d"])
-    bbox_image = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormat_to_Image(bboxes))
+    bboxes = parseBBoxesVisDroneStyle(message["bbox2d"])
+    bbox_image = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormatStringToImage(bboxes))
     cv2.imshow("BBoxImage", bbox_image)
     cv2.waitKey(1)
 

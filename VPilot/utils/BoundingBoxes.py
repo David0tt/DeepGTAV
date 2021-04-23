@@ -1,6 +1,4 @@
 # Functionality concerning the bounding boxes
-
-
 import cv2
 import numpy as np
 import os
@@ -10,11 +8,13 @@ from math import sqrt
 
 from utils.PedNamesAndHashes import convertHashToModelName
 
-# There are some rounding Errors when converting from Yolo to Visdrone Format and Back (because of converting from relative image coordinates to Pixel values and vice versa)
 
+###############################################################################
+######################## Parsing to VisDrone Categories #######################
+###############################################################################
 
 # I use VisDrone Categories as follows:
-OBJECT_CATEGORY_TO_NUMBER = {'pedestrian': 0,
+VIDSDRONE_OBJECT_CATEGORY_TO_NUMBER = {'pedestrian': 0,
                              'people': 1,
                              'bicycle': 2,
                              'car': 3,
@@ -24,8 +24,6 @@ OBJECT_CATEGORY_TO_NUMBER = {'pedestrian': 0,
                              'awning-tricycle': 7,
                              'bus': 8,
                              'motor': 9}
-
-NUMBER_TO_OBJECT_CATEGORY = {v: k for k,v in OBJECT_CATEGORY_TO_NUMBER.items()}
 
 
 with open(os.path.normpath("utils/vehicle_names_and_categories.csv"), "r") as namefile:
@@ -68,15 +66,6 @@ VEHICLE_NAME_TO_CATEGORY['policeo'] = 'Sports'
 VEHICLE_NAME_TO_CATEGORY['tailgate'] = 'Sports'
 
 
-
-
-
-
-
-
-
-
-
 # This mapping is made according to 
 # https://wiki.gtanet.work/index.php?title=Vehicle_Models
 GTAV_CATEGORY_TO_VISDRONE_CATEGORY = {'Boats': 'UNRECOGNIZED_CATEGORY', # 'boat', # This should not happen
@@ -106,92 +95,6 @@ GTAV_CATEGORY_TO_VISDRONE_CATEGORY = {'Boats': 'UNRECOGNIZED_CATEGORY', # 'boat'
                                       'Uncategorized': 'UNRECOGNIZED_CATEGORY',
                                       
                                       'UNRECOGNIZED_CATEGORY': 'UNRECOGNIZED_CATEGORY'}
-
-
-
-
-
-
-                                      
-
-def show_image_with_bboxes(image, bboxes): 
-    # image = np.array(image)
-    # image = image[...,::-1]
-    image = np.array(image)
-    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-
-    image = add_bboxes(image, bboxes)
-    cv2.imshow("test", image)
-    cv2.waitKey(-1)
-
-
-
-def add_bboxes(image, bboxes, show_labels=True):
-    """Add bounding boxes to an image
-
-    bboxes as list of dicts, e.g.
-        [{'category': 'Car',
-          'left': '537',
-          'top': '117',
-          'right': '585',
-          'bottom': '204'},
-         {'category': 'Car',
-          'left': '546',
-          'top': '385',
-          'right': '595',
-          'bottom': '468'},
-         {'category': 'Car',
-          'left': '792',
-          'top': '617',
-          'right': '837',
-          'bottom': '704'},
-         {'category': 'Car',
-          'left': '683',
-          'top': '251',
-          'right': '741',
-          'bottom': '336'}]
-
-    
-    Args:
-        image: the image to add bounding boxes into
-        bboxes: the bounding box data
-    """
-
-    for bbox in bboxes:
-        x1 = bbox['left']
-        y1 = bbox['top']
-        x2 = bbox['right']
-        y2 = bbox['bottom']
-        label = bbox['label']
-        if show_labels:
-            color = (255, 255, 0)
-            # if x2 - x1 <= 10 or y2 - y1 <= 10:
-            #     color = (0,255,255)
-            cv2.putText(image, label, (x1, y1+25), cv2.FONT_HERSHEY_SIMPLEX, 1.0, color, thickness = 2, lineType=cv2.LINE_AA) 
-        cv2.rectangle(image, (x1, y1), (x2, y2), color, 2)
-
-    return image
-
-
-    
-def parseBBox2d(bbox2d):
-    if bbox2d == None:
-        return []
-    items = bbox2d.split("\n")
-    ret = []
-    for item in items[:-1]:
-        data = item.split(" ")
-        # Indices can be found in /DeepGTAV-PreSIL/dataformat-augmented.txt
-        label = data[0]
-        left = int(data[4])
-        top = int(data[5])
-        right = int(data[6])
-        bottom = int(data[7])
-
-        # ignore 1920 1080 0 0 boxes
-        if not (left > right or top > bottom):
-            ret.append({"label": label,"left": left,"top": top,"right": right,"bottom": bottom})
-    return ret
 
 
 MANUAL_CATEGORY = {#Emergency:
@@ -302,7 +205,7 @@ def getLabelFromObjectName(obj_name):
 # parse the bbboxes from label_aug format to VisDrone format. This also catches some wrong class labels by looking at the models, e.g. SUVs as  truck
 # TODO improve
 # see file "Decision on the classes"
-def parseBBoxLabel_augToVisDrone(bboxes):
+def parse_LabelAugToVisDrone(bboxes):
     items = bboxes.split("\n")
     ret = []
     for item in items[:-1]:
@@ -374,8 +277,27 @@ def parseBBoxLabel_augToVisDrone(bboxes):
     return ret
 
 
+def parseBBox2d_LikePreSIL(bbox2d):
+    if bbox2d == None:
+        return []
+    items = bbox2d.split("\n")
+    ret = []
+    for item in items[:-1]:
+        data = item.split(" ")
+        # Indices can be found in /DeepGTAV-PreSIL/dataformat-augmented.txt
+        label = data[0]
+        left = int(data[4])
+        top = int(data[5])
+        right = int(data[6])
+        bottom = int(data[7])
 
-def parseBBox_LabelAugToSeaDroneSea(bboxes):
+        # ignore 1920 1080 0 0 boxes
+        if not (left > right or top > bottom):
+            ret.append({"label": label,"left": left,"top": top,"right": right,"bottom": bottom})
+    return ret
+
+
+def parse_LabelAugToSeaDroneSea(bboxes):
     items = bboxes.split("\n")
     ret = []
     for item in items[:-1]:
@@ -421,84 +343,155 @@ def parseBBox_LabelAugToSeaDroneSea(bboxes):
             ret.append({"label": label,"left": left,"top": top,"right": right,"bottom": bottom})
     return ret
 
-def convertBBoxSeaDroneSeaToNumber(bboxes):
-    OBJECT_CATEGORY_TO_NUMBER = {"people": 0, "peopleWithSwimwest": 1, "peopleOnBoat": 2, "peopleOnBoatWithSwimwest": 3, "boat":4}
-    bboxes_new =  [[OBJECT_CATEGORY_TO_NUMBER[b['label']], (b['left'] + b['right']) / 2, (b['top'] + b['bottom']) / 2, b['right'] - b['left'], b['bottom'] - b['top']] for b in bboxes]
-    # bboxes_new =  [[OBJECT_CATEGORY_TO_DEEPGTAV_NUMBER[b['label']], b['left'] + b['right'] / 2, b['top'] + b['bottom'] / 2, b['right'] - b['left'], b['bottom'] - b['top']] for b in bboxes if b[0] in OBJECT_CATEGORY_TO_DEEPGTAV_NUMBER]
+
+###############################################################################
+########################## Appending BBoxes to Images #########################
+###############################################################################
+
+def add_bboxes(image, bboxes, show_labels=True):
+    """Add bounding boxes to an image
+
+    bboxes as list of dicts, e.g.
+        [{'category': 'Car',
+          'left': '537',
+          'top': '117',
+          'right': '585',
+          'bottom': '204'},
+         {'category': 'Car',
+          'left': '546',
+          'top': '385',
+          'right': '595',
+          'bottom': '468'},
+         {'category': 'Car',
+          'left': '792',
+          'top': '617',
+          'right': '837',
+          'bottom': '704'},
+         {'category': 'Car',
+          'left': '683',
+          'top': '251',
+          'right': '741',
+          'bottom': '336'}]
+
+    
+    Args:
+        image: the image to add bounding boxes into
+        bboxes: the bounding box data
+    """
+
+    for bbox in bboxes:
+        x1 = bbox['left']
+        y1 = bbox['top']
+        x2 = bbox['right']
+        y2 = bbox['bottom']
+        label = bbox['label']
+        if show_labels:
+            color = (255, 255, 0)
+            # if x2 - x1 <= 10 or y2 - y1 <= 10:
+            #     color = (0,255,255)
+            cv2.putText(image, label, (x1, y1+25), cv2.FONT_HERSHEY_SIMPLEX, 1.0, color, thickness = 2, lineType=cv2.LINE_AA) 
+        cv2.rectangle(image, (x1, y1), (x2, y2), color, 2)
+
+    return image
+
+
+def show_image_with_bboxes(image, bboxes): 
+    # image = np.array(image)
+    # image = image[...,::-1]
+    image = np.array(image)
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
+    image = add_bboxes(image, bboxes)
+    cv2.imshow("test", image)
+    cv2.waitKey(-1)
+
+
+
+###############################################################################
+########################## General Parsing Functions ##########################
+###############################################################################
+
+# convert a dictionary with format {"left", "right", "top", "bottom"} to list with format [x_center, y_center, width, height]
+def convertDictLRTBToListXYWH(bboxes):
+    bboxes_new =  [[b['label'], (b['left'] + b['right']) / 2, (b['top'] + b['bottom']) / 2, b['right'] - b['left'], b['bottom'] - b['top']] for b in bboxes]
     return bboxes_new
 
-
-
-def parseBBox_LabelAugToCow(bboxes):
-    pass
-
-
-def convertBBoxVisDroneToYolo(bboxes):
-    # convert from {'left' 'top' 'right' 'bottom'} in px to {x_center, y_center, width, height} 
-    bboxes_new =  [[OBJECT_CATEGORY_TO_NUMBER[b['label']], (b['left'] + b['right']) / 2, (b['top'] + b['bottom']) / 2, b['right'] - b['left'], b['bottom'] - b['top']] for b in bboxes]
-    # bboxes_new =  [[OBJECT_CATEGORY_TO_DEEPGTAV_NUMBER[b['label']], b['left'] + b['right'] / 2, b['top'] + b['bottom'] / 2, b['right'] - b['left'], b['bottom'] - b['top']] for b in bboxes if b[0] in OBJECT_CATEGORY_TO_DEEPGTAV_NUMBER]
+def convertListXYWHToDictLRTB(bboxes):
+    bboxes_new = [{'label': b[0], 'left': int(b[1] - b[3]/2), 'right': int(b[1] + b[3]/2), 'top': int(b[2] - b[4]/2), 'bottom': int(b[2] + b[4]/2)} for b in bboxes]
     return bboxes_new
 
-def convertBBoxesYolo_relative(bboxes_yolo, img_width, img_height):
-    bboxes_new = [[b[0], b[1] / img_width, b[2] / img_height, b[3] / img_width, b[4] / img_height] for b in bboxes_yolo]
+def convertLabelNamesToNumber(bboxes, labelToNumberDict):
+    bboxes_new =  [[labelToNumberDict[b[0]], b[1], b[2], b[3], b[4]] for b in bboxes]
     return bboxes_new
 
-def revertConvertBBoxVisDroneToYolo(bboxes):
-    bboxes_new = [{'label': NUMBER_TO_OBJECT_CATEGORY[b[0]], 'left': int(b[1] - b[3]/2), 'right': int(b[1] + b[3]/2), 'top': int(b[2] - b[4]/2), 'bottom': int(b[2] + b[4]/2)} for b in bboxes]
+def convertNumberToLabelNames(bboxes, labelToNumberDict):
+    numberToLabelDict = {v: k for k,v in labelToNumberDict.items()}
+    return [[numberToLabelDict[b[0]], b[1], b[2], b[3], b[4]] for b in bboxes]
+
+
+# Note that there are some rounding Errors when converting from relative to
+# absolute values and back
+def convertBBoxes_AbsoluteToRelative(bboxes, img_width, img_height):
+    bboxes_new = [[b[0], b[1] / img_width, b[2] / img_height, b[3] / img_width, b[4] / img_height] for b in bboxes]
     return bboxes_new
 
-def revertConvertBBoxVisDroneToYolo_ONLY_NUMBER(bboxes):
-    bboxes_new = [{'label': str(b[0]), 'left': int(b[1] - b[3]/2), 'right': int(b[1] + b[3]/2), 'top': int(b[2] - b[4]/2), 'bottom': int(b[2] + b[4]/2)} for b in bboxes]
-    return bboxes_new
-
-
-def revertConvertBBoxesYolo_relative(bboxes, img_width, img_height):
+def convertBBoxes_RelativeToAboslute(bboxes, img_width, img_height):
     bboxes_new = [[b[0], int(b[1] * img_width), int(b[2] * img_height), int(b[3] * img_width), int(b[4] * img_height)] for b in bboxes]
     return bboxes_new
 
 
-# fully converts bounding boxes from label_aug format to format as required by ultralytics yolo training
-def convertBBoxesDeepGTAToYolo(bboxes):
-    bboxes = parseBBoxLabel_augToVisDrone(bboxes)
-    bboxes = convertBBoxVisDroneToYolo(bboxes)
-    bboxes = convertBBoxesYolo_relative(bboxes, IMG_WIDTH, IMG_HEIGHT)
-    bboxes = ["{:d} {:1.6f} {:1.6f} {:1.6f} {:1.6f}".format(*bbox) for bbox in bboxes]
-    bboxes = "\n".join(bboxes)
+
+def revertConvertBBoxVisDroneToYolo(bboxes):
+    bboxes = convertNumberToLabelNames(bboxes, VIDSDRONE_OBJECT_CATEGORY_TO_NUMBER)
+    bboxes = convertListXYWHToDictLRTB(bboxes)
+    return bboxes
+
+def revertConvertBBoxVisDroneToYolo_ONLY_NUMBER(bboxes):
+    bboxes = [[str(b[0]), b[1], b[2], b[3], b[4]] for b in bboxes]
+    bboxes = convertListXYWHToDictLRTB(bboxes)
+    # bboxes_new = [{'label': str(b[0]), 'left': int(b[1] - b[3]/2), 'right': int(b[1] + b[3]/2), 'top': int(b[2] - b[4]/2), 'bottom': int(b[2] + b[4]/2)} for b in bboxes]
     return bboxes
 
 
-# string bboxes to list
-def parseBBox_to_List(bboxes):
+# parse string BBoxes in the format as it is used for YOLO training (space and
+# newline separated (label, x_center, y_center, width, height) relative to the
+# image size) to a list
+def parseYoloBBoxStringToList(bboxes):
     if bboxes == "":
         return []
     bboxes = [bbox.split(" ") for bbox in bboxes.split("\n")]
     bboxes = [[int(b[0]), float(b[1]), float(b[2]), float(b[3]), float(b[4])] for b in bboxes]
     return bboxes
 
-
-def revertParseBBox_to_List(bboxes):
+def parseListToYoloBBoxString(bboxes):
     bboxes = ["{:d} {:1.6f} {:1.6f} {:1.6f} {:1.6f}".format(*bbox) for bbox in bboxes]
     bboxes = "\n".join(bboxes)
     return bboxes
 
-def parseBBox_YoloFormat_to_Image(bboxes, img_width=IMG_WIDTH, img_height=IMG_HEIGHT):
-    bboxes = parseBBox_to_List(bboxes)
-    bboxes = revertConvertBBoxesYolo_relative(bboxes, img_width, img_height)
+def parseBBox_YoloFormatStringToImage(bboxes, img_width=IMG_WIDTH, img_height=IMG_HEIGHT):
+    bboxes = parseYoloBBoxStringToList(bboxes)
+    bboxes = convertBBoxes_RelativeToAboslute(bboxes, img_width, img_height)
     bboxes = revertConvertBBoxVisDroneToYolo(bboxes)
     return bboxes
 
-def parseBBox_YoloFormat_to_Number(bboxes, img_width=IMG_WIDTH, img_height=IMG_HEIGHT):
-    bboxes = parseBBox_to_List(bboxes)
-    bboxes = revertConvertBBoxesYolo_relative(bboxes, img_width, img_height)
+def parseBBox_YoloFormatStringToImage_NumberOnly(bboxes, img_width=IMG_WIDTH, img_height=IMG_HEIGHT):
+    bboxes = parseYoloBBoxStringToList(bboxes)
+    bboxes = convertBBoxes_RelativeToAboslute(bboxes, img_width, img_height)
     bboxes = revertConvertBBoxVisDroneToYolo_ONLY_NUMBER(bboxes)
     return bboxes
 
 
 
+# fully converts bounding boxes from label_aug to visdrone categories in format as required by yolo training
+def parseBBoxesVisDroneStyle(bboxes):
+    bboxes = parse_LabelAugToVisDrone(bboxes)
+    bboxes = convertDictLRTBToListXYWH(bboxes)
+    bboxes = convertLabelNamesToNumber(bboxes, VIDSDRONE_OBJECT_CATEGORY_TO_NUMBER)
+    bboxes = convertBBoxes_AbsoluteToRelative(bboxes, IMG_WIDTH, IMG_HEIGHT)
+    bboxes = parseListToYoloBBoxString(bboxes)
+    return bboxes
 
-def parseBBoxesVisdroneStyle():
-    # TODO
-    pass
+
 
 
 # Parse the bbox2d string returned from DeepGTAV for the following conventions:
@@ -508,13 +501,15 @@ def parseBBoxesVisdroneStyle():
 # People On Boats with Life Jackets: 3
 # Boats: 4
 def parseBBoxesSeadroneSeaStyle(bboxes):
-    bboxes = parseBBox_LabelAugToSeaDroneSea(bboxes)
-    bboxes = convertBBoxSeaDroneSeaToNumber(bboxes)
-    bboxes = convertBBoxesYolo_relative(bboxes, IMG_WIDTH, IMG_HEIGHT)
-    bboxes = ["{:d} {:1.6f} {:1.6f} {:1.6f} {:1.6f}".format(*bbox) for bbox in bboxes]
-    bboxes = "\n".join(bboxes)
+    SEA_DRONE_SEA_OBJECT_CATEGORY_TO_NUMBER = {"people": 0, "peopleWithSwimwest": 1, "peopleOnBoat": 2, "peopleOnBoatWithSwimwest": 3, "boat":4}
+    bboxes = parse_LabelAugToSeaDroneSea(bboxes)
+    bboxes = convertDictLRTBToListXYWH(bboxes)
+    bboxes = convertLabelNamesToNumber(bboxes, SEA_DRONE_SEA_OBJECT_CATEGORY_TO_NUMBER)
+    bboxes = convertBBoxes_AbsoluteToRelative(bboxes, IMG_WIDTH, IMG_HEIGHT)
+    bboxes = parseListToYoloBBoxString(bboxes)
     return bboxes
 
 def parseBBoxesCowStyle():
+    OBJECT_CATEGORY_TO_NUMBER = {"cow": 0}
     # TODO
     pass

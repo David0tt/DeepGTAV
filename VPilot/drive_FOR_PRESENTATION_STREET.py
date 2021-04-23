@@ -8,7 +8,7 @@ from deepgtav.messages import Start, Stop, Scenario, Dataset, Commands, frame2nu
 from deepgtav.messages import StartRecording, StopRecording, SetClockTime, SetWeather, CreatePed
 from deepgtav.client import Client
 
-from utils.BoundingBoxes import add_bboxes, parseBBox2d, convertBBoxesDeepGTAToYolo, parseBBox_YoloFormat_to_Image
+from utils.BoundingBoxes import add_bboxes, parseBBox2d_LikePreSIL, parseBBoxesVisDroneStyle, parseBBox_YoloFormatStringToImage
 from utils.utils import save_image_and_bbox, save_meta_data, getRunCount, generateNewTargetLocation
 
 import argparse
@@ -32,7 +32,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=None)
     parser.add_argument('-l', '--host', default='127.0.0.1', help='The IP where DeepGTAV is running')
     parser.add_argument('-p', '--port', default=8000, help='The port where DeepGTAV is running')
-    parser.add_argument('-s', '--save_dir', default='E:\\Bachelorarbeit\\DataGeneration_DeepGTAV-PreSIL\\EXPORTDIR\\ExportStreet', help='The directory the generated data is saved to')
+    parser.add_argument('-s', '--save_dir', default='G:\\EXPORTDIR\\ExportStreet_1', help='The directory the generated data is saved to')
     # args = parser.parse_args()
 
     # TODO for running in VSCode
@@ -46,7 +46,10 @@ if __name__ == '__main__':
     scenario = Scenario(drivingMode=0, vehicle="buzzard", location=[245.23306274414062, -998.244140625, 29.205352783203125]) #automatic driving
     # dataset=Dataset(location=True, time=True, instanceSegmentationImageColor=True, exportBBox2D=True, occlusionImage=True, segmentationImage=True) #,exportStencilImage=True, exportLiDAR=True, maxLidarDist=50)
     # dataset=Dataset(location=True, time=True, exportBBox2D=True, segmentationImage=True, instanceSegmentationImageColor=True) #exportIndividualStencilImages=True)
-    dataset=Dataset(location=True, time=True, exportBBox2D=True, segmentationImage=True, exportStencilImage=True) # , exportIndividualStencilImages=True) #exportIndividualStencilImages=True)
+    IMG_WIDTH, IMG_HEIGHT = (1920, 1080)
+    # screenResolution = (1920, 1080)
+    screenResolution = (3840, 2160)
+    dataset=Dataset(frame=[IMG_WIDTH, IMG_HEIGHT], screenResolution = screenResolution, location=True, time=True, exportBBox2D=True, segmentationImage=True, exportStencilImage=True) # , exportIndividualStencilImages=True) #exportIndividualStencilImages=True)
     
     # dataset=Dataset(location=True, time=True, exportLiDAR=True, maxLidarDist=120) #exportIndividualStencilImages=True)
     
@@ -257,8 +260,13 @@ if __name__ == '__main__':
 
             # Plot Segmentation Image and Bounding Box image overlayed for testing 
             if message["segmentationImage"] != None and message["segmentationImage"] != "":
-                bboxes = convertBBoxesDeepGTAToYolo(message["bbox2d"])
-                bbox_image = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormat_to_Image(bboxes))
+                bboxes = parseBBoxesVisDroneStyle(message["bbox2d"])
+                
+                filename = f'{run_count:04}' + '_' + f'{count:010}'
+                save_image_and_bbox(args.save_dir, filename, frame2numpy(message['frame'], screenResolution), bboxes)
+                save_meta_data(args.save_dir, filename, message["location"], message["HeightAboveGround"], message["CameraPosition"], message["CameraAngle"], message["time"], "CLEAR")
+                
+                bbox_image = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormatStringToImage(bboxes))
                 
                 nparr = np.fromstring(base64.b64decode(message["segmentationImage"]), np.uint8)
                 segmentationImage = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
@@ -308,8 +316,8 @@ if __name__ == '__main__':
 def showmessage(idx):
     message = messages[idx]
 
-    bboxes = convertBBoxesDeepGTAToYolo(message["bbox2d"])
-    bbox_image = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormat_to_Image(bboxes))
+    bboxes = parseBBoxesVisDroneStyle(message["bbox2d"])
+    bbox_image = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormatStringToImage(bboxes))
     
     nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImageColor"]), np.uint8)
     segmentationImage = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
@@ -323,8 +331,8 @@ def showmessage(idx):
 
 def showBBox(idx):
     message = messages[idx]
-    bboxes = convertBBoxesDeepGTAToYolo(message["bbox2d"])
-    bbox_image = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormat_to_Image(bboxes))
+    bboxes = parseBBoxesVisDroneStyle(message["bbox2d"])
+    bbox_image = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormatStringToImage(bboxes))
     cv2.imshow("BBoxImage", bbox_image)
     cv2.waitKey(1)
 

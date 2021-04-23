@@ -3,7 +3,7 @@ import cv2
 import os
 import numpy as np
 
-from utils.BoundingBoxes import parseBBox_YoloFormat_to_Image, show_image_with_bboxes, parseBBox_YoloFormat_to_Number
+from utils.BoundingBoxes import parseBBox_YoloFormatStringToImage, show_image_with_bboxes, parseBBox_YoloFormatStringToImage_NumberOnly
     
 def show_dataset_online_format(images_path, include_boats=False):
     images_path = os.path.normpath(images_path)
@@ -12,7 +12,7 @@ def show_dataset_online_format(images_path, include_boats=False):
         with open(os.path.join(images_path.replace("images", "labels"), file_name.replace(".jpg", ".txt")), "r") as bbox_file:
             bboxes = bbox_file.read()
         
-        bboxes = parseBBox_YoloFormat_to_Image(bboxes, *image.size, include_boats=include_boats)
+        bboxes = parseBBox_YoloFormatStringToImage(bboxes, *image.size, include_boats=include_boats)
         
         image = np.array(image)
         show_image_with_bboxes(image, bboxes)
@@ -31,7 +31,7 @@ def show_dataset_online_format_NUMBERS_ONLY(images_path):
         with open(os.path.join(images_path.replace("images", "labels"), file_name.replace(".jpg", ".txt")), "r") as bbox_file:
             bboxes = bbox_file.read()
         
-        bboxes = parseBBox_YoloFormat_to_Number(bboxes, *image.size)
+        bboxes = parseBBox_YoloFormatStringToImage_NumberOnly(bboxes, *image.size)
         image = np.array(image)
         show_image_with_bboxes(image, bboxes)
 
@@ -40,7 +40,8 @@ def show_dataset_online_format_NUMBERS_ONLY(images_path):
 # show_dataset_online_format_NUMBERS_ONLY("E:\\Bachelorarbeit\\Datasets\\VisDrone\\VisDrone_YOLO_FORMAT_CLEANED\\train\\images")
 # show_dataset_online_format_NUMBERS_ONLY("Z:\\visdrone-dataset\\VisDrone_YOLO_FORMAT\\train\\images")
 # show_dataset_online_format_NUMBERS_ONLY("Z:\\DeepGTAV-EXPORTDIR-TEST\\Generation1\\images")
-show_dataset_online_format_NUMBERS_ONLY("G:\\EXPORTDIR\\ExportWater_4k_11\\images")
+# show_dataset_online_format_NUMBERS_ONLY("G:\\EXPORTDIR\\ExportWater_4k_12\\images")
+show_dataset_online_format_NUMBERS_ONLY("G:\\EXPORTDIR\\ExportStreet_1\\images")
 
 if __name__ == '__main__':
     pass

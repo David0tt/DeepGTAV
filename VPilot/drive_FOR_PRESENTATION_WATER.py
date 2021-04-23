@@ -8,7 +8,7 @@ from deepgtav.messages import Start, Stop, Scenario, Dataset, Commands, frame2nu
 from deepgtav.messages import StartRecording, StopRecording, SetClockTime, SetWeather, CreatePed, CreateVehicle
 from deepgtav.client import Client
 
-from utils.BoundingBoxes import add_bboxes, parseBBox2d, convertBBoxesDeepGTAToYolo, parseBBox_YoloFormat_to_Image
+from utils.BoundingBoxes import add_bboxes, parseBBox2d_LikePreSIL, parseBBoxesVisDroneStyle, parseBBox_YoloFormatStringToImage, parseBBoxesSeadroneSeaStyle
 from utils.utils import save_image_and_bbox, save_meta_data, getRunCount, generateNewTargetLocation
 from utils.colors import pickRandomColor
 
@@ -278,15 +278,8 @@ if __name__ == '__main__':
             if message["segmentationImage"] != None and message["segmentationImage"] != "":
                 # Combine unprocessed pedestrians with processed rest
 
-                bboxes_unprocessed = convertBBoxesDeepGTAToYolo(message["bbox2dUnprocessed"], include_boats=True)
-                bboxes_processed = convertBBoxesDeepGTAToYolo(message["bbox2d"], include_boats=True)
-                bboxes_unprocessed = parseBBox_YoloFormat_to_Image(bboxes_unprocessed, include_boats=True)
-                bboxes_processed = parseBBox_YoloFormat_to_Image(bboxes_processed, include_boats=True)
-                bboxes_unprocessed = [b for b in bboxes_unprocessed if b['label'] == 'pedestrian' or b['label'] == 'people']
-                bboxed_processed = [b for b in bboxes_processed if b['label'] != 'pedestrian' and b['label'] != 'people']
 
-                bboxes = bboxes_unprocessed + bboxes_processed
-
+                bboxes = parseBBoxesSeadroneSeaStyle(message["bbox2d"])
                 bbox_image = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), bboxes)
                 
                 nparr = np.fromstring(base64.b64decode(message["segmentationImage"]), np.uint8)
@@ -337,8 +330,8 @@ if __name__ == '__main__':
 def showmessage(idx):
     message = messages[idx]
 
-    bboxes = convertBBoxesDeepGTAToYolo(message["bbox2d"])
-    bbox_image = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormat_to_Image(bboxes))
+    bboxes = parseBBoxesVisDroneStyle(message["bbox2d"])
+    bbox_image = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormatStringToImage(bboxes))
     
     nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImageColor"]), np.uint8)
     segmentationImage = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
@@ -352,8 +345,8 @@ def showmessage(idx):
 
 def showBBox(idx):
     message = messages[idx]
-    bboxes = convertBBoxesDeepGTAToYolo(message["bbox2d"])
-    bbox_image = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormat_to_Image(bboxes))
+    bboxes = parseBBoxesVisDroneStyle(message["bbox2d"])
+    bbox_image = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormatStringToImage(bboxes))
     cv2.imshow("BBoxImage", bbox_image)
     cv2.waitKey(1)
 
