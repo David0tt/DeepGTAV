@@ -1,6 +1,7 @@
 import os
 import random
 
+# Hashes can be found here https://wiki.rage.mp/index.php?title=Peds
 with open(os.path.normpath("utils/pedsToHashes.txt"), "r") as file:
     pedsToHashes_ls = file.read()
 

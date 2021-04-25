@@ -486,11 +486,11 @@ def parseBBox_YoloFormatStringToImage_NumberOnly(bboxes, img_width=IMG_WIDTH, im
 
 
 # fully converts bounding boxes from label_aug to visdrone categories in format as required by yolo training
-def parseBBoxesVisDroneStyle(bboxes):
+def parseBBoxesVisDroneStyle(bboxes, img_width=IMG_WIDTH, img_height=IMG_HEIGHT):
     bboxes = parse_LabelAugToVisDrone(bboxes)
     bboxes = convertDictLRTBToListXYWH(bboxes)
     bboxes = convertLabelNamesToNumber(bboxes, VIDSDRONE_OBJECT_CATEGORY_TO_NUMBER)
-    bboxes = convertBBoxes_AbsoluteToRelative(bboxes, IMG_WIDTH, IMG_HEIGHT)
+    bboxes = convertBBoxes_AbsoluteToRelative(bboxes, img_width, img_height)
     bboxes = parseListToYoloBBoxString(bboxes)
     return bboxes
 
@@ -503,12 +503,12 @@ def parseBBoxesVisDroneStyle(bboxes):
 # People On Boats: 2
 # People On Boats with Life Jackets: 3
 # Boats: 4
-def parseBBoxesSeadroneSeaStyle(bboxes):
+def parseBBoxesSeadroneSeaStyle(bboxes, img_width=IMG_WIDTH, img_height=IMG_HEIGHT):
     SEA_DRONE_SEA_OBJECT_CATEGORY_TO_NUMBER = {"people": 0, "peopleWithSwimwest": 1, "peopleOnBoat": 2, "peopleOnBoatWithSwimwest": 3, "boat":4}
     bboxes = parse_LabelAugToSeaDroneSea(bboxes)
     bboxes = convertDictLRTBToListXYWH(bboxes)
     bboxes = convertLabelNamesToNumber(bboxes, SEA_DRONE_SEA_OBJECT_CATEGORY_TO_NUMBER)
-    bboxes = convertBBoxes_AbsoluteToRelative(bboxes, IMG_WIDTH, IMG_HEIGHT)
+    bboxes = convertBBoxes_AbsoluteToRelative(bboxes, img_width, img_height)
     bboxes = parseListToYoloBBoxString(bboxes)
     return bboxes
 
