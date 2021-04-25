@@ -81,6 +81,14 @@ void Scenario::parseScenarioConfig(const Value& sc, bool setDefaults) {
 	else if (setDefaults) {
 		_drivingMode = -1;
 	}
+	if (!sc["spawnedEntitiesDespawnSeconds"].IsNull()) {
+		spawnedEntitiesDespawnSeconds = sc["spawnedEntitiesDespawnSeconds"].GetDouble();
+	}
+	else if (setDefaults) {
+		spawnedEntitiesDespawnSeconds = 60;
+	}
+
+
 }
 
 void Scenario::parseDatasetConfig(const Value& dc, bool setDefaults) {
@@ -316,6 +324,9 @@ void Scenario::run() {
 			PED::SET_DRIVER_AGGRESSIVENESS(ped, 0.0);
 			PED::SET_DRIVER_ABILITY(ped, 100.0);
 		}
+
+		despawnSpawnedObjectsAfterTime();
+
 	}
 	scriptWait(0);
 }
@@ -411,6 +422,7 @@ void Scenario::createVehicle(const char* model, float relativeForward, float rel
 	log("Scenario::CreateVehicle");
 	log("Model: ");
 	log(model);
+	log("With LifeJacketPed: " + std::to_string(withLifeJacketPed));
 	Vector3 currentForwardVector, currentRightVector, currentUpVector, currentPos;
 	ENTITY::GET_ENTITY_MATRIX(m_ownVehicle, &currentForwardVector, &currentRightVector, &currentUpVector, &currentPos);
 
@@ -434,7 +446,7 @@ void Scenario::createVehicle(const char* model, float relativeForward, float rel
 	STREAMING::REQUEST_MODEL(vehicleHash);
 	while (!STREAMING::HAS_MODEL_LOADED(vehicleHash)) WAIT(0);
 	Vehicle tempV = VEHICLE::CREATE_VEHICLE(vehicleHash, pos.x, pos.y, pos.z, heading, FALSE, FALSE);
-	WAIT(0);
+	//WAIT(0);
 	if (color != -1) {
 		VEHICLE::SET_VEHICLE_COLOURS(tempV, color, color2);
 	}
@@ -455,6 +467,8 @@ void Scenario::createVehicle(const char* model, float relativeForward, float rel
 		tempPed = PED::CREATE_RANDOM_PED(pos.x, pos.y, pos.z);
 	}
 	PED::SET_PED_INTO_VEHICLE(tempPed, tempV, -1);
+
+	WAIT(0);
 	AI::TASK_VEHICLE_DRIVE_WANDER(tempPed, tempV, 2.0f, 16777216);
 
 
@@ -473,8 +487,20 @@ void Scenario::createVehicle(const char* model, float relativeForward, float rel
     //    }
     //}
 
-    ENTITY::SET_ENTITY_AS_NO_LONGER_NEEDED(&tempV);
-	ENTITY::SET_PED_AS_NO_LONGER_NEEDED(&tempPed);
+    //ENTITY::SET_ENTITY_AS_NO_LONGER_NEEDED(&tempV);
+	//ENTITY::SET_PED_AS_NO_LONGER_NEEDED(&tempPed);
+
+	SpawnedPed sp;
+	sp.ped = tempPed;
+	sp.spawntime = time(NULL);
+	spawnedPeds.push_back(sp);
+
+	SpawnedVehicle sv;
+	sv.vehicle = tempV;
+	sv.spawntime = time(NULL);
+	spawnedVehicles.push_back(sv);
+
+
 }
 
 void Scenario::createPed(const char* model, float relativeForward, float relativeRight, float relativeUp, float heading, int task, bool placeOnGround) {
@@ -536,11 +562,41 @@ void Scenario::createPed(const char* model, float relativeForward, float relativ
 		PED::SET_PED_COMPONENT_VARIATION(tempPed, 9, 1, 0, 2);
 	}
 
-
-	//WAIT(0); 
+	WAIT(0); 
 	AI::TASK_WANDER_STANDARD(tempPed, 10.0f, 10);
 	//AI::TASK_WANDER_STANDARD(tempPed, 0, 0);
-	ENTITY::SET_PED_AS_NO_LONGER_NEEDED(&tempPed);
+	//ENTITY::SET_PED_AS_NO_LONGER_NEEDED(&tempPed);
+
+	SpawnedPed sp;
+	sp.ped = tempPed;
+	sp.spawntime = time(NULL);
+	spawnedPeds.push_back(sp);
+}
+
+void Scenario::despawnSpawnedObjectsAfterTime() {
+	time_t currentTime = time(NULL);
+	std::vector<SpawnedPed> newSpawnedPeds;
+	std::vector<SpawnedVehicle> newSpawnedVehicles;
+
+	for (SpawnedPed sp : spawnedPeds) {
+		if (difftime(currentTime, sp.spawntime) > spawnedEntitiesDespawnSeconds) {
+			PED::DELETE_PED(&sp.ped);
+		}
+		else {
+			newSpawnedPeds.push_back(sp);
+		}
+	}
+	for (SpawnedVehicle sv : spawnedVehicles) {
+		if (difftime(currentTime, sv.spawntime) > spawnedEntitiesDespawnSeconds) {
+			VEHICLE::DELETE_VEHICLE(&sv.vehicle);
+		}
+		else {
+			newSpawnedVehicles.push_back(sv);
+		}
+	}
+	spawnedPeds = newSpawnedPeds;
+	spawnedVehicles = newSpawnedVehicles;
+
 }
 
 

@@ -20,9 +20,22 @@
 
 #include "DataExport.h"
 
+#include <time.h>
+
 using namespace rapidjson;
 
 //#define DEBUG 1
+
+struct SpawnedPed {
+	Ped ped;
+	time_t spawntime;
+};
+
+struct SpawnedVehicle {
+	Vehicle vehicle;
+	time_t spawntime;
+};
+
 
 class Scenario {
 private:
@@ -63,6 +76,11 @@ private:
     bool vehicles_created = false;
     std::vector<VehicleToCreate> vehiclesToCreate;
     std::vector<PedToCreate> pedsToCreate;
+
+	std::vector<SpawnedPed> spawnedPeds;
+	std::vector<SpawnedVehicle> spawnedVehicles;
+	double spawnedEntitiesDespawnSeconds;
+
 
 public:
 	float rate;
@@ -112,5 +130,8 @@ private:
     void drawBoxes(Vector3 BLL, Vector3 FUR, Vector3 dim, Vector3 upVector, Vector3 rightVector, Vector3 forwardVector, Vector3 position, int colour);
     void createVehicles();
     //void setPosition();
+
+	void despawnSpawnedObjectsAfterTime();
+
 
 };

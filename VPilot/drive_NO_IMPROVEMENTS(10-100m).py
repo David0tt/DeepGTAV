@@ -9,7 +9,7 @@ from deepgtav.messages import StartRecording, StopRecording
 from deepgtav.messages import SetClockTime, SetWeather
 from deepgtav.client import Client
 
-from utils.BoundingBoxes import add_bboxes, parseBBox2d, convertBBoxesDeepGTAToYolo, parseBBox_YoloFormat_to_Image
+from utils.BoundingBoxes import add_bboxes, parseBBoxesVisDroneStyle, parseBBox_YoloFormatStringToImage
 from utils.utils import save_image_and_bbox, save_meta_data, getRunCount, generateNewTargetLocation
 # import utils.BoundingBoxes 
 
@@ -184,7 +184,7 @@ if __name__ == '__main__':
                     # Use filename of the format [run]_[count] with padding, e.g. for the 512th image in the 21th run:
                     # 0021_000000512
                     filename = f'{run_count:04}' + '_' + f'{count:010}'
-                    bboxes = convertBBoxesDeepGTAToYolo(message["bbox2d"])
+                    bboxes = parseBBoxesVisDroneStyle(message["bbox2d"])
                     if bboxes != "":
                         save_image_and_bbox(args.save_dir, filename, frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), bboxes)
                         save_meta_data(args.save_dir, filename, message["location"], message["HeightAboveGround"], message["CameraPosition"], message["CameraAngle"], message["time"], "CLEAR")

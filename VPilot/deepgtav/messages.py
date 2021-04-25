@@ -6,15 +6,16 @@ import numpy as np
 from numpy.lib.stride_tricks import as_strided
 
 import utils.PedNamesAndHashes as PedNamesAndHashes
-# from utils import PedNamesAndHashes
+from utils.Constants import FRAME, SCREEN_RESOLUTION
 
 class Scenario:
-    def __init__(self, location=None, time=None, weather=None, vehicle=None, drivingMode=None):
+    def __init__(self, location=None, time=None, weather=None, vehicle=None, drivingMode=None, spawnedEntitiesDespawnSeconds=None):
         self.location = location #[x,y,z,heading] (heading optional)
         self.time = time #[hour, minute]
         self.weather = weather #string
         self.vehicle = vehicle #string
         self.drivingMode = drivingMode #[drivingMode, setSpeed]
+        self.spawnedEntitiesDespawnSeconds = spawnedEntitiesDespawnSeconds # Despawn time in seconds
 
 
 # TODO Default settings should be added in the future
@@ -25,6 +26,11 @@ class Dataset:
             # offscreen=None, showBoxes=None, pointclouds=None, stationaryScene=None, vehiclesToCreate=None, pedsToCreate=None,
             # startIndex=None, lidarParam=None, collectTracking=None, recordScenario=None, positionScenario=None):
         self.__dict__.update(kwargs)
+        
+        if not 'frame' in kwargs:
+            self.frame = FRAME
+        if not 'screenResolution' in kwargs:
+            self.screenResolution = SCREEN_RESOLUTION
 
         # self.rate = rate #Hz
         # self.frame = frame #[width, height]
@@ -106,7 +112,7 @@ class Commands:
     def to_json(self):
         return json.dumps({'commands':self.__dict__})
         
-def frame2numpy(frame, frameSize):
+def frame2numpy(frame, frameSize=SCREEN_RESOLUTION):
     buff = np.fromstring(frame, dtype='uint8')
     # Scanlines are aligned to 4 bytes in Windows bitmaps
     strideWidth = int((frameSize[0] * 3 + 3) / 4) * 4
@@ -179,7 +185,7 @@ class CreatePed:
         
         self.model = model
         self.relativeForward = relativeForward
-        self. relativeRight = relativeRight
+        self.relativeRight = relativeRight
         self.relativeUp = relativeUp
         self.heading = heading
         self.task = task
@@ -198,7 +204,7 @@ class CreateVehicle:
         self.color = color
         self.color2 = color2
         self.placeOnGround = placeOnGround
-
+        self.withLifeJacketPed = withLifeJacketPed
     def to_json(self):
         return json.dumps({'CreateVehicle':self.__dict__})
 

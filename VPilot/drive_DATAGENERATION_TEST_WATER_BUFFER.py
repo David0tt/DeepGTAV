@@ -37,7 +37,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=None)
     parser.add_argument('-l', '--host', default='127.0.0.1', help='The IP where DeepGTAV is running')
     parser.add_argument('-p', '--port', default=8000, help='The port where DeepGTAV is running')
-    parser.add_argument('-s', '--save_dir', default='G:\\EXPORTDIR\\ExportWater_4k_12', help='The directory the generated data is saved to')
+    parser.add_argument('-s', '--save_dir', default='G:\\EXPORTDIR\\ExportWater_4k_25', help='The directory the generated data is saved to')
+    parser.add_argument('-r', '--screen_resolution', default='3840x2160DSR7680x4320', help="The screen resolution the game is running at. '1920x1080', '3840x2160', '3840x2160DSR' are currently supported. See VPilot/deepgtav/messages.py Dataset class for handeling of different Screen Resolutions")
     # args = parser.parse_args()
 
     # TODO for running in VSCode
@@ -49,14 +50,16 @@ if __name__ == '__main__':
     
     # scenario = Scenario(drivingMode=786603, vehicle="buzzard", location=[245.23306274414062, -998.244140625, 29.205352783203125]) #automatic driving
     # scenario = Scenario(drivingMode=0, vehicle="buzzard", location=[245.23306274414062, -998.244140625, 29.205352783203125]) #automatic driving
-    scenario = Scenario(drivingMode=1, vehicle="buzzard", location=[245.23306274414062, -998.244140625, 29.205352783203125]) #automatic driving
+    scenario = Scenario(drivingMode=1, vehicle="buzzard", location=[245.23306274414062, -998.244140625, 29.205352783203125], spawnedEntitiesDespawnSeconds=60) #automatic driving
     # dataset=Dataset(location=True, time=True, instanceSegmentationImageColor=True, exportBBox2D=True, occlusionImage=True, segmentationImage=True) #,exportStencilImage=True, exportLiDAR=True, maxLidarDist=50)
     # dataset=Dataset(location=True, time=True, exportBBox2D=True, segmentationImage=True, instanceSegmentationImageColor=True) #exportIndividualStencilImages=True)
+    # IMG_WIDTH, IMG_HEIGHT = 7680, 4320
     # IMG_WIDTH, IMG_HEIGHT = 3840, 2160
-    IMG_WIDTH, IMG_HEIGHT = (1920, 1080)
+    # IMG_WIDTH, IMG_HEIGHT = (1920, 1080)
     # screenResolution = (1920, 1080)
-    screenResolution = (3840, 2160)
-    dataset=Dataset(frame=[IMG_WIDTH, IMG_HEIGHT], screenResolution = screenResolution, exportStencliBuffer=True, location=True, time=True, exportBBox2D=True, exportBBox2DUnprocessed=True, segmentationImage=True, exportStencilImage=True)# , instanceSegmentationImageColor=True) # , exportIndividualStencilImages=True) #exportIndividualStencilImages=True)
+    # screenResolution = (3840, 2160)
+    # dataset=Dataset(frame=[IMG_WIDTH, IMG_HEIGHT], screenResolution = screenResolution, exportStencliBuffer=True, location=True, time=True, exportBBox2D=True, exportBBox2DUnprocessed=True, segmentationImage=True, exportStencilImage=True)# , instanceSegmentationImageColor=True) # , exportIndividualStencilImages=True) #exportIndividualStencilImages=True)
+    dataset=Dataset(location=True, time=True, exportBBox2D=True)# , instanceSegmentationImageColor=True) # , exportIndividualStencilImages=True) #exportIndividualStencilImages=True)
     # dataset=Dataset(location=True, time=True, exportLiDAR=True, maxLidarDist=120) #exportIndividualStencilImages=True)
     
     
@@ -109,7 +112,7 @@ if __name__ == '__main__':
     emptybbox = []
 
     # while True:
-    while count < 205:
+    while count < 50000:
         try:
             count += 1
             print("count: ", count)
@@ -121,20 +124,24 @@ if __name__ == '__main__':
                 client.sendMessage(StopRecording())
 
             if count % 30 == 0:
-                for i in range (-40, 40, 10):
+                for i in range (-40, 40, 20):
+                # for i in [-20, 20]:
                     rand_x = uniform(-10,10)
                     rand_y = uniform(-10,10)
                     # client.sendMessage(CreatePed(150+rand_x, i+rand_y, heading=uniform(-180,180), model='a_c_cow'))
                     withLifeJacketPed = random.choice([True, False])
+                    # withLifeJacketPed=True
                     if withLifeJacketPed:
                         client.sendMessage(CreatePed(150+rand_x, i+rand_y, heading=uniform(-180,180), model='s_m_y_baywatch_01'))
                     else:
                         client.sendMessage(CreatePed(150+rand_x, i+rand_y, heading=uniform(-180,180), model=None))
             if count % 30 == 4:
                 for i in [-30, 0, 30]:
+                # for i in [-30, 30]:
                     rand_x = uniform(-10,10)
                     rand_y = uniform(-10,10)
                     withLifeJacketPed = random.choice([True, False])
+                    # withLifeJacketPed=True
                     client.sendMessage(CreateVehicle(random.choice(BOATS), relativeForward=190+rand_x, relativeRight=i+rand_y, color=pickRandomColor(), color2=pickRandomColor(), heading=uniform(-180,180), withLifeJacketPed=withLifeJacketPed))
 
 
@@ -150,7 +157,7 @@ if __name__ == '__main__':
 
 
             message = client.recvMessage()  
-            messages.append(message)
+            # messages.append(message)
             # None message from utf-8 decode error
             if message == None:
                 continue
@@ -214,7 +221,7 @@ if __name__ == '__main__':
                     bboxes =  parseBBoxesSeadroneSeaStyle(message["bbox2d"])
 
                     if bboxes != "":
-                        save_image_and_bbox(args.save_dir, filename, frame2numpy(message['frame'], screenResolution), bboxes)
+                        save_image_and_bbox(args.save_dir, filename, frame2numpy(message['frame']), bboxes)
                         save_meta_data(args.save_dir, filename, message["location"], message["HeightAboveGround"], message["CameraPosition"], message["CameraAngle"], message["time"], "CLEAR")
                         
                     

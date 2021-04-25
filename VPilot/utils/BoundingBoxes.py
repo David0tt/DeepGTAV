@@ -402,6 +402,9 @@ def show_image_with_bboxes(image, bboxes):
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
     image = add_bboxes(image, bboxes)
+
+    cv2.namedWindow("test", cv2.WINDOW_NORMAL)
+    cv2.resizeWindow("test", 1920, 1080)
     cv2.imshow("test", image)
     cv2.waitKey(-1)
 
