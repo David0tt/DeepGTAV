@@ -1749,12 +1749,7 @@ void ObjectDetection::setPedsList() {
 
         if (RETAIN_ANIMALS || classid != 11) {
             model = ENTITY::GET_ENTITY_MODEL(peds[i]);
-
-
-			// TODO 
 			std::string modelString = std::to_string((uint) model);
-			log("modelstring: " + modelString);
-
             ObjEntity objEntity;
             bool nearbyVehicle = false;//Don't look if it is a nearby vehicle as we're collecting peds
             bool success = getEntityVector(objEntity, peds[i], model, classid, type, modelString, isPedInV, vPedIsIn, nearbyVehicle);

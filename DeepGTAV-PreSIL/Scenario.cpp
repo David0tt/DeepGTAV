@@ -420,9 +420,7 @@ void Scenario::setCameraPositionAndRotation(float x, float y, float z, float rot
 
 void Scenario::createVehicle(const char* model, float relativeForward, float relativeRight, float heading, int color, int color2, bool placeOnGround, bool withLifeJacketPed) {
 	log("Scenario::CreateVehicle");
-	log("Model: ");
-	log(model);
-	log("With LifeJacketPed: " + std::to_string(withLifeJacketPed));
+
 	Vector3 currentForwardVector, currentRightVector, currentUpVector, currentPos;
 	ENTITY::GET_ENTITY_MATRIX(m_ownVehicle, &currentForwardVector, &currentRightVector, &currentUpVector, &currentPos);
 
@@ -446,7 +444,6 @@ void Scenario::createVehicle(const char* model, float relativeForward, float rel
 	STREAMING::REQUEST_MODEL(vehicleHash);
 	while (!STREAMING::HAS_MODEL_LOADED(vehicleHash)) WAIT(0);
 	Vehicle tempV = VEHICLE::CREATE_VEHICLE(vehicleHash, pos.x, pos.y, pos.z, heading, FALSE, FALSE);
-	//WAIT(0);
 	if (color != -1) {
 		VEHICLE::SET_VEHICLE_COLOURS(tempV, color, color2);
 	}
@@ -471,25 +468,6 @@ void Scenario::createVehicle(const char* model, float relativeForward, float rel
 	WAIT(0);
 	AI::TASK_VEHICLE_DRIVE_WANDER(tempPed, tempV, 2.0f, 16777216);
 
-
-    //if (VEHICLE::IS_THIS_MODEL_A_BICYCLE(vehicleHash) || VEHICLE::IS_THIS_MODEL_A_BIKE(vehicleHash)) {
-    //    log("Trying to set ped on bike", true);
-    //    Hash hash = 0x505603B9;// GAMEPLAY::GET_HASH_KEY(const_cast<char*>(model));
-    //    STREAMING::REQUEST_MODEL(hash);
-    //    Ped tempP = PED::CREATE_PED(4, hash, pos.x, pos.y, pos.z, heading, FALSE, FALSE);
-    //    WAIT(0);
-    //    if (bike_num == 0) {
-    //        bike_num++;
-    //        AI::TASK_ENTER_VEHICLE(tempP, tempV, 0, -1, 2.0f, 16, 0);
-    //    }
-    //    else {
-    //        AI::TASK_VEHICLE_DRIVE_WANDER(tempP, tempV, 2.0f, 16777216);
-    //    }
-    //}
-
-    //ENTITY::SET_ENTITY_AS_NO_LONGER_NEEDED(&tempV);
-	//ENTITY::SET_PED_AS_NO_LONGER_NEEDED(&tempPed);
-
 	SpawnedPed sp;
 	sp.ped = tempPed;
 	sp.spawntime = time(NULL);
@@ -506,17 +484,11 @@ void Scenario::createVehicle(const char* model, float relativeForward, float rel
 void Scenario::createPed(const char* model, float relativeForward, float relativeRight, float relativeUp, float heading, int task, bool placeOnGround) {
 	log("Scenario::createPed");
 	std::string s = model;
-	log("Model Str: " + s);
-
 	unsigned int modelInt;
 	std::stringstream ss;
 	ss << std::hex << model;
 	ss >> modelInt;
 	Hash modelHash = (Hash)modelInt;
-
-	log("modelHash: " + std::to_string(modelHash));
-
-
 
 	Vector3 currentForwardVector, currentRightVector, currentUpVector, currentPos;
 	ENTITY::GET_ENTITY_MATRIX(m_ownVehicle, &currentForwardVector, &currentRightVector, &currentUpVector, &currentPos);
@@ -526,17 +498,6 @@ void Scenario::createPed(const char* model, float relativeForward, float relativ
     pos.y = currentPos.y + currentForwardVector.y * relativeForward + currentRightVector.y * relativeRight + currentUpVector.y * relativeUp;
     pos.z = currentPos.z + currentForwardVector.z * relativeForward + currentRightVector.z * relativeRight + currentUpVector.z * relativeUp;
 
-	////Ped hashes found at: https://www.se7ensins.com/forums/threads/request-pc-ped-hashes.1317848/
-	//Hash hash = 0x505603B9;// GAMEPLAY::GET_HASH_KEY(const_cast<char*>(model));
-	
- //   STREAMING::REQUEST_MODEL(hash);
- //   while (!STREAMING::HAS_MODEL_LOADED(hash)) WAIT(0);
- //   Ped temp = PED::CREATE_PED(4, hash, pos.x, pos.y, pos.z, heading, FALSE, FALSE);
- //   WAIT(0);
- //   AI::TASK_WANDER_STANDARD(ped, 10.0f, 10);
- //   ENTITY::SET_ENTITY_AS_NO_LONGER_NEEDED(&temp);
-
-	// or do:
 	if (placeOnGround) {
 		float groundZ;
 		GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(pos.x, pos.y, pos.z, &groundZ, false);
@@ -547,9 +508,6 @@ void Scenario::createPed(const char* model, float relativeForward, float relativ
 		pos.z = heightZ-0.5;
 	}
 
-	//Ped tempPed = PED::CREATE_RANDOM_PED(pos.x, pos.y, pos.z); 
-
-
 	STREAMING::REQUEST_MODEL(modelHash);
 	while (!STREAMING::HAS_MODEL_LOADED(modelHash)) WAIT(0);
 	Ped tempPed = PED::CREATE_PED(4, modelHash, pos.x, pos.y, pos.z, heading, FALSE, FALSE);
@@ -557,15 +515,13 @@ void Scenario::createPed(const char* model, float relativeForward, float relativ
 		OBJECT::PLACE_OBJECT_ON_GROUND_PROPERLY(tempPed);
 	}
 	
-	// TODO this is a dirty fix, to only spawn lifeguards with LifeJackets
+	// This is a dirty fix, to only spawn lifeguards with LifeJackets
 	if (modelHash == 0x0b4a6862) {
 		PED::SET_PED_COMPONENT_VARIATION(tempPed, 9, 1, 0, 2);
 	}
 
 	WAIT(0); 
 	AI::TASK_WANDER_STANDARD(tempPed, 10.0f, 10);
-	//AI::TASK_WANDER_STANDARD(tempPed, 0, 0);
-	//ENTITY::SET_PED_AS_NO_LONGER_NEEDED(&tempPed);
 
 	SpawnedPed sp;
 	sp.ped = tempPed;
