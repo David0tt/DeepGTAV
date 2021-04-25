@@ -32,7 +32,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=None)
     parser.add_argument('-l', '--host', default='127.0.0.1', help='The IP where DeepGTAV is running')
     parser.add_argument('-p', '--port', default=8000, help='The port where DeepGTAV is running')
-    parser.add_argument('-s', '--save_dir', default='G:\\EXPORTDIR\\ExportStreet_1', help='The directory the generated data is saved to')
+    parser.add_argument('-s', '--save_dir', default='G:\\EXPORTDIR\\ExportStreet_3', help='The directory the generated data is saved to')
     # args = parser.parse_args()
 
     # TODO for running in VSCode
@@ -46,10 +46,7 @@ if __name__ == '__main__':
     scenario = Scenario(drivingMode=0, vehicle="buzzard", location=[245.23306274414062, -998.244140625, 29.205352783203125]) #automatic driving
     # dataset=Dataset(location=True, time=True, instanceSegmentationImageColor=True, exportBBox2D=True, occlusionImage=True, segmentationImage=True) #,exportStencilImage=True, exportLiDAR=True, maxLidarDist=50)
     # dataset=Dataset(location=True, time=True, exportBBox2D=True, segmentationImage=True, instanceSegmentationImageColor=True) #exportIndividualStencilImages=True)
-    IMG_WIDTH, IMG_HEIGHT = (1920, 1080)
-    # screenResolution = (1920, 1080)
-    screenResolution = (3840, 2160)
-    dataset=Dataset(frame=[IMG_WIDTH, IMG_HEIGHT], screenResolution = screenResolution, location=True, time=True, exportBBox2D=True, segmentationImage=True, exportStencilImage=True) # , exportIndividualStencilImages=True) #exportIndividualStencilImages=True)
+    dataset=Dataset(location=True, time=True, exportBBox2D=True, segmentationImage=True, exportStencilImage=True) # , exportIndividualStencilImages=True) #exportIndividualStencilImages=True)
     
     # dataset=Dataset(location=True, time=True, exportLiDAR=True, maxLidarDist=120) #exportIndividualStencilImages=True)
     
@@ -263,7 +260,7 @@ if __name__ == '__main__':
                 bboxes = parseBBoxesVisDroneStyle(message["bbox2d"])
                 
                 filename = f'{run_count:04}' + '_' + f'{count:010}'
-                save_image_and_bbox(args.save_dir, filename, frame2numpy(message['frame'], screenResolution), bboxes)
+                save_image_and_bbox(args.save_dir, filename, frame2numpy(message['frame']), bboxes)
                 save_meta_data(args.save_dir, filename, message["location"], message["HeightAboveGround"], message["CameraPosition"], message["CameraAngle"], message["time"], "CLEAR")
                 
                 bbox_image = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormatStringToImage(bboxes))

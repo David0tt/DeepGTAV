@@ -266,7 +266,7 @@ def parse_LabelAugToVisDrone(bboxes):
 
             # Not Found Labels are ignored. This should not be that important, but in the future it can be improved with the NotFoundObjectNames.txt
             label = object_name
-            with open("NotFoundObjectNames.txt", "a") as not_found_file:
+            with open(os.path.normpath("utils/NotFoundObjectNames.txt"), "a") as not_found_file:
                 not_found_file.write(object_name + "\n") # + "\n From Labels: \n" + bboxes)
             ignore_this_bbox = True
 
