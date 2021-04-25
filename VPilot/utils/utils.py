@@ -15,10 +15,13 @@ def save_image_and_bbox(save_dir, filename, image, bboxes):
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
     img = Image.fromarray(image)
-    img.save(os.path.join(save_dir, 'images', filename + ".jpg"))
+    img.save(os.path.join(save_dir, 'images', filename + ".png"))
 
     with open(os.path.join(save_dir, 'labels', filename + ".txt"), 'w') as file:
         file.write(bboxes)
+
+def save_segmentation_and_depth(save_dir, filename, segmentation, depth):
+    pass
 
 
 # Format for the saved meta data is [x y z heightAboveGround, campos_x, campos_y, campos_z, camrot_x, camrot_y, camrot_z, time_hours, time_min, time_sec, weather]

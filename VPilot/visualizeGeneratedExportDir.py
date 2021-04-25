@@ -9,7 +9,7 @@ def show_dataset_online_format(images_path, include_boats=False):
     images_path = os.path.normpath(images_path)
     for file_name in os.listdir(images_path):
         image = Image.open(os.path.join(images_path, file_name))
-        with open(os.path.join(images_path.replace("images", "labels"), file_name.replace(".jpg", ".txt")), "r") as bbox_file:
+        with open(os.path.join(images_path.replace("images", "labels"), file_name.replace(".jpg", ".txt").replace(".png", ".txt")), "r") as bbox_file:
             bboxes = bbox_file.read()
         
         bboxes = parseBBox_YoloFormatStringToImage(bboxes, *image.size, include_boats=include_boats)
@@ -28,7 +28,7 @@ def show_dataset_online_format_NUMBERS_ONLY(images_path):
     images_path = os.path.normpath(images_path)
     for file_name in os.listdir(images_path):
         image = Image.open(os.path.join(images_path, file_name))
-        with open(os.path.join(images_path.replace("images", "labels"), file_name.replace(".jpg", ".txt")), "r") as bbox_file:
+        with open(os.path.join(images_path.replace("images", "labels"), file_name.replace(".jpg", ".txt").replace(".png", ".txt")), "r") as bbox_file:
             bboxes = bbox_file.read()
         
         bboxes = parseBBox_YoloFormatStringToImage_NumberOnly(bboxes, *image.size)
@@ -40,8 +40,8 @@ def show_dataset_online_format_NUMBERS_ONLY(images_path):
 # show_dataset_online_format_NUMBERS_ONLY("E:\\Bachelorarbeit\\Datasets\\VisDrone\\VisDrone_YOLO_FORMAT_CLEANED\\train\\images")
 # show_dataset_online_format_NUMBERS_ONLY("Z:\\visdrone-dataset\\VisDrone_YOLO_FORMAT\\train\\images")
 # show_dataset_online_format_NUMBERS_ONLY("Z:\\DeepGTAV-EXPORTDIR-TEST\\Generation1\\images")
-# show_dataset_online_format_NUMBERS_ONLY("G:\\EXPORTDIR\\ExportWater_4k_12\\images")
-show_dataset_online_format_NUMBERS_ONLY("G:\\EXPORTDIR\\ExportStreet_1\\images")
+show_dataset_online_format_NUMBERS_ONLY("G:\\EXPORTDIR\\ExportWater_4k_25\\images")
+# show_dataset_online_format_NUMBERS_ONLY("G:\\EXPORTDIR\\ExportStreet_1\\images")
 
 if __name__ == '__main__':
     pass
