@@ -29,13 +29,10 @@ import numpy as np
 import os
 
 
-
-# Controls the DeepGTAV vehicle
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=None)
     parser.add_argument('-l', '--host', default='localhost', help='The IP where DeepGTAV is running')
     parser.add_argument('-p', '--port', default=8000, help='The port where DeepGTAV is running')
-    # parser.add_argument('-s', '--save_dir', default='E:\\Bachelorarbeit\\DataGeneration_DeepGTAV-PreSIL\\EXPORTDIR_OWN', help='The directory the generated data is saved to')
     parser.add_argument('-s', '--save_dir', default='Z:\\DeepGTAV-EXPORTDIR-TEST\\Generation7_NO_IMPROVEMENTS(10-100m)', help='The directory the generated data is saved to')
     args = parser.parse_args()
 
@@ -46,19 +43,7 @@ if __name__ == '__main__':
 
     client = Client(ip=args.host, port=args.port)
     
-
-
-
-    # We set the scenario to be in manual driving, and everything else random (time, weather and location). 
-    # See deepgtav/messages.py to see what options are supported
-    # scenario = Scenario(drivingMode=-1) #manual driving (Works, but is too slow to be used)
-    # scenario = Scenario(drivingMode=786603) #automatic driving
-    # scenario = Scenario(drivingMode=786603, vehicle="buzzard") #automatic driving
-    # scenario = Scenario(drivingMode=786603, vehicle="buzzard", location=[-424.991, -522.049, 50]) #automatic driving
-    scenario = Scenario(drivingMode=786603, vehicle="buzzard", location=[245.23306274414062, -998.244140625, 29.205352783203125]) #automatic driving
-    # scenario = Scenario(drivingMode=[786603, 20.0], vehicle="buzzard", location=[275.23306274414062, -998.244140625, 29.205352783203125]) #automatic driving
-    # scenario = Scenario(drivingMode=-1, vehicle="buzzard") #automatic driving
-
+    scenario = Scenario(drivingMode=786603, vehicle="buzzard", location=[245.23306274414062, -998.244140625, 29.205352783203125])
     dataset=Dataset(location=True, time=True)
 
     client.sendMessage(Start(scenario=scenario, dataset=dataset))
@@ -67,26 +52,16 @@ if __name__ == '__main__':
     # Adjustments for recording from UAV perspective
     client.sendMessage(SetCameraPositionAndRotation(z = -3, rot_x = -90))
 
-
-    # Start listening for messages coming from DeepGTAV. We do it for 20 hours
-
-    stoptime = time.time() + 20 * 3600
     count = 0
     bbox2d_old = ""
     errors = []
 
-
-
     # SETTINGS
     STARTING_COUNT = 100
-
-
-
 
     currentTravelHeight = uniform(10, 100)
 
     x_target, y_target = generateNewTargetLocation(-1960, 1900, -3360, 2000)
-    # x_target, y_target = (-182.139, -507.529)
     correcting_height = False
 
     if not os.path.exists(os.path.join(args.save_dir, 'images')):
