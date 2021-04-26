@@ -38,17 +38,16 @@ if __name__ == '__main__':
     parser.add_argument('-l', '--host', default='127.0.0.1', help='The IP where DeepGTAV is running')
     parser.add_argument('-p', '--port', default=8000, help='The port where DeepGTAV is running')
     parser.add_argument('-s', '--save_dir', default='G:\\EXPORTDIR\\SeaDroneSee_1', help='The directory the generated data is saved to')
-    # args = parser.parse_args()
+    args = parser.parse_args()
 
     # TODO for running in VSCode
-    args = parser.parse_args('')
+    # args = parser.parse_args('')
     
     args.save_dir = os.path.normpath(args.save_dir)
 
     client = Client(ip=args.host, port=args.port)
-        # scenario = Scenario(drivingMode=786603, vehicle="buzzard", location=[245.23306274414062, -998.244140625, 29.205352783203125]) #automatic driving
 
-    scenario = Scenario(drivingMode=0, vehicle="buzzard", location=[245.23306274414062, -998.244140625, 29.205352783203125]) #automatic driving
+    scenario = Scenario(drivingMode=0, vehicle="buzzard", location=[245.23306274414062, -998.244140625, 29.205352783203125])
     dataset=Dataset(location=True, time=True, exportBBox2D=True)    
     
     client.sendMessage(Start(scenario=scenario, dataset=dataset))
@@ -62,10 +61,7 @@ if __name__ == '__main__':
 
     count = 0
     bbox2d_old = ""
-    errors = []
 
-
-    # SETTINGS
     STARTING_COUNT = 100
 
     TRAVEL_HEIGHT_LOW = 20
@@ -91,16 +87,9 @@ if __name__ == '__main__':
         os.makedirs(os.path.join(args.save_dir, 'SegmentationAndBBox'))
     
     
-        
-
     run_count = getRunCount(args.save_dir)
 
-
-    messages = []
-    emptybbox = []
-
     while True:
-    # while count < 50000:
         try:
             count += 1
             print("count: ", count)
@@ -139,12 +128,7 @@ if __name__ == '__main__':
                 client.sendMessage(SetWeather("CLEAR"))
 
 
-
-
-
             message = client.recvMessage()  
-            # messages.append(message)
-
 
             # Generate a new Travelheight for every x frames (which are x / 10 recorded frames):
             if count % 500 == 0:
@@ -153,8 +137,6 @@ if __name__ == '__main__':
             if count % 700 == 0:
                 client.sendMessage(SetCameraPositionAndRotation(z = CAMERA_OFFSET_Z, rot_x = uniform(CAMERA_ROT_X_LOW, CAMERA_ROT_X_HIGH)))
 
-
-
             estimated_ground_height = message["location"][2] - message["HeightAboveGround"]
 
             # Sometimes Generate a new location, to prevent getting stuck
@@ -162,14 +144,11 @@ if __name__ == '__main__':
                 x_target, y_target = generateNewTargetLocation(xAr_min, xAr_max, yAr_min, yAr_max)
                 client.sendMessage(GoToLocation(x_target, y_target, estimated_ground_height + currentTravelHeight))
 
-
-
             # if we are near the target location generate a new target location
             if sqrt((message["location"][0] - x_target) ** 2 + (message["location"][1] - y_target) ** 2) < 10:
                 x_target, y_target = generateNewTargetLocation(xAr_min, xAr_max, yAr_min, yAr_max)
                 client.sendMessage(GoToLocation(x_target, y_target, estimated_ground_height + currentTravelHeight))
                 print("Going to new loctation: ", x_target, y_target, currentTravelHeight)
-
 
 
             # keep the currentTravelHeight under the wanted one
@@ -185,38 +164,17 @@ if __name__ == '__main__':
             else:
                 client.sendMessage(GoToLocation(x_target, y_target, estimated_ground_height + currentTravelHeight))
 
-
-
             if message["bbox2d"] != bbox2d_old and message["bbox2d"] != None:
-                # try: # Sometimes there are errors with the message, i catch those here
+                filename = f'{run_count:04}' + '_' + f'{count:010}'
+                
+                bboxes =  parseBBoxesSeadroneSeaStyle(message["bbox2d"])
 
-                    # save Data
-                    # Use filename of the format [run]_[count] with padding, e.g. for the 512th image in the 21th run:
-                    # 0021_000000512
-                    filename = f'{run_count:04}' + '_' + f'{count:010}'
-                    
-                    # print(message["bbox2dUnprocessed"])
+                if bboxes != "":
+                    save_image_and_bbox(args.save_dir, filename, frame2numpy(message['frame']), bboxes)
+                    save_meta_data(args.save_dir, filename, message["location"], message["HeightAboveGround"], message["CameraPosition"], message["CameraAngle"], message["time"], "CLEAR")
 
-                    # bboxes = combineBBoxesProcessedUnprocessed(message["bbox2d"], message["bbox2dUnprocessed"])
-                    bboxes =  parseBBoxesSeadroneSeaStyle(message["bbox2d"])
+                bbox2d_old = message["bbox2d"]
 
-                    if bboxes != "":
-                        save_image_and_bbox(args.save_dir, filename, frame2numpy(message['frame']), bboxes)
-                        save_meta_data(args.save_dir, filename, message["location"], message["HeightAboveGround"], message["CameraPosition"], message["CameraAngle"], message["time"], "CLEAR")
-                        
-                    
-                    # img = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormat_to_Image(bboxes))
-                    # cv2.imshow("test", img)
-                    # cv2.waitKey(1) 
-                    bbox2d_old = message["bbox2d"]
-
-                # except Exception as e:
-                #     print(e)
-                #     errors.append(e)
-
-            
-
-            
         except KeyboardInterrupt:
             break
             
