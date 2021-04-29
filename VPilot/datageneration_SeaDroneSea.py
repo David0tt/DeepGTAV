@@ -88,6 +88,7 @@ if __name__ == '__main__':
     
     
     run_count = getRunCount(args.save_dir)
+    weather = random.choice(["CLEAR", "EXTRASUNNY", "CLOUDS", "OVERCAST"])
 
     while True:
         try:
@@ -125,8 +126,8 @@ if __name__ == '__main__':
 
             # Make sure the weather is always "CLEAR"
             if count % 800 == 6:
-                client.sendMessage(SetWeather("CLEAR"))
-
+                weather = random.choice(["CLEAR", "EXTRASUNNY", "CLOUDS", "OVERCAST"])
+                client.sendMessage(SetWeather(weather))
 
             message = client.recvMessage()  
 
@@ -171,7 +172,7 @@ if __name__ == '__main__':
 
                 if bboxes != "":
                     save_image_and_bbox(args.save_dir, filename, frame2numpy(message['frame']), bboxes)
-                    save_meta_data(args.save_dir, filename, message["location"], message["HeightAboveGround"], message["CameraPosition"], message["CameraAngle"], message["time"], "CLEAR")
+                    save_meta_data(args.save_dir, filename, message["location"], message["HeightAboveGround"], message["CameraPosition"], message["CameraAngle"], message["time"], weather)
 
                 bbox2d_old = message["bbox2d"]
 
