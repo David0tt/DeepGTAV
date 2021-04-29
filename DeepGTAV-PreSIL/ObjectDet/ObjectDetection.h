@@ -12,6 +12,12 @@
 
 //#define DEBUG 1
 
+struct BufferSizes {
+	int DepthBufferSize;
+	int StencilBufferSize;
+};
+
+
 struct WorldObject {
     Entity e;
     std::string type;
@@ -137,7 +143,7 @@ public:
 
 	//void ObjectDetection::passDepthStencilEntity(float* pDepth, uint8_t* pStencil, int entityID = -1);
 	void ObjectDetection::passEntity(int entityID = -1);
-	void ObjectDetection::setDepthAndStencil();
+	BufferSizes ObjectDetection::setDepthAndStencil();
 
 
 	FrameObjectInfo generateMessage();

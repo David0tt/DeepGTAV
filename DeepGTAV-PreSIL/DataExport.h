@@ -23,7 +23,6 @@
 using namespace rapidjson;
 
 
-
 /*
 	The DataExport Class is used to aggregate all the data that will be sent over a TCP-Connection in a JSON Document. 
 	To do this the data is generated (mostly from GTAV functions or in ObjectDet

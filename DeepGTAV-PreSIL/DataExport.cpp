@@ -346,59 +346,61 @@ StringBuffer DataExport::generateMessage() {
 
 		setCamParams();
 		//setColorBuffer();
-		m_pObjDet->setDepthAndStencil();
+		BufferSizes bufferSizes = m_pObjDet->setDepthAndStencil();
 
-		// TODO this was for secondary perspective capture, it could be removed
-		m_pObjDet->passEntity();
+		// check if the buffer sizes are actually correct, if not skip this export
+		// They could be wrong due to errors in NVIDIA DSR
+		if (bufferSizes.DepthBufferSize == s_camParams.width * s_camParams.height * 4
+			&& bufferSizes.StencilBufferSize == s_camParams.width * s_camParams.height) {
 
-
-
-
-
-
-		////Create vehicles if it is a stationary scenario
-		//createVehicles();
-
-		//if (GENERATE_SECONDARY_PERSPECTIVES) {
-		//	generateSecondaryPerspectives();
-		//}
-
-		//For testing to ensure secondary ownvehicle aligns with main perspective
-		//generateSecondaryPerspective(m_pObjDet->m_ownVehicleObj);
+			// TODO this was for secondary perspective capture, it could be removed
+			m_pObjDet->passEntity();
 
 
-		FrameObjectInfo fObjInfo = m_pObjDet->generateMessage();
 
 
-		// TODO remove?
-		d["index"] = fObjInfo.instanceIdx;
 
-		Document::AllocatorType& allocator = d.GetAllocator();
 
-		if (exportBBox2D) d.AddMember("bbox2d", m_pObjDet->exportDetectionsString(fObjInfo), allocator);
-		if (exportBBox2DUnprocessed) d.AddMember("bbox2dUnprocessed", m_pObjDet->exportDetectionsStringUnprocessed(fObjInfo), allocator);
-		if (occlusionImage) d.AddMember("occlusionImage", m_pObjDet->outputOcclusion(), allocator);
-		if (unusedStencilIPixelmage) d.AddMember("unusedStencilIPixelmage", m_pObjDet->outputUnusedStencilPixels(), allocator);
-		
-		// TODO this is not clean right now, make this better later
-		// Export different Segmentation images:
-		if (segmentationImage) d.AddMember("segmentationImage", m_pObjDet->exportSegmentationImage(), allocator);
-		if (instanceSegmentationImage) d.AddMember("instanceSegmentationImage", m_pObjDet->printInstanceSegmentationImage(), allocator);
-		if (instanceSegmentationImageColor) d.AddMember("instanceSegmentationImageColor", m_pObjDet->printInstanceSegmentationImageColor(), allocator);
-		if (exportLiDAR) d.AddMember("LiDAR", m_pObjDet->exportLiDAR(), allocator);
-		if (exportLiDARRaycast) d.AddMember("LiDARRaycast", m_pObjDet->exportLiDARRaycast(), allocator);
-		if (export2DPointmap) d.AddMember("2DPointmap", m_pObjDet->export2DPointmap(), allocator);
-		if (exportSome2DPointmapText) d.AddMember("Some2DPointmapText", m_pObjDet->exportSome2DPointmapText(), allocator);
-		if (exportLiDARDepthStats) d.AddMember("LiDARDepthStats", m_pObjDet->exportLidarDepthStats(), allocator);
-		if (exportStencliBuffer) d.AddMember("StencilBuffer", m_pObjDet->exportStencilBuffer(), allocator);
-		if (exportStencilImage) d.AddMember("StencilImage", m_pObjDet->exportStencilImage(), allocator);
-		if (exportIndividualStencilImages) d.AddMember("IndividualStencilImage", m_pObjDet->exportIndividualStencilImages(), allocator);
-		if (exportDepthBuffer) d.AddMember("DepthBuffer", m_pObjDet->exportDepthBuffer(), allocator);
+			////Create vehicles if it is a stationary scenario
+			//createVehicles();
 
+			//if (GENERATE_SECONDARY_PERSPECTIVES) {
+			//	generateSecondaryPerspectives();
+			//}
+
+			//For testing to ensure secondary ownvehicle aligns with main perspective
+			//generateSecondaryPerspective(m_pObjDet->m_ownVehicleObj);
+
+			FrameObjectInfo fObjInfo = m_pObjDet->generateMessage();
+
+			// TODO remove?
+			d["index"] = fObjInfo.instanceIdx;
+
+			Document::AllocatorType& allocator = d.GetAllocator();
+
+			if (exportBBox2D) d.AddMember("bbox2d", m_pObjDet->exportDetectionsString(fObjInfo), allocator);
+			if (exportBBox2DUnprocessed) d.AddMember("bbox2dUnprocessed", m_pObjDet->exportDetectionsStringUnprocessed(fObjInfo), allocator);
+			if (occlusionImage) d.AddMember("occlusionImage", m_pObjDet->outputOcclusion(), allocator);
+			if (unusedStencilIPixelmage) d.AddMember("unusedStencilIPixelmage", m_pObjDet->outputUnusedStencilPixels(), allocator);
+
+			// TODO this is not clean right now, make this better later
+			// Export different Segmentation images:
+			if (segmentationImage) d.AddMember("segmentationImage", m_pObjDet->exportSegmentationImage(), allocator);
+			if (instanceSegmentationImage) d.AddMember("instanceSegmentationImage", m_pObjDet->printInstanceSegmentationImage(), allocator);
+			if (instanceSegmentationImageColor) d.AddMember("instanceSegmentationImageColor", m_pObjDet->printInstanceSegmentationImageColor(), allocator);
+			if (exportLiDAR) d.AddMember("LiDAR", m_pObjDet->exportLiDAR(), allocator);
+			if (exportLiDARRaycast) d.AddMember("LiDARRaycast", m_pObjDet->exportLiDARRaycast(), allocator);
+			if (export2DPointmap) d.AddMember("2DPointmap", m_pObjDet->export2DPointmap(), allocator);
+			if (exportSome2DPointmapText) d.AddMember("Some2DPointmapText", m_pObjDet->exportSome2DPointmapText(), allocator);
+			if (exportLiDARDepthStats) d.AddMember("LiDARDepthStats", m_pObjDet->exportLidarDepthStats(), allocator);
+			if (exportStencliBuffer) d.AddMember("StencilBuffer", m_pObjDet->exportStencilBuffer(), allocator);
+			if (exportStencilImage) d.AddMember("StencilImage", m_pObjDet->exportStencilImage(), allocator);
+			if (exportIndividualStencilImages) d.AddMember("IndividualStencilImage", m_pObjDet->exportIndividualStencilImages(), allocator);
+			if (exportDepthBuffer) d.AddMember("DepthBuffer", m_pObjDet->exportDepthBuffer(), allocator);
+		}
 
 		m_pObjDet->refreshBuffers();
 		m_pObjDet->increaseIndex();
-
 	}
 
 	d.Accept(writer);

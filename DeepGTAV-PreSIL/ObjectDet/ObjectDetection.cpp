@@ -224,7 +224,7 @@ void ObjectDetection::passEntity(int entityID) {
 }
 
 
-void ObjectDetection::setDepthAndStencil() {
+BufferSizes ObjectDetection::setDepthAndStencil() {
 	log("ObjectDetection::setDepthAndStencil");
 
 
@@ -254,7 +254,11 @@ void ObjectDetection::setDepthAndStencil() {
 		log("ERROR: Stencil Buffer could not be properly set!!!");
 	}
 
+	BufferSizes bufferSizes;
+	bufferSizes.DepthBufferSize = DepthBufferSize;
+	bufferSizes.StencilBufferSize = StencilBufferSize;
 
+	return bufferSizes;
 
 }
 
@@ -804,7 +808,7 @@ void ObjectDetection::processSegmentation3D() {
                 addPointToSegImages(i, j, m_ownVehicle);
             }
             else {
-                processStencilPixel3D(stencilVal, j, i, xVectorCam, yVectorCam, zVectorCam);
+				processStencilPixel3D(stencilVal, j, i, xVectorCam, yVectorCam, zVectorCam);
             }
         }
     }
