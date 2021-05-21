@@ -202,9 +202,16 @@ def getLabelFromObjectName(obj_name):
 
 
 
-# parse the bbboxes from label_aug format to VisDrone format. This also catches some wrong class labels by looking at the models, e.g. SUVs as  truck
-# TODO improve
-# see file "Decision on the classes"
+# parse the bbboxes from label_aug format to VisDrone format. This also catches
+# some wrong class labels by looking at the models, e.g. SUVs as  truck
+
+# TODO We follow all conventions from VisDrone, while keeping the "tricycle" and
+# "awning tricicly" class, despite of them not appearing in the game In
+# accordance to VisDrone, people on bikes and motor are labeled as "people",
+# while people in vehicles (e.g. in cars) are not labeled people that take part
+# in the traffic (move) for example on sidewalks and crosswalks are labeled as
+# "pedestrian", while people that don't take part (e.g. sit) are labeled as
+# "people".
 def parse_LabelAugToVisDrone(bboxes):
     items = bboxes.split("\n")
     ret = []
@@ -269,6 +276,26 @@ def parse_LabelAugToVisDrone(bboxes):
             with open(os.path.normpath("utils/NotFoundObjectNames.txt"), "a") as not_found_file:
                 not_found_file.write(object_name + "\n") # + "\n From Labels: \n" + bboxes)
             ignore_this_bbox = True
+
+        if label == "pedestrian" or label=="people":
+            # if the person is in a vehicle (data[22] != 0), find the vehicle
+            # with the corresponding entity_id data[22]== vehData[15]
+            # And append this person accordingly
+            if data[22] != "0":
+                thisVehicle="UNKNOWN"
+                thisVehLabel = "UNKNOWN"
+                thisVehModel = "UNKNOWN"
+                for item2 in items[:-1]:
+                    vehData = item2.split(" ")
+                    if vehData[15] == data[22]:
+                        thisVehLabel = vehData[0]
+                        thisVehModel = vehData[21]
+                        break
+
+                if (thisVehLabel == "Motorbike" and getLabelFromObjectName(thisVehModel) == "motor") or thisVehLabel=="Cyclist":
+                    label = "people"
+                else:
+                    ignore_this_bbox = True
 
 
         # ignore 1920 1080 0 0 boxes
