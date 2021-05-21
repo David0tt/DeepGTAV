@@ -22,20 +22,17 @@ for me employed GTAV from the Epic store in version 1.0.2060.1
 1. Obtain the newest version of ScriptHookV from
    (http://dev-c.com/GTAV/scripthookv) and copy the files from `bin/` to
    `DeepGTAV-PreSIL/Release/` overwriting the old files (this is not necessery
-   when using GTAV in version 1.0.2060.1)
+   when using GTAV in version 1.0.2245.0 or older)
 2. Copy the contents of `DeepGTAV-PreSIL/bin/Release/` to the GTAV install
    directory
 3. Replace the save game data in `Documents/Rockstar Games/GTA V/Profiles/` with
    the contents of `DeepGTAV-PreSIL/bin/SaveGame`
-4. Download paths.xml
+
+4. Done!
+
+5. Only if you are using the reinforcement learning rewarder: Download paths.xml
    (https://drive.google.com/file/d/0B6pR5O2YrmHnNU9EMDBSSFpMV00/view?usp=sharing)
    and store it in the GTAV install directory
-
-5. Create environment variables (GTAV_INSTALL_DIR, DEEPGTAV_DIR,
-   DEEPGTAV_LOG_FILE, DEEPGTAV_EXPORT_DIR) (TODO those should not be necessary
-   anymore!)
-6. Download opencv and place opencv_world343.dll in the GTAV install directory
-   (TODO is this necessary?)
 
 ## Game Settings
 1. Set the game in windowed mode.
