@@ -53,7 +53,10 @@ def show_dataset_online_format_NUMBERS_ONLY(images_path):
 # show_dataset_online_format_NUMBERS_ONLY("F:\\EXPORTDIR\\SeaDroneSee_1\\images")
 # show_dataset_online_format_NUMBERS_ONLY("F:\\EXPORTDIR\\DGTA_SeaDroneSee\\val\\images")
 # show_dataset_online_format_NUMBERS_ONLY("F:\\EXPORTDIR\\DGTA_VisDrone\\val\\images")
-show_dataset_online_format_NUMBERS_ONLY("F:\\EXPORTDIR\\DGTA_VisDrone_LowQuality\\train\\images")
+# show_dataset_online_format_NUMBERS_ONLY("F:\\EXPORTDIR\\DGTA_VisDrone_LowQuality\\train\\images")
+# show_dataset_online_format_NUMBERS_ONLY("Z:\\DeepGTA\\Training\\SeaDronesSee\\train\\images")
+show_dataset_online_format_NUMBERS_ONLY("G:\\Exportdir\\TEST_DGTA_Cattle_1\\images")
+
 
 if __name__ == '__main__':
     pass

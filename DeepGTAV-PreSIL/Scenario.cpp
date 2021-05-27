@@ -481,7 +481,7 @@ void Scenario::createVehicle(const char* model, float relativeForward, float rel
 
 }
 
-void Scenario::createPed(const char* model, float relativeForward, float relativeRight, float relativeUp, float heading, int task, bool placeOnGround) {
+void Scenario::createPed(const char* model, float relativeForward, float relativeRight, float relativeUp, float heading, bool placeOnGround, const char* animDict, const char* animName) {
 	log("Scenario::createPed");
 	std::string s = model;
 	unsigned int modelInt;
@@ -521,8 +521,23 @@ void Scenario::createPed(const char* model, float relativeForward, float relativ
 	}
 
 	WAIT(0); 
-	AI::TASK_WANDER_STANDARD(tempPed, 10.0f, 10);
+	
+	if (strlen(animDict) != 0 && strlen(animName) != 0) {
+		AI::CLEAR_PED_TASKS(tempPed);
+		PCHAR animDict1 = const_cast<PCHAR>(animDict);
+		PCHAR animName1 = const_cast<PCHAR>(animName);
 
+		STREAMING::REQUEST_ANIM_DICT(animDict1);
+		while (!STREAMING::HAS_ANIM_DICT_LOADED(animDict1)) {
+			WAIT(0);
+		}
+
+		AI::TASK_PLAY_ANIM(tempPed, animDict1, animName1, 4.0f, -4.0f, -1, 1, 0, false, false, false);
+	}
+	else {
+		AI::TASK_WANDER_STANDARD(tempPed, 10.0f, 10);
+	}
+	
 	SpawnedPed sp;
 	sp.ped = tempPed;
 	sp.spawntime = time(NULL);

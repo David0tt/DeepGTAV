@@ -371,6 +371,37 @@ def parse_LabelAugToSeaDroneSea(bboxes):
     return ret
 
 
+def parse_LabelAugToCattle(bbox2d):
+    if bbox2d == None:
+        return []
+    items = bbox2d.split("\n")
+    ret = []
+    for item in items[:-1]:
+        data = item.split(" ")
+        # Indices can be found in /DeepGTAV-PreSIL/dataformat-augmented.txt
+        label = data[0].lower()
+        left = int(data[4])
+        top = int(data[5])
+        right = int(data[6])
+        bottom = int(data[7])
+
+        object_name = data[21]
+
+        if label=="Animal" or label=='animal':
+
+            if convertHashToModelName(int(object_name)) == "a_c_cow":
+                label="cow"
+
+        ignore_this_bbox=False
+        if label!="cow":
+            ignore_this_bbox = True
+
+        # ignore 1920 1080 0 0 boxes
+        if not (left > right or top > bottom) and not ignore_this_bbox:
+            ret.append({"label": label,"left": left,"top": top,"right": right,"bottom": bottom})
+    return ret
+
+
 ###############################################################################
 ########################## Appending BBoxes to Images #########################
 ###############################################################################
@@ -539,7 +570,11 @@ def parseBBoxesSeadroneSeaStyle(bboxes, img_width=IMG_WIDTH, img_height=IMG_HEIG
     bboxes = parseListToYoloBBoxString(bboxes)
     return bboxes
 
-def parseBBoxesCowStyle():
-    OBJECT_CATEGORY_TO_NUMBER = {"cow": 0}
-    # TODO
-    pass
+def parseBBoxesCattleStyle(bboxes,  img_width=IMG_WIDTH, img_height=IMG_HEIGHT):
+    CATTLE_OBJECT_CATEGORY_TO_NUMBER = {'cow': 0}
+    bboxes = parse_LabelAugToCattle(bboxes)
+    bboxes = convertDictLRTBToListXYWH(bboxes)
+    bboxes = convertLabelNamesToNumber(bboxes, CATTLE_OBJECT_CATEGORY_TO_NUMBER)
+    bboxes = convertBBoxes_AbsoluteToRelative(bboxes, img_width, img_height)
+    bboxes = parseListToYoloBBoxString(bboxes)
+    return bboxes

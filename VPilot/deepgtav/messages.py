@@ -172,10 +172,17 @@ class SetCameraPositionAndRotation:
     def to_json(self):
         return json.dumps({'SetCameraPositionAndRotation':self.__dict__})
 
-# Creates a Pedestrian relative to the player vehicle.
-# support for some of the settings (model, task) is not given in deepGTAV
+
+# Creates a Pedestrian relative to the player vehicle. The model can be set with
+# a model name, which can be found e.g. at:
+# https://docs.fivem.net/docs/game-references/ped-models/ Note that there are
+# different versions of most models, with different textures.
+
+# Normally models wander in the game world. A specific animation can be given
+# with an animDict and the animName. Those can be found at
+# https://alexguirre.github.io/animations-list/
 class CreatePed:
-    def __init__(self, relativeForward = 0, relativeRight = 0, relativeUp = 0, model = None, heading = 0, task = 0, placeOnGround = True):
+    def __init__(self, relativeForward = 0, relativeRight = 0, relativeUp = 0, model = None, heading = 0, task = 0, placeOnGround = True, animDict = "", animName = ""):
         
         if model == None:
             model = PedNamesAndHashes.getRandomPed()
@@ -190,6 +197,8 @@ class CreatePed:
         self.heading = heading
         self.task = task
         self.placeOnGround = placeOnGround
+        self.animDict = animDict
+        self.animName = animName
     
     def to_json(self):
         return json.dumps({'CreatePed':self.__dict__})
