@@ -23,9 +23,11 @@ the correct newest version of ScriptHookV is obtained. The last working version
 for me employed GTAV from the Epic store in version 1.0.2060.1
 
 ## Installation of DeepGTAV
-1. Install MS Visual Studio 2017 with `Desktop developement with C++` and `Game
-   Developement with C++` selected. This installs some dependencies, that are
-   needed, otherwise DeepGTAV crashes without an error. 
+1. Install MS Visual Studio 2017
+   (https://visualstudio.microsoft.com/de/vs/older-downloads/) with `Desktop
+   developement with C++` and `Game Developement with C++` selected. This
+   installs some dependencies, that are needed, otherwise DeepGTAV crashes
+   without an error. 
 2. Obtain the newest version of ScriptHookV from
    (http://dev-c.com/GTAV/scripthookv) and copy the files from `bin/` to
    `DeepGTAV-PreSIL/Release/` overwriting the old files (this is not necessery
