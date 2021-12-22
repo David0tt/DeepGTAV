@@ -23,18 +23,21 @@ the correct newest version of ScriptHookV is obtained. The last working version
 for me employed GTAV from the Epic store in version 1.0.2060.1
 
 ## Installation of DeepGTAV
-1. Obtain the newest version of ScriptHookV from
+1. Install MS Visual Studio 2017 with `Desktop developement with C++` and `Game
+   Developement with C++` selected. This installs some dependencies, that are
+   needed, otherwise DeepGTAV crashes without an error. 
+2. Obtain the newest version of ScriptHookV from
    (http://dev-c.com/GTAV/scripthookv) and copy the files from `bin/` to
    `DeepGTAV-PreSIL/Release/` overwriting the old files (this is not necessery
    when using GTAV in version 1.0.2245.0 or older)
-2. Copy the contents of `DeepGTAV-PreSIL/bin/Release/` to the GTAV install
+3. Copy the contents of `DeepGTAV-PreSIL/bin/Release/` to the GTAV install
    directory
-3. Replace the save game data in `Documents/Rockstar Games/GTA V/Profiles/` with
+4. Replace the save game data in `Documents/Rockstar Games/GTA V/Profiles/` with
    the contents of `DeepGTAV-PreSIL/bin/SaveGame`
 
-4. Done!
+5. Done!
 
-5. Only if you are using the reinforcement learning rewarder: Download paths.xml
+6. Only if you are using the reinforcement learning rewarder: Download paths.xml
    (https://drive.google.com/file/d/0B6pR5O2YrmHnNU9EMDBSSFpMV00/view?usp=sharing)
    and store it in the GTAV install directory
 
@@ -129,7 +132,7 @@ have to do the following things:
 DeepGTAV was built using MS Visual Studio 2017 and I recommend to also use it to
 circumvent compatability issues.
 
-[ ] TODO this is currently not up to date!
+- [ ] TODO this is currently not up to date!
 
 1. clone this repository
 2. TODO get all requirements for DeepGTAV-PreSIL and copy them to this
