@@ -69,3 +69,7 @@ The file `popcycle.dat` defines the proportions of objects from different popula
 
 `edit_popcycle.dat.py` is a script to automate the production of the `popgroups.ymt` and `popcycle.dat` files.
 It has to be noted, that those modifications do not perfectly produce the specified proportions of ingame objects. At this point it is not clear why this is the case, but it probably can be  mitigated with some modifications. 
+
+
+## Graphics Settings
+The folders in `Graphics Settings` contain screenshots from GeForce Experience that document the graphics settings that were used in our works. 

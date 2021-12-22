@@ -12,6 +12,10 @@ client, that make it suitable for custom scenarios and in principle even
 reinforcement learning tasks. 
 
 
+We used synthetic training data generated with the DeepGTAV framework to good
+real world object detection performance reported in our paper `Leveraging
+Synthetic Data in Object Detection onUnmanned Aerial Vehicles` [TODO link].
+
 # Simple Use
 In the following the steps that are necessary to just export data using DeepGTAV
 are described. In principle DeepGTAV should work with any version of GTAV, if
@@ -44,12 +48,28 @@ for me employed GTAV from the Epic store in version 1.0.2060.1
 
 ## Data Generation using VPilot
 VPilot uses simple Python commands to interact with DeepGTAV. Examples of how
-VPilot can be used are shown in `VPilot/drive_FOR_PRESENTATION.py`. The
-currently best ready to use data generation script is
-`VPilot/drive_LOW_USED_GENERATION.py`. With data generated with this script good
-performances have been achieved in object detection training, as can be seen in
-my Bachelors Thesis. 
+VPilot can be used are shown in `VPilot/presentation_VisDrone.py`. 
 
+The other scripts in the `VPilot` folder starting with `datageneration_` can be
+used to generate different synthetic training data matching different real world
+datasets.
+
+To do data generation simply run GTAV. When the game has loaded run one of the
+respective data generation scripts and specify the Export directory, e.g.:
+
+      python .\VPilot\datageneration_VisDrone.py --save_dir "C:\DeepGTAV_Exportdir\"
+
+Then open the GTAV window again, ESC from the menu and the data generation
+should be starting.
+
+In some rare cases the game crashes when the player is in a building while
+starting a data generation script. To prevent this leave the building before
+starting the data generation.
+
+### VPilot messages
+For an in depth understanding of the VPilot message interface, the best way to
+start is to look at the file `VPilot\deepgtav\messages.py`. The function
+signatures of the `__init__` should be realtively self explanatory.
 
 ## Modification of GTAV
 In general DeepGTAV should work stable with modifications of GTAV. 
@@ -58,14 +78,16 @@ For my works I used the following modifications:
 1. Simple Increase Traffic(and Pedestrian)
 2. HeapLimitAdjuster
 3. Balanced Classes
-
+4. To allow 4k Data capturing the resolution has to be set to 7680x4320DSR in
+   NVIDIA GeForce Experience. This correctly scales the Depth and Stencil
+   buffers which are used to determine object segmentation. 
 
 The modifications and install instructions can be found in the folder `Mods`
 
-In the future additional modifications will be added, mainly for graphics
-improvements. If you have use this repository in conjunction with graphics
-enhancing mods I would love it if you send me a quick email telling me what mods
-you used and whether they worked. 
+Different additional modifications could be used, mainly for graphics
+improvements. If you use this repository in conjunction with graphics enhancing
+mods I would love it if you send me a quick email telling me what mods you used
+and whether they worked. 
 
 
 
@@ -106,6 +128,8 @@ have to do the following things:
 
 DeepGTAV was built using MS Visual Studio 2017 and I recommend to also use it to
 circumvent compatability issues.
+
+[] TODO this is currently not up to date!
 
 1. clone this repository
 2. TODO get all requirements for DeepGTAV-PreSIL and copy them to this
@@ -216,30 +240,18 @@ been made, a comprehensive list of the improvements is given in the following:
 
 
 # TODO 
-## Bug Fixes / Urgent
-- Refactor and improve code quality
-- Full removal of disk writing functionality
-- Implement testing
-- Fix Bugs in the bounding box exportation, in particular for pedestrians
-- Fix Bugs that result in crashes when having LiDAR active for heights with
-  relatively flat camera angles.
-- Provide more documentation
-
-
 ## Improvements
-- Implement object spawning 
-- increase amount of spawned objects 
-- balance spawned object classes
+- [x] Implement object spawning 
+- [x] increase amount of spawned objects 
+- [x] balance spawned object classes
 
-- Improve capturing speed (atm at ~6s per captured frame) by optimizing the
-  raycasting
-- Improve the graphics quality 
-- Improve the water quality 
-- Adapt for higher resolution capturing 
+- [x] Adapt for higher resolution capturing 
 
 
 ## Things that I will not do in the near future that would be easy to implement/useful
-- Allow capturing of different objects (Traffic signs, Animals, houses,...)
+- [] Allow capturing of different objects (Traffic signs, Animals, houses,...)
+- [] Improve the graphics quality 
+- [] Improve the water quality 
 
 
 
@@ -250,7 +262,11 @@ been made, a comprehensive list of the improvements is given in the following:
   the correct depth from the graphics depth map, if it is available. Of course
   this depth map is only available for the objects that are in the current
   frame. Therefore the LiDAR is not exact for objects outside of the current
-  frame image.
+  frame image. 
+- Currently the calcualtion of ingame positions from the depth map
+  and the determination of the correct object segmentation from this data is
+  done relatively inefficient on the CPU. Great performance improvements could
+  be achieved by doing this on the GPU.
 
 
 
