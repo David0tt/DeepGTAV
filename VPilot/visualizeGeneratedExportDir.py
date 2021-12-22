@@ -30,7 +30,7 @@ def show_dataset_online_format_NUMBERS_ONLY(images_path):
     random.shuffle(dir_ls)
     for file_name in dir_ls:
         image = Image.open(os.path.join(images_path, file_name))
-        with open(os.path.join(images_path.replace("images", "labels"), file_name.replace(".jpg", ".txt").replace(".png", ".txt")), "r") as bbox_file:
+        with open(os.path.join(images_path.replace("images", "labels"), file_name.replace(".jpg", ".txt").replace(".png", ".txt")).replace(".JPG", ".txt"), "r") as bbox_file:
             bboxes = bbox_file.read()
         
         bboxes = parseBBox_YoloFormatStringToImage_NumberOnly(bboxes, *image.size)
@@ -55,7 +55,10 @@ def show_dataset_online_format_NUMBERS_ONLY(images_path):
 # show_dataset_online_format_NUMBERS_ONLY("F:\\EXPORTDIR\\DGTA_VisDrone\\val\\images")
 # show_dataset_online_format_NUMBERS_ONLY("F:\\EXPORTDIR\\DGTA_VisDrone_LowQuality\\train\\images")
 # show_dataset_online_format_NUMBERS_ONLY("Z:\\DeepGTA\\Training\\SeaDronesSee\\train\\images")
-show_dataset_online_format_NUMBERS_ONLY("G:\\Exportdir\\TEST_DGTA_Cattle_1\\images")
+# show_dataset_online_format_NUMBERS_ONLY("G:\\Exportdir\\TEST_DGTA_Cattle_1\\images")
+# show_dataset_online_format_NUMBERS_ONLY("G:\\Exportdir\\TEST_DGTA_Cattle_2\\images")
+# show_dataset_online_format_NUMBERS_ONLY("G:\\DGTA_Cattle_DAY\\val\\images")
+show_dataset_online_format_NUMBERS_ONLY("Z:\\cattle\\CATTLE\\CattlePre\\images")
 
 
 if __name__ == '__main__':
