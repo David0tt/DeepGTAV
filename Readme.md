@@ -140,7 +140,7 @@ to do better documentation, but for now this has to suffice.
 
 
 
-# Developement
+# Development
 If you want to compile the binaries by yourself or make your own changes you
 have to do the following things:
 
@@ -180,7 +180,7 @@ circumvent compatability issues.
    17. Copy GTAVisionNative.asi & GTAVisionNative.lib to your GTAV exe folder.
 
 
-   It is important to mimic this exact file structure, otherwise the realtive
+   It is important to mimic this exact file structure, otherwise the relative
    "Additional Include Directories" do not fit correctly. If this is the case
    and for some reason you want to include those directories from different
    locations, you have to change the "Additional Include Directories" in the
