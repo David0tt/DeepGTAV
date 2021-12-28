@@ -14,7 +14,20 @@ reinforcement learning tasks.
 
 We used synthetic training data generated with the DeepGTAV framework to good
 real world object detection performance reported in our paper `Leveraging
-Synthetic Data in Object Detection on Unmanned Aerial Vehicles` [TODO link].
+Synthetic Data in Object Detection on Unmanned Aerial Vehicles`
+https://arxiv.org/abs/2112.12252.
+
+
+
+[TODO Demo Video]
+
+
+Below we show some example images from DeepGTAV with the object bounding boxes
+(right) and corresponding images from real world datasets (left)
+
+![Example images from DeepGTAV with corresponding images from real world
+datasets](/images/ExampleImages.png)
+
 
 # Simple Use
 In the following the steps that are necessary to just export data using DeepGTAV
@@ -256,7 +269,8 @@ been made, a comprehensive list of the improvements is given in the following:
 ## Things that I will not do in the near future that would be easy to implement or useful
 - [ ] Allow capturing of different objects (Traffic signs, Animals, houses,...)
 - [ ] Improve the graphics quality 
-- [ ] Improve the water quality 
+- [ ] Improve the water quality
+- [ ] Improve the segmentation quality on water (see below) 
 
 
 
@@ -272,6 +286,22 @@ been made, a comprehensive list of the improvements is given in the following:
   and the determination of the correct object segmentation from this data is
   done relatively inefficient on the CPU. Great performance improvements could
   be achieved by doing this on the GPU.
+- Currently the segmentation of objects on water is relatively unintuitive. The
+  segmentation works in such a way that only the part of the object above the
+  water surface is part of the segmentation mask, while the part of the object
+  below the water surface is not part of the segmentation mask. However parts of
+  the objects below the water are still visible. With our current methodolgy of
+  calculating the segmentation data from the depth and stencil buffers it is not
+  possible to extend the segmentation to the parts of the objects below the
+  water surface. However, if one wanted to fix this, there is a water opacity
+  buffer in the rendering pipeline that contains inforamtion about the depth
+  below the water for each pixel (see
+  https://www.adriancourreges.com/blog/2015/11/02/gta-v-graphics-study/ for a
+  detailed explanation of the GTAV rendering pipeline, you can use RenderDoc or
+  NVIDIA Nsight to dissect the rendering pipeline). This buffer would need to be
+  extracted by extending GTAVisionExport-DepthExtractor. Then one could combine
+  this buffer data with the stencil buffer and then get the correct segmentation
+  masks from those. 
 
 
 
