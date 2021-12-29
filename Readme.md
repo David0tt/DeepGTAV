@@ -49,9 +49,7 @@ for me employed GTAV from the Epic store in version 1.0.2060.1
    directory
 4. Replace the save game data in `Documents/Rockstar Games/GTA V/Profiles/` with
    the contents of `DeepGTAV-PreSIL/bin/SaveGame`
-
 5. Done!
-
 6. Only if you are using the reinforcement learning rewarder: Download paths.xml
    (https://drive.google.com/file/d/0B6pR5O2YrmHnNU9EMDBSSFpMV00/view?usp=sharing)
    and store it in the GTAV install directory
@@ -62,7 +60,13 @@ for me employed GTAV from the Epic store in version 1.0.2060.1
    detected. The correct settings should be loaded by replacing the files in
    `Documents/Rockstar Games/GTA V/Profiles/`, but keep this in mind if you
    modify the game settings.
-
+3. If you have a 4k screen and want to capture 4k data (very hardware hungry,
+   but runs smooth on an RTX3090): Set the screen resolution to "7680x4320DSR"
+   in NVIDIA GeForce Experience. This increases the buffer sizes for pixel
+   perfect 4k segmentation data.
+4. Set the correct screen Resolution in `VPilot/utils/Constants.py`. To do this
+   change the variable `MANAGED_SCREEN_RESOLUTION` to the screen resolution at
+   which GTAV is running, e.g. "1920x1080". Default is "3840x2160DSR7680x4320"
 
 ## Data Generation using VPilot
 VPilot uses simple Python commands to interact with DeepGTAV. Examples of how
@@ -84,10 +88,41 @@ In some rare cases the game crashes when the player is in a building while
 starting a data generation script. To prevent this leave the building before
 starting the data generation.
 
+
+ATTENTION: Restrict the data that is recorded with the `Dataset` message to only
+the data that you need. 
+
+e.g.
+
+      dataset=Dataset(location=True, time=True, exportBBox2D=True)
+
+against
+
+      dataset=Dataset(location=True, time=True, exportBBox2D=True, segmentationImage=True, exportLiDAR=True, maxLidarDist=120)
+
+This improves the capturing speed by quite a lot.
+
+
+
+In `VPilot/backup/presentation_VisDrone_VisualizeMessageParts.py` examples on
+how to handle different message parts are given (most in comments). Note that
+most of the export messages are only there for legacy and debugging reasons. The
+suported and useful exported message parts are the settings `exportBBox2D,
+segmentationImage, exportLiDAR (with maxLidarDist)` in `Dataset` and
+corresponding message parts. 
+
+
+
 ### VPilot messages
 For an in depth understanding of the VPilot message interface, the best way to
 start is to look at the file `VPilot\deepgtav\messages.py`. The function
 signatures of the `__init__` should be realtively self explanatory.
+
+
+DeepGTAV sends capturing messages to VPilot in every tick. Those messages encode
+all the recorded information and can be accessed by their fields (e.g.
+message['frame'] is the recorded image, message['bbox2d'] the recorded bounding
+boxes etc.)
 
 ## Modification of GTAV
 In general DeepGTAV should work stable with modifications of GTAV. 
@@ -271,6 +306,8 @@ been made, a comprehensive list of the improvements is given in the following:
 - [ ] Improve the graphics quality 
 - [ ] Improve the water quality
 - [ ] Improve the segmentation quality on water (see below) 
+- [ ] Sending the ground truth 3D bounding boxes from DeepGTAV to VPilot
+- [ ] Compress messages sent through ZeroMQ
 
 
 
@@ -302,6 +339,14 @@ been made, a comprehensive list of the improvements is given in the following:
   extracted by extending GTAVisionExport-DepthExtractor. Then one could combine
   this buffer data with the stencil buffer and then get the correct segmentation
   masks from those. 
+- If too many messages are sent over the ZeroMQ mesage queue in short intervals,
+  or if the sent messages are too large (e.g. extracting multiple images +
+  LiDAR) then the message queue can get overfilled, which results in messages
+  not being processed in the correct order (e.g. a `StopCapture` message does
+  not come through and too many captures are sent for some frames). If this
+  happens increase the spacing between captures, or reduce the amount of
+  captured data. 
+   - Another more advanced fix would be to compress the sent messages.
 
 
 
