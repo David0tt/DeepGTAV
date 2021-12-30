@@ -308,6 +308,10 @@ been made, a comprehensive list of the improvements is given in the following:
 - [ ] Improve the segmentation quality on water (see below) 
 - [ ] Sending the ground truth 3D bounding boxes from DeepGTAV to VPilot
 - [ ] Compress messages sent through ZeroMQ
+- [ ] The capturing process could be made to feel smoother by attaching the
+  camera to the entity and not setting the camera position relative to the
+  entity at each captured frame. This would reduce the stutter (but does not
+  change captured data quality).
 
 
 

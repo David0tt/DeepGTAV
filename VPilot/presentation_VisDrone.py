@@ -22,7 +22,7 @@ import numpy as np
 import os
 
 import base64
-import open3d
+# import open3d
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 

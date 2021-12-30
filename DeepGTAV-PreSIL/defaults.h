@@ -29,7 +29,7 @@
 #define _INSTANCE_SEGMENTATION_IMAGE_COLOR_ false;
 #define _EXPORT_LIDAR_ false;
 #define _EXPORT_LIDAR_RAYCAST_ false;
-#define _MAX_LIDAR_DIST_ 50.0f;
+#define _MAX_LIDAR_DIST_ 120.0f;
 #define _EXPORT_2D_POINTMAP_ false;
 #define _EXPORT_SOME_2D_POINTMAP_TEXT_ false;
 #define _EXPORT_LIDAR_DEPTH_STATS_ false;
