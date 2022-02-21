@@ -18,7 +18,7 @@ Synthetic Data in Object Detection on Unmanned Aerial Vehicles`
 https://arxiv.org/abs/2112.12252.
 
 ## Video Demonstration
-[![DeepGTAV Demo Video](http://img.youtube.com/vi/h3By_ZOdlAc/0.jpg)](https://www.youtube.com/watch?v=h3By_ZOdlAc "DeepGTAV: Synthetic ML Training Data from GTAV")
+[![DeepGTAV Demo Video](/images/YoutubeThumbnail.jpg)](https://www.youtube.com/watch?v=h3By_ZOdlAc "DeepGTAV: Synthetic ML Training Data from GTAV")
 
 
 Below we show some example images from DeepGTAV with the object bounding boxes
