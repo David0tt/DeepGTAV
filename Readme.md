@@ -124,6 +124,11 @@ all the recorded information and can be accessed by their fields (e.g.
 message['frame'] is the recorded image, message['bbox2d'] the recorded bounding
 boxes etc.)
 
+
+Note that there are lots of legacy fields in the `Dataset` message, which
+sometimes do nothing. I would advise to only use the fields that are also used
+in the example scripts and data generation scripts.
+
 ## Modification of GTAV
 In general DeepGTAV should work stable with modifications of GTAV. 
 

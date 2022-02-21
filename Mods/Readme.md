@@ -4,7 +4,7 @@ In this Readme the the installation instructions for the Modifications that I ha
 If you face difficulties with newer versions of GTAV, try to find newer versions of the mods listed here. 
 
 In general there are mostly two different ways of mod installations. Either the scripts have to be copied to the `GTAV/` root folder, or the game files have to be overwritten usign `OpenIV` (https://openiv.com/). 
-For those installations where `OpenIV` is required I recommend using the dedicated `mods` folder. Detailed instructions for the use of `OpenIV` can be found online.
+For those installations where `OpenIV` is required I recommend using the dedicated `mods` folder. Detailed instructions for the use of `OpenIV` can be found online (https://www.lcpdfr.com/tutorials/index.action/grand-theft-auto-v/42_script-data-file-modification-tutorials/how-to-install-openivasi-r127/).
 
 ## No chromatic aberration lens distortion
 This mod removes the post processing effects for chromatic aberration and lens distortion. Only with this modifications do the bounding boxes at the edges of the screen fit correctly.

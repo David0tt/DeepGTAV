@@ -105,10 +105,10 @@ if __name__ == '__main__':
             if count == 4:
                 client.sendMessage(SetClockTime(12))
 
-            if count == 150:
+            if count == 250:
                 client.sendMessage(SetClockTime(0))
 
-            if count == 200:
+            if count == 600:
                 client.sendMessage(SetClockTime(19))
             
 
@@ -136,9 +136,9 @@ if __name__ == '__main__':
                 dst = cv2.addWeighted(bbox_image, 0.5, segmentationImage, 0.5, 0.0)
 
                 cv2.namedWindow("SegmentationBBox", cv2.WINDOW_NORMAL)
-                cv2.resizeWindow("SegmentationBBox", 1280, 720)
+                cv2.resizeWindow("SegmentationBBox", int(1920 * (9/10)), int(1080 * (9/10)))
                 cv2.imshow("SegmentationBBox", dst)
-                cv2.waitKey(50)
+                cv2.waitKey(1)
 
                 filename = f'{run_count:04}' + '_' + f'{count:010}' + ".png"
                 cv2.imwrite(os.path.join(args.save_dir, "image", filename), bbox_image)
@@ -148,30 +148,48 @@ if __name__ == '__main__':
             if message["LiDAR"] != None and message["LiDAR"] != "":
                 # print(message["LiDAR"])
                 a = np.frombuffer(base64.b64decode(message["LiDAR"]), np.float32)
+                # np.save(os.path.join(args.save_dir, "LiDAR", filename[:-4] + ".npy"), a)
+
                 a = a.reshape((-1, 4))
+
+                # Entities are stored in a[:, 3]
+                # produce equally spaced entities for the colors
+                unique_entities, inv = np.unique(a[:, 3], return_inverse=True)
+                mapping = {k: v for k, v in zip(unique_entities, range(len(unique_entities)))}
+                vals = np.array([mapping[key] for key in unique_entities])
+                colors = np.array(vals[inv])
+
                 points3d = np.delete(a, 3, 1)
 
                 # point_cloud = open3d.geometry.PointCloud()
                 # point_cloud.points = open3d.utility.Vector3dVector(points3d)
                 # open3d.visualization.draw_geometries([point_cloud])
 
-                fig = plt.figure(figsize=(10,6))
+                fig = plt.figure(figsize=(80,40))
                 ax = fig.add_subplot(111, projection='3d')
-                ax.view_init(70, 180)
+                ax.set_xlim([-5, 100])
+                ax.set_ylim([-40, 40])
+                ax.set_zlim([-2, 20])
 
-                ax.scatter(points3d[:,0], points3d[:,1], points3d[:,2], c=points3d[:,2], s=2)
+                # ax.view_init(70, 180)
+                ax.view_init(0, 180)
+
+                ax.get_proj = lambda: np.dot(Axes3D.get_proj(ax), np.diag([10, 1, 1, 1]))
+
+                ax.scatter(points3d[:,0], points3d[:,1], points3d[:,2], c=colors, s=1)
 
                 fig.canvas.draw()
                 img = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8, sep='')
                 img  = img.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+                height, width = fig.canvas.get_width_height()[::-1]
                 img = cv2.cvtColor(img,cv2.COLOR_RGB2BGR)
+                img = img[int(height * 0.5):int(height * 0.75), int(width * 0.4):int(width * 0.68)]
                 cv2.namedWindow("LiDAR", cv2.WINDOW_NORMAL)
-                cv2.resizeWindow("LiDAR", 1280, 720)
                 cv2.imshow("LiDAR",img)
-                cv2.waitKey(50)
+                cv2.resizeWindow("LiDAR", int(1920 * (9/10)), int(1080 * (9/10)))
+                cv2.waitKey(1)
+
                 cv2.imwrite(os.path.join(args.save_dir, "LiDAR", filename), img)
-                # plt.savefig(os.path.join)
-                # plt.show()
 
             
         except KeyboardInterrupt:

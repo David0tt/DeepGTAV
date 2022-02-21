@@ -104,27 +104,27 @@ if __name__ == '__main__':
             if count == 4:
                 client.sendMessage(SetClockTime(12))
 
-            if count == 150:
+            if count == 200:
                 client.sendMessage(SetClockTime(0))
 
-            if count == 200:
+            if count == 300:
                 client.sendMessage(SetClockTime(19))
             
 
-            if count == 250:
+            if count == 400:
                 currentTravelHeight = 25
 
-            if count == 300:
+            if count == 500:
                 currentTravelHeight = 100
 
-            if count == 380:
+            if count == 600:
                 currentTravelHeight = 40
 
 
-            if count == 400:
+            if count == 700:
                 client.sendMessage(SetCameraPositionAndRotation(z = -20, rot_x = -90))
 
-            if count == 450:
+            if count == 800:
                 client.sendMessage(SetCameraPositionAndRotation(z = -20, rot_x = -20))
 
 
@@ -167,9 +167,10 @@ if __name__ == '__main__':
                 dst = cv2.addWeighted(bbox_image, 0.5, segmentationImage, 0.5, 0.0)
 
                 cv2.namedWindow("CombinedImage", cv2.WINDOW_NORMAL)
-                cv2.resizeWindow("CombinedImage", 1280, 720)
+                cv2.resizeWindow("CombinedImage", int(1920 * (9/10)), int(1080 * (9/10)))
                 cv2.imshow("CombinedImage", dst)
                 cv2.waitKey(1)
+                # cv2.waitKey(50000)
 
                 filename = f'{run_count:04}' + '_' + f'{count:010}' + ".png"
                 cv2.imwrite(os.path.join(args.save_dir, "image", filename), bbox_image)
