@@ -27,6 +27,12 @@ Below we show some example images from DeepGTAV with the object bounding boxes
 ![Example images from DeepGTAV with corresponding images from real world
 datasets](/images/ExampleImages.png)
 
+## Pregenerated Datasets
+The datasets we used in work `Leveraging
+Synthetic Data in Object Detection on Unmanned Aerial Vehicles`
+(https://arxiv.org/abs/2112.12252) are available under
+https://cloud.cs.uni-tuebingen.de/index.php/s/cQ3Qt5z8o4e5GWo
+
 
 # Simple Use
 In the following the steps that are necessary to just export data using DeepGTAV
