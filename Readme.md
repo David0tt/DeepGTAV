@@ -300,6 +300,15 @@ been made, a comprehensive list of the improvements is given in the following:
 <!-- A detailed description of the changes is presented in my bachelors thesis.  -->
 
 
+# Legals and Use Considerations
+In principal, the publisher of GTAV (Rockstar Games) allows for non-commercial use 
+of game footage (http://tinyurl.com/pjfoqo5), which includes academic work.
+Commercial use of the game footage however is not allowed in general. 
+
+Furthermore when working or extending this tool it has to be considered that 
+new game patches could introduce breaking changes at any time. Note however that 
+this has not happened since the release of the game, so this is rather unlikely.
+
 
 
 # TODO 
