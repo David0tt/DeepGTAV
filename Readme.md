@@ -1,3 +1,6 @@
+ 	
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/leveraging-synthetic-data-in-object-detection/object-detection-on-seadronessee)](https://paperswithcode.com/sota/object-detection-on-seadronessee?p=leveraging-synthetic-data-in-object-detection)
+
 # DeepGTA
 ## Ground Truth Data Generation for UAV Object detection
 
