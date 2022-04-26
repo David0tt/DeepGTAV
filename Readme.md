@@ -37,6 +37,22 @@ Synthetic Data in Object Detection on Unmanned Aerial Vehicles`
 https://cloud.cs.uni-tuebingen.de/index.php/s/cQ3Qt5z8o4e5GWo
 
 
+### Format of the Metadata in the Pregenerated Datasets:
+In each metadata file we have the following values separated by spaces:
+
+    [x y z heightAboveGround, campos_x, campos_y, campos_z, camrot_x, camrot_y, camrot_z, time_hours, time_min, time_sec, weather]
+
+- `x,y,z`: the location of the player vehicle in GTAV world coordinates.
+- `heightAboveGround`: The height difference of the player vehicle to the ground (or water)
+- `campos_x, campos_y, campos_z`: The positions of the camera in world coordinates.
+- `camrot_x, camrot_y, camrot_z`: The camera rotations
+- `time_hours, time_min, time_sec`: The ingame time
+- `weather`: The ingame weather condition
+
+
+Note that the camera position in general is offset wrt. the player vehicle. Also the height of the camera above ground is different from the heightAboveGround for the vehicle, so if you need this you need to calculate it. 
+
+
 # Simple Use
 In the following the steps that are necessary to just export data using DeepGTAV
 are described. In principle DeepGTAV should work with any version of GTAV, if
