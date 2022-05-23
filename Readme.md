@@ -37,7 +37,12 @@ Synthetic Data in Object Detection on Unmanned Aerial Vehicles`
 https://cloud.cs.uni-tuebingen.de/index.php/s/cQ3Qt5z8o4e5GWo
 
 
-### Format of the Metadata in the Pregenerated Datasets:
+### Format of the Labels and Metadata in the Pregenerated Datasets:
+
+The labels have the following id to category name mapping:
+
+{"swimmer": 0, "floater": 1, "swimmer on boat": 2, "floater on boat": 3, "boat":4}
+
 In each metadata file we have the following values separated by spaces:
 
     [x y z heightAboveGround, campos_x, campos_y, campos_z, camrot_x, camrot_y, camrot_z, time_hours, time_min, time_sec, weather]
