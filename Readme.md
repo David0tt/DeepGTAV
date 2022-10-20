@@ -158,6 +158,13 @@ Note that there are lots of legacy fields in the `Dataset` message, which
 sometimes do nothing. I would advise to only use the fields that are also used
 in the example scripts and data generation scripts.
 
+
+### Capturing images freely from arbitrary locations
+If you want to capture images from any location a hacky simple solution is to use a 
+"freecam" mod to move the camera. [Aikido Free Cam](https://www.gta5-mods.com/scripts/aikido-free-cam) 
+worked well for us (see this [issue](https://github.com/Eisbaer8/DeepGTAV/issues/7)).
+
+
 ## Modification of GTAV
 In general DeepGTAV should work stable with modifications of GTAV. 
 
