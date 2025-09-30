@@ -62,26 +62,35 @@ Note that the camera position in general is offset wrt. the player vehicle. Also
 In the following the steps that are necessary to just export data using DeepGTAV
 are described. In principle DeepGTAV should work with any version of GTAV, if
 the correct newest version of ScriptHookV is obtained. The last working version
-for me employed GTAV from the Epic store in version 1.0.2060.1
+for me employed GTAV from the Epic store in version 1.0.3586.0
 
 ## Installation of DeepGTAV
-1. Install MS Visual Studio 2017
-   (https://visualstudio.microsoft.com/de/vs/older-downloads/) with `Desktop
-   developement with C++` and `Game Developement with C++` selected. This
+1. Install `MS Visual Studio Community 2022` and `Visual C++ Redistributable for Visual Studio 2017`
+   (https://visualstudio.microsoft.com/de/vs/older-downloads/) with ⚠️`Desktop
+   developement with C++` and ⚠️`Game Developement with C++` selected. This
    installs some dependencies, that are needed, otherwise DeepGTAV crashes
-   without an error. 
-2. Obtain the newest version of ScriptHookV from
+   without an error. (Originally this was installed using MS Visual Studio
+   2017, but this is not available anymore. MS Visual Studio 2022 has been tested)
+3. Obtain the newest version of ScriptHookV from
    (http://dev-c.com/GTAV/scripthookv) and copy the files from `bin/` to
    `DeepGTAV-PreSIL/bin/Release/` overwriting the old files (this is not necessery
-   when using GTAV in version 1.0.2245.0 or older)
-3. Copy the contents of `DeepGTAV-PreSIL/bin/Release/` to the GTAV install
+   when using GTAV in version 1.0.3586.0 or older)
+4. Copy the contents of `DeepGTAV-PreSIL/bin/Release/` to the GTAV install
    directory
-4. Replace the save game data in `Documents/Rockstar Games/GTA V/Profiles/` with
+5. Replace the save game data in `Documents/Rockstar Games/GTA V/Profiles/` with
    the contents of `DeepGTAV-PreSIL/bin/SaveGame`
-5. Done!
-6. Only if you are using the reinforcement learning rewarder: Download paths.xml
+6. Done!
+7. Only if you are using the reinforcement learning rewarder: Download paths.xml
    (https://drive.google.com/file/d/0B6pR5O2YrmHnNU9EMDBSSFpMV00/view?usp=sharing)
    and store it in the GTAV install directory
+
+## Installation of Python environment for VPilot
+You can simply install the python environment for VPilot using conda:
+
+    conda create -n DeepGTAV numpy ipykernel opencv matplotlib zeromq
+
+In principle, VPilot only requires a small amount of mature packages, which will probably not have breaking changes, so you can install the python environment in any way you want, installing `numpy`, `ipykernel`, `opencv`, `matplotlib` and `zeromq`
+If some of these dependencies should break at some point in the future, a reference environment that definitely worked is provided in [`.\VPilot\environment.yml`](https://github.com/David0tt/DeepGTAV/blob/master/VPilot/environment.yml).
 
 ## Game Settings
 1. Set the game in windowed mode.
@@ -108,7 +117,9 @@ datasets.
 To do data generation simply run GTAV. When the game has loaded run one of the
 respective data generation scripts and specify the Export directory, e.g.:
 
-      python .\VPilot\datageneration_VisDrone.py --save_dir "C:\DeepGTAV_Exportdir\"
+      conda activate DeepGTAV
+      cd .\VPilot
+      python .\datageneration_VisDrone.py --save_dir "C:\DeepGTAV_Exportdir\"
 
 Then open the GTAV window again, ESC from the menu and the data generation
 should be starting.
