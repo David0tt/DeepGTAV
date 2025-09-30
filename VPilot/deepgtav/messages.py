@@ -113,7 +113,7 @@ class Commands:
         return json.dumps({'commands':self.__dict__})
         
 def frame2numpy(frame, frameSize=SCREEN_RESOLUTION):
-    buff = np.fromstring(frame, dtype='uint8')
+    buff = np.frombuffer(frame, dtype='uint8')
     # Scanlines are aligned to 4 bytes in Windows bitmaps
     strideWidth = int((frameSize[0] * 3 + 3) / 4) * 4
     # Return a copy because custom strides are not supported by OpenCV.

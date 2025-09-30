@@ -4,7 +4,7 @@ def showStencilBuffer(idx):
     message = messages[idx]
     if message["StencilBuffer"] != None and message["StencilBuffer"] != "":
         # print(message["occlusionImage"])
-        nparr = np.fromstring(base64.b64decode(message["StencilBuffer"]), np.uint8)
+        nparr = np.frombuffer(base64.b64decode(message["StencilBuffer"]), np.uint8)
         
         # np.unique(nparr, return_counts=True)
 
@@ -31,7 +31,7 @@ def showmessage(idx):
     bboxes = parseBBoxesVisDroneStyle(message["bbox2d"])
     bbox_image = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormatStringToImage(bboxes))
     
-    nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImageColor"]), np.uint8)
+    nparr = np.frombuffer(base64.b64decode(message["instanceSegmentationImageColor"]), np.uint8)
     segmentationImage = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
     
     dst = cv2.addWeighted(bbox_image, 0.5, segmentationImage, 0.5, 0.0)
@@ -43,7 +43,7 @@ def showmessage(idx):
 
 def showSegmentationImage(idx):
     message = messages[idx]
-    nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImageColor"]), np.uint8)
+    nparr = np.frombuffer(base64.b64decode(message["instanceSegmentationImageColor"]), np.uint8)
     segmentationImage = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
     cv2.imshow("SegmentationImage", segmentationImage)
     cv2.waitKey(1)
@@ -60,7 +60,7 @@ def showOcclusionImage(idx):
     message = messages[idx]
     if message["occlusionImage"] != None and message["occlusionImage"] != "":
         # print(message["occlusionImage"])
-        nparr = np.fromstring(base64.b64decode(message["occlusionImage"]), np.uint8)
+        nparr = np.frombuffer(base64.b64decode(message["occlusionImage"]), np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
         cv2.imshow("occlusionImage", img)
         cv2.waitKey(1)
@@ -69,7 +69,7 @@ def showStencil1(idx):
     message = messages[idx]
     if message["segmentationImage"] != None and message["segmentationImage"] != "":
         # print(message["occlusionImage"])
-        nparr = np.fromstring(base64.b64decode(message["segmentationImage"]), np.uint8)
+        nparr = np.frombuffer(base64.b64decode(message["segmentationImage"]), np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
         cv2.imshow("segmentationImage", img)
         cv2.waitKey(1)
@@ -92,32 +92,32 @@ def parseMultipleStencil(stencilMessage):
     imgs = [msg[2:] for msg in msgs]
 
 
-    nparr = np.fromstring(base64.b64decode(imgs[1]), np.uint8)
+    nparr = np.frombuffer(base64.b64decode(imgs[1]), np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
     cv2.imshow("img1", img)
     cv2.waitKey(1)
 
-    nparr = np.fromstring(base64.b64decode(imgs[2]), np.uint8)
+    nparr = np.frombuffer(base64.b64decode(imgs[2]), np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
     cv2.imshow("img2", img)
     cv2.waitKey(1)
 
-    nparr = np.fromstring(base64.b64decode(imgs[3]), np.uint8)
+    nparr = np.frombuffer(base64.b64decode(imgs[3]), np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
     cv2.imshow("img3", img)
     cv2.waitKey(3)
 
-    nparr = np.fromstring(base64.b64decode(imgs[4]), np.uint8)
+    nparr = np.frombuffer(base64.b64decode(imgs[4]), np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
     cv2.imshow("img4", img)
     cv2.waitKey(4)
 
-    nparr = np.fromstring(base64.b64decode(imgs[5]), np.uint8)
+    nparr = np.frombuffer(base64.b64decode(imgs[5]), np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
     cv2.imshow("img5", img)
     cv2.waitKey(5)
 
-    nparr = np.fromstring(base64.b64decode(imgs[6]), np.uint8)
+    nparr = np.frombuffer(base64.b64decode(imgs[6]), np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
     cv2.imshow("img6", img)
     cv2.waitKey(6)

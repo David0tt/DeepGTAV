@@ -187,31 +187,31 @@ if __name__ == '__main__':
 
             # if message["occlusionImage"] != None and message["occlusionImage"] != "":
             #     # print(message["occlusionImage"])
-            #     nparr = np.fromstring(base64.b64decode(message["occlusionImage"]), np.uint8)
+            #     nparr = np.frombuffer(base64.b64decode(message["occlusionImage"]), np.uint8)
             #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
             #     cv2.imshow("occlusionImage", img)
             #     cv2.waitKey(1)
             # if message["unusedStencilIPixelmage"] != None and message["unusedStencilIPixelmage"] != "":
             #     # print(message["occlusionImage"])
-            #     nparr = np.fromstring(base64.b64decode(message["unusedStencilIPixelmage"]), np.uint8)
+            #     nparr = np.frombuffer(base64.b64decode(message["unusedStencilIPixelmage"]), np.uint8)
             #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
             #     cv2.imshow("unusedStencilIPixelmage", img)
             #     cv2.waitKey(1)
             # if message["segmentationImage"] != None and message["segmentationImage"] != "":
             #     # print(message["occlusionImage"])
-            #     nparr = np.fromstring(base64.b64decode(message["segmentationImage"]), np.uint8)
+            #     nparr = np.frombuffer(base64.b64decode(message["segmentationImage"]), np.uint8)
             #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
             #     cv2.imshow("segmentationImage", img)
             #     cv2.waitKey(1)
             # if message["instanceSegmentationImage"] != None and message["instanceSegmentationImage"] != "":
             #     # print(message["occlusionImage"])
-            #     nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImage"]), np.uint8)
+            #     nparr = np.frombuffer(base64.b64decode(message["instanceSegmentationImage"]), np.uint8)
             #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
             #     cv2.imshow("instanceSegmentationImage", img)
             #     cv2.waitKey(1)
             # if message["instanceSegmentationImageColor"] != None and message["instanceSegmentationImageColor"] != "":
             #     # print("SegmentationImage found")
-            #     nparr = np.fromstring(base64.b64decode(message["instanceSegmentationImageColor"]), np.uint8)
+            #     nparr = np.frombuffer(base64.b64decode(message["instanceSegmentationImageColor"]), np.uint8)
             #     img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
             #     cv2.imshow("instanceSegmentationImageColor", img)
             #     cv2.waitKey(1)
@@ -243,7 +243,7 @@ if __name__ == '__main__':
             if message["StencilImage"] != None and message["StencilImage"] != "":
                 # print("StencilImage found")
                 # print(message["occlusionImage"])
-                nparr = np.fromstring(base64.b64decode(message["StencilImage"]), np.uint8)
+                nparr = np.frombuffer(base64.b64decode(message["StencilImage"]), np.uint8)
                 img = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
                 # cv2.imshow("StencilImage", img)
                 # cv2.waitKey(1)
@@ -262,12 +262,12 @@ if __name__ == '__main__':
                 
                 bbox_image = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormatStringToImage(bboxes))
                 
-                nparr = np.fromstring(base64.b64decode(message["segmentationImage"]), np.uint8)
+                nparr = np.frombuffer(base64.b64decode(message["segmentationImage"]), np.uint8)
                 segmentationImage = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
 
                 print("SegmentationShape: ",segmentationImage.shape)
 
-                # nparr = np.fromstring(base64.b64decode(message["StencilImage"]), np.uint8)
+                # nparr = np.frombuffer(base64.b64decode(message["StencilImage"]), np.uint8)
                 # stencilImage = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
 
                 # stencilImageRGB = cv2.cvtColor(stencilImage, cv2.COLOR_GRAY2RGB)

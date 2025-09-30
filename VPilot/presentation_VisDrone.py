@@ -33,10 +33,10 @@ if __name__ == '__main__':
     parser.add_argument('-l', '--host', default='127.0.0.1', help='The IP where DeepGTAV is running')
     parser.add_argument('-p', '--port', default=8000, help='The port where DeepGTAV is running')
     parser.add_argument('-s', '--save_dir', default='F:\\EXPORTDIR\\VisDrone_presentation_1', help='The directory the generated data is saved to')
-    # args = parser.parse_args()
+    args = parser.parse_args()
 
     # TODO for running in VSCode
-    args = parser.parse_args('')
+    # args = parser.parse_args('')
     
     args.save_dir = os.path.normpath(args.save_dir)
 
@@ -161,7 +161,7 @@ if __name__ == '__main__':
                 
                 bbox_image = add_bboxes(frame2numpy(message['frame'], (IMG_WIDTH,IMG_HEIGHT)), parseBBox_YoloFormatStringToImage(bboxes))
                 
-                nparr = np.fromstring(base64.b64decode(message["segmentationImage"]), np.uint8)
+                nparr = np.frombuffer(base64.b64decode(message["segmentationImage"]), np.uint8)
                 segmentationImage = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
 
                 dst = cv2.addWeighted(bbox_image, 0.5, segmentationImage, 0.5, 0.0)
