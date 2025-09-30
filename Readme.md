@@ -72,7 +72,7 @@ for me employed GTAV from the Epic store in version 1.0.2060.1
    without an error. 
 2. Obtain the newest version of ScriptHookV from
    (http://dev-c.com/GTAV/scripthookv) and copy the files from `bin/` to
-   `DeepGTAV-PreSIL/Release/` overwriting the old files (this is not necessery
+   `DeepGTAV-PreSIL/bin/Release/` overwriting the old files (this is not necessery
    when using GTAV in version 1.0.2245.0 or older)
 3. Copy the contents of `DeepGTAV-PreSIL/bin/Release/` to the GTAV install
    directory
